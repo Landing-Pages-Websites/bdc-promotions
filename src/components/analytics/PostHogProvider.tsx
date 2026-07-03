@@ -35,15 +35,15 @@ async function initPostHog(): Promise<void> {
 }
 
 /**
- * Lazy PostHog loader. Requires NEXT_PUBLIC_POSTHOG_KEY AND accepted
- * consent; then initializes on first interaction or after 3s idle,
+ * Lazy PostHog loader. Requires NEXT_PUBLIC_POSTHOG_KEY AND allowed
+ * consent (per siteConfig.consentMode); then initializes on first interaction or after 3s idle,
  * whichever comes first.
  */
 export function PostHogProvider(): null {
-  const { status } = useConsent();
+  const { analyticsAllowed } = useConsent();
 
   useEffect(() => {
-    if (status !== "accepted" || !POSTHOG_KEY || initStarted) {
+    if (!analyticsAllowed || !POSTHOG_KEY || initStarted) {
       return;
     }
 
@@ -66,7 +66,7 @@ export function PostHogProvider(): null {
     }
 
     return cleanup;
-  }, [status]);
+  }, [analyticsAllowed]);
 
   return null;
 }

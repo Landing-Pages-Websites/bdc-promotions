@@ -11,9 +11,9 @@ const GA4_ID = process.env.NEXT_PUBLIC_GA4_ID;
  * provisioning bot) AND the visitor has accepted cookies.
  */
 export function GoogleAnalytics(): ReactElement | null {
-  const { status } = useConsent();
+  const { analyticsAllowed } = useConsent();
 
-  if (!GA4_ID || status !== "accepted") {
+  if (!GA4_ID || !analyticsAllowed) {
     return null;
   }
 

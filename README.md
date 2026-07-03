@@ -84,10 +84,18 @@ All optional; the site works with none of them. Set in **Vercel project env**
 | `NEXT_PUBLIC_GSC_VERIFICATION` | provisioning bot | Vercel env | Search Console verification is requested |
 | `ALLOW_TODO` | builder | build command / CI only | Preview builds while config is unfinished |
 
-GA4, GTM, and PostHog loaders are **consent-gated**: nothing loads until the
-visitor accepts the cookie banner, even with the env vars set. PostHog
-additionally lazy-initializes (first interaction or 3s idle) through the
-same-origin `/ingest` proxy, with session recording off by default.
+GA4, GTM, and PostHog loaders are **consent-aware**, controlled by
+`consentMode` in `src/site.config.ts`:
+
+- **`"us-default"`** (the default): analytics load immediately on page view;
+  the banner is informational ("Got it" / "Decline") and Decline is an
+  opt-out that stops capture. The norm for US clients (CCPA is
+  opt-out-based) — no analytics loss from visitors who ignore the banner.
+- **`"strict"`**: nothing loads until the visitor clicks Accept (GDPR-style
+  opt-in). Use for customers with meaningful EU traffic.
+
+PostHog additionally lazy-initializes (first interaction or 3s idle) through
+the same-origin `/ingest` proxy, with session recording off by default.
 
 The **Mega optimizer snippet** (`cdn.gomega.ai/scripts/optimizer.min.js`) is
 the exception: it is hard-coded in

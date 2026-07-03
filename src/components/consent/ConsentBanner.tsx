@@ -8,9 +8,13 @@ import { useConsent } from "@/components/consent/useConsent";
 /**
  * Lightweight self-built cookie banner (no vendor script). Renders nothing
  * once the visitor has chosen; analytics loaders react via useConsent().
+ * In "us-default" mode the banner is informational (analytics already
+ * loading) and the primary button reads "Got it"; in "strict" mode it's a
+ * true opt-in gate and reads "Accept".
  */
 export function ConsentBanner(): ReactElement | null {
   const { status, accept, decline } = useConsent();
+  const strict = siteConfig.consentMode === "strict";
 
   if (status !== "unset") {
     return null;
@@ -38,7 +42,7 @@ export function ConsentBanner(): ReactElement | null {
             aria-label="Accept analytics cookies"
             className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
           >
-            Accept
+            {strict ? "Accept" : "Got it"}
           </button>
           <button
             type="button"

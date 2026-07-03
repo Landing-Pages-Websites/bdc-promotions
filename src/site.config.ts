@@ -76,6 +76,15 @@ export interface SiteConfig {
   thankYouPath: string;
   /** BCP 47 locale, drives <html lang> and OG locale. */
   locale: string;
+  /**
+   * Cookie-consent behavior.
+   * - "us-default": analytics load immediately; the banner is informational
+   *   ("Got it" / "Decline") and Decline is an opt-out. The norm for US
+   *   clients (CCPA is opt-out-based) — no data loss from banner-ignorers.
+   * - "strict": nothing loads until the visitor clicks Accept (GDPR-style
+   *   opt-in). Use for customers with meaningful EU traffic.
+   */
+  consentMode: "us-default" | "strict";
 }
 
 export const siteConfig: SiteConfig = {
@@ -109,4 +118,5 @@ export const siteConfig: SiteConfig = {
   },
   thankYouPath: "/thank-you",
   locale: "en-US",
+  consentMode: "us-default",
 };

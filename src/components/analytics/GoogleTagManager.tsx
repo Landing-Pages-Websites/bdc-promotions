@@ -11,9 +11,9 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
  * NEXT_PUBLIC_GTM_ID is set AND the visitor has accepted cookies.
  */
 export function GoogleTagManager(): ReactElement | null {
-  const { status } = useConsent();
+  const { analyticsAllowed } = useConsent();
 
-  if (!GTM_ID || status !== "accepted") {
+  if (!GTM_ID || !analyticsAllowed) {
     return null;
   }
 

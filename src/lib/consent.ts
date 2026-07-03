@@ -4,6 +4,8 @@
  * subscriber (banner, GA, GTM, PostHog) reacts without a page reload.
  */
 
+import { siteConfig } from "@/site.config";
+
 export type ConsentStatus = "unset" | "accepted" | "declined";
 
 export const CONSENT_STORAGE_KEY = "site-consent";
@@ -35,4 +37,17 @@ export function setConsentStatus(status: Exclude<ConsentStatus, "unset">): void 
 export function subscribeToConsent(callback: () => void): () => void {
   window.addEventListener(CONSENT_CHANGE_EVENT, callback);
   return () => window.removeEventListener(CONSENT_CHANGE_EVENT, callback);
+}
+
+/**
+ * Whether analytics (GA4/GTM/PostHog) may load for the given consent status,
+ * per siteConfig.consentMode:
+ * - "us-default": allowed unless the visitor explicitly declined (opt-out).
+ * - "strict": allowed only after an explicit accept (opt-in).
+ */
+export function isAnalyticsAllowed(status: ConsentStatus): boolean {
+  if (siteConfig.consentMode === "strict") {
+    return status === "accepted";
+  }
+  return status !== "declined";
 }
