@@ -30,6 +30,13 @@ export interface SocialLink {
 
 export type SchemaType = "LocalBusiness" | "Organization";
 
+export interface BudgetQualifier {
+  /** Price-anchoring statement, e.g. "Our kitchen remodels start at $25,000." */
+  priceAnchor: string;
+  /** The yes/no question shown after the anchor, e.g. "Is this within your budget?" */
+  question: string;
+}
+
 export interface SiteConfig {
   /** Public-facing brand name, e.g. "Acme Plumbing". */
   businessName: string;
@@ -49,8 +56,20 @@ export interface SiteConfig {
   logoPath: string;
   /** Path under /public, 1200x630, e.g. "/og-image.png". */
   ogImagePath: string;
-  /** URL that lead form submissions POST to (JSON body). */
-  formEndpoint: string;
+  /** Customer UUID from MEGA Admin. */
+  megaCustomerId: string;
+  /** Site UUID from MEGA Admin Conversions tab. */
+  megaSiteId: string;
+  /**
+   * Lead source identifier sent with every submission. The `website-` prefix
+   * distinguishes website leads from ad/LP leads in Keystone.
+   */
+  sourceProvider: string;
+  /**
+   * Budget qualifying question rendered as yes/no toggles in the lead form.
+   * Set to null to hide the budget toggles for sites where it doesn't fit.
+   */
+  budgetQualifier: BudgetQualifier | null;
   /** Where the lead form redirects after a successful submit. */
   thankYouPath: string;
   /** BCP 47 locale, drives <html lang> and OG locale. */
@@ -78,7 +97,13 @@ export const siteConfig: SiteConfig = {
   socialLinks: [{ label: "TODO_SOCIAL_LABEL", url: "https://TODO_SOCIAL_URL" }],
   logoPath: "/logo.png",
   ogImagePath: "/og-image.png",
-  formEndpoint: "https://TODO_FORM_ENDPOINT.example.com/leads",
+  megaCustomerId: "TODO_MEGA_CUSTOMER_ID",
+  megaSiteId: "TODO_MEGA_SITE_ID",
+  sourceProvider: "website-TODO_SOURCE_SLUG",
+  budgetQualifier: {
+    priceAnchor: "TODO_PRICE_ANCHOR — e.g. 'Our projects start at $X,XXX.'",
+    question: "Is this within your budget?",
+  },
   thankYouPath: "/thank-you",
   locale: "en-US",
 };

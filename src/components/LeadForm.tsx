@@ -1,101 +1,219 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent, type ReactElement } from "react";
-import { trackEvent } from "@/lib/track";
+import {
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactElement,
+} from "react";
+import {
+  EMAIL_PATTERN,
+  formatPhone,
+  isValidEmail,
+  isValidPhone,
+  useMegaLeadForm,
+} from "@/hooks/useMegaLeadForm";
+import { getPostHogClient } from "@/lib/posthog-client";
 import { siteConfig } from "@/site.config";
 
-type SubmitState = "idle" | "submitting" | "error";
-
-interface LeadPayload {
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-}
-
-async function submitLead(payload: LeadPayload): Promise<void> {
-  const response = await fetch(siteConfig.formEndpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    throw new Error(`Lead submit failed with status ${response.status}`);
-  }
-}
-
 const inputClasses =
-  "w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
+  "w-full rounded-md border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
+
+const budgetToggleClasses =
+  "rounded-lg border-2 border-neutral-300 py-2.5 text-center text-sm font-semibold transition-all peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white dark:border-neutral-700 dark:peer-checked:border-white dark:peer-checked:bg-white dark:peer-checked:text-neutral-900";
 
 /**
- * Lead capture form. POSTs JSON to siteConfig.formEndpoint, fires
- * lead_form_submit to all loaded analytics destinations, then redirects to
- * siteConfig.thankYouPath.
+ * Fires post-submit analytics. Per the landing-page-tracking skill, the
+ * dataLayer event name is `form_submission` (distinct from the optimizer's
+ * own `form_submit`) so GTM has its own trigger without double-counting.
+ */
+function trackFormSubmission(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: "form_submission" });
+  getPostHogClient()?.capture("lead_form_submit");
+}
+
+/**
+ * Lead capture form wired to the Mega submission contract
+ * (landing-page-forms skill): validate-first + requestSubmit(), synchronous
+ * inFlightRef duplicate guard, separate form_data key per field, and
+ * name attributes the Mega optimizer reads. Redirects to
+ * siteConfig.thankYouPath after submit.
  */
 export function LeadForm(): ReactElement {
   const router = useRouter();
-  const [state, setState] = useState<SubmitState>("idle");
+  const idPrefix = useId();
+  const { submit } = useMegaLeadForm();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+  const formRef = useRef<HTMLFormElement>(null);
+  // Synchronous duplicate-submit gate: React state is batched, so a
+  // double-click in one tick would see submitting=false twice. A ref flips
+  // immediately. Never reset — one submit per page load.
+  const inFlightRef = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [budget, setBudget] = useState("");
+
+  const { budgetQualifier } = siteConfig;
+  const budgetAnswered = budgetQualifier === null || budget !== "";
+  const canSubmit =
+    firstName.trim() !== "" &&
+    lastName.trim() !== "" &&
+    isValidEmail(email) &&
+    isValidPhone(phone) &&
+    budgetAnswered;
+
+  function handleClick(): void {
+    if (!canSubmit) {
+      formRef.current?.reportValidity(); // shows browser tooltips
+      return;
+    }
+    formRef.current?.requestSubmit(); // fires <form onSubmit>
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const payload: LeadPayload = {
-      name: String(data.get("name") ?? ""),
-      email: String(data.get("email") ?? ""),
-      phone: String(data.get("phone") ?? ""),
-      message: String(data.get("message") ?? ""),
-    };
+    void performSubmit();
+  }
 
-    setState("submitting");
+  async function performSubmit(): Promise<void> {
+    if (inFlightRef.current || submitted) return; // synchronous gate
+    if (!canSubmit) return;
+    inFlightRef.current = true; // flips IMMEDIATELY, not next render
+    setSubmitting(true);
     try {
-      await submitLead(payload);
-      trackEvent("lead_form_submit");
-      router.push(siteConfig.thankYouPath);
+      await submit({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        ...(budgetQualifier === null ? {} : { budget }),
+      });
+      trackFormSubmission(); // only on a successful API response
     } catch {
-      setState("error");
+      // Fall through to thank-you even on error — never strand the user
+      // (landing-page-forms Hard Rule #7). No analytics on the error path.
+    } finally {
+      setSubmitted(true);
+      setSubmitting(false);
+      router.push(siteConfig.thankYouPath);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-md flex-col gap-4">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="flex w-full max-w-md flex-col gap-4"
+    >
       <div className="flex flex-col gap-1">
-        <label htmlFor="lead-name" className="text-sm font-medium">
-          Name
+        <label htmlFor={`${idPrefix}-first-name`} className="text-sm font-medium">
+          First Name
         </label>
-        <input id="lead-name" name="name" type="text" required autoComplete="name" className={inputClasses} />
+        <input
+          id={`${idPrefix}-first-name`}
+          name="firstName"
+          type="text"
+          required
+          autoComplete="given-name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          className={inputClasses}
+        />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="lead-email" className="text-sm font-medium">
+        <label htmlFor={`${idPrefix}-last-name`} className="text-sm font-medium">
+          Last Name
+        </label>
+        <input
+          id={`${idPrefix}-last-name`}
+          name="lastName"
+          type="text"
+          required
+          autoComplete="family-name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          className={inputClasses}
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`${idPrefix}-email`} className="text-sm font-medium">
           Email
         </label>
-        <input id="lead-email" name="email" type="email" required autoComplete="email" className={inputClasses} />
+        <input
+          id={`${idPrefix}-email`}
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          pattern={EMAIL_PATTERN}
+          title="Enter a valid email address (e.g. you@company.com)"
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClasses}
+        />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="lead-phone" className="text-sm font-medium">
+        <label htmlFor={`${idPrefix}-phone`} className="text-sm font-medium">
           Phone
         </label>
-        <input id="lead-phone" name="phone" type="tel" autoComplete="tel" className={inputClasses} />
+        <input
+          id={`${idPrefix}-phone`}
+          name="phone"
+          type="tel"
+          inputMode="numeric"
+          required
+          autoComplete="tel"
+          value={phone}
+          onChange={(e) => setPhone(formatPhone(e.target.value))}
+          placeholder="(555) 123-4567"
+          pattern="\(\d{3}\) \d{3}-\d{4}"
+          title="Please enter a valid 10-digit phone number"
+          className={inputClasses}
+        />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="lead-message" className="text-sm font-medium">
-          Message
-        </label>
-        <textarea id="lead-message" name="message" rows={4} required className={inputClasses} />
-      </div>
-      {state === "error" ? (
-        <p role="alert" className="rounded-md border border-red-600 bg-red-50 px-3 py-2 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-200">
-          Something went wrong sending your message. Please try again, or
-          contact us directly at {siteConfig.contact.phone}.
-        </p>
-      ) : null}
+      {budgetQualifier === null ? null : (
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium">
+            {budgetQualifier.priceAnchor} {budgetQualifier.question}
+          </legend>
+          <div className="flex gap-3">
+            {(["yes", "no"] as const).map((option) => (
+              <label key={option} className="flex-1 cursor-pointer">
+                <input
+                  type="radio"
+                  name="budget"
+                  value={option}
+                  required
+                  checked={budget === option}
+                  onChange={() => setBudget(option)}
+                  className="sr-only peer"
+                />
+                <div className={budgetToggleClasses}>
+                  {option === "yes" ? "Yes" : "No"}
+                </div>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <button
-        type="submit"
-        disabled={state === "submitting"}
+        type="button"
+        onClick={handleClick}
+        disabled={submitting || submitted}
         className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
       >
-        {state === "submitting" ? "Sending…" : "Send message"}
+        {submitting ? "Sending…" : "Get My Free Quote"}
       </button>
     </form>
   );

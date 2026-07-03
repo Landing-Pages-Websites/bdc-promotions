@@ -1,21 +1,20 @@
-"use client";
-
 import type { ReactElement } from "react";
-import { useConsent } from "@/components/consent/useConsent";
-
-const MEGA_SNIPPET_ID = process.env.NEXT_PUBLIC_MEGA_SNIPPET_ID;
+import Script from "next/script";
 
 /**
- * Mega tracking snippet loader. Wiring (env var + consent gate) is in place;
- * the actual snippet is pending.
+ * Mega optimizer script (lead capture, conversion tracking, form-field
+ * capture via input `name` attributes).
+ *
+ * INTENTIONALLY NOT CONSENT-GATED: this is the business-critical
+ * lead-capture/optimizer script — gating it behind the cookie banner would
+ * drop leads. Decision made by Peter's assistant; flagged for review.
+ * GA4/GTM/PostHog remain consent-gated.
  */
-export function MegaSnippet(): ReactElement | null {
-  const { status } = useConsent();
-
-  if (!MEGA_SNIPPET_ID || status !== "accepted") {
-    return null;
-  }
-
-  // TODO(mega): replace with actual Mega Snippet line — awaiting from Peter
-  return null;
+export function MegaSnippet(): ReactElement {
+  return (
+    <Script
+      src="https://cdn.gomega.ai/scripts/optimizer.min.js"
+      strategy="afterInteractive"
+    />
+  );
 }
