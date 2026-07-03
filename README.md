@@ -38,7 +38,9 @@ pages, ship.
      submission API (`analytics.gomega.ai/submission/submit`) with full
      attribution, fires analytics events, and redirects to `/thank-you`.
      It reads `megaCustomerId` / `megaSiteId` / `sourceProvider` /
-     `budgetQualifier` from `src/site.config.ts`. NEVER submit leads any
+     `budgetQualifier` from `src/site.config.ts`. The Mega optimizer needs
+     `megaSiteKey` (sk_… from MEGA Admin Conversions tab) — set it in
+     `src/site.config.ts` or the optimizer cannot function. NEVER submit leads any
      other way (no direct database access from frontend code).
      - `sourceProvider` uses the `website-<slug>` convention — the
        `website-` prefix distinguishes website leads from ad/LP leads in

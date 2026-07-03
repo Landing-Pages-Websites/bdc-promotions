@@ -24,17 +24,28 @@ const inputClasses =
 const budgetToggleClasses =
   "rounded-lg border-2 border-neutral-300 py-2.5 text-center text-sm font-semibold transition-all peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white dark:border-neutral-700 dark:peer-checked:border-white dark:peer-checked:bg-white dark:peer-checked:text-neutral-900";
 
+declare global {
+  interface Window {
+    MegaTag?: {
+      trackEvent?: (event: string, data: Record<string, string>) => void;
+    };
+  }
+}
+
 /**
  * Fires post-submit analytics. Per the landing-page-tracking skill, the
  * dataLayer event name is `form_submission` (distinct from the optimizer's
- * own `form_submit`) so GTM has its own trigger without double-counting.
+ * own `form_submit`) so GTM has its own trigger — and the manual
+ * MegaTag.trackEvent("form_submit", …) ships alongside it ("never one
+ * without the other").
  */
-function trackFormSubmission(): void {
+function trackFormSubmission(formData: Record<string, string>): void {
   if (typeof window === "undefined") {
     return;
   }
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: "form_submission" });
+  window.MegaTag?.trackEvent?.("form_submit", formData);
   getPostHogClient()?.capture("lead_form_submit");
 }
 
@@ -91,15 +102,16 @@ export function LeadForm(): ReactElement {
     if (!canSubmit) return;
     inFlightRef.current = true; // flips IMMEDIATELY, not next render
     setSubmitting(true);
+    const formData = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      ...(budgetQualifier === null ? {} : { budget }),
+    };
     try {
-      await submit({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        ...(budgetQualifier === null ? {} : { budget }),
-      });
-      trackFormSubmission(); // only on a successful API response
+      await submit(formData);
+      trackFormSubmission(formData); // only on a successful API response
     } catch {
       // Fall through to thank-you even on error — never strand the user
       // (landing-page-forms Hard Rule #7). No analytics on the error path.

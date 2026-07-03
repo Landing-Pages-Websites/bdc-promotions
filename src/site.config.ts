@@ -60,6 +60,8 @@ export interface SiteConfig {
   megaCustomerId: string;
   /** Site UUID from MEGA Admin Conversions tab. */
   megaSiteId: string;
+  /** MegaTag site key (sk_…) from MEGA Admin Conversions tab — required for the optimizer to function. */
+  megaSiteKey: string;
   /**
    * Lead source identifier sent with every submission. The `website-` prefix
    * distinguishes website leads from ad/LP leads in Keystone.
@@ -99,6 +101,7 @@ export const siteConfig: SiteConfig = {
   ogImagePath: "/og-image.png",
   megaCustomerId: "TODO_MEGA_CUSTOMER_ID",
   megaSiteId: "TODO_MEGA_SITE_ID",
+  megaSiteKey: "TODO_MEGA_SITE_KEY",
   sourceProvider: "website-TODO_SOURCE_SLUG",
   budgetQualifier: {
     priceAnchor: "TODO_PRICE_ANCHOR — e.g. 'Our projects start at $X,XXX.'",
