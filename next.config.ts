@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { redirectMap } from "./src/lib/redirects";
 
 const POSTHOG_HOST =
   process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
@@ -13,6 +14,16 @@ const nextConfig: NextConfig = {
   // make Next.js guess wrong.
   turbopack: {
     root: __dirname,
+  },
+  async redirects() {
+    // 301-equivalent redirects for migrations. Builders fill the map in
+    // src/lib/redirects.ts; Next serves permanent redirects as 308
+    // (SEO-equivalent to 301 — go-live QA accepts either).
+    return redirectMap.map(({ source, destination }) => ({
+      source,
+      destination,
+      permanent: true,
+    }));
   },
   async rewrites() {
     // Same-origin reverse proxy for PostHog (PostHog's documented Next.js

@@ -68,6 +68,9 @@ itself.
 - `scripts/check-config.mjs`
 
 What you DO edit: `src/site.config.ts`, `src/lib/routes.ts` (append pages),
+`src/lib/redirects.ts` (migrations only: map every old-site URL to its new
+slug — inventory the old site while it's still live, BEFORE DNS flips;
+go-live QA verifies each entry and treats a broken one as a launch blocker),
 everything under `src/app/*/page.tsx`, and `public/` assets.
 
 ## Env vars
