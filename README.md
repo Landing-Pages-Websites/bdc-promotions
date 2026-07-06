@@ -1,6 +1,6 @@
 # site-starter
 
-Mega's shared Next.js starter for customer landing pages and websites,
+Mega's shared Next.js starter for customer websites,
 deployed to Vercel. Used as a **GitHub template repo** by both coding bots and
 human developers: click "Use this template", fill in one config file, build
 pages, ship.
