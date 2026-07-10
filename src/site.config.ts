@@ -5,7 +5,7 @@
  * site. Every `TODO_`-prefixed value is a sentinel: `npm run check-config`
  * (and `npm run build` via `prebuild`) fails while any sentinel remains.
  *
- * Tracking IDs (GA4, GTM, PostHog, etc.) do NOT live here — they are env
+ * Tracking IDs (GA4, PostHog, etc.) do NOT live here — they are env
  * vars minted later by the provisioning bot. See .env.example.
  */
 

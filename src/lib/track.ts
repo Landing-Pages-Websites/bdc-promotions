@@ -8,7 +8,7 @@ declare global {
 
 /**
  * Fires a conversion/interaction event to every destination that happens to
- * be loaded: GTM/GA4 via dataLayer, PostHog via the lazy client. Safe to call
+ * be loaded: GA4 via dataLayer, PostHog via the lazy client. Safe to call
  * unconditionally — it no-ops for destinations that are not initialized
  * (no consent, no env var, or SSR).
  */

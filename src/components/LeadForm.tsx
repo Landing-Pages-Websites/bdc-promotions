@@ -35,9 +35,10 @@ declare global {
 /**
  * Fires post-submit analytics. Per the landing-page-tracking skill, the
  * dataLayer event name is `form_submission` (distinct from the optimizer's
- * own `form_submit`) so GTM has its own trigger — and the manual
- * MegaTag.trackEvent("form_submit", …) ships alongside it ("never one
- * without the other").
+ * own `form_submit`) so any dataLayer consumer has its own trigger — and the
+ * manual MegaTag.trackEvent("form_submit", …) ships alongside it ("never one
+ * without the other"). The dataLayer push is a guarded no-op when nothing
+ * consumes it (dataLayer is also populated by gtag.js/GA4).
  */
 function trackFormSubmission(formData: Record<string, string>): void {
   if (typeof window === "undefined") {

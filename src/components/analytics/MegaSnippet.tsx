@@ -14,7 +14,7 @@ import { siteConfig } from "@/site.config";
  * INTENTIONALLY NOT CONSENT-GATED: this is the business-critical
  * lead-capture/optimizer script — gating it behind the cookie banner would
  * drop leads. Decision made by Peter's assistant; flagged for review.
- * GA4/GTM/PostHog remain consent-gated.
+ * GA4/PostHog remain consent-gated.
  */
 export function MegaSnippet(): ReactElement {
   const bootstrap =

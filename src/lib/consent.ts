@@ -1,7 +1,7 @@
 /**
  * Consent state shared by the banner and the analytics loaders.
  * Persisted in localStorage; changes broadcast via a window event so every
- * subscriber (banner, GA, GTM, PostHog) reacts without a page reload.
+ * subscriber (banner, GA, PostHog) reacts without a page reload.
  */
 
 import { siteConfig } from "@/site.config";
@@ -40,7 +40,7 @@ export function subscribeToConsent(callback: () => void): () => void {
 }
 
 /**
- * Whether analytics (GA4/GTM/PostHog) may load for the given consent status,
+ * Whether analytics (GA4/PostHog) may load for the given consent status,
  * per siteConfig.consentMode:
  * - "us-default": allowed unless the visitor explicitly declined (opt-out).
  * - "strict": allowed only after an explicit accept (opt-in).
