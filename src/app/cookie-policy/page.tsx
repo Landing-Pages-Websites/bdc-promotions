@@ -17,7 +17,7 @@ const sections: LegalSection[] = [
   },
   {
     heading: "Cookies We Use",
-    body: `TODO_POLICY_CONTENT — list the analytics cookies ${siteConfig.businessName} uses (Google Analytics, Google Tag Manager, PostHog) and their purposes.`,
+    body: `TODO_POLICY_CONTENT — list the analytics cookies ${siteConfig.businessName} uses (Google Analytics, PostHog) and their purposes.`,
   },
   {
     heading: "Managing Your Preferences",

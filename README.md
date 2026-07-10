@@ -13,7 +13,7 @@ pages, ship.
 2. **`src/site.config.ts` (edit this)** — ALL customer-specific business data
    lives in this one typed file. Values start as `TODO_` sentinels; the build
    fails until every sentinel is replaced.
-3. **Env vars (set later, in Vercel)** — tracking IDs (GA4, GTM, PostHog,
+3. **Env vars (set later, in Vercel)** — tracking IDs (GA4, PostHog,
    GSC) are minted by the provisioning bot after the site exists. The
    site builds and runs fine with none of them set; each loader renders
    nothing until its var exists. The Mega optimizer snippet is NOT an env
@@ -59,7 +59,7 @@ itself.
 
 - `src/lib/` — seo, routes types, consent store, tracking, posthog client
 - `src/hooks/useMegaLeadForm.ts` — Mega lead submission + attribution hook
-- `src/components/analytics/` — GA4 / GTM / Mega / PostHog loaders
+- `src/components/analytics/` — GA4 / Mega / PostHog loaders
 - `src/components/consent/` — cookie banner + `useConsent()`
 - `src/components/schema/` — JSON-LD renderer + builders
 - `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/manifest.ts`,
@@ -81,13 +81,12 @@ All optional; the site works with none of them. Set in **Vercel project env**
 | Var | Who sets it | Where | Required when |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_GA4_ID` | provisioning bot | Vercel env | GA4 tracking is provisioned |
-| `NEXT_PUBLIC_GTM_ID` | provisioning bot | Vercel env | GTM container is provisioned |
 | `NEXT_PUBLIC_POSTHOG_KEY` | provisioning bot | Vercel env | PostHog project is provisioned |
 | `NEXT_PUBLIC_POSTHOG_HOST` | provisioning bot | Vercel env | Only for non-US PostHog (defaults to US cloud) |
 | `NEXT_PUBLIC_GSC_VERIFICATION` | provisioning bot | Vercel env | Search Console verification is requested |
 | `ALLOW_TODO` | builder | build command / CI only | Preview builds while config is unfinished |
 
-GA4, GTM, and PostHog loaders are **consent-aware**, controlled by
+GA4 and PostHog loaders are **consent-aware**, controlled by
 `consentMode` in `src/site.config.ts`:
 
 - **`"us-default"`** (the default): analytics load immediately on page view;
