@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { GomegaReviewBridge } from "@/components/analytics/GomegaReviewBridge";
 import { MegaSnippet } from "@/components/analytics/MegaSnippet";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { ConsentBanner } from "@/components/consent/ConsentBanner";
@@ -42,6 +43,7 @@ export default function RootLayout({
         <GoogleAnalytics />
         <MegaSnippet />
         <PostHogProvider />
+        <GomegaReviewBridge />
       </body>
     </html>
   );
