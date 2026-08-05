@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check-config": "node scripts/check-config.mjs"
+    "check-config": "node scripts/check-config.mjs",
+    "test": "node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "next": "16.2.10",
