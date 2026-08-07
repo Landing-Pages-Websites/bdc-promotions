@@ -1,4 +1,3 @@
-import Script from "next/script";
 import type { ReactElement } from "react";
 
 const GOMEGA_REVIEW_BRIDGE_SOURCE =
@@ -8,12 +7,11 @@ const GOMEGA_REVIEW_BRIDGE_INTEGRITY =
 
 export function GomegaReviewBridge(): ReactElement {
   return (
-    <Script
+    <script
       src={GOMEGA_REVIEW_BRIDGE_SOURCE}
       integrity={GOMEGA_REVIEW_BRIDGE_INTEGRITY}
       crossOrigin="anonymous"
       defer
-      strategy="afterInteractive"
     />
   );
 }
