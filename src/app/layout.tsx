@@ -32,6 +32,9 @@ export default function RootLayout({
       lang={siteConfig.locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <GomegaReviewBridge />
+      </head>
       <body className="min-h-full flex flex-col">
         <a href="#main-content" className="skip-link">
           Skip to main content
@@ -43,7 +46,6 @@ export default function RootLayout({
         <GoogleAnalytics />
         <MegaSnippet />
         <PostHogProvider />
-        <GomegaReviewBridge />
       </body>
     </html>
   );
