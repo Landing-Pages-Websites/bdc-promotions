@@ -67,6 +67,15 @@ itself.
 - `next.config.ts` (PostHog `/ingest` reverse proxy)
 - `scripts/check-config.mjs`
 
+### Prelaunch reviews
+
+The starter's `robots.txt` permits crawlers and advertises the generated
+`sitemap.xml`; every registered route receives a weekly crawl-frequency hint.
+Keep `src/lib/routes.ts` current so a prelaunch Website Review can discover
+the complete public site. The Gomega review bridge is immutable v3 plumbing:
+`https://app.gomega.ai/review-bridge/v3/review-bridge.js` with its pinned SRI
+value and anonymous cross-origin mode. Do not replace any of those values.
+
 What you DO edit: `src/site.config.ts`, `src/lib/routes.ts` (append pages),
 `src/lib/redirects.ts` (migrations only: map every old-site URL to its new
 slug — inventory the old site while it's still live, BEFORE DNS flips;

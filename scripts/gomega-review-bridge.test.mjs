@@ -7,9 +7,9 @@ const componentPath = new URL(
   import.meta.url
 );
 const layoutPath = new URL("../src/app/layout.tsx", import.meta.url);
-const bridgeSource = "https://app.gomega.ai/review-bridge/v1/review-bridge.js";
+const bridgeSource = "https://app.gomega.ai/review-bridge/v3/review-bridge.js";
 const bridgeIntegrity =
-  "sha384-e+tDMiCLKMzL5fTMLVKEg2xAWTNzUZt+V+mo5WoMLZeijU/HS4Mt6qQj/SvE6/zi";
+  "sha384-jpRb6pw0QCmjXc3ZKH3g3/XxhoVmpPO4TaQkZE04gfzvKc2bQD2hbSD8DavN6oSb";
 
 test("renders the credential-free Gomega review bridge in the initial HTML", async () => {
   const component = await readFile(componentPath, "utf8");
