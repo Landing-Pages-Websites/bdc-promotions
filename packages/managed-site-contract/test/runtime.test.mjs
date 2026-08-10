@@ -66,6 +66,9 @@ describe("packed package runtime contract", () => {
       const [manifest] = JSON.parse(packOutput);
       const packedFiles = new Set(manifest.files.map(({ path }) => `./${path}`));
 
+      assert.equal(packedFiles.has("./dist/schema.js"), false);
+      assert.equal(packedFiles.has("./dist/schema.d.ts"), false);
+
       for (const [, declaration] of exportEntries()) {
         for (const target of exportTargets(declaration)) {
           assert.equal(existsSync(resolve(packageRoot, target)), true, target);

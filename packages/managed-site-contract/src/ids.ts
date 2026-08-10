@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import { ManagedSiteContractError } from "./errors.js";
 
-export const STABLE_ID_KINDS = [
+export const STABLE_ID_KINDS = Object.freeze([
   "contract",
   "page",
   "section",
@@ -11,7 +11,7 @@ export const STABLE_ID_KINDS = [
   "item",
   "asset",
   "alias",
-] as const;
+] as const);
 
 export type StableIdKind = (typeof STABLE_ID_KINDS)[number];
 export type StableId<Kind extends StableIdKind = StableIdKind> = string & {

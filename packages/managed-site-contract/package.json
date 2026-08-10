@@ -13,6 +13,7 @@
     "dist"
   ],
   "scripts": {
+    "prebuild": "node scripts/clean-dist.mjs",
     "build": "tsc --project tsconfig.build.json",
     "prepack": "npm run build",
     "test": "npm run test:unit && npm run test:runtime",
@@ -22,5 +23,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
   }
 }
