@@ -1,0 +1,26 @@
+{
+  "name": "@gomega/managed-site-contract",
+  "version": "0.0.0-development",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "npm run test:unit && npm run test:runtime",
+    "test:runtime": "node --test test/runtime.test.mjs",
+    "test:unit": "tsx --test test/*.test.ts",
+    "type-check": "tsc --project tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -2,6 +2,9 @@
   "name": "site-starter",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/check-config.mjs",
@@ -9,7 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "check-config": "node scripts/check-config.mjs",
-    "test": "node --test scripts/*.test.mjs"
+    "test": "node --test scripts/*.test.mjs",
+    "test:managed-site": "tsx --test"
   },
   "dependencies": {
     "next": "16.2.10",
@@ -25,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "tsx": "4.23.11",
     "typescript": "^5"
   }
 }
