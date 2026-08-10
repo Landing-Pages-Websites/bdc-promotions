@@ -15,6 +15,10 @@ import {
   type ManagedRichTextDocument,
   type ManagedRichTextInline,
 } from "./rich-text.js";
+import {
+  MANAGED_SITE_ROOT_SEMANTICS,
+  withManagedSiteJsonSchemaSemantic,
+} from "./schema-semantics.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
   absoluteHttpsUrlSchema,
@@ -214,10 +218,10 @@ const renderedContentValueSchema = z.discriminatedUnion("type", [
   collectionContentValueSchema,
 ]);
 
-export const managedSiteContentValueSchema = z.union([
-  renderedContentValueSchema,
-  internalProtectedContentValueSchema,
-]);
+export const managedSiteContentValueSchema = withManagedSiteJsonSchemaSemantic(
+  "content-value",
+  z.union([renderedContentValueSchema, internalProtectedContentValueSchema]),
+);
 
 export const managedSiteAssetManifestEntrySchema = z.strictObject({
   assetSlotId: stableIdSchema("asset"),
@@ -229,11 +233,14 @@ export const managedSiteAssetManifestEntrySchema = z.strictObject({
   bytes: z.number().int().positive(),
 });
 
-export const managedSiteContentDocumentSchema = z.strictObject({
-  schemaVersion: z.literal("1.0"),
-  values: z.array(managedSiteContentValueSchema),
-  assetManifest: z.array(managedSiteAssetManifestEntrySchema),
-});
+export const managedSiteContentDocumentSchema = withManagedSiteJsonSchemaSemantic(
+  MANAGED_SITE_ROOT_SEMANTICS.ManagedSiteContentDocument,
+  z.strictObject({
+    schemaVersion: z.literal("1.0"),
+    values: z.array(managedSiteContentValueSchema),
+    assetManifest: z.array(managedSiteAssetManifestEntrySchema),
+  }),
+);
 
 export type ManagedContentOwner = DeepReadonly<z.infer<typeof managedContentOwnerSchema>>;
 export type ManagedInternalValueType = z.infer<typeof managedInternalValueTypeSchema>;

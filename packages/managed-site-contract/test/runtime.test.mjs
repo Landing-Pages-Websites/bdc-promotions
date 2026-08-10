@@ -50,6 +50,58 @@ function packageSpecifier(subpath) {
     : `${packageJson.name}${subpath.slice(1)}`;
 }
 
+const stableId = (kind, digit) => `${kind}_${digit}${"0".repeat(25)}`;
+
+function minimalBridge() {
+  return {
+    reviewProtocol: 1,
+    editProtocol: 2,
+    annotationVersion: 1,
+    delivery: {
+      version: "v4",
+      src: "https://app.gomega.ai/review-bridge/v4/review-bridge.js",
+      integrity: `sha384-${"a".repeat(64)}`,
+      crossOrigin: "anonymous",
+      load: "head_defer",
+    },
+    framing: "authenticated_preview_gateway",
+  };
+}
+
+function minimalInternalSeo(fieldId) {
+  return {
+    protectedFields: [],
+    businessIdentity: {
+      legalName: fieldId,
+      displayName: fieldId,
+      telephone: fieldId,
+      postalAddress: fieldId,
+      email: null,
+      geo: null,
+      openingHours: null,
+      sameAs: null,
+    },
+    pages: [],
+    redirects: [],
+  };
+}
+
+function minimalContract() {
+  const fieldId = stableId("field", "3");
+  return {
+    schemaVersion: "1.0",
+    contractId: stableId("contract", "0"),
+    adapter: { kind: "nextjs", adapterVersion: "1.0" },
+    bridge: minimalBridge(),
+    pages: [],
+    collections: [],
+    assets: [],
+    internalSeo: minimalInternalSeo(fieldId),
+    atomicAliasGroups: [],
+    tombstonedIds: [],
+  };
+}
+
 before(() => {
   run("npm", ["run", "build"]);
 });
@@ -68,6 +120,10 @@ describe("packed package runtime contract", () => {
 
       assert.equal(packedFiles.has("./dist/schema.js"), false);
       assert.equal(packedFiles.has("./dist/schema.d.ts"), false);
+      assert.equal(
+        packedFiles.has("./schema/managed-site.v1.schema.json"),
+        true,
+      );
 
       for (const [, declaration] of exportEntries()) {
         for (const target of exportTargets(declaration)) {
@@ -95,6 +151,25 @@ describe("packed package runtime contract", () => {
       "--eval",
       script,
       JSON.stringify(specifiers),
+    ]);
+  });
+
+  it("validates both bundled roots through the packed stock-Node API", () => {
+    const script = [
+      "const api=await import(process.argv[1]);",
+      "const inputs=JSON.parse(process.argv[2]);",
+      "if(!api.validateManagedSiteContractV1JsonSchema(inputs.contract).valid)process.exit(2);",
+      "if(!api.validateManagedSiteContentDocumentJsonSchema(inputs.content).valid)process.exit(3);",
+    ].join("");
+    run("node", [
+      "--input-type=module",
+      "--eval",
+      script,
+      packageJson.name,
+      JSON.stringify({
+        contract: minimalContract(),
+        content: { schemaVersion: "1.0", values: [], assetManifest: [] },
+      }),
     ]);
   });
 });

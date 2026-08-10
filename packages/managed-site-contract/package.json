@@ -10,12 +10,15 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "schema"
   ],
   "scripts": {
     "prebuild": "node scripts/clean-dist.mjs",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json && node scripts/check-schema.mjs",
     "prepack": "npm run build",
+    "preschema:generate": "node scripts/clean-dist.mjs",
+    "schema:generate": "tsc --project tsconfig.build.json && node scripts/write-schema.mjs",
     "test": "npm run test:unit && npm run test:runtime",
     "test:runtime": "node --test test/runtime.test.mjs",
     "test:unit": "tsx --test test/*.test.ts",
@@ -25,6 +28,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "ajv": "8.20.0",
     "zod": "4.4.3"
   }
 }

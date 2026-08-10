@@ -4,6 +4,7 @@ import { ManagedSiteContractError } from "./errors.js";
 import type { DeepReadonly } from "./deep-readonly.js";
 import { parseStableId, type StableId, type StableIdKind } from "./ids.js";
 import { HARD_MAX_JSON_DEPTH, type JsonValue } from "./json.js";
+import { withManagedSiteJsonSchemaSemantic } from "./schema-semantics.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
   parseJsonPointer,
@@ -78,16 +79,25 @@ function jsonValueSchemaAtDepth(maxDepth: number): z.ZodType<JsonValue> {
   return z.custom<JsonValue>((value) => isJsonValueWithinDepth(value, maxDepth));
 }
 
-export const opaqueJsonValueSchema = jsonValueSchemaAtDepth(HARD_MAX_JSON_DEPTH);
-export const boundedJsonValueSchema = jsonValueSchemaAtDepth(MAX_JSON_SCHEMA_DEPTH);
+export const opaqueJsonValueSchema = withManagedSiteJsonSchemaSemantic(
+  "opaque-json",
+  jsonValueSchemaAtDepth(HARD_MAX_JSON_DEPTH),
+);
+export const boundedJsonValueSchema = withManagedSiteJsonSchemaSemantic(
+  "bounded-json-depth-8",
+  jsonValueSchemaAtDepth(MAX_JSON_SCHEMA_DEPTH),
+);
 
-export const managedPresentationSchema = z.strictObject({
-  name: z.string().min(1).max(160),
-  description: z.string().min(1).max(1_000).nullable(),
-  group: z.string().min(1).max(160),
-  order: z.number().int(),
-  example: boundedJsonValueSchema.nullable(),
-});
+export const managedPresentationSchema = withManagedSiteJsonSchemaSemantic(
+  "presentation",
+  z.strictObject({
+    name: z.string().min(1).max(160),
+    description: z.string().min(1).max(1_000).nullable(),
+    group: z.string().min(1).max(160),
+    order: z.number().int(),
+    example: boundedJsonValueSchema.nullable(),
+  }),
+);
 
 export const jsonPointerSourceResolverSchema = z.strictObject({
   kind: z.literal("json_pointer"),
@@ -118,9 +128,12 @@ function validateExternalUrl(value: string): boolean {
   }
 }
 
-export const absoluteHttpsUrlSchema = z
-  .url()
-  .refine(validateExternalUrl, "URL must be absolute HTTPS without credentials or hash");
+export const absoluteHttpsUrlSchema = withManagedSiteJsonSchemaSemantic(
+  "absolute-https-url",
+  z
+    .url()
+    .refine(validateExternalUrl, "URL must be absolute HTTPS without credentials or hash"),
+);
 
 const STATIC_ROUTE_PATTERN = /^\/(?:[A-Za-z0-9._~-]+(?:\/[A-Za-z0-9._~-]+)*)?$/;
 const GENERATED_SEGMENT_PATTERN = /^\[[A-Za-z][A-Za-z0-9_]*\]$/;
@@ -138,18 +151,24 @@ function hasCanonicalRouteSegments(value: string, allowGenerated: boolean): bool
   return validSegments && (!allowGenerated || segments.some((segment) => GENERATED_SEGMENT_PATTERN.test(segment)));
 }
 
-export const managedStaticRoutePathSchema = z
-  .string()
-  .max(2_048)
-  .regex(STATIC_ROUTE_PATTERN)
-  .refine((value) => hasCanonicalRouteSegments(value, false));
+export const managedStaticRoutePathSchema = withManagedSiteJsonSchemaSemantic(
+  "static-route",
+  z
+    .string()
+    .max(2_048)
+    .regex(STATIC_ROUTE_PATTERN)
+    .refine((value) => hasCanonicalRouteSegments(value, false)),
+);
 
-export const managedGeneratedRoutePatternSchema = z
-  .string()
-  .min(1)
-  .max(2_048)
-  .regex(/^\/(?!\/)[^/]+(?:\/[^/]+)*$/)
-  .refine((value) => hasCanonicalRouteSegments(value, true));
+export const managedGeneratedRoutePatternSchema = withManagedSiteJsonSchemaSemantic(
+  "generated-route",
+  z
+    .string()
+    .min(1)
+    .max(2_048)
+    .regex(/^\/(?!\/)[^/]+(?:\/[^/]+)*$/)
+    .refine((value) => hasCanonicalRouteSegments(value, true)),
+);
 
 export const managedFragmentSchema = z
   .string()
@@ -214,8 +233,9 @@ function hasUniqueStrings(values: readonly string[]): boolean {
   return new Set(values).size === values.length;
 }
 
-export const managedAssetSlotDescriptorSchema = z
-  .strictObject({
+export const managedAssetSlotDescriptorSchema = withManagedSiteJsonSchemaSemantic(
+  "asset-slot",
+  z.strictObject({
     id: stableIdSchema("asset"),
     presentation: managedPresentationSchema,
     semantics: managedAssetSemanticsSchema,
@@ -229,8 +249,7 @@ export const managedAssetSlotDescriptorSchema = z
     cropPolicy: assetPolicySchema,
     focalPointPolicy: assetPolicySchema,
     maxBytes: z.number().int().positive(),
-  })
-  .superRefine((slot, context) => {
+  }).superRefine((slot, context) => {
     const dimensionsValid =
       slot.minWidth <= slot.maxWidth && slot.minHeight <= slot.maxHeight;
     const mimeTypesUnique =
@@ -241,7 +260,8 @@ export const managedAssetSlotDescriptorSchema = z
     if (!dimensionsValid || !mimeTypesUnique || !ratiosUnique) {
       context.addIssue({ code: "custom", message: "Asset slot constraints conflict" });
     }
-  });
+  }),
+);
 
 export type ManagedPresentation = DeepReadonly<z.infer<typeof managedPresentationSchema>>;
 export type JsonPointerSourceResolver = DeepReadonly<z.infer<

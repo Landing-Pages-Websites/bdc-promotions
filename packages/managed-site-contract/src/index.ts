@@ -11,6 +11,15 @@ export {
 export { HARD_MAX_JSON_DEPTH, HARD_MAX_JSON_NODES, parseJsonValue } from "./json.js";
 export { HARD_MAX_JSON_TEXT_BYTES, parseJsonText } from "./json-text.js";
 export {
+  MANAGED_SITE_CONTENT_V1_SCHEMA_ID,
+  MANAGED_SITE_CONTRACT_V1_SCHEMA_ID,
+  MANAGED_SITE_JSON_SCHEMA_BUNDLE_V1,
+} from "./json-schema-bundle.js";
+export {
+  validateManagedSiteContentDocumentJsonSchema,
+  validateManagedSiteContractV1JsonSchema,
+} from "./json-schema-validator.js";
+export {
   assertDistinctRepositoryPaths,
   parseJsonPointer,
   parseRepositoryPath,
@@ -45,6 +54,13 @@ export type { DeepReadonly } from "./deep-readonly.js";
 export type { StableId, StableIdKind } from "./ids.js";
 export type { JsonParseLimits, JsonPrimitive, JsonValue } from "./json.js";
 export type { JsonTextParseLimits } from "./json-text.js";
+export type {
+  ManagedSiteJsonSchemaBundleV1,
+} from "./json-schema-bundle.js";
+export type {
+  ManagedSiteJsonSchemaIssue,
+  ManagedSiteJsonSchemaValidationResult,
+} from "./json-schema-validator.js";
 export type {
   JsonPointer,
   ParsedJsonPointer,

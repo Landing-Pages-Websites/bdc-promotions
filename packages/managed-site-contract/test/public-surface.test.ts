@@ -110,12 +110,24 @@ describe("public managed-site surface", () => {
     const actual = Object.keys(publicApi)
       .filter((name) => /^(parseManaged|validateManaged)/u.test(name))
       .sort();
-    assert.deepEqual(actual, surfaces.map(({ name }) => name).sort());
     assert.deepEqual(
-      Object.keys(publicApi).filter((name) => name.endsWith("Schema")),
+      actual,
+      [
+        ...surfaces.map(({ name }) => name),
+        "validateManagedSiteContentDocumentJsonSchema",
+        "validateManagedSiteContractV1JsonSchema",
+      ].sort(),
+    );
+    assert.deepEqual(
+      Object.keys(publicApi).filter(
+        (name) =>
+          name.endsWith("Schema") &&
+          typeof publicApi[name as keyof typeof publicApi] !== "function",
+      ),
       [],
     );
     assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_CAPABILITIES), true);
+    assert.equal(Object.isFrozen(publicApi.MANAGED_SITE_JSON_SCHEMA_BUNDLE_V1), true);
   });
 
   it("rejects accessors and revoked proxies at every argument boundary", () => {

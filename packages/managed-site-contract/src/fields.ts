@@ -2,6 +2,7 @@ import * as z from "zod";
 
 import type { DeepReadonly } from "./deep-readonly.js";
 import { managedRichTextMarkSchema } from "./rich-text.js";
+import { withManagedSiteJsonSchemaSemantic } from "./schema-semantics.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
   jsonPointerSchema,
@@ -222,19 +223,20 @@ const linkFieldSchema = z.strictObject({ ...commonFieldShape, ...linkShape });
 const imageFieldSchema = z.strictObject({ ...commonFieldShape, ...imageShape });
 const collectionFieldSchema = z.strictObject({ ...commonFieldShape, ...collectionShape });
 
-export const managedFieldDescriptorSchema = z
-  .discriminatedUnion("type", [
+export const managedFieldDescriptorSchema = withManagedSiteJsonSchemaSemantic(
+  "field-descriptor",
+  z.discriminatedUnion("type", [
     plainTextFieldSchema,
     headingTextFieldSchema,
     richTextFieldSchema,
     linkFieldSchema,
     imageFieldSchema,
     collectionFieldSchema,
-  ])
-  .superRefine((field, context) => {
+  ]).superRefine((field, context) => {
     validateCapabilities(field, context);
     validateRichTextCapabilities(field, context);
-  });
+  }),
+);
 
 const plainTextItemFieldSchema = z.strictObject({ ...commonItemFieldShape, ...plainTextShape });
 const headingTextItemFieldSchema = z.strictObject({ ...commonItemFieldShape, ...headingTextShape });
@@ -260,8 +262,9 @@ const uniquenessRuleSchema = z.strictObject({
   comparison: z.enum(["exact", "case_folded"]),
 });
 
-export const managedCollectionDescriptorSchema = z
-  .strictObject({
+export const managedCollectionDescriptorSchema = withManagedSiteJsonSchemaSemantic(
+  "collection-descriptor",
+  z.strictObject({
     id: stableIdSchema("collection"),
     presentation: managedPresentationSchema,
     resolver: jsonPointerSourceResolverSchema,
@@ -275,8 +278,8 @@ export const managedCollectionDescriptorSchema = z
       whenReferenced: z.enum(["restrict", "cascade"]),
       restorable: z.boolean(),
     }),
-  })
-  .refine((collection) => collection.minItems <= collection.maxItems);
+  }).refine((collection) => collection.minItems <= collection.maxItems),
+);
 
 export type ManagedFieldCapability = z.infer<typeof managedFieldCapabilitySchema>;
 export type ManagedContentClassification = z.infer<typeof managedContentClassificationSchema>;

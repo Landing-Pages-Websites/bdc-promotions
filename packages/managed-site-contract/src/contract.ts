@@ -6,6 +6,10 @@ import {
   managedFieldDescriptorSchema,
 } from "./fields.js";
 import { parseSchemaInput } from "./schema-input.js";
+import {
+  MANAGED_SITE_ROOT_SEMANTICS,
+  withManagedSiteJsonSchemaSemantic,
+} from "./schema-semantics.js";
 import { managedSiteSeoDescriptorSchema } from "./seo.js";
 import {
   managedGeneratedRoutePatternSchema,
@@ -75,18 +79,21 @@ const anyStableIdSchema = z.union([
   stableIdSchema("alias"),
 ]);
 
-export const managedSiteContractV1Schema = z.strictObject({
-  schemaVersion: z.literal("1.0"),
-  contractId: stableIdSchema("contract"),
-  adapter: managedSiteAdapterDescriptorSchema,
-  bridge: managedSiteBridgeDescriptorSchema,
-  pages: z.array(managedPageDescriptorSchema),
-  collections: z.array(managedCollectionDescriptorSchema),
-  assets: z.array(managedAssetSlotDescriptorSchema),
-  internalSeo: managedSiteSeoDescriptorSchema,
-  atomicAliasGroups: z.array(managedAtomicAliasGroupSchema),
-  tombstonedIds: z.array(anyStableIdSchema),
-});
+export const managedSiteContractV1Schema = withManagedSiteJsonSchemaSemantic(
+  MANAGED_SITE_ROOT_SEMANTICS.ManagedSiteContractV1,
+  z.strictObject({
+    schemaVersion: z.literal("1.0"),
+    contractId: stableIdSchema("contract"),
+    adapter: managedSiteAdapterDescriptorSchema,
+    bridge: managedSiteBridgeDescriptorSchema,
+    pages: z.array(managedPageDescriptorSchema),
+    collections: z.array(managedCollectionDescriptorSchema),
+    assets: z.array(managedAssetSlotDescriptorSchema),
+    internalSeo: managedSiteSeoDescriptorSchema,
+    atomicAliasGroups: z.array(managedAtomicAliasGroupSchema),
+    tombstonedIds: z.array(anyStableIdSchema),
+  }),
+);
 
 export type ManagedSiteAdapterDescriptor = DeepReadonly<z.infer<
   typeof managedSiteAdapterDescriptorSchema
