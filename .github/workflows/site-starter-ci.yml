@@ -1,0 +1,56 @@
+name: Site Starter CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: site-starter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify starter and managed-site contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Test starter behavior
+        run: npm test
+
+      - name: Type-check managed-site contract
+        run: npm --workspace @gomega/managed-site-contract run type-check
+
+      - name: Test managed-site contract
+        run: npm --workspace @gomega/managed-site-contract run test
+
+      - name: Build managed-site contract and verify schema artifact
+        run: npm --workspace @gomega/managed-site-contract run build
+
+      - name: Lint starter
+        run: npm run lint
+
+      - name: Build starter template
+        env:
+          ALLOW_TODO: "1"
+        run: npm run build
