@@ -20,6 +20,7 @@ import {
   seoDescriptor,
   stableId,
 } from "./schema-fixtures.js";
+import { conformingContract } from "./contract-semantics-fixture.js";
 
 type Surface = {
   readonly name: string;
@@ -116,6 +117,7 @@ describe("public managed-site surface", () => {
         ...surfaces.map(({ name }) => name),
         "validateManagedSiteContentDocumentJsonSchema",
         "validateManagedSiteContractV1JsonSchema",
+        "validateManagedSiteContractV1Semantics",
       ].sort(),
     );
     assert.deepEqual(
@@ -149,6 +151,13 @@ describe("public managed-site surface", () => {
 
   it("returns a deeply frozen graph from every public parser and validator", () => {
     for (const target of surfaces) assertDeepFrozen(target.invoke(target.args));
+  });
+
+  it("exposes only frozen C3B-deferred item IDs from semantic validation", () => {
+    const contract = publicApi.parseManagedSiteContractV1(conformingContract());
+    const result = publicApi.validateManagedSiteContractV1Semantics(contract);
+    assertDeepFrozen(result);
+    assert.equal(result.deferred.itemIds.length, 1);
   });
 
   it("rejects oversized rich text through every accepting public surface", () => {
