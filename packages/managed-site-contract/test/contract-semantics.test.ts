@@ -68,6 +68,29 @@ function linkField(id: string, pageId: string): Record<string, unknown> {
   };
 }
 
+interface SourceField {
+  readonly id: string;
+  readonly resolver: { path: string; pointer: string };
+}
+
+function sourceField(contract: Record<string, unknown>, index: number): SourceField {
+  const fields = mutableContract(contract).pages[0].sections[0].fields;
+  return fields[index] as unknown as SourceField;
+}
+
+function assignExactSourceAlias(contract: Record<string, unknown>): void {
+  const [first, second] = [sourceField(contract, 0), sourceField(contract, 1)];
+  second.resolver.path = first.resolver.path;
+  second.resolver.pointer = first.resolver.pointer;
+}
+
+function protectedSourceField(contract: Record<string, unknown>): SourceField {
+  const protectedFields = (contract.internalSeo as { protectedFields: SourceField[] }).protectedFields;
+  const first = protectedFields[0];
+  assert.notEqual(first, undefined);
+  return first;
+}
+
 describe("managed-site contract semantic facts", () => {
   it("classifies every C1 stable-ID occurrence in a conforming contract", () => {
     const facts = collectManagedSiteContractV1Facts(
@@ -266,11 +289,35 @@ describe("managed-site contract source and route facts", () => {
     assert.doesNotThrow(() => validateManagedSiteContractRouteFacts(facts));
   });
 
+  for (const { name, mutate, code } of [
+    { name: "allows exact source aliases for fields in one group", mutate: (contract: Record<string, unknown>) => assignExactSourceAlias(contract), code: null },
+    { name: "rejects exact source aliases without a group", mutate: (contract: Record<string, unknown>) => { assignExactSourceAlias(contract); mutableContract(contract).atomicAliasGroups.length = 0; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "rejects exact source aliases across different groups", mutate: (contract: Record<string, unknown>) => { assignExactSourceAlias(contract); const data = mutableContract(contract); data.atomicAliasGroups[0].fieldIds = [sourceField(contract, 0).id]; data.atomicAliasGroups.push({ id: fixtureId("alias"), fieldIds: [sourceField(contract, 1).id] }); }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "rejects exact source aliases when group membership is split", mutate: (contract: Record<string, unknown>) => { assignExactSourceAlias(contract); const data = mutableContract(contract); data.atomicAliasGroups.push({ id: fixtureId("alias"), fieldIds: [sourceField(contract, 1).id] }); }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "rejects a same-group source ancestor", mutate: (contract: Record<string, unknown>) => { const [first, second] = [sourceField(contract, 0), sourceField(contract, 1)]; first.resolver.pointer = "/atomic"; second.resolver.pointer = "/atomic/child"; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "rejects a same-group source descendant", mutate: (contract: Record<string, unknown>) => { const [first, second] = [sourceField(contract, 0), sourceField(contract, 1)]; first.resolver.pointer = "/atomic/child"; second.resolver.pointer = "/atomic"; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "allows same-group fields with distinct sources", mutate: (contract: Record<string, unknown>) => { const [first, second] = [sourceField(contract, 0), sourceField(contract, 1)]; first.resolver.pointer = "/atomic/title"; second.resolver.pointer = "/atomic/body"; }, code: null },
+    { name: "rejects a field and collection sharing an exact source", mutate: (contract: Record<string, unknown>) => { const field = sourceField(contract, 0); const collection = (contract.collections as Array<{ resolver: { path: string; pointer: string } }>)[0]; field.resolver.pointer = "/shared"; collection.resolver.pointer = "/shared"; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "rejects a protected field sharing a group source", mutate: (contract: Record<string, unknown>) => { const field = sourceField(contract, 0); const protectedField = protectedSourceField(contract); field.resolver.pointer = "/shared"; protectedField.resolver.pointer = "/shared"; mutableContract(contract).atomicAliasGroups[0].fieldIds = [field.id, protectedField.id]; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP" },
+    { name: "rejects canonical path aliases despite an alias group", mutate: (contract: Record<string, unknown>) => { assignExactSourceAlias(contract); sourceField(contract, 1).resolver.path = "CONTENT/site.json"; }, code: "CONTRACT_SOURCE_PATH_ALIAS" },
+    { name: "treats escaped separators as pointer text rather than ancestry", mutate: (contract: Record<string, unknown>) => { const [first, second] = [sourceField(contract, 0), sourceField(contract, 1)]; first.resolver.pointer = "/atomic~1title"; second.resolver.pointer = "/atomic"; }, code: null },
+  ] as const) {
+    it(name, () => {
+      const contract = conformingContract();
+      mutate(contract);
+      if (code === null) {
+        assert.doesNotThrow(() => validateManagedSiteContractSourceFacts(contractFacts(contract)));
+        return;
+      }
+      assertCode(() => validateManagedSiteContractSourceFacts(contractFacts(contract)), code);
+    });
+  }
+
   for (const { name, mutate, code, validate } of [
     { name: "rejects case-alias source paths", mutate: (contract: Record<string, unknown>) => { const data = mutableContract(contract); const field = data.pages[0].sections[0].fields[0] as unknown as { resolver: { path: string } }; field.resolver.path = "CONTENT/site.json"; }, code: "CONTRACT_SOURCE_PATH_ALIAS", validate: validateManagedSiteContractSourceFacts },
     { name: "rejects ancestor source pointers", mutate: (contract: Record<string, unknown>) => { const data = mutableContract(contract); const field = data.pages[0].sections[0].fields[1] as unknown as { resolver: { pointer: string } }; field.resolver.pointer = "/hero"; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP", validate: validateManagedSiteContractSourceFacts },
     { name: "rejects root source pointers", mutate: (contract: Record<string, unknown>) => { const data = mutableContract(contract); const field = data.pages[0].sections[0].fields[1] as unknown as { resolver: { pointer: string } }; field.resolver.pointer = ""; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP", validate: validateManagedSiteContractSourceFacts },
-    { name: "rejects equal source pointers", mutate: (contract: Record<string, unknown>) => { const data = mutableContract(contract); const field = data.pages[0].sections[0].fields[1] as unknown as { resolver: { pointer: string } }; field.resolver.pointer = "/hero/title"; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP", validate: validateManagedSiteContractSourceFacts },
+    { name: "rejects equal source pointers outside an alias group", mutate: (contract: Record<string, unknown>) => { sourceField(contract, 2).resolver.pointer = "/hero/title"; }, code: "CONTRACT_SOURCE_POINTER_OVERLAP", validate: validateManagedSiteContractSourceFacts },
     { name: "rejects generated routes colliding with static routes", mutate: (contract: Record<string, unknown>) => { mutableContract(contract).pages[0].route.path = "/services/x"; }, code: "CONTRACT_ROUTE_COLLISION", validate: validateManagedSiteContractRouteFacts },
     { name: "rejects redirects colliding with generated routes", mutate: (contract: Record<string, unknown>) => { const redirects = (contract.internalSeo as { redirects: Array<{ fromPath: string }> }).redirects; redirects[0].fromPath = "/services/x"; }, code: "CONTRACT_ROUTE_COLLISION", validate: validateManagedSiteContractRouteFacts },
   ]) {

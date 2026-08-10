@@ -24,6 +24,7 @@ export interface ManagedSiteContractReferenceFact {
 
 export interface ManagedSiteContractSourceFact {
   readonly id: StableId;
+  readonly owner: "field" | "collection" | "protected";
   readonly address: SourceAddress;
   readonly location: string;
 }
@@ -82,8 +83,14 @@ function addOccurrence(facts: MutableFacts, occurrence: ManagedSiteContractOccur
   }
 }
 
-function addSource(facts: MutableFacts, id: StableId, resolver: { readonly path: string; readonly pointer: string }, location: string): void {
-  facts.sources.push(Object.freeze({ id, address: parseSourceAddress(resolver), location }));
+function addSource(
+  facts: MutableFacts,
+  id: StableId,
+  resolver: { readonly path: string; readonly pointer: string },
+  location: string,
+  owner: ManagedSiteContractSourceFact["owner"],
+): void {
+  facts.sources.push(Object.freeze({ id, owner, address: parseSourceAddress(resolver), location }));
 }
 
 function addRoute(facts: MutableFacts, route: ManagedPageRoute, location: string): void {
@@ -103,7 +110,7 @@ function addSectionSources(facts: MutableFacts, sections: ManagedSiteContractV1[
   for (const [sectionIndex, section] of sections.entries()) {
     const sectionLocation = `${pageLocation}.sections[${sectionIndex}]`;
     for (const [fieldIndex, field] of section.fields.entries()) {
-      addSource(facts, field.id, field.resolver, `${sectionLocation}.fields[${fieldIndex}].resolver`);
+      addSource(facts, field.id, field.resolver, `${sectionLocation}.fields[${fieldIndex}].resolver`, "field");
     }
   }
 }
@@ -118,13 +125,13 @@ function addPageFacts(facts: MutableFacts, contract: ManagedSiteContractV1): voi
 
 function addCollectionFacts(facts: MutableFacts, contract: ManagedSiteContractV1): void {
   for (const [index, collection] of contract.collections.entries()) {
-    addSource(facts, collection.id, collection.resolver, `collections[${index}].resolver`);
+    addSource(facts, collection.id, collection.resolver, `collections[${index}].resolver`, "collection");
   }
 }
 
 function addSeoFacts(facts: MutableFacts, contract: ManagedSiteContractV1): void {
   for (const [index, field] of contract.internalSeo.protectedFields.entries()) {
-    addSource(facts, field.id, field.resolver, `internalSeo.protectedFields[${index}].resolver`);
+    addSource(facts, field.id, field.resolver, `internalSeo.protectedFields[${index}].resolver`, "protected");
   }
   for (const [index, redirect] of contract.internalSeo.redirects.entries()) {
     facts.routes.push(Object.freeze({ kind: "redirect", path: redirect.fromPath, location: `internalSeo.redirects[${index}]` }));
