@@ -32,6 +32,7 @@ export {
   validateManagedCollectionValue,
   validateManagedFieldValue,
 } from "./content.js";
+export { validateManagedSiteContractV1ContentSemantics } from "./content-semantics.js";
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export {

@@ -6,6 +6,7 @@ import {
   parseManagedCollectionDescriptor,
   parseManagedFieldDescriptor,
   type ManagedCollectionDescriptor,
+  type ManagedCollectionItemField,
   type ManagedFieldDescriptor,
 } from "./fields.js";
 import {
@@ -276,9 +277,15 @@ function externalHost(destination: ManagedLinkDestination): string | null {
   return destination.kind === "external" ? new URL(destination.url).hostname : null;
 }
 
+type ManagedValueField = ManagedFieldDescriptor | ManagedCollectionItemField;
+type ManagedTextField = Extract<
+  ManagedValueField,
+  { type: "plain_text" | "heading_text" }
+>;
+
 function isAllowedDestination(
   destination: ManagedLinkDestination,
-  constraints: Extract<ManagedFieldDescriptor, { type: "link" }>['constraints'],
+  constraints: Extract<ManagedValueField, { type: "link" }>['constraints'],
 ): boolean {
   const internal = destination.kind === "internal";
   if (constraints.authority === "internal_only" && !internal) return false;
@@ -293,7 +300,7 @@ function isAllowedDestination(
 }
 
 function validateRichText(
-  field: Extract<ManagedFieldDescriptor, { type: "rich_text" }>,
+  field: Extract<ManagedValueField, { type: "rich_text" }>,
   document: ManagedRichTextDocument,
 ): boolean {
   const stats = summarizeManagedRichText(document);
@@ -313,7 +320,7 @@ function validateRichText(
 }
 
 function richTextLinkAllowed(
-  field: Extract<ManagedFieldDescriptor, { type: "rich_text" }>,
+  field: Extract<ManagedValueField, { type: "rich_text" }>,
   inline: Extract<ManagedRichTextInline, { type: "link" }>,
 ): boolean {
   if (!field.constraints.allowLinks) return false;
@@ -337,31 +344,87 @@ function validatesText(value: string, constraints: TextConstraints): boolean {
   );
 }
 
+function validateTextFieldContent(
+  field: ManagedTextField,
+  content: ManagedSiteContentValue,
+): void {
+  if (
+    (content.type !== "plain_text" && content.type !== "heading_text") ||
+    !validatesText(content.value, field.constraints)
+  ) {
+    fail("FIELD_VALUE_TEXT", "Text violates its field constraints");
+  }
+}
+
+function validateRichTextFieldContent(
+  field: Extract<ManagedValueField, { type: "rich_text" }>,
+  content: ManagedSiteContentValue,
+): void {
+  if (content.type !== "rich_text") {
+    fail("FIELD_VALUE_IDENTITY", "Content value does not match its field descriptor");
+  }
+  const document = parseManagedRichTextDocument(content.value);
+  if (!validateRichText(field, document)) {
+    fail("FIELD_VALUE_RICH_TEXT", "Rich text violates its field constraints");
+  }
+}
+
+function validateLinkFieldContent(
+  field: Extract<ManagedValueField, { type: "link" }>,
+  content: ManagedSiteContentValue,
+): void {
+  if (content.type !== "link") {
+    fail("FIELD_VALUE_IDENTITY", "Content value does not match its field descriptor");
+  }
+  const labelValid = validatesText(content.value.label, field.constraints.labelConstraints);
+  const targetValid = field.constraints.allowedTargets.includes(content.value.target);
+  if (!labelValid || !targetValid || !isAllowedDestination(content.value.destination, field.constraints)) {
+    fail("FIELD_VALUE_LINK", "Link violates its field constraints");
+  }
+}
+
+export function validateParsedManagedFieldValue(
+  field: ManagedValueField,
+  content: ManagedSiteContentValue,
+): void {
+  if (field.id !== content.fieldId || field.type !== content.type) {
+    fail("FIELD_VALUE_IDENTITY", "Content value does not match its field descriptor");
+  }
+  switch (field.type) {
+    case "plain_text":
+    case "heading_text":
+      return validateTextFieldContent(field, content);
+    case "rich_text":
+      return validateRichTextFieldContent(field, content);
+    case "link":
+      return validateLinkFieldContent(field, content);
+    case "image":
+    case "collection":
+      return;
+  }
+}
+
+export function validateParsedManagedCollectionValue(
+  descriptor: ManagedCollectionDescriptor,
+  content: ManagedSiteContentValue,
+): void {
+  if (content.type !== "collection") {
+    fail("COLLECTION_VALUE_TYPE", "Expected a collection content value");
+  }
+  const ids = content.value.orderedItemIds;
+  const withinBounds = ids.length >= descriptor.minItems && ids.length <= descriptor.maxItems;
+  if (!withinBounds || new Set(ids).size !== ids.length) {
+    fail("COLLECTION_VALUE_POLICY", "Collection item IDs violate collection policy");
+  }
+}
+
 export function validateManagedFieldValue(
   fieldInput: unknown,
   valueInput: unknown,
 ): ManagedSiteContentValue {
   const field = parseManagedFieldDescriptor(fieldInput);
   const content = parseManagedSiteContentValue(valueInput);
-  if (field.id !== content.fieldId || field.type !== content.type) {
-    return fail("FIELD_VALUE_IDENTITY", "Content value does not match its field descriptor");
-  }
-  if ((field.type === "plain_text" || field.type === "heading_text") && !validatesText(content.value as string, field.constraints)) {
-    return fail("FIELD_VALUE_TEXT", "Text violates its field constraints");
-  }
-  if (field.type === "rich_text") {
-    const document = parseManagedRichTextDocument(content.value);
-    if (!validateRichText(field, document)) {
-      return fail("FIELD_VALUE_RICH_TEXT", "Rich text violates its field constraints");
-    }
-  }
-  if (field.type === "link" && content.type === "link") {
-    const labelValid = validatesText(content.value.label, field.constraints.labelConstraints);
-    const targetValid = field.constraints.allowedTargets.includes(content.value.target);
-    if (!labelValid || !targetValid || !isAllowedDestination(content.value.destination, field.constraints)) {
-      return fail("FIELD_VALUE_LINK", "Link violates its field constraints");
-    }
-  }
+  validateParsedManagedFieldValue(field, content);
   return content;
 }
 
@@ -371,13 +434,6 @@ export function validateManagedCollectionValue(
 ): ManagedSiteContentValue {
   const descriptor: ManagedCollectionDescriptor = parseManagedCollectionDescriptor(descriptorInput);
   const content = parseManagedSiteContentValue(valueInput);
-  if (content.type !== "collection") {
-    return fail("COLLECTION_VALUE_TYPE", "Expected a collection content value");
-  }
-  const ids = content.value.orderedItemIds;
-  const withinBounds = ids.length >= descriptor.minItems && ids.length <= descriptor.maxItems;
-  if (!withinBounds || new Set(ids).size !== ids.length) {
-    return fail("COLLECTION_VALUE_POLICY", "Collection item IDs violate collection policy");
-  }
+  validateParsedManagedCollectionValue(descriptor, content);
   return content;
 }
