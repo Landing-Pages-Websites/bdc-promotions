@@ -1,5 +1,8 @@
 export { canonicalizeJson } from "./canonical.js";
-export { MANAGED_SITE_CONTRACT_DIGEST_DOMAIN, digestCanonicalJson } from "./digest.js";
+export {
+  MANAGED_SITE_CONTRACT_DIGEST_DOMAIN,
+  digestCanonicalJson,
+} from "./digest.js";
 export { ManagedSiteContractError } from "./errors.js";
 export {
   STABLE_ID_KINDS,
@@ -8,7 +11,11 @@ export {
   mintStableId,
   parseStableId,
 } from "./ids.js";
-export { HARD_MAX_JSON_DEPTH, HARD_MAX_JSON_NODES, parseJsonValue } from "./json.js";
+export {
+  HARD_MAX_JSON_DEPTH,
+  HARD_MAX_JSON_NODES,
+  parseJsonValue,
+} from "./json.js";
 export { HARD_MAX_JSON_TEXT_BYTES, parseJsonText } from "./json-text.js";
 export {
   MANAGED_SITE_CONTENT_V1_SCHEMA_ID,
@@ -36,6 +43,10 @@ export { validateManagedSiteContractV1ContentSemantics } from "./content-semanti
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
+export {
+  deriveManagedSiteGuardContractFactsV1,
+  deriveManagedSiteGuardPolicyFactsV1,
+} from "./site-guard-policy-facts.js";
 export { createManagedSiteAstroV1 } from "./astro-adapter.js";
 export { createManagedSiteNextV1 } from "./next-adapter.js";
 export {
@@ -86,12 +97,8 @@ export type {
   ManagedSiteNextValueReader,
   ManagedSiteNextValueSelector,
 } from "./next-adapter-values.js";
-export type {
-  ManagedSiteContractSemanticResult,
-} from "./contract-semantics.js";
-export type {
-  ManagedSiteJsonSchemaBundleV1,
-} from "./json-schema-bundle.js";
+export type { ManagedSiteContractSemanticResult } from "./contract-semantics.js";
+export type { ManagedSiteJsonSchemaBundleV1 } from "./json-schema-bundle.js";
 export type {
   ManagedSiteJsonSchemaIssue,
   ManagedSiteJsonSchemaValidationResult,
@@ -101,6 +108,11 @@ export type {
   ManagedSiteContractArtifactV1,
   ManagedSiteNormalizedArtifactsV1,
 } from "./normalized-artifacts.js";
+export type {
+  ManagedSiteGuardAssetFactV1,
+  ManagedSiteGuardContractFactsV1,
+  ManagedSiteGuardPolicyFactsV1,
+} from "./site-guard-policy-facts.js";
 export type {
   JsonPointer,
   ParsedJsonPointer,

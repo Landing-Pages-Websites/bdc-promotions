@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const PACKAGE_NAME = "@landing-pages-websites/managed-site-contract";
-const PACKAGE_VERSION = "0.1.0";
+const PACKAGE_VERSION = "0.1.1";
 
 function repositoryFile(path) {
   return new URL(`../${path}`, import.meta.url);

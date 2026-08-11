@@ -56,11 +56,17 @@ const surfaces: readonly Surface[] = [
   surface("parseManagedSiteSeoDescriptor", [seoDescriptor()]),
   surface("parseManagedSiteContractV1", [managedSiteContract()]),
   surface("validateManagedFieldValue", [plainTextField(), plainContentValue]),
-  surface("validateManagedCollectionValue", [collectionDescriptor(), collectionContentValue]),
+  surface("validateManagedCollectionValue", [
+    collectionDescriptor(),
+    collectionContentValue,
+  ]),
   surface("validateManagedImageValue", [assetSlot(), imageValue()]),
 ];
 
-function surface(name: keyof typeof publicApi, args: readonly object[]): Surface {
+function surface(
+  name: keyof typeof publicApi,
+  args: readonly object[],
+): Surface {
   const candidate = publicApi[name];
   assert.equal(typeof candidate, "function", `${name} must be a function`);
   const callable = candidate as (...values: readonly object[]) => unknown;
@@ -122,7 +128,7 @@ describe("public managed-site surface", () => {
   it("exports only safe C2 functions, types, and frozen constants", () => {
     const actual = Object.keys(publicApi)
       .filter((name) =>
-        /^(createManaged|managedSite.*Attributes|normalizeManaged|parseManaged|projectManaged|validateManaged)/u.test(
+        /^(createManaged|deriveManaged|managedSite.*Attributes|normalizeManaged|parseManaged|projectManaged|validateManaged)/u.test(
           name,
         ),
       )
@@ -133,6 +139,8 @@ describe("public managed-site surface", () => {
         ...surfaces.map(({ name }) => name),
         "createManagedSiteAstroV1",
         "createManagedSiteNextV1",
+        "deriveManagedSiteGuardContractFactsV1",
+        "deriveManagedSiteGuardPolicyFactsV1",
         "managedSiteFieldAttributesV1",
         "managedSitePageAttributesV1",
         "normalizeManagedSiteArtifactsV1",
@@ -154,7 +162,10 @@ describe("public managed-site surface", () => {
     assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_CAPABILITIES), true);
     assert.deepEqual(publicApi.MANAGED_FIELD_SCOPES, ["site", "page"]);
     assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_SCOPES), true);
-    assert.equal(Object.isFrozen(publicApi.MANAGED_SITE_JSON_SCHEMA_BUNDLE_V1), true);
+    assert.equal(
+      Object.isFrozen(publicApi.MANAGED_SITE_JSON_SCHEMA_BUNDLE_V1),
+      true,
+    );
   });
 
   it("rejects accessors and revoked proxies at every argument boundary", () => {
@@ -191,7 +202,11 @@ describe("public managed-site surface", () => {
     const paragraph = (value.children as Record<string, unknown>[])[0];
     const link = (paragraph.children as Record<string, unknown>[])[0];
     (link.children as Record<string, unknown>[])[0].text = "x".repeat(131_073);
-    const document = { schemaVersion: "1.0", values: [oversized], assetManifest: [] };
+    const document = {
+      schemaVersion: "1.0",
+      values: [oversized],
+      assetManifest: [],
+    };
     const richField = structuredClone(plainTextField());
     Object.assign(richField, {
       type: "rich_text",
@@ -210,6 +225,8 @@ describe("public managed-site surface", () => {
     assert.throws(() => publicApi.parseManagedRichTextDocument(value));
     assert.throws(() => publicApi.parseManagedSiteContentValue(oversized));
     assert.throws(() => publicApi.parseManagedSiteContentDocument(document));
-    assert.throws(() => publicApi.validateManagedFieldValue(richField, oversized));
+    assert.throws(() =>
+      publicApi.validateManagedFieldValue(richField, oversized),
+    );
   });
 });
