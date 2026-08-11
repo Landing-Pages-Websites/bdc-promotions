@@ -3,6 +3,9 @@
   "version": "0.0.0-development",
   "private": true,
   "type": "module",
+  "bin": {
+    "gomega-managed-site-conformance": "./dist/conformance-cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

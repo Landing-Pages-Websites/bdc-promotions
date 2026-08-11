@@ -15,6 +15,9 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(
   readFileSync(resolve(packageRoot, "package.json"), "utf8"),
 );
+const conformanceBin = "gomega-managed-site-conformance";
+const conformanceUsage =
+  "Usage: gomega-managed-site-conformance --contract <path> --content <path>\n";
 
 function run(command, args, env = process.env) {
   const result = spawnSync(command, args, {
@@ -124,6 +127,10 @@ describe("packed package runtime contract", () => {
         packedFiles.has("./schema/managed-site.v1.schema.json"),
         true,
       );
+      const binTarget = packageJson.bin?.[conformanceBin];
+      assert.equal(typeof binTarget, "string");
+      assert.equal(existsSync(resolve(packageRoot, binTarget)), true);
+      assert.equal(packedFiles.has(binTarget), true);
 
       for (const [, declaration] of exportEntries()) {
         for (const target of exportTargets(declaration)) {
@@ -171,5 +178,14 @@ describe("packed package runtime contract", () => {
         content: { schemaVersion: "1.0", values: [], assetManifest: [] },
       }),
     ]);
+  });
+
+  it("ships a stock-Node conformance executable with exact help", () => {
+    const binTarget = packageJson.bin?.[conformanceBin];
+    assert.equal(typeof binTarget, "string");
+    assert.equal(
+      run("node", [resolve(packageRoot, binTarget), "--help"]),
+      conformanceUsage,
+    );
   });
 });
