@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import * as publicApi from "../src/index.js";
 import type {
   ManagedRichTextDocument,
+  ManagedSiteAstroV1,
   ManagedSiteContentDocument,
   ManagedSiteContractV1,
   ManagedSiteNextV1,
@@ -100,6 +101,7 @@ function assertDeepReadonlyTypes(
   richText: ManagedRichTextDocument,
   source: ManagedSiteSourceDocumentV1,
   nextSite: ManagedSiteNextV1,
+  astroSite: ManagedSiteAstroV1,
 ): void {
   // @ts-expect-error public contract arrays are deeply readonly
   contract.pages.push(contract.pages[0]);
@@ -111,6 +113,8 @@ function assertDeepReadonlyTypes(
   source.path = "content/other.json";
   // @ts-expect-error Next adapter data is deeply readonly
   nextSite.content.values[0].owner.kind = "site";
+  // @ts-expect-error Astro adapter data is deeply readonly
+  astroSite.content.values[0].owner.kind = "site";
 }
 void assertDeepReadonlyTypes;
 
@@ -127,6 +131,7 @@ describe("public managed-site surface", () => {
       actual,
       [
         ...surfaces.map(({ name }) => name),
+        "createManagedSiteAstroV1",
         "createManagedSiteNextV1",
         "managedSiteFieldAttributesV1",
         "managedSitePageAttributesV1",

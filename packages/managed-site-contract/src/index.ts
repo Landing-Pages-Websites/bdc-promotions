@@ -36,6 +36,7 @@ export { validateManagedSiteContractV1ContentSemantics } from "./content-semanti
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
+export { createManagedSiteAstroV1 } from "./astro-adapter.js";
 export { createManagedSiteNextV1 } from "./next-adapter.js";
 export {
   managedSiteFieldAttributesV1,
@@ -66,6 +67,10 @@ export type { JsonParseLimits, JsonPrimitive, JsonValue } from "./json.js";
 export type { JsonTextParseLimits } from "./json-text.js";
 export type { ManagedSiteSourceDocumentV1 } from "./source-documents.js";
 export type {
+  CreateManagedSiteAstroV1Input,
+  ManagedSiteAstroV1,
+} from "./astro-adapter.js";
+export type {
   CreateManagedSiteNextV1Input,
   ManagedSiteNextV1,
 } from "./next-adapter.js";
@@ -73,6 +78,10 @@ export type {
   ManagedSiteFieldAttributesV1,
   ManagedSitePageAttributesV1,
 } from "./next-adapter-annotations.js";
+export type {
+  ManagedSiteValueReader,
+  ManagedSiteValueSelector,
+} from "./adapter-values.js";
 export type {
   ManagedSiteNextValueReader,
   ManagedSiteNextValueSelector,
