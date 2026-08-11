@@ -36,6 +36,7 @@ export { validateManagedSiteContractV1ContentSemantics } from "./content-semanti
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
+export { projectManagedSiteContentDocumentV1 } from "./source-projection.js";
 export {
   MANAGED_FIELD_CAPABILITIES,
   MANAGED_FIELD_SCOPES,
@@ -58,6 +59,7 @@ export type { DeepReadonly } from "./deep-readonly.js";
 export type { StableId, StableIdKind } from "./ids.js";
 export type { JsonParseLimits, JsonPrimitive, JsonValue } from "./json.js";
 export type { JsonTextParseLimits } from "./json-text.js";
+export type { ManagedSiteSourceDocumentV1 } from "./source-documents.js";
 export type {
   ManagedSiteContractSemanticResult,
 } from "./contract-semantics.js";

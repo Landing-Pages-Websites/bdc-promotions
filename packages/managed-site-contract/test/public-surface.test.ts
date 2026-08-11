@@ -6,6 +6,7 @@ import type {
   ManagedRichTextDocument,
   ManagedSiteContentDocument,
   ManagedSiteContractV1,
+  ManagedSiteSourceDocumentV1,
 } from "../src/index.js";
 import {
   assetSlot,
@@ -96,6 +97,7 @@ function assertDeepReadonlyTypes(
   contract: ManagedSiteContractV1,
   content: ManagedSiteContentDocument,
   richText: ManagedRichTextDocument,
+  source: ManagedSiteSourceDocumentV1,
 ): void {
   // @ts-expect-error public contract arrays are deeply readonly
   contract.pages.push(contract.pages[0]);
@@ -103,19 +105,26 @@ function assertDeepReadonlyTypes(
   content.values[0].owner.kind = "site";
   // @ts-expect-error nested rich-text arrays are deeply readonly
   richText.children[0].children = [];
+  // @ts-expect-error source-document paths are readonly
+  source.path = "content/other.json";
 }
 void assertDeepReadonlyTypes;
 
 describe("public managed-site surface", () => {
   it("exports only safe C2 functions, types, and frozen constants", () => {
     const actual = Object.keys(publicApi)
-      .filter((name) => /^(normalizeManaged|parseManaged|validateManaged)/u.test(name))
+      .filter((name) =>
+        /^(normalizeManaged|parseManaged|projectManaged|validateManaged)/u.test(
+          name,
+        ),
+      )
       .sort();
     assert.deepEqual(
       actual,
       [
         ...surfaces.map(({ name }) => name),
         "normalizeManagedSiteArtifactsV1",
+        "projectManagedSiteContentDocumentV1",
         "validateManagedSiteContentDocumentJsonSchema",
         "validateManagedSiteContractV1JsonSchema",
         "validateManagedSiteContractV1ContentSemantics",

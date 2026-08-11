@@ -283,7 +283,7 @@ function parseAssetSlot(input: unknown): ManagedAssetSlotDescriptor {
   return parseSchemaInput(managedAssetSlotDescriptorSchema, input);
 }
 
-function parseImageValue(input: unknown): ManagedImageValue {
+export function parseManagedImageValueInput(input: unknown): ManagedImageValue {
   return parseSchemaInput(managedImageValueSchema, input);
 }
 
@@ -313,7 +313,7 @@ export function validateManagedImageValue(
   imageInput: unknown,
 ): ManagedImageValue {
   const slot = parseAssetSlot(slotInput);
-  const image = parseImageValue(imageInput);
+  const image = parseManagedImageValueInput(imageInput);
   const dimensionsValid =
     image.width >= slot.minWidth &&
     image.width <= slot.maxWidth &&
