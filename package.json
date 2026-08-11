@@ -4,7 +4,8 @@
   "private": true,
   "packageManager": "npm@10.9.8",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "fixtures/*"
   ],
   "scripts": {
     "dev": "next dev",
@@ -14,7 +15,10 @@
     "lint": "eslint",
     "check-config": "node scripts/check-config.mjs",
     "test": "node --test scripts/*.test.mjs",
-    "test:managed-site": "tsx --test"
+    "test:managed-site": "tsx --test",
+    "conformance:astro-reference": "npm --workspace @gomega/managed-site-astro-reference run conformance",
+    "check:astro-reference": "npm --workspace @gomega/managed-site-astro-reference run check",
+    "build:astro-reference": "npm --workspace @gomega/managed-site-astro-reference run build"
   },
   "dependencies": {
     "@gomega/managed-site-contract": "0.0.0-development",

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Workspace package build output is verified by its source type-check.
     "packages/**/dist/**",
+    // Astro emits framework-owned declarations during check/build.
+    "**/.astro/**",
   ]),
 ]);
 

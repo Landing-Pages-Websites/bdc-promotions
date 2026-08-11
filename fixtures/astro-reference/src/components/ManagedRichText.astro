@@ -1,0 +1,59 @@
+---
+import type { ManagedAstroRichText } from "../lib/managed-site";
+
+interface Props {
+  readonly document: ManagedAstroRichText;
+}
+
+const { document } = Astro.props;
+---
+
+<div class="managed-rich-text">
+  {
+    document.children.map((block) => {
+      if (block.type === "paragraph") {
+        return (
+          <p>
+            {block.children.map((inline) =>
+              inline.type === "text" ? (
+                <span
+                  class:list={{
+                    "managed-rich-text__bold": inline.marks.includes("bold"),
+                    "managed-rich-text__italic": inline.marks.includes("italic"),
+                  }}
+                >
+                  {inline.text}
+                </span>
+              ) : null,
+            )}
+          </p>
+        );
+      }
+      const List = block.type === "ordered_list" ? "ol" : "ul";
+      return (
+        <List>
+          {block.children.map((item) => (
+            <li>
+              {item.children.map((paragraph) => (
+                <p>
+                  {paragraph.children.map((inline) =>
+                    inline.type === "text" ? (
+                      <span
+                        class:list={{
+                          "managed-rich-text__bold": inline.marks.includes("bold"),
+                          "managed-rich-text__italic": inline.marks.includes("italic"),
+                        }}
+                      >
+                        {inline.text}
+                      </span>
+                    ) : null,
+                  )}
+                </p>
+              ))}
+            </li>
+          ))}
+        </List>
+      );
+    })
+  }
+</div>

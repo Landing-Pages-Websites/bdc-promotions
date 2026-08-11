@@ -47,6 +47,15 @@ jobs:
       - name: Build managed-site contract and verify schema artifact
         run: npm --workspace @gomega/managed-site-contract run build
 
+      - name: Conform Astro reference content
+        run: npm run conformance:astro-reference
+
+      - name: Check Astro reference fixture
+        run: npm run check:astro-reference
+
+      - name: Build Astro reference fixture
+        run: npm run build:astro-reference
+
       - name: Lint starter
         run: npm run lint
 
