@@ -36,6 +36,11 @@ export { validateManagedSiteContractV1ContentSemantics } from "./content-semanti
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
+export { createManagedSiteNextV1 } from "./next-adapter.js";
+export {
+  managedSiteFieldAttributesV1,
+  managedSitePageAttributesV1,
+} from "./next-adapter-annotations.js";
 export { projectManagedSiteContentDocumentV1 } from "./source-projection.js";
 export {
   MANAGED_FIELD_CAPABILITIES,
@@ -60,6 +65,18 @@ export type { StableId, StableIdKind } from "./ids.js";
 export type { JsonParseLimits, JsonPrimitive, JsonValue } from "./json.js";
 export type { JsonTextParseLimits } from "./json-text.js";
 export type { ManagedSiteSourceDocumentV1 } from "./source-documents.js";
+export type {
+  CreateManagedSiteNextV1Input,
+  ManagedSiteNextV1,
+} from "./next-adapter.js";
+export type {
+  ManagedSiteFieldAttributesV1,
+  ManagedSitePageAttributesV1,
+} from "./next-adapter-annotations.js";
+export type {
+  ManagedSiteNextValueReader,
+  ManagedSiteNextValueSelector,
+} from "./next-adapter-values.js";
 export type {
   ManagedSiteContractSemanticResult,
 } from "./contract-semantics.js";

@@ -1,5 +1,6 @@
 import { ManagedSiteContractError } from "./errors.js";
 import { parseJsonValue, type JsonValue } from "./json.js";
+import { hasExactJsonKeys, isJsonRecord } from "./json-record.js";
 import {
   assertDistinctRepositoryPaths,
   parseJsonPointer,
@@ -43,12 +44,6 @@ function fail(code: string, message: string): never {
   throw new ManagedSiteContractError(code, message);
 }
 
-function isJsonRecord(
-  value: JsonValue,
-): value is Readonly<Record<string, JsonValue>> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
 function parsedDocument(value: JsonValue): ParsedSourceDocument {
   if (!isJsonRecord(value)) {
     return fail(
@@ -56,11 +51,8 @@ function parsedDocument(value: JsonValue): ParsedSourceDocument {
       "Source documents must be exact records",
     );
   }
-  const keys = Object.keys(value);
   if (
-    keys.length !== 2 ||
-    !Object.hasOwn(value, "path") ||
-    !Object.hasOwn(value, "value") ||
+    !hasExactJsonKeys(value, ["path", "value"]) ||
     typeof value.path !== "string"
   ) {
     return fail(

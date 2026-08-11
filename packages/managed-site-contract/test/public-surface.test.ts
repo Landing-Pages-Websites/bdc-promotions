@@ -6,6 +6,7 @@ import type {
   ManagedRichTextDocument,
   ManagedSiteContentDocument,
   ManagedSiteContractV1,
+  ManagedSiteNextV1,
   ManagedSiteSourceDocumentV1,
 } from "../src/index.js";
 import {
@@ -98,6 +99,7 @@ function assertDeepReadonlyTypes(
   content: ManagedSiteContentDocument,
   richText: ManagedRichTextDocument,
   source: ManagedSiteSourceDocumentV1,
+  nextSite: ManagedSiteNextV1,
 ): void {
   // @ts-expect-error public contract arrays are deeply readonly
   contract.pages.push(contract.pages[0]);
@@ -107,6 +109,8 @@ function assertDeepReadonlyTypes(
   richText.children[0].children = [];
   // @ts-expect-error source-document paths are readonly
   source.path = "content/other.json";
+  // @ts-expect-error Next adapter data is deeply readonly
+  nextSite.content.values[0].owner.kind = "site";
 }
 void assertDeepReadonlyTypes;
 
@@ -114,7 +118,7 @@ describe("public managed-site surface", () => {
   it("exports only safe C2 functions, types, and frozen constants", () => {
     const actual = Object.keys(publicApi)
       .filter((name) =>
-        /^(normalizeManaged|parseManaged|projectManaged|validateManaged)/u.test(
+        /^(createManaged|managedSite.*Attributes|normalizeManaged|parseManaged|projectManaged|validateManaged)/u.test(
           name,
         ),
       )
@@ -123,6 +127,9 @@ describe("public managed-site surface", () => {
       actual,
       [
         ...surfaces.map(({ name }) => name),
+        "createManagedSiteNextV1",
+        "managedSiteFieldAttributesV1",
+        "managedSitePageAttributesV1",
         "normalizeManagedSiteArtifactsV1",
         "projectManagedSiteContentDocumentV1",
         "validateManagedSiteContentDocumentJsonSchema",
