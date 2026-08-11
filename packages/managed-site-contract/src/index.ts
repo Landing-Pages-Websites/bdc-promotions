@@ -36,6 +36,7 @@ export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export {
   MANAGED_FIELD_CAPABILITIES,
+  MANAGED_FIELD_SCOPES,
   parseManagedCollectionDescriptor,
   parseManagedFieldDescriptor,
 } from "./fields.js";
@@ -93,6 +94,7 @@ export type {
   ManagedContentClassification,
   ManagedFieldCapability,
   ManagedFieldDescriptor,
+  ManagedFieldScope,
 } from "./fields.js";
 export type {
   ManagedRichTextBlock,

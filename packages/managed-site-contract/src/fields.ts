@@ -13,7 +13,11 @@ import {
   managedLinkTargetSchema,
   managedPresentationSchema,
   stableIdSchema,
+  type ManagedFieldUsage,
 } from "./values.js";
+
+export const MANAGED_FIELD_SCOPES = Object.freeze(["site", "page"] as const);
+export const managedFieldScopeSchema = z.enum(MANAGED_FIELD_SCOPES);
 
 export const MANAGED_FIELD_CAPABILITIES = Object.freeze([
   "text.edit",
@@ -55,6 +59,7 @@ const linkLabelConstraintsSchema = textConstraintsSchema.refine(
 
 const commonFieldShape = {
   id: stableIdSchema("field"),
+  scope: managedFieldScopeSchema,
   classification: managedRenderedClassificationSchema,
   capabilities: capabilitySchema,
   resolver: jsonPointerSourceResolverSchema,
@@ -169,8 +174,26 @@ type RenderedFieldInput = {
   readonly capabilities: readonly (typeof MANAGED_FIELD_CAPABILITIES)[number][];
 };
 
+interface ScopedFieldInput {
+  readonly scope: "site" | "page";
+  readonly usages: readonly ManagedFieldUsage[];
+}
+
 function hasUniqueValues(values: readonly unknown[]): boolean {
   return new Set(values).size === values.length;
+}
+
+export function validateManagedFieldScope(
+  field: ScopedFieldInput,
+  context: z.RefinementCtx,
+): void {
+  const pageCount = new Set(field.usages.map((usage) => usage.pageId)).size;
+  if (field.scope === "page" && pageCount !== 1) {
+    context.addIssue({
+      code: "custom",
+      message: "Page-scoped field usages must belong to one page",
+    });
+  }
 }
 
 function validateCapabilities(field: RenderedFieldInput, context: z.RefinementCtx): void {
@@ -235,6 +258,7 @@ export const managedFieldDescriptorSchema = withManagedSiteJsonSchemaSemantic(
   ]).superRefine((field, context) => {
     validateCapabilities(field, context);
     validateRichTextCapabilities(field, context);
+    validateManagedFieldScope(field, context);
   }),
 );
 
@@ -282,6 +306,7 @@ export const managedCollectionDescriptorSchema = withManagedSiteJsonSchemaSemant
 );
 
 export type ManagedFieldCapability = z.infer<typeof managedFieldCapabilitySchema>;
+export type ManagedFieldScope = z.infer<typeof managedFieldScopeSchema>;
 export type ManagedContentClassification = z.infer<typeof managedContentClassificationSchema>;
 export type ManagedFieldDescriptor = DeepReadonly<z.infer<typeof managedFieldDescriptorSchema>>;
 export type ManagedCollectionItemField = DeepReadonly<z.infer<

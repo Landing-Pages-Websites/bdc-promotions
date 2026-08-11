@@ -1,3 +1,5 @@
+import { mintStableId } from "../src/ids.js";
+
 type StableKind =
   | "contract"
   | "page"
@@ -21,6 +23,10 @@ const SUFFIXES: Record<StableKind, string> = {
 
 export function stableId(kind: StableKind): string {
   return `${kind}_${SUFFIXES[kind]}`;
+}
+
+export function secondaryPageId(): string {
+  return mintStableId("page", new Uint8Array(16).fill(1));
 }
 
 export const presentation = {
@@ -179,6 +185,7 @@ export function internalContentValue(): Record<string, unknown> {
 function renderedFieldBase(): Record<string, unknown> {
   return {
     id: stableId("field"),
+    scope: "page",
     classification: "customer_editable",
     resolver,
     usages: [usage],
@@ -339,6 +346,7 @@ export function collectionDescriptor(): Record<string, unknown> {
 export function internalProtectedField(): Record<string, unknown> {
   return {
     id: stableId("field"),
+    scope: "site",
     type: "internal_protected",
     classification: "internal_protected",
     capabilities: [],

@@ -51,6 +51,7 @@ function linkField(id: string, pageId: string): Record<string, unknown> {
   return {
     id,
     type: "link",
+    scope: "page",
     classification: "customer_editable",
     capabilities: ["link.label.edit", "link.destination.edit", "link.target.edit"],
     resolver: { kind: "json_pointer", path: "content/site.json", pointer: "/hero/link" },

@@ -1,7 +1,11 @@
 import * as z from "zod";
 
 import type { DeepReadonly } from "./deep-readonly.js";
-import { managedFieldCapabilitySchema } from "./fields.js";
+import {
+  managedFieldCapabilitySchema,
+  managedFieldScopeSchema,
+  validateManagedFieldScope,
+} from "./fields.js";
 import { managedInternalValueTypeSchema } from "./content.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
@@ -15,6 +19,7 @@ import {
 
 export const managedInternalProtectedFieldSchema = z.strictObject({
   id: stableIdSchema("field"),
+  scope: managedFieldScopeSchema,
   type: z.literal("internal_protected"),
   classification: z.literal("internal_protected"),
   capabilities: z.array(managedFieldCapabilitySchema).length(0),
@@ -23,7 +28,7 @@ export const managedInternalProtectedFieldSchema = z.strictObject({
   resolver: jsonPointerSourceResolverSchema,
   usages: z.array(managedFieldUsageSchema).min(1),
   presentation: managedPresentationSchema,
-});
+}).superRefine(validateManagedFieldScope);
 
 const fieldId = stableIdSchema("field");
 const nullableFieldId = fieldId.nullable();

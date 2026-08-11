@@ -13,6 +13,7 @@ import {
   linkContentValue,
   managedSiteContract,
   richTextContentValue,
+  secondaryPageId,
   stableId,
 } from "./schema-fixtures.js";
 
@@ -223,6 +224,53 @@ const CONTRACT_CASES: readonly DifferentialCase[] = [
     invalidContract("customer field without capabilities", (input) => {
       objectAt(input, ["pages", 0, "sections", 0, "fields", 0]).capabilities = [];
     }),
+    invalidContract("field without ownership scope", (input) => {
+      delete objectAt(input, ["pages", 0, "sections", 0, "fields", 0]).scope;
+    }),
+    invalidContract("unknown field ownership scope", (input) => {
+      objectAt(input, ["pages", 0, "sections", 0, "fields", 0]).scope = "global";
+    }),
+    invalidContract("page-owned field spanning pages", (input) => {
+      objectAt(input, ["pages", 0, "sections", 0, "fields", 0]).usages = [
+        { pageId: stableId("page"), itemId: null },
+        { pageId: secondaryPageId(), itemId: null },
+      ];
+    }),
+    {
+      name: "site-owned field spanning pages",
+      input: changed(managedSiteContract, (input) => {
+        const field = objectAt(input, ["pages", 0, "sections", 0, "fields", 0]);
+        field.scope = "site";
+        field.usages = [
+          { pageId: stableId("page"), itemId: null },
+          { pageId: secondaryPageId(), itemId: null },
+        ];
+      }),
+      valid: true,
+    },
+    invalidContract("protected field without ownership scope", (input) => {
+      delete objectAt(input, ["internalSeo", "protectedFields", 0]).scope;
+    }),
+    invalidContract("page-owned protected field spanning pages", (input) => {
+      const field = objectAt(input, ["internalSeo", "protectedFields", 0]);
+      field.scope = "page";
+      field.usages = [
+        { pageId: stableId("page"), itemId: null },
+        { pageId: secondaryPageId(), itemId: null },
+      ];
+    }),
+    {
+      name: "site-owned protected field spanning pages",
+      input: changed(managedSiteContract, (input) => {
+        const field = objectAt(input, ["internalSeo", "protectedFields", 0]);
+        field.scope = "site";
+        field.usages = [
+          { pageId: stableId("page"), itemId: null },
+          { pageId: secondaryPageId(), itemId: null },
+        ];
+      }),
+      valid: true,
+    },
     invalidContract("rich mark capability outside policy", (input) => {
       objectAt(input, ["pages", 0, "sections", 0, "fields", 1, "constraints"]).allowedMarks = ["italic"];
     }),

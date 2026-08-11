@@ -29,6 +29,7 @@ function resolver(pointer: string): object {
 function textField(id: string, pageId: string, pointer: string, type = "plain_text"): object {
   const base = {
     id,
+    scope: "page",
     classification: "customer_editable",
     capabilities: ["text.edit"],
     resolver: resolver(pointer),
@@ -76,8 +77,8 @@ export function conformingContract(): Record<string, unknown> {
         sections: [{ id: sectionId, presentation: presentation("Hero"), fields: [
           textField(titleId, homeId, "/hero/title", "heading_text"),
           textField(bodyId, homeId, "/hero/body"),
-          { id: imageId, type: "image", classification: "customer_editable", capabilities: ["image.upload"], resolver: resolver("/hero/image"), usages: [{ pageId: homeId, itemId }], presentation: presentation("Image"), assetSlotId: assetId },
-          { id: collectionFieldId, type: "collection", classification: "customer_editable", capabilities: ["collection.reorder"], resolver: resolver("/hero/services"), usages: [{ pageId: homeId, itemId: null }], presentation: presentation("Services"), collectionId },
+          { id: imageId, scope: "page", type: "image", classification: "customer_editable", capabilities: ["image.upload"], resolver: resolver("/hero/image"), usages: [{ pageId: homeId, itemId }], presentation: presentation("Image"), assetSlotId: assetId },
+          { id: collectionFieldId, scope: "page", type: "collection", classification: "customer_editable", capabilities: ["collection.reorder"], resolver: resolver("/hero/services"), usages: [{ pageId: homeId, itemId: null }], presentation: presentation("Services"), collectionId },
         ] }],
       },
       { id: generatedId, presentation: presentation("Service"), route: { kind: "generated", pattern: "/services/[slug]", collectionId, routeKeyFieldId: routeKeyId }, sections: [] },
@@ -96,7 +97,7 @@ export function conformingContract(): Record<string, unknown> {
     }],
     assets: [{ id: assetId, presentation: presentation("Hero image"), semantics: { kind: "informative" }, acceptedMimeTypes: ["image/webp"], outputMimeTypes: ["image/webp"], minWidth: 1, maxWidth: 2, minHeight: 1, maxHeight: 2, aspectRatios: [{ width: 1, height: 1 }], cropPolicy: "optional", focalPointPolicy: "optional", maxBytes: 1 }],
     internalSeo: {
-      protectedFields: [{ id: protectedId, type: "internal_protected", classification: "internal_protected", capabilities: [], valueType: "string", semantic: "seo.title", resolver: resolver("/seo/title"), usages: [{ pageId: homeId, itemId: null }], presentation: presentation("SEO title") }],
+      protectedFields: [{ id: protectedId, scope: "site", type: "internal_protected", classification: "internal_protected", capabilities: [], valueType: "string", semantic: "seo.title", resolver: resolver("/seo/title"), usages: [{ pageId: homeId, itemId: null }], presentation: presentation("SEO title") }],
       businessIdentity: { legalName: protectedId, displayName: protectedId, telephone: protectedId, postalAddress: protectedId, email: null, geo: null, openingHours: null, sameAs: null },
       pages: [{ pageId: homeId, intent: { purpose: "home", primaryEntity: protectedId, services: [], locations: [] }, metadata: { title: protectedId, description: protectedId, canonical: protectedId, indexing: protectedId, social: { title: null, description: null, image: assetId } }, headingOutline: [{ fieldId: titleId, semanticLevel: 1 }], jsonLd: [{ schemaType: "LocalBusiness", required: true, sourceFieldIds: [protectedId], requiredOutputProperties: ["name"] }], breadcrumbParentPageId: null, internalLinks: { requiredPageIds: [generatedId], minimumInboundLinks: 0 }, sitemap: { included: true, changeFrequency: "monthly", priority: 1 }, primaryImageAssetSlotId: assetId, performanceBudget: { maxLcpMilliseconds: 1, maxCls: 0, maxInpMilliseconds: 1, maxPageBytes: 1 } }],
       redirects: [{ fromPath: "/old", destination: { kind: "page", pageId: homeId }, status: 301, preserveQuery: true }],

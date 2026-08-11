@@ -129,6 +129,8 @@ describe("public managed-site surface", () => {
       [],
     );
     assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_CAPABILITIES), true);
+    assert.deepEqual(publicApi.MANAGED_FIELD_SCOPES, ["site", "page"]);
+    assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_SCOPES), true);
     assert.equal(Object.isFrozen(publicApi.MANAGED_SITE_JSON_SCHEMA_BUNDLE_V1), true);
   });
 
