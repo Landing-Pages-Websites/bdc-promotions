@@ -16,6 +16,10 @@ export interface ContentSemanticsFixtureIds {
   readonly linkField: string;
   readonly protectedField: string;
   readonly routeKeyField: string;
+  readonly generatedTitleField: string;
+  readonly generatedDescriptionField: string;
+  readonly generatedCanonicalField: string;
+  readonly generatedIndexingField: string;
   readonly itemHeadingField: string;
   readonly itemRichField: string;
   readonly itemLinkField: string;
@@ -49,6 +53,14 @@ interface MutableContract extends JsonObject {
   assets: Array<JsonObject & { id: string }>;
   internalSeo: {
     protectedFields: MutableField[];
+    generatedPages: Array<{
+      metadata: {
+        title: string;
+        description: string;
+        canonical: string;
+        indexing: string;
+      };
+    }>;
   };
 }
 
@@ -147,6 +159,21 @@ function renderedValue(
   return { fieldId, owner: contentOwner, type, value };
 }
 
+function protectedItemValue(
+  fieldId: string,
+  ids: ContentSemanticsFixtureIds,
+  valueType: string,
+  value: unknown,
+): JsonObject {
+  return {
+    fieldId,
+    owner: itemOwner(ids.collection, ids.item),
+    type: "internal_protected",
+    valueType,
+    value,
+  };
+}
+
 function addRenderedFields(
   contract: MutableContract,
   ids: ContentSemanticsFixtureIds,
@@ -190,16 +217,6 @@ function addItemFields(
 ): void {
   collection.itemFields.push(
     {
-      id: ids.itemHeadingField,
-      type: "heading_text",
-      classification: "customer_editable",
-      capabilities: ["text.edit"],
-      itemPointer: "/heading",
-      presentation: presentation("Item heading", 30),
-      semanticLevel: 2,
-      constraints: { minLength: 1, maxLength: 80, newlines: "forbid" },
-    },
-    {
       id: ids.itemRichField,
       type: "rich_text",
       classification: "customer_editable",
@@ -217,15 +234,6 @@ function addItemFields(
       presentation: presentation("Item link", 32),
       constraints: linkConstraints(),
     },
-    {
-      id: ids.itemImageField,
-      type: "image",
-      classification: "customer_editable",
-      capabilities: ["image.upload"],
-      itemPointer: "/image",
-      presentation: presentation("Item image", 33),
-      assetSlotId: ids.asset,
-    },
   );
   collection.uniqueness.push({
     fieldIds: [ids.itemHeadingField],
@@ -239,6 +247,20 @@ function fixtureIds(contract: MutableContract): ContentSemanticsFixtureIds {
   const item = fields[2].usages?.[0]?.itemId;
   if (item === null || item === undefined) {
     throw new Error("C3A fixture must expose its deferred item ID");
+  }
+  const generatedMetadata = contract.internalSeo.generatedPages[0]?.metadata;
+  if (generatedMetadata === undefined) {
+    throw new Error("C3A fixture must expose generated SEO metadata");
+  }
+  const itemHeading = collection.itemFields.find(
+    (field) => field.type === "heading_text",
+  );
+  if (itemHeading === undefined) {
+    throw new Error("C3A fixture must expose a generated H1 field");
+  }
+  const itemImage = collection.itemFields.find((field) => field.type === "image");
+  if (itemImage === undefined) {
+    throw new Error("C3A fixture must expose a generated image field");
   }
   return {
     homePage: contract.pages[0].id,
@@ -254,15 +276,37 @@ function fixtureIds(contract: MutableContract): ContentSemanticsFixtureIds {
     linkField: fixtureId("field"),
     protectedField: contract.internalSeo.protectedFields[0].id,
     routeKeyField: collection.itemFields[0].id,
-    itemHeadingField: fixtureId("field"),
+    generatedTitleField: generatedMetadata.title,
+    generatedDescriptionField: generatedMetadata.description,
+    generatedCanonicalField: generatedMetadata.canonical,
+    generatedIndexingField: generatedMetadata.indexing,
+    itemHeadingField: itemHeading.id,
     itemRichField: fixtureId("field"),
     itemLinkField: fixtureId("field"),
-    itemImageField: fixtureId("field"),
+    itemImageField: itemImage.id,
   };
 }
 
-function contentValues(ids: ContentSemanticsFixtureIds): JsonObject[] {
-  return [
+function orderItemValues(
+  values: JsonObject[],
+  collection: MutableCollection,
+): JsonObject[] {
+  const isItemValue = (value: JsonObject) =>
+    (value.owner as JsonObject).kind === "collection_item";
+  const itemValues = values.filter(isItemValue);
+  const orderedItemValues = collection.itemFields.map(({ id }) => {
+    const matches = itemValues.filter((value) => value.fieldId === id);
+    if (matches.length !== 1) throw new Error(`Expected one fixture value for ${id}`);
+    return matches[0];
+  });
+  return [...values.filter((value) => !isItemValue(value)), ...orderedItemValues];
+}
+
+function contentValues(
+  ids: ContentSemanticsFixtureIds,
+  collection: MutableCollection,
+): JsonObject[] {
+  const values: JsonObject[] = [
     renderedValue(ids.titleField, owner("page", ids.homePage), "heading_text", "Managed heading"),
     renderedValue(ids.bodyField, owner("page", ids.homePage), "plain_text", "Managed body"),
     renderedValue(ids.imageField, owner("page", ids.homePage), "image", imageValue()),
@@ -282,7 +326,29 @@ function contentValues(ids: ContentSemanticsFixtureIds): JsonObject[] {
       valueType: "string",
       value: "Gomega",
     },
-    renderedValue(ids.routeKeyField, itemOwner(ids.collection, ids.item), "plain_text", "service-one"),
+    protectedItemValue(ids.routeKeyField, ids, "string", "service-one"),
+    protectedItemValue(ids.generatedTitleField, ids, "string", "Service One | Gomega"),
+    protectedItemValue(
+      ids.generatedDescriptionField,
+      ids,
+      "string",
+      "Service One description",
+    ),
+    protectedItemValue(
+      ids.generatedCanonicalField,
+      ids,
+      "url",
+      "https://example.com/services/service-one",
+    ),
+    protectedItemValue(ids.generatedIndexingField, ids, "indexing_directives", {
+      index: true,
+      follow: true,
+      archive: true,
+      imageIndex: true,
+      maxSnippet: -1,
+      maxImagePreview: "large",
+      maxVideoPreview: -1,
+    }),
     renderedValue(ids.itemHeadingField, itemOwner(ids.collection, ids.item), "heading_text", "Service One"),
     renderedValue(ids.itemRichField, itemOwner(ids.collection, ids.item), "rich_text", richValue(ids.homePage)),
     renderedValue(ids.itemLinkField, itemOwner(ids.collection, ids.item), "link", {
@@ -292,6 +358,7 @@ function contentValues(ids: ContentSemanticsFixtureIds): JsonObject[] {
     }),
     renderedValue(ids.itemImageField, itemOwner(ids.collection, ids.item), "image", imageValue()),
   ];
+  return orderItemValues(values, collection);
 }
 
 export function contentSemanticsFixture(): ContentSemanticsFixture {
@@ -303,7 +370,7 @@ export function contentSemanticsFixture(): ContentSemanticsFixture {
     contract,
     content: {
       schemaVersion: "1.0",
-      values: contentValues(ids),
+      values: contentValues(ids, contract.collections[0]),
       assetManifest: [manifestEntry(ids.asset)],
     },
     ids,

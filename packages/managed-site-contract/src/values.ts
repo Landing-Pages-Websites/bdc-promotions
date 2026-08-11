@@ -139,6 +139,10 @@ const STATIC_ROUTE_PATTERN = /^\/(?:[A-Za-z0-9._~-]+(?:\/[A-Za-z0-9._~-]+)*)?$/;
 const GENERATED_SEGMENT_PATTERN = /^\[[A-Za-z][A-Za-z0-9_]*\]$/;
 const STATIC_SEGMENT_PATTERN = /^[A-Za-z0-9._~-]+$/;
 
+export function isManagedGeneratedRouteSegment(value: string): boolean {
+  return GENERATED_SEGMENT_PATTERN.test(value);
+}
+
 function hasCanonicalRouteSegments(value: string, allowGenerated: boolean): boolean {
   if (value === "/") return !allowGenerated;
   const segments = value.slice(1).split("/");
@@ -146,9 +150,12 @@ function hasCanonicalRouteSegments(value: string, allowGenerated: boolean): bool
     segment !== "." &&
     segment !== ".." &&
     (STATIC_SEGMENT_PATTERN.test(segment) ||
-      (allowGenerated && GENERATED_SEGMENT_PATTERN.test(segment))),
+      (allowGenerated && isManagedGeneratedRouteSegment(segment))),
   );
-  return validSegments && (!allowGenerated || segments.some((segment) => GENERATED_SEGMENT_PATTERN.test(segment)));
+  return (
+    validSegments &&
+    (!allowGenerated || segments.some(isManagedGeneratedRouteSegment))
+  );
 }
 
 export const managedStaticRoutePathSchema = withManagedSiteJsonSchemaSemantic(

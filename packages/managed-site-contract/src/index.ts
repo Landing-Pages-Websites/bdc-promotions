@@ -139,6 +139,7 @@ export type {
   ManagedRichTextMark,
 } from "./rich-text.js";
 export type {
+  ManagedGeneratedPageSeoDescriptor,
   ManagedInternalProtectedField,
   ManagedSiteSeoDescriptor,
 } from "./seo.js";

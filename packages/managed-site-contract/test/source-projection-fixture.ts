@@ -11,6 +11,10 @@ interface ProjectionIds {
   readonly linkField: string;
   readonly protectedField: string;
   readonly routeKeyField: string;
+  readonly generatedTitleField: string;
+  readonly generatedDescriptionField: string;
+  readonly generatedCanonicalField: string;
+  readonly generatedIndexingField: string;
   readonly itemHeadingField: string;
   readonly itemRichField: string;
   readonly itemLinkField: string;
@@ -56,6 +60,12 @@ function sourceValue(
       {
         id: ids.item,
         slug: requiredValue(values, ids.routeKeyField),
+        seo: {
+          title: requiredValue(values, ids.generatedTitleField),
+          description: requiredValue(values, ids.generatedDescriptionField),
+          canonical: requiredValue(values, ids.generatedCanonicalField),
+          indexing: requiredValue(values, ids.generatedIndexingField),
+        },
         heading: requiredValue(values, ids.itemHeadingField),
         description: requiredValue(values, ids.itemRichField),
         link: requiredValue(values, ids.itemLinkField),

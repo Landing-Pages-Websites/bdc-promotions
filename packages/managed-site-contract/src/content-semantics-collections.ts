@@ -18,6 +18,9 @@ interface ManagedCollectionState {
   readonly itemIds: readonly StableId<"item">[];
 }
 
+const GENERATED_ROUTE_KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_GENERATED_ROUTE_KEY_CHARACTERS = 200;
+
 function arraysEqual(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
@@ -287,6 +290,42 @@ function validateCollectionUniqueness(
   }
 }
 
+function validateGeneratedRouteKeys(
+  facts: ManagedContentSemanticFacts,
+  states: ReadonlyMap<string, ManagedCollectionState>,
+): void {
+  for (const page of facts.pages.values()) {
+    if (page.route.kind !== "generated") continue;
+    const state = states.get(page.route.collectionId);
+    if (state === undefined) {
+      contentSemanticFail(
+        "CONTENT_GENERATED_ROUTE_KEY",
+        `Generated route collection has no active content: ${page.route.collectionId}`,
+      );
+    }
+    for (const itemId of state.itemIds) {
+      const resolved = requiredItemValue(
+        facts,
+        state.descriptor,
+        itemId,
+        page.route.routeKeyFieldId,
+      );
+      if (
+        resolved.value.type !== "internal_protected" ||
+        resolved.value.valueType !== "string" ||
+        typeof resolved.value.value !== "string" ||
+        resolved.value.value.length > MAX_GENERATED_ROUTE_KEY_CHARACTERS ||
+        !GENERATED_ROUTE_KEY_PATTERN.test(resolved.value.value)
+      ) {
+        contentSemanticFail(
+          "CONTENT_GENERATED_ROUTE_KEY",
+          `Generated route key is not a canonical slug: ${itemId}`,
+        );
+      }
+    }
+  }
+}
+
 export function validateManagedContentCollections(
   facts: ManagedContentSemanticFacts,
 ): void {
@@ -296,4 +335,5 @@ export function validateManagedContentCollections(
   validateItemCompleteness(facts, states);
   validateUsageItems(facts, active);
   validateCollectionUniqueness(facts, states);
+  validateGeneratedRouteKeys(facts, states);
 }

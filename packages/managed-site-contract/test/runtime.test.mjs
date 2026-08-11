@@ -85,6 +85,7 @@ function minimalInternalSeo(fieldId) {
       sameAs: null,
     },
     pages: [],
+    generatedPages: [],
     redirects: [],
   };
 }

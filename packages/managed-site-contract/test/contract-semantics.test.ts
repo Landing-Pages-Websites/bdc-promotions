@@ -92,19 +92,53 @@ function protectedSourceField(contract: Record<string, unknown>): SourceField {
   return first;
 }
 
+function fieldItemIds(
+  field: ManagedSiteContractV1["pages"][number]["sections"][number]["fields"][number],
+): readonly string[] {
+  return field.usages.flatMap((usage) =>
+    usage.itemId === null ? [] : [usage.itemId],
+  );
+}
+
+function expectedDeferredItems(
+  contract: ManagedSiteContractV1,
+): readonly string[] {
+  return contract.pages.flatMap((page) =>
+    page.sections.flatMap((section) => section.fields.flatMap(fieldItemIds)),
+  );
+}
+
+function expectedSourceCount(contract: ManagedSiteContractV1): number {
+  const pageFields = contract.pages.flatMap((page) =>
+    page.sections.flatMap((section) => section.fields),
+  );
+  return (
+    pageFields.length +
+    contract.collections.length +
+    contract.internalSeo.protectedFields.length
+  );
+}
+
 describe("managed-site contract semantic facts", () => {
   it("classifies every C1 stable-ID occurrence in a conforming contract", () => {
-    const facts = collectManagedSiteContractV1Facts(
-      parseManagedSiteContractV1(conformingContract()),
-    );
+    const parsed = parseManagedSiteContractV1(conformingContract());
+    const facts = collectManagedSiteContractV1Facts(parsed);
+    const occurrences = collectManagedSiteContractOccurrences(parsed);
 
-    assert.deepEqual(facts.deferred.itemIds, [
-      "item_00000000000000000000000140",
-    ]);
-    assert.equal(facts.declarations.length, 13);
-    assert.equal(facts.references.length, 28);
-    assert.equal(facts.sources.length, 6);
-    assert.equal(facts.routes.length, 3);
+    assert.deepEqual(facts.deferred.itemIds, expectedDeferredItems(parsed));
+    assert.equal(
+      facts.declarations.length,
+      occurrences.filter((occurrence) => occurrence.role === "declaration").length,
+    );
+    assert.equal(
+      facts.references.length,
+      occurrences.filter((occurrence) => occurrence.role === "reference").length,
+    );
+    assert.equal(facts.sources.length, expectedSourceCount(parsed));
+    assert.equal(
+      facts.routes.length,
+      parsed.pages.length + parsed.internalSeo.redirects.length,
+    );
   });
 
   it("classifies variant-only collection item asset references", () => {
@@ -112,19 +146,23 @@ describe("managed-site contract semantic facts", () => {
     const collection = (contract.collections as Array<{
       itemFields: Array<Record<string, unknown>>;
     }>)[0];
+    const imageFieldId = fixtureId("field");
+    const assetId = (contract.assets as Array<{ id: string }>)[0].id;
     collection.itemFields.push({
-      id: fixtureId("field"),
+      id: imageFieldId,
       type: "image",
       classification: "customer_editable",
       capabilities: ["image.upload"],
       itemPointer: "/image",
       presentation: { name: "Image", description: null, group: "C3A", order: 1, example: null },
-      assetSlotId: (contract.assets as Array<{ id: string }>)[0].id,
+      assetSlotId: assetId,
     });
     const facts = contractFacts(contract);
     assert.equal(
       facts.references.some((fact) =>
-        fact.location === "collections[0].itemFields[1].assetSlotId"),
+        fact.id === assetId &&
+        fact.location ===
+          `collections[0].itemFields[${collection.itemFields.length - 1}].assetSlotId`),
       true,
     );
   });

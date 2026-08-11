@@ -1299,10 +1299,173 @@
           ]
         },
         "__schema100": {
+          "anyOf": [
+            {
+              "pattern": "^page_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "__schema101": {
+          "additionalProperties": false,
+          "properties": {
+            "minimumInboundLinks": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "requiredPageIds": {
+              "items": {
+                "pattern": "^page_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "requiredPageIds",
+            "minimumInboundLinks"
+          ],
+          "type": "object"
+        },
+        "__schema102": {
+          "additionalProperties": false,
+          "properties": {
+            "changeFrequency": {
+              "enum": [
+                "always",
+                "hourly",
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "never"
+              ],
+              "type": "string"
+            },
+            "included": {
+              "type": "boolean"
+            },
+            "priority": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "included",
+            "changeFrequency",
+            "priority"
+          ],
+          "type": "object"
+        },
+        "__schema103": {
+          "additionalProperties": false,
+          "properties": {
+            "maxCls": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "maxInpMilliseconds": {
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            },
+            "maxLcpMilliseconds": {
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            },
+            "maxPageBytes": {
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "maxLcpMilliseconds",
+            "maxCls",
+            "maxInpMilliseconds",
+            "maxPageBytes"
+          ],
+          "type": "object"
+        },
+        "__schema104": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "__schema105": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "__schema106": {
+          "type": "boolean"
+        },
+        "__schema107": {
+          "items": {
+            "$ref": "#/$defs/__schema96"
+          },
+          "type": "array"
+        },
+        "__schema108": {
+          "items": {
+            "$ref": "#/$defs/__schema96"
+          },
+          "type": "array"
+        },
+        "__schema109": {
+          "items": {
+            "$ref": "#/$defs/__schema110"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "__schema11": {
+          "gomegaSemanticV1": "static-route",
+          "maxLength": 2048,
+          "pattern": "^\\/(?:[A-Za-z0-9._~-]+(?:\\/[A-Za-z0-9._~-]+)*)?$",
+          "type": "string"
+        },
+        "__schema110": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "__schema111": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "fieldIds": {
+                "items": {
+                  "$ref": "#/$defs/__schema112"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "id": {
+                "pattern": "^alias_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "fieldIds"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "__schema112": {
           "pattern": "^field_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
           "type": "string"
         },
-        "__schema101": {
+        "__schema113": {
           "items": {
             "anyOf": [
               {
@@ -1340,12 +1503,6 @@
             ]
           },
           "type": "array"
-        },
-        "__schema11": {
-          "gomegaSemanticV1": "static-route",
-          "maxLength": 2048,
-          "pattern": "^\\/(?:[A-Za-z0-9._~-]+(?:\\/[A-Za-z0-9._~-]+)*)?$",
-          "type": "string"
         },
         "__schema12": {
           "additionalProperties": false,
@@ -2883,105 +3040,148 @@
               ],
               "type": "object"
             },
-            "pages": {
+            "generatedPages": {
               "items": {
                 "additionalProperties": false,
                 "properties": {
                   "breadcrumbParentPageId": {
-                    "anyOf": [
-                      {
-                        "pattern": "^page_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
+                    "$ref": "#/$defs/__schema100"
+                  },
+                  "collectionId": {
+                    "pattern": "^collection_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
+                    "type": "string"
                   },
                   "headingOutline": {
+                    "$ref": "#/$defs/__schema99"
+                  },
+                  "intent": {
+                    "$ref": "#/$defs/__schema98"
+                  },
+                  "internalLinks": {
+                    "$ref": "#/$defs/__schema101"
+                  },
+                  "jsonLd": {
                     "items": {
                       "additionalProperties": false,
                       "properties": {
-                        "fieldId": {
-                          "$ref": "#/$defs/__schema96"
+                        "itemSourceFieldIds": {
+                          "$ref": "#/$defs/__schema107"
                         },
-                        "semanticLevel": {
-                          "maximum": 6,
-                          "minimum": 1,
-                          "type": "integer"
+                        "required": {
+                          "$ref": "#/$defs/__schema106"
+                        },
+                        "requiredOutputProperties": {
+                          "$ref": "#/$defs/__schema109"
+                        },
+                        "schemaType": {
+                          "$ref": "#/$defs/__schema105"
+                        },
+                        "siteSourceFieldIds": {
+                          "$ref": "#/$defs/__schema108"
                         }
                       },
                       "required": [
-                        "fieldId",
-                        "semanticLevel"
+                        "schemaType",
+                        "required",
+                        "itemSourceFieldIds",
+                        "siteSourceFieldIds",
+                        "requiredOutputProperties"
                       ],
                       "type": "object"
                     },
                     "type": "array"
                   },
-                  "intent": {
+                  "metadata": {
                     "additionalProperties": false,
                     "properties": {
-                      "locations": {
-                        "items": {
-                          "$ref": "#/$defs/__schema96"
-                        },
-                        "type": "array"
-                      },
-                      "primaryEntity": {
+                      "canonical": {
                         "$ref": "#/$defs/__schema96"
                       },
-                      "purpose": {
-                        "enum": [
-                          "home",
-                          "service",
-                          "location",
-                          "service_location",
-                          "about",
-                          "contact",
-                          "article",
-                          "landing",
-                          "legal",
-                          "other"
-                        ],
-                        "type": "string"
+                      "description": {
+                        "$ref": "#/$defs/__schema96"
                       },
-                      "services": {
-                        "items": {
-                          "$ref": "#/$defs/__schema96"
+                      "indexing": {
+                        "$ref": "#/$defs/__schema96"
+                      },
+                      "social": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "description": {
+                            "$ref": "#/$defs/__schema97"
+                          },
+                          "imageFieldId": {
+                            "$ref": "#/$defs/__schema97"
+                          },
+                          "title": {
+                            "$ref": "#/$defs/__schema97"
+                          }
                         },
-                        "type": "array"
+                        "required": [
+                          "title",
+                          "description",
+                          "imageFieldId"
+                        ],
+                        "type": "object"
+                      },
+                      "title": {
+                        "$ref": "#/$defs/__schema96"
                       }
                     },
                     "required": [
-                      "purpose",
-                      "primaryEntity",
-                      "services",
-                      "locations"
+                      "title",
+                      "description",
+                      "canonical",
+                      "indexing",
+                      "social"
                     ],
                     "type": "object"
                   },
+                  "pageId": {
+                    "pattern": "^page_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
+                    "type": "string"
+                  },
+                  "performanceBudget": {
+                    "$ref": "#/$defs/__schema103"
+                  },
+                  "primaryImageFieldId": {
+                    "$ref": "#/$defs/__schema97"
+                  },
+                  "sitemap": {
+                    "$ref": "#/$defs/__schema102"
+                  }
+                },
+                "required": [
+                  "pageId",
+                  "collectionId",
+                  "intent",
+                  "headingOutline",
+                  "breadcrumbParentPageId",
+                  "internalLinks",
+                  "sitemap",
+                  "performanceBudget",
+                  "metadata",
+                  "jsonLd",
+                  "primaryImageFieldId"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pages": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "breadcrumbParentPageId": {
+                    "$ref": "#/$defs/__schema100"
+                  },
+                  "headingOutline": {
+                    "$ref": "#/$defs/__schema99"
+                  },
+                  "intent": {
+                    "$ref": "#/$defs/__schema98"
+                  },
                   "internalLinks": {
-                    "additionalProperties": false,
-                    "properties": {
-                      "minimumInboundLinks": {
-                        "maximum": 9007199254740991,
-                        "minimum": 0,
-                        "type": "integer"
-                      },
-                      "requiredPageIds": {
-                        "items": {
-                          "pattern": "^page_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
-                          "type": "string"
-                        },
-                        "type": "array"
-                      }
-                    },
-                    "required": [
-                      "requiredPageIds",
-                      "minimumInboundLinks"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/__schema101"
                   },
                   "jsonLd": {
                     "items": {
@@ -2992,7 +3192,7 @@
                         },
                         "requiredOutputProperties": {
                           "items": {
-                            "$ref": "#/$defs/__schema98"
+                            "$ref": "#/$defs/__schema104"
                           },
                           "minItems": 1,
                           "type": "array"
@@ -3078,36 +3278,7 @@
                     "type": "string"
                   },
                   "performanceBudget": {
-                    "additionalProperties": false,
-                    "properties": {
-                      "maxCls": {
-                        "maximum": 1,
-                        "minimum": 0,
-                        "type": "number"
-                      },
-                      "maxInpMilliseconds": {
-                        "exclusiveMinimum": 0,
-                        "maximum": 9007199254740991,
-                        "type": "integer"
-                      },
-                      "maxLcpMilliseconds": {
-                        "exclusiveMinimum": 0,
-                        "maximum": 9007199254740991,
-                        "type": "integer"
-                      },
-                      "maxPageBytes": {
-                        "exclusiveMinimum": 0,
-                        "maximum": 9007199254740991,
-                        "type": "integer"
-                      }
-                    },
-                    "required": [
-                      "maxLcpMilliseconds",
-                      "maxCls",
-                      "maxInpMilliseconds",
-                      "maxPageBytes"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/__schema103"
                   },
                   "primaryImageAssetSlotId": {
                     "anyOf": [
@@ -3121,48 +3292,20 @@
                     ]
                   },
                   "sitemap": {
-                    "additionalProperties": false,
-                    "properties": {
-                      "changeFrequency": {
-                        "enum": [
-                          "always",
-                          "hourly",
-                          "daily",
-                          "weekly",
-                          "monthly",
-                          "yearly",
-                          "never"
-                        ],
-                        "type": "string"
-                      },
-                      "included": {
-                        "type": "boolean"
-                      },
-                      "priority": {
-                        "maximum": 1,
-                        "minimum": 0,
-                        "type": "number"
-                      }
-                    },
-                    "required": [
-                      "included",
-                      "changeFrequency",
-                      "priority"
-                    ],
-                    "type": "object"
+                    "$ref": "#/$defs/__schema102"
                   }
                 },
                 "required": [
                   "pageId",
                   "intent",
-                  "metadata",
                   "headingOutline",
-                  "jsonLd",
                   "breadcrumbParentPageId",
                   "internalLinks",
                   "sitemap",
-                  "primaryImageAssetSlotId",
-                  "performanceBudget"
+                  "performanceBudget",
+                  "metadata",
+                  "jsonLd",
+                  "primaryImageAssetSlotId"
                 ],
                 "type": "object"
               },
@@ -3306,6 +3449,7 @@
             "protectedFields",
             "businessIdentity",
             "pages",
+            "generatedPages",
             "redirects"
           ],
           "type": "object"
@@ -3362,29 +3506,63 @@
           ]
         },
         "__schema98": {
-          "maxLength": 160,
-          "minLength": 1,
-          "type": "string"
+          "additionalProperties": false,
+          "properties": {
+            "locations": {
+              "items": {
+                "$ref": "#/$defs/__schema96"
+              },
+              "type": "array"
+            },
+            "primaryEntity": {
+              "$ref": "#/$defs/__schema96"
+            },
+            "purpose": {
+              "enum": [
+                "home",
+                "service",
+                "location",
+                "service_location",
+                "about",
+                "contact",
+                "article",
+                "landing",
+                "legal",
+                "other"
+              ],
+              "type": "string"
+            },
+            "services": {
+              "items": {
+                "$ref": "#/$defs/__schema96"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "purpose",
+            "primaryEntity",
+            "services",
+            "locations"
+          ],
+          "type": "object"
         },
         "__schema99": {
           "items": {
             "additionalProperties": false,
             "properties": {
-              "fieldIds": {
-                "items": {
-                  "$ref": "#/$defs/__schema100"
-                },
-                "minItems": 1,
-                "type": "array"
+              "fieldId": {
+                "$ref": "#/$defs/__schema96"
               },
-              "id": {
-                "pattern": "^alias_[0-9a-hjkmnp-tv-z]{25}[048cgmrw]$",
-                "type": "string"
+              "semanticLevel": {
+                "maximum": 6,
+                "minimum": 1,
+                "type": "integer"
               }
             },
             "required": [
-              "id",
-              "fieldIds"
+              "fieldId",
+              "semanticLevel"
             ],
             "type": "object"
           },
@@ -3403,7 +3581,7 @@
           "$ref": "#/$defs/__schema75"
         },
         "atomicAliasGroups": {
-          "$ref": "#/$defs/__schema99"
+          "$ref": "#/$defs/__schema111"
         },
         "bridge": {
           "$ref": "#/$defs/__schema3"
@@ -3424,7 +3602,7 @@
           "$ref": "#/$defs/__schema0"
         },
         "tombstonedIds": {
-          "$ref": "#/$defs/__schema101"
+          "$ref": "#/$defs/__schema113"
         }
       },
       "required": [

@@ -412,6 +412,7 @@ const SEO_DESCRIPTOR = {
         },
       },
     ],
+    generatedPages: [],
     redirects: [
       {
         fromPath: "/old",

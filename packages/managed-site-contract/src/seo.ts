@@ -81,6 +81,33 @@ const managedJsonLdDeclarationSchema = z.strictObject({
   requiredOutputProperties: z.array(z.string().min(1).max(160)).min(1),
 });
 
+const managedGeneratedMetadataSchema = z.strictObject({
+  title: fieldId,
+  description: fieldId,
+  canonical: fieldId,
+  indexing: fieldId,
+  social: z.strictObject({
+    title: nullableFieldId,
+    description: nullableFieldId,
+    imageFieldId: nullableFieldId,
+  }),
+});
+
+const managedGeneratedJsonLdDeclarationSchema = z
+  .strictObject({
+    schemaType: z.string().min(1).max(160),
+    required: z.boolean(),
+    itemSourceFieldIds: z.array(fieldId),
+    siteSourceFieldIds: z.array(fieldId),
+    requiredOutputProperties: z.array(z.string().min(1).max(160)).min(1),
+  })
+  .refine(
+    (declaration) =>
+      declaration.itemSourceFieldIds.length +
+        declaration.siteSourceFieldIds.length >
+      0,
+  );
+
 const managedSitemapSchema = z.strictObject({
   included: z.boolean(),
   changeFrequency: z.enum([
@@ -102,22 +129,35 @@ const managedPerformanceBudgetSchema = z.strictObject({
   maxPageBytes: z.number().int().positive(),
 });
 
-const managedPageSeoSchema = z.strictObject({
-  pageId: stableIdSchema("page"),
+const managedSharedPageSeoShape = {
   intent: managedPageIntentSchema,
-  metadata: managedMetadataSchema,
   headingOutline: z.array(
     z.strictObject({ fieldId, semanticLevel: z.number().int().min(1).max(6) }),
   ),
-  jsonLd: z.array(managedJsonLdDeclarationSchema),
   breadcrumbParentPageId: stableIdSchema("page").nullable(),
   internalLinks: z.strictObject({
     requiredPageIds: z.array(stableIdSchema("page")),
     minimumInboundLinks: z.number().int().nonnegative(),
   }),
   sitemap: managedSitemapSchema,
-  primaryImageAssetSlotId: stableIdSchema("asset").nullable(),
   performanceBudget: managedPerformanceBudgetSchema,
+};
+
+const managedPageSeoSchema = z.strictObject({
+  pageId: stableIdSchema("page"),
+  ...managedSharedPageSeoShape,
+  metadata: managedMetadataSchema,
+  jsonLd: z.array(managedJsonLdDeclarationSchema),
+  primaryImageAssetSlotId: stableIdSchema("asset").nullable(),
+});
+
+export const managedGeneratedPageSeoSchema = z.strictObject({
+  pageId: stableIdSchema("page"),
+  collectionId: stableIdSchema("collection"),
+  ...managedSharedPageSeoShape,
+  metadata: managedGeneratedMetadataSchema,
+  jsonLd: z.array(managedGeneratedJsonLdDeclarationSchema),
+  primaryImageFieldId: nullableFieldId,
 });
 
 const managedRedirectDestinationSchema = z.discriminatedUnion("kind", [
@@ -136,11 +176,15 @@ export const managedSiteSeoDescriptorSchema = z.strictObject({
   protectedFields: z.array(managedInternalProtectedFieldSchema),
   businessIdentity: managedBusinessIdentitySchema,
   pages: z.array(managedPageSeoSchema),
+  generatedPages: z.array(managedGeneratedPageSeoSchema),
   redirects: z.array(managedRedirectSchema),
 });
 
 export type ManagedInternalProtectedField = DeepReadonly<z.infer<
   typeof managedInternalProtectedFieldSchema
+>>;
+export type ManagedGeneratedPageSeoDescriptor = DeepReadonly<z.infer<
+  typeof managedGeneratedPageSeoSchema
 >>;
 export type ManagedSiteSeoDescriptor = DeepReadonly<z.infer<
   typeof managedSiteSeoDescriptorSchema

@@ -244,6 +244,24 @@ const OCCURRENCE_RULES = {
   "internalSeo.pages[].breadcrumbParentPageId#page": { idKind: "page", role: "reference", scope: "global" },
   "internalSeo.pages[].internalLinks.requiredPageIds[]#page": { idKind: "page", role: "reference", scope: "global" },
   "internalSeo.pages[].primaryImageAssetSlotId#asset": { idKind: "asset", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].collectionId#collection": { idKind: "collection", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].intent.primaryEntity#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].intent.services[]#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].intent.locations[]#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.title#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.description#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.canonical#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.indexing#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.social.title#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.social.description#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.social.imageFieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].headingOutline[].fieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].jsonLd[].itemSourceFieldIds[]#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].jsonLd[].siteSourceFieldIds[]#field": { idKind: "field", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].breadcrumbParentPageId#page": { idKind: "page", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].internalLinks.requiredPageIds[]#page": { idKind: "page", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].primaryImageFieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "internalSeo.redirects[].destination[kind=page].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "atomicAliasGroups[].id#alias": { idKind: "alias", role: "declaration", scope: "global" },
   "atomicAliasGroups[].fieldIds[]#field": { idKind: "field", role: "reference", scope: "global" },
@@ -408,7 +426,10 @@ function collectionIdFrom(occurrence: LocatedValue, scope: OccurrenceScopeRule):
   for (const value of [...occurrence.ancestors].reverse()) {
     if (!isRecord(value)) continue;
     const candidate = scope === "route_collection" ? value.collectionId : value.id;
-    const ownsCollection = scope === "route_collection" ? "routeKeyFieldId" in value : "itemFields" in value;
+    const ownsCollection =
+      scope === "route_collection"
+        ? typeof value.collectionId === "string"
+        : "itemFields" in value;
     if (ownsCollection && typeof candidate === "string") return candidate as StableId<"collection">;
   }
   return fail("CONTRACT_OCCURRENCE_UNCLASSIFIED", `Stable-ID occurrence has no collection scope: ${occurrence.location}`);
