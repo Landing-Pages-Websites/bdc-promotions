@@ -8,6 +8,7 @@ import type {
   ManagedFieldDescriptor,
 } from "./fields.js";
 import type { StableId } from "./ids.js";
+import type { ManagedInternalValueType } from "./internal-value-types.js";
 import type { JsonValue } from "./json.js";
 import type { ManagedInternalProtectedField } from "./seo.js";
 import { ManagedSiteSourceResolver } from "./source-documents.js";
@@ -17,8 +18,16 @@ import {
   type ManagedImageValue,
 } from "./values.js";
 
-type RenderedDescriptor = ManagedFieldDescriptor | ManagedCollectionItemField;
+type RenderedCollectionItemField = Exclude<
+  ManagedCollectionItemField,
+  { readonly type: "internal_protected" }
+>;
+type RenderedDescriptor = ManagedFieldDescriptor | RenderedCollectionItemField;
 type RawContentValue = Readonly<Record<string, unknown>>;
+interface ProtectedDescriptor {
+  readonly id: StableId<"field">;
+  readonly valueType: ManagedInternalValueType;
+}
 
 function manifestEntry(
   assetSlotId: StableId<"asset">,
@@ -77,6 +86,32 @@ export function projectRenderedValue(
   };
 }
 
+function projectProtectedValue(
+  descriptor: ProtectedDescriptor,
+  owner: ManagedContentOwner,
+  value: JsonValue,
+): RawContentValue {
+  return {
+    fieldId: descriptor.id,
+    owner,
+    type: "internal_protected",
+    valueType: descriptor.valueType,
+    value,
+  };
+}
+
+export function projectCollectionItemValue(
+  descriptor: ManagedCollectionItemField,
+  owner: ManagedContentOwner,
+  value: JsonValue,
+  manifest: ProjectedAssetManifest,
+): RawContentValue {
+  if (descriptor.type !== "internal_protected") {
+    return projectRenderedValue(descriptor, owner, value, manifest);
+  }
+  return projectProtectedValue(descriptor, owner, value);
+}
+
 function requiredOwner(field: ManagedFieldDescriptor): ManagedContentOwner {
   if (field.scope === "site") return { kind: "site" };
   return { kind: "page", pageId: field.usages[0].pageId };
@@ -105,13 +140,7 @@ function projectProtectedField(
     field.scope === "site"
       ? { kind: "site" }
       : { kind: "page", pageId: field.usages[0].pageId };
-  return {
-    fieldId: field.id,
-    owner,
-    type: "internal_protected",
-    valueType: field.valueType,
-    value: source.value,
-  };
+  return projectProtectedValue(field, owner, source.value);
 }
 
 export function projectNonItemValues(

@@ -6,7 +6,7 @@ import {
   managedFieldScopeSchema,
   validateManagedFieldScope,
 } from "./fields.js";
-import { managedInternalValueTypeSchema } from "./content.js";
+import { managedInternalValueTypeSchema } from "./internal-value-types.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
   absoluteHttpsUrlSchema,

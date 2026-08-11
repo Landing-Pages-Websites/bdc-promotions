@@ -214,6 +214,7 @@ const OCCURRENCE_RULES = {
   "collections[].itemFields[type=link].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].itemFields[type=image].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].itemFields[type=image].assetSlotId#asset": { idKind: "asset", role: "reference", scope: "global" },
+  "collections[].itemFields[type=internal_protected].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].uniqueness[].fieldIds[]#field": { idKind: "field", role: "reference", scope: "collection" },
   "assets[].id#asset": { idKind: "asset", role: "declaration", scope: "global" },
   "internalSeo.protectedFields[type=internal_protected].id#field": { idKind: "field", role: "declaration", scope: "global" },

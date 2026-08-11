@@ -130,6 +130,7 @@ export type {
   ManagedFieldCapability,
   ManagedFieldDescriptor,
   ManagedFieldScope,
+  ManagedInternalProtectedCollectionItemField,
 } from "./fields.js";
 export type {
   ManagedRichTextBlock,

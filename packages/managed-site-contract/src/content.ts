@@ -9,6 +9,7 @@ import {
   type ManagedCollectionItemField,
   type ManagedFieldDescriptor,
 } from "./fields.js";
+import { managedInternalValueTypeSchema } from "./internal-value-types.js";
 import {
   managedRichTextDocumentSchema,
   parseManagedRichTextDocument,
@@ -96,19 +97,6 @@ const collectionContentValueSchema = z.strictObject({
   type: z.literal("collection"),
   value: z.strictObject({ orderedItemIds: z.array(stableIdSchema("item")) }),
 });
-
-export const managedInternalValueTypeSchema = z.enum([
-  "string",
-  "url",
-  "boolean",
-  "number",
-  "string_list",
-  "postal_address",
-  "geo_coordinates",
-  "opening_hours",
-  "indexing_directives",
-  "json",
-]);
 
 const internalContentBase = {
   ...contentBase,
@@ -244,7 +232,6 @@ export const managedSiteContentDocumentSchema = withManagedSiteJsonSchemaSemanti
 );
 
 export type ManagedContentOwner = DeepReadonly<z.infer<typeof managedContentOwnerSchema>>;
-export type ManagedInternalValueType = z.infer<typeof managedInternalValueTypeSchema>;
 export type ManagedSiteContentValue = DeepReadonly<z.infer<typeof managedSiteContentValueSchema>>;
 export type ManagedSiteAssetManifestEntry = DeepReadonly<z.infer<
   typeof managedSiteAssetManifestEntrySchema
@@ -252,6 +239,7 @@ export type ManagedSiteAssetManifestEntry = DeepReadonly<z.infer<
 export type ManagedSiteContentDocument = DeepReadonly<z.infer<
   typeof managedSiteContentDocumentSchema
 >>;
+export type { ManagedInternalValueType } from "./internal-value-types.js";
 
 function fail(code: string, message: string): never {
   throw new ManagedSiteContractError(code, message);
@@ -391,6 +379,17 @@ export function validateParsedManagedFieldValue(
     fail("FIELD_VALUE_IDENTITY", "Content value does not match its field descriptor");
   }
   switch (field.type) {
+    case "internal_protected":
+      if (
+        content.type !== "internal_protected" ||
+        content.valueType !== field.valueType
+      ) {
+        fail(
+          "FIELD_VALUE_IDENTITY",
+          "Protected content does not match its item descriptor",
+        );
+      }
+      return;
     case "plain_text":
     case "heading_text":
       return validateTextFieldContent(field, content);

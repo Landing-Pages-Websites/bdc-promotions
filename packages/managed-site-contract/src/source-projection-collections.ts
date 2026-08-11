@@ -10,7 +10,7 @@ import {
 } from "./source-documents.js";
 import {
   ProjectedAssetManifest,
-  projectRenderedValue,
+  projectCollectionItemValue,
 } from "./source-projection-values.js";
 
 type RawContentValue = Readonly<Record<string, unknown>>;
@@ -96,7 +96,7 @@ function projectItemValues(
   const owner = itemOwner(collection, itemId);
   return collection.itemFields.map((field) => {
     const source = sources.resolveRelative(item, field.itemPointer);
-    return projectRenderedValue(field, owner, source.value, manifest);
+    return projectCollectionItemValue(field, owner, source.value, manifest);
   });
 }
 

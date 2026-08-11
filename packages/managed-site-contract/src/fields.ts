@@ -1,6 +1,7 @@
 import * as z from "zod";
 
 import type { DeepReadonly } from "./deep-readonly.js";
+import { managedInternalValueTypeSchema } from "./internal-value-types.js";
 import { managedRichTextMarkSchema } from "./rich-text.js";
 import { withManagedSiteJsonSchemaSemantic } from "./schema-semantics.js";
 import { parseSchemaInput } from "./schema-input.js";
@@ -74,6 +75,17 @@ const commonItemFieldShape = {
   itemPointer: jsonPointerSchema,
   presentation: managedPresentationSchema,
 };
+
+const internalProtectedItemFieldSchema = z.strictObject({
+  id: stableIdSchema("field"),
+  type: z.literal("internal_protected"),
+  classification: z.literal("internal_protected"),
+  capabilities: z.array(managedFieldCapabilitySchema).length(0),
+  valueType: managedInternalValueTypeSchema,
+  semantic: z.string().min(1).max(256),
+  itemPointer: jsonPointerSchema,
+  presentation: managedPresentationSchema,
+});
 
 const plainTextShape = {
   type: z.literal("plain_text"),
@@ -275,8 +287,10 @@ export const managedCollectionItemFieldSchema = z
     richTextItemFieldSchema,
     linkItemFieldSchema,
     imageItemFieldSchema,
+    internalProtectedItemFieldSchema,
   ])
   .superRefine((field, context) => {
+    if (field.type === "internal_protected") return;
     validateCapabilities(field, context);
     validateRichTextCapabilities(field, context);
   });
@@ -312,6 +326,10 @@ export type ManagedFieldDescriptor = DeepReadonly<z.infer<typeof managedFieldDes
 export type ManagedCollectionItemField = DeepReadonly<z.infer<
   typeof managedCollectionItemFieldSchema
 >>;
+export type ManagedInternalProtectedCollectionItemField = Extract<
+  ManagedCollectionItemField,
+  { readonly type: "internal_protected" }
+>;
 export type ManagedCollectionDescriptor = DeepReadonly<z.infer<
   typeof managedCollectionDescriptorSchema
 >>;
