@@ -109,12 +109,13 @@ void assertDeepReadonlyTypes;
 describe("public managed-site surface", () => {
   it("exports only safe C2 functions, types, and frozen constants", () => {
     const actual = Object.keys(publicApi)
-      .filter((name) => /^(parseManaged|validateManaged)/u.test(name))
+      .filter((name) => /^(normalizeManaged|parseManaged|validateManaged)/u.test(name))
       .sort();
     assert.deepEqual(
       actual,
       [
         ...surfaces.map(({ name }) => name),
+        "normalizeManagedSiteArtifactsV1",
         "validateManagedSiteContentDocumentJsonSchema",
         "validateManagedSiteContractV1JsonSchema",
         "validateManagedSiteContractV1ContentSemantics",

@@ -35,6 +35,7 @@ export {
 export { validateManagedSiteContractV1ContentSemantics } from "./content-semantics.js";
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
+export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
 export {
   MANAGED_FIELD_CAPABILITIES,
   MANAGED_FIELD_SCOPES,
@@ -67,6 +68,11 @@ export type {
   ManagedSiteJsonSchemaIssue,
   ManagedSiteJsonSchemaValidationResult,
 } from "./json-schema-validator.js";
+export type {
+  ManagedSiteContentArtifactV1,
+  ManagedSiteContractArtifactV1,
+  ManagedSiteNormalizedArtifactsV1,
+} from "./normalized-artifacts.js";
 export type {
   JsonPointer,
   ParsedJsonPointer,
