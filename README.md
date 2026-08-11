@@ -2,18 +2,21 @@
 
 Mega's shared Next.js starter for customer websites,
 deployed to Vercel. Used as a **GitHub template repo** by both coding bots and
-human developers: click "Use this template", fill in one config file, build
-pages, ship.
+human developers: click "Use this template", fill the operational config and
+structured content, build pages, ship.
 
-## The 3 layers
+## The 4 layers
 
 1. **Plumbing (hard-coded, do not edit)** — SEO metadata, JSON-LD schema,
    robots/sitemap/llms.txt/manifest, consent-gated analytics loaders, the
    PostHog reverse proxy, cookie banner, lead form wiring, a11y baseline.
-2. **`src/site.config.ts` (edit this)** — ALL customer-specific business data
-   lives in this one typed file. Values start as `TODO_` sentinels; the build
-   fails until every sentinel is replaced.
-3. **Env vars (set later, in Vercel)** — tracking IDs (GA4, PostHog,
+2. **`src/content/` (edit through the contract)** — customer-editable copy,
+   images, collections, and internal-protected SEO fields live in structured
+   JSON. `managed-site.contract.json` classifies every value and stable ID.
+3. **`src/site.config.ts` (edit this)** — operational deployment, lead,
+   consent, and legacy compatibility settings. It is not the authored page
+   content source.
+4. **Env vars (set later, in Vercel)** — tracking IDs (GA4, PostHog,
    GSC) are minted by the provisioning bot after the site exists. The
    site builds and runs fine with none of them set; each loader renders
    nothing until its var exists. The Mega optimizer snippet is NOT an env
@@ -22,11 +25,14 @@ pages, ship.
 ## Building a new site — step by step
 
 1. Create a repo from this template and clone it.
-2. Fill in **every** field in `src/site.config.ts` (no `TODO_` left).
+2. Fill every field in `src/site.config.ts`, `src/content/site.json`, and
+   `src/content/pages/home.json` (no `TODO_` left).
 3. Replace the placeholder assets in `public/`: `logo.png`,
    `og-image.png` (1200x630), `icon-192.png`, `icon-512.png`, and
    `src/app/favicon.ico`. The shipped files are solid-gray placeholders.
-4. Replace the demo content in `src/app/page.tsx` and build the site's pages.
+4. Extend `src/content/managed-site.contract.json` and structured page JSON as
+   you build the site's pages. Render only values returned by the managed-site
+   adapter and preserve stable page/field annotations.
    - Register every new page in `src/lib/routes.ts` (drives sitemap.xml,
      llms.txt, and the 404 page).
    - Use `buildMetadata({ title, description, path })` for every page's
@@ -72,11 +78,12 @@ itself.
 The starter's `robots.txt` permits crawlers and advertises the generated
 `sitemap.xml`; every registered route receives a weekly crawl-frequency hint.
 Keep `src/lib/routes.ts` current so a prelaunch Website Review can discover
-the complete public site. The Gomega review bridge is immutable v3 plumbing:
-`https://app.gomega.ai/review-bridge/v3/review-bridge.js` with its pinned SRI
+the complete public site. The Gomega review bridge is immutable v4 plumbing:
+`https://app.gomega.ai/review-bridge/v4/review-bridge.js` with its pinned SRI
 value and anonymous cross-origin mode. Do not replace any of those values.
 
-What you DO edit: `src/site.config.ts`, `src/lib/routes.ts` (append pages),
+What you DO edit: `src/site.config.ts`, `src/content/`,
+`src/lib/routes.ts` (append pages),
 `src/lib/redirects.ts` (migrations only: map every old-site URL to its new
 slug — inventory the old site while it's still live, BEFORE DNS flips;
 go-live QA verifies each entry and treats a broken one as a launch blocker),
@@ -119,7 +126,7 @@ consent-gated** — it is the business-critical lead-capture/optimizer script
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Dev server |
-| `npm run check-config` | Fails if `TODO_` sentinels / empty fields remain in `site.config.ts` |
+| `npm run check-config` | Fails if `TODO_` sentinels / empty fields remain in operational config or structured content |
 | `npm run build` | check-config, then production build (`ALLOW_TODO=1` downgrades to a warning) |
 | `npm run lint` | ESLint |
 

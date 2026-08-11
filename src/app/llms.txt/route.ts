@@ -1,17 +1,18 @@
 import { siteRoutes } from "@/lib/routes";
 import { absoluteUrl } from "@/lib/seo";
-import { siteConfig } from "@/site.config";
+import { managedHome } from "@/content/managed-site";
 
 /** Serves /llms.txt — a machine-readable site summary for LLM crawlers. */
 export function GET(): Response {
+  const { identity, metadata } = managedHome.seo;
   const pageLines = siteRoutes.map(
     (route) => `- [${route.title}](${absoluteUrl(route.path)})`,
   );
 
   const body = [
-    `# ${siteConfig.businessName}`,
+    `# ${identity.displayName}`,
     "",
-    `> ${siteConfig.description}`,
+    `> ${metadata.description}`,
     "",
     "## Pages",
     "",
@@ -19,8 +20,8 @@ export function GET(): Response {
     "",
     "## Contact",
     "",
-    `- Email: ${siteConfig.contact.email}`,
-    `- Phone: ${siteConfig.contact.phone}`,
+    `- Email: ${identity.email}`,
+    `- Phone: ${identity.telephone}`,
     "",
   ].join("\n");
 

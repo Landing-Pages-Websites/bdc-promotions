@@ -1,9 +1,11 @@
+import siteContent from "./content/site.json";
+
 /**
  * Layer 2 — site configuration.
  *
- * This is the ONLY file a site builder must edit to wire up a new customer
- * site. Every `TODO_`-prefixed value is a sentinel: `npm run check-config`
- * (and `npm run build` via `prebuild`) fails while any sentinel remains.
+ * Operational deployment and lead settings for a customer site. Authored page
+ * content and protected SEO fields live under src/content/. Every `TODO_`
+ * sentinel is enforced by `npm run check-config` and the prebuild hook.
  *
  * Tracking IDs (GA4, PostHog, etc.) do NOT live here — they are env
  * vars minted later by the provisioning bot. See .env.example.
@@ -88,24 +90,27 @@ export interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-  businessName: "TODO_BUSINESS_NAME",
-  legalName: "TODO_LEGAL_NAME",
+  businessName: siteContent.identity.displayName,
+  legalName: siteContent.identity.legalName,
   domain: "TODO_DOMAIN.example.com",
-  description: "TODO_DESCRIPTION — one or two sentences about the business.",
+  description: siteContent.identity.description,
   contact: {
-    phone: "TODO_PHONE",
-    email: "TODO_EMAIL",
+    phone: siteContent.identity.telephone,
+    email: siteContent.identity.email,
     address: {
-      street: "TODO_STREET",
-      city: "TODO_CITY",
-      region: "TODO_REGION",
-      postalCode: "TODO_POSTAL_CODE",
-      country: "TODO_COUNTRY",
+      street: siteContent.identity.postalAddress.streetAddress,
+      city: siteContent.identity.postalAddress.addressLocality,
+      region: siteContent.identity.postalAddress.addressRegion,
+      postalCode: siteContent.identity.postalAddress.postalCode,
+      country: siteContent.identity.postalAddress.addressCountry,
     },
   },
   schemaType: "LocalBusiness",
   serviceAreas: ["TODO_SERVICE_AREA"],
-  socialLinks: [{ label: "TODO_SOCIAL_LABEL", url: "https://TODO_SOCIAL_URL" }],
+  socialLinks: siteContent.identity.sameAs.map((url, index) => ({
+    label: `Profile ${index + 1}`,
+    url,
+  })),
   logoPath: "/logo.png",
   ogImagePath: "/og-image.png",
   megaCustomerId: "TODO_MEGA_CUSTOMER_ID",

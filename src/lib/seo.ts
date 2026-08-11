@@ -5,10 +5,13 @@ export interface MetadataOverrides {
   /** Page title. Rendered through the "%s | Business Name" template. */
   title?: string;
   description?: string;
-  /** Path for the canonical URL, e.g. "/services". Defaults to "/". */
+  siteName?: string;
+  /** Site path or absolute canonical URL. Defaults to "/". */
   path?: string;
   /** Override OG image path (under /public). Defaults to siteConfig.ogImagePath. */
   ogImagePath?: string;
+  /** Per-page crawler directives, supplied by internal protected SEO content. */
+  robots?: Metadata["robots"];
 }
 
 /** Absolute production origin, e.g. "https://example.com". */
@@ -45,7 +48,7 @@ export function buildMetadata(overrides: MetadataOverrides = {}): Metadata {
     },
     openGraph: {
       type: "website",
-      siteName: siteConfig.businessName,
+      siteName: overrides.siteName ?? siteConfig.businessName,
       title: overrides.title ?? siteConfig.businessName,
       description,
       url: path,
@@ -58,6 +61,7 @@ export function buildMetadata(overrides: MetadataOverrides = {}): Metadata {
       description,
       images: [ogImagePath],
     },
+    ...(overrides.robots ? { robots: overrides.robots } : {}),
     ...(gscVerification ? { verification: { google: gscVerification } } : {}),
   };
 }

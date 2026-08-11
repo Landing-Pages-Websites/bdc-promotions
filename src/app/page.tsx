@@ -1,65 +1,44 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import { LeadForm } from "@/components/LeadForm";
+import { managedSitePageAttributesV1 } from "@gomega/managed-site-contract";
+
+import { ManagedContact } from "@/components/home/ManagedContact";
+import { ManagedFaq } from "@/components/home/ManagedFaq";
+import { ManagedHero } from "@/components/home/ManagedHero";
 import { JsonLd } from "@/components/schema/JsonLd";
 import { buildBusinessSchema, buildFaqSchema } from "@/components/schema/builders";
+import { managedHome } from "@/content/managed-site";
 import { buildMetadata } from "@/lib/seo";
-import { siteConfig } from "@/site.config";
 
-export const metadata: Metadata = buildMetadata({ path: "/" });
+const { identity, metadata: seo } = managedHome.seo;
 
-const demoFaqs = [
-  {
-    question: "PLACEHOLDER — What services do you offer?",
-    answer: "PLACEHOLDER — Replace this FAQ with real customer content.",
+export const metadata: Metadata = buildMetadata({
+  title: seo.title,
+  description: seo.description,
+  siteName: identity.displayName,
+  path: seo.canonical,
+  robots: {
+    index: seo.indexing.index,
+    follow: seo.indexing.follow,
+    noarchive: !seo.indexing.archive,
+    noimageindex: !seo.indexing.imageIndex,
+    "max-snippet": seo.indexing.maxSnippet,
+    "max-image-preview": seo.indexing.maxImagePreview,
+    "max-video-preview": seo.indexing.maxVideoPreview,
   },
-  {
-    question: "PLACEHOLDER — What areas do you serve?",
-    answer: `PLACEHOLDER — This site serves: ${siteConfig.serviceAreas.join(", ")}.`,
-  },
-];
+});
 
-/**
- * DEMO home page — obviously-placeholder content that exercises the
- * plumbing (buildMetadata, schema builders, LeadForm). Site builders
- * replace everything visual here; keep the JsonLd business schema.
- */
+const businessSchema = buildBusinessSchema(identity);
+const faqSchema = buildFaqSchema(managedHome.faq.items);
+
 export default function HomePage(): ReactElement {
   return (
-    <>
-      <JsonLd data={buildBusinessSchema()} />
-      <JsonLd data={buildFaqSchema(demoFaqs)} />
-
-      <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-6 py-24 text-center">
-        <p className="rounded-full border border-dashed border-amber-500 px-4 py-1 text-xs font-medium uppercase tracking-wide text-amber-600">
-          Placeholder page — replace with real content
-        </p>
-        <h1 className="text-4xl font-bold">{siteConfig.businessName}</h1>
-        <p className="max-w-xl text-lg text-neutral-600 dark:text-neutral-400">
-          {siteConfig.description}
-        </p>
-      </section>
-
-      <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-        <h2 className="text-2xl font-semibold">
-          PLACEHOLDER — Frequently asked questions
-        </h2>
-        <dl className="mt-6 space-y-6">
-          {demoFaqs.map((faq) => (
-            <div key={faq.question}>
-              <dt className="font-medium">{faq.question}</dt>
-              <dd className="mt-1 text-neutral-600 dark:text-neutral-400">
-                {faq.answer}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 pb-24">
-        <h2 className="text-2xl font-semibold">Get in touch</h2>
-        <LeadForm />
-      </section>
-    </>
+    <div className="contents" {...managedSitePageAttributesV1(managedHome.pageId)}>
+      <JsonLd data={businessSchema} />
+      <JsonLd data={faqSchema} />
+      <ManagedHero />
+      <ManagedFaq />
+      <ManagedContact />
+    </div>
   );
 }

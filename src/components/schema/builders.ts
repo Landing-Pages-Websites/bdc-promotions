@@ -10,8 +10,24 @@ export interface BreadcrumbItem {
 }
 
 export interface FaqItem {
-  question: string;
-  answer: string;
+  readonly question: string;
+  readonly answer: string;
+}
+
+export interface BusinessSchemaIdentity {
+  readonly displayName: string;
+  readonly legalName: string;
+  readonly description: string;
+  readonly email: string;
+  readonly telephone: string;
+  readonly postalAddress: {
+    readonly streetAddress: string;
+    readonly addressLocality: string;
+    readonly addressRegion: string;
+    readonly postalCode: string;
+    readonly addressCountry: string;
+  };
+  readonly sameAs: readonly string[];
 }
 
 export interface ArticleInput {
@@ -26,33 +42,39 @@ export interface ArticleInput {
   imagePath?: string;
 }
 
-/**
- * Organization or LocalBusiness schema (switches on siteConfig.schemaType),
- * with NAP (name/address/phone) pulled from the config. Render once per
- * site, on the home page.
- */
-export function buildBusinessSchema(): SchemaObject {
+function businessSchemaBase(identity?: BusinessSchemaIdentity): SchemaObject {
   const { contact } = siteConfig;
-  const base: SchemaObject = {
+  const address = identity?.postalAddress ?? {
+    streetAddress: contact.address.street,
+    addressLocality: contact.address.city,
+    addressRegion: contact.address.region,
+    postalCode: contact.address.postalCode,
+    addressCountry: contact.address.country,
+  };
+  return {
     "@context": "https://schema.org",
     "@type": siteConfig.schemaType,
-    name: siteConfig.businessName,
-    legalName: siteConfig.legalName,
-    description: siteConfig.description,
+    name: identity?.displayName ?? siteConfig.businessName,
+    legalName: identity?.legalName ?? siteConfig.legalName,
+    description: identity?.description ?? siteConfig.description,
     url: siteOrigin(),
     logo: absoluteUrl(siteConfig.logoPath),
-    email: contact.email,
-    telephone: contact.phone,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: contact.address.street,
-      addressLocality: contact.address.city,
-      addressRegion: contact.address.region,
-      postalCode: contact.address.postalCode,
-      addressCountry: contact.address.country,
-    },
-    sameAs: siteConfig.socialLinks.map((link) => link.url),
+    email: identity?.email ?? contact.email,
+    telephone: identity?.telephone ?? contact.phone,
+    address: { "@type": "PostalAddress", ...address },
+    sameAs: identity?.sameAs ?? siteConfig.socialLinks.map((link) => link.url),
   };
+}
+
+/**
+ * Organization or LocalBusiness schema (switches on siteConfig.schemaType),
+ * with NAP (name/address/phone) supplied by structured managed content when
+ * available and legacy config as a compatibility fallback. Render once on home.
+ */
+export function buildBusinessSchema(
+  identity?: BusinessSchemaIdentity,
+): SchemaObject {
+  const base = businessSchemaBase(identity);
 
   if (siteConfig.schemaType === "LocalBusiness") {
     base.areaServed = siteConfig.serviceAreas.map((area) => ({
@@ -77,7 +99,7 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]): SchemaObject {
   };
 }
 
-export function buildFaqSchema(items: FaqItem[]): SchemaObject {
+export function buildFaqSchema(items: readonly FaqItem[]): SchemaObject {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
