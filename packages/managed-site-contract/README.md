@@ -12,8 +12,11 @@ The package is published manually from `main` to GitHub Packages as
 the exact version in the workspace and lockfile in a reviewed PR before running
 the `Publish managed-site contract` workflow.
 
-Before the first release, protect the `managed-site-contract-release` GitHub
-Environment with required reviewers and allow deployments from `main` only.
+The `managed-site-contract-release` Environment allows deployments from `main`
+only. GitHub Team does not offer required Environment reviewers for private
+repositories, so release approval comes from the reviewed version-bump PR,
+green CI, an immutable version, and a manual workflow with no version override.
+Add required Environment reviewers if the organization moves to Enterprise.
 
 Same-organization repository workflows should:
 
