@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { managedSiteFieldAttributesV1 } from "@gomega/managed-site-contract";
+import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
 import { LeadForm } from "@/components/LeadForm";
 import { managedHome } from "@/content/managed-site";

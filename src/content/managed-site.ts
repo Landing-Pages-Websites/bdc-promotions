@@ -9,7 +9,7 @@ import {
   type ManagedInternalValueType,
   type ManagedSiteContentValue,
   type StableId,
-} from "@gomega/managed-site-contract";
+} from "@landing-pages-websites/managed-site-contract";
 
 import contractDocument from "./managed-site.contract.json";
 import homeDocument from "./pages/home.json";

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import { managedSitePageAttributesV1 } from "@gomega/managed-site-contract";
+import { managedSitePageAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
 import { ManagedContact } from "@/components/home/ManagedContact";
 import { ManagedFaq } from "@/components/home/ManagedFaq";

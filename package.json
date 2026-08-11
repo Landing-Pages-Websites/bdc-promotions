@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/check-config.mjs && npm --workspace @gomega/managed-site-contract run build",
+    "prebuild": "node scripts/check-config.mjs && npm --workspace @landing-pages-websites/managed-site-contract run build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -21,7 +21,7 @@
     "build:astro-reference": "npm --workspace @gomega/managed-site-astro-reference run build"
   },
   "dependencies": {
-    "@gomega/managed-site-contract": "0.0.0-development",
+    "@landing-pages-websites/managed-site-contract": "0.1.0",
     "next": "16.2.10",
     "posthog-js": "^1.396.6",
     "react": "19.2.4",

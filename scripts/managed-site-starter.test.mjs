@@ -113,7 +113,7 @@ test("checks operational and structured configuration sentinels", async () => {
   assert.match(checker, /readdirSync/u);
   assert.match(
     packageDocument.scripts.prebuild,
-    /check-config.*@gomega\/managed-site-contract run build/u,
+    /check-config.*@landing-pages-websites\/managed-site-contract run build/u,
   );
   assert.match(siteConfig, /import siteContent from "\.\/content\/site\.json"/u);
   assert.doesNotMatch(siteConfig, /businessName:\s*"TODO_/u);

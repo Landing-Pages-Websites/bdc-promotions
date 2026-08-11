@@ -11,7 +11,7 @@ import {
   type ManagedRichTextDocument,
   type ManagedSiteContentValue,
   type StableId,
-} from "@gomega/managed-site-contract";
+} from "@landing-pages-websites/managed-site-contract";
 
 import servicesSource from "../content/collections/services.json";
 import contractSource from "../content/managed-site.contract.json";

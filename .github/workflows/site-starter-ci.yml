@@ -39,13 +39,13 @@ jobs:
         run: npm test
 
       - name: Type-check managed-site contract
-        run: npm --workspace @gomega/managed-site-contract run type-check
+        run: npm --workspace @landing-pages-websites/managed-site-contract run type-check
 
       - name: Test managed-site contract
-        run: npm --workspace @gomega/managed-site-contract run test
+        run: npm --workspace @landing-pages-websites/managed-site-contract run test
 
       - name: Build managed-site contract and verify schema artifact
-        run: npm --workspace @gomega/managed-site-contract run build
+        run: npm --workspace @landing-pages-websites/managed-site-contract run build
 
       - name: Conform Astro reference content
         run: npm run conformance:astro-reference

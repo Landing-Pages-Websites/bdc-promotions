@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   canonicalizeJson,
   createManagedSiteAstroV1,
-} from "@gomega/managed-site-contract";
+} from "@landing-pages-websites/managed-site-contract";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const FIXTURE = "fixtures/astro-reference/src/content";

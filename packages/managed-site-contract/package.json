@@ -1,7 +1,6 @@
 {
-  "name": "@gomega/managed-site-contract",
-  "version": "0.0.0-development",
-  "private": true,
+  "name": "@landing-pages-websites/managed-site-contract",
+  "version": "0.1.0",
   "type": "module",
   "bin": {
     "gomega-managed-site-conformance": "./dist/conformance-cli.js"
@@ -16,6 +15,15 @@
     "dist",
     "schema"
   ],
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Landing-Pages-Websites/site-starter.git",
+    "directory": "packages/managed-site-contract"
+  },
   "scripts": {
     "prebuild": "node scripts/clean-dist.mjs",
     "build": "tsc --project tsconfig.build.json && node scripts/check-schema.mjs",
