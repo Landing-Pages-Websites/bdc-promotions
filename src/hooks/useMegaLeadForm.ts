@@ -274,7 +274,11 @@ export const useMegaLeadForm = (): UseMegaLeadFormReturn => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return response.json();
+      const json = await response.json();
+      if (!json || json.ok !== true) {
+        throw new Error(`Submission rejected: ${JSON.stringify(json)?.slice(0, 200)}`);
+      }
+      return json;
     },
     [],
   );

@@ -21,6 +21,9 @@ import { siteConfig } from "@/site.config";
 const inputClasses =
   "w-full rounded-md border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
 
+const SUBMIT_ERROR_MESSAGE =
+  "Something went wrong sending your request. Please check your connection and try again.";
+
 const budgetToggleClasses =
   "rounded-lg border-2 border-neutral-300 py-2.5 text-center text-sm font-semibold transition-all peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white dark:border-neutral-700 dark:peer-checked:border-white dark:peer-checked:bg-white dark:peer-checked:text-neutral-900";
 
@@ -65,10 +68,12 @@ export function LeadForm(): ReactElement {
   const formRef = useRef<HTMLFormElement>(null);
   // Synchronous duplicate-submit gate: React state is batched, so a
   // double-click in one tick would see submitting=false twice. A ref flips
-  // immediately. Never reset — one submit per page load.
+  // immediately. Cleared in finally so a failed submit can be retried; a
+  // confirmed success sets submitted=true, which permanently gates re-submit.
   const inFlightRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -103,6 +108,7 @@ export function LeadForm(): ReactElement {
     if (!canSubmit) return;
     inFlightRef.current = true; // flips IMMEDIATELY, not next render
     setSubmitting(true);
+    setSubmitError(null);
     const formData = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -111,15 +117,23 @@ export function LeadForm(): ReactElement {
       ...(budgetQualifier === null ? {} : { budget }),
     };
     try {
-      await submit(formData);
-      trackFormSubmission(formData); // only on a successful API response
-    } catch {
-      // Fall through to thank-you even on error — never strand the user
-      // (landing-page-forms Hard Rule #7). No analytics on the error path.
-    } finally {
+      const res = await submit(formData);
+      // A 2xx with a body that isn't {ok:true} is still a dropped lead. Only a
+      // confirmed success fires analytics and advances to the thank-you page.
+      if (res?.ok !== true) {
+        throw new Error("Submission not confirmed by server.");
+      }
+      trackFormSubmission(formData);
       setSubmitted(true);
-      setSubmitting(false);
       router.push(siteConfig.thankYouPath);
+    } catch (error) {
+      // The visitor is fine; the LEAD would be dropped. Surface a retryable error,
+      // fire no analytics, and do not advance to the thank-you page.
+      console.error("Form submission error:", error);
+      setSubmitError(SUBMIT_ERROR_MESSAGE);
+    } finally {
+      inFlightRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -220,6 +234,15 @@ export function LeadForm(): ReactElement {
           </div>
         </fieldset>
       )}
+      {submitError ? (
+        <p
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border-2 border-red-300 bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+        >
+          {submitError}
+        </p>
+      ) : null}
       <button
         type="button"
         onClick={handleClick}
