@@ -40,6 +40,7 @@ export {
   validateManagedFieldValue,
 } from "./content.js";
 export { validateManagedSiteContractV1ContentSemantics } from "./content-semantics.js";
+export { validateManagedSiteContractV1Compatibility } from "./contract-compatibility-policy.js";
 export { parseManagedSiteContractV1 } from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
@@ -98,6 +99,7 @@ export type {
   ManagedSiteNextValueSelector,
 } from "./next-adapter-values.js";
 export type { ManagedSiteContractSemanticResult } from "./contract-semantics.js";
+export type { ManagedSiteContractCompatibilityV1 } from "./contract-compatibility-policy.js";
 export type { ManagedSiteJsonSchemaBundleV1 } from "./json-schema-bundle.js";
 export type {
   ManagedSiteJsonSchemaIssue,

@@ -148,6 +148,7 @@ describe("public managed-site surface", () => {
         "validateManagedSiteContentDocumentJsonSchema",
         "validateManagedSiteContractV1JsonSchema",
         "validateManagedSiteContractV1ContentSemantics",
+        "validateManagedSiteContractV1Compatibility",
         "validateManagedSiteContractV1Semantics",
       ].sort(),
     );
