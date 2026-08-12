@@ -37,7 +37,7 @@ const managedBusinessIdentitySchema = z.strictObject({
   legalName: fieldId,
   displayName: fieldId,
   telephone: fieldId,
-  postalAddress: fieldId,
+  postalAddress: nullableFieldId,
   email: nullableFieldId,
   geo: nullableFieldId,
   openingHours: nullableFieldId,

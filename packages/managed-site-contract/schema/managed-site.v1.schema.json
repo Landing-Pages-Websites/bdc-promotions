@@ -3019,7 +3019,7 @@
                   "$ref": "#/$defs/__schema97"
                 },
                 "postalAddress": {
-                  "$ref": "#/$defs/__schema96"
+                  "$ref": "#/$defs/__schema97"
                 },
                 "sameAs": {
                   "$ref": "#/$defs/__schema97"

@@ -167,6 +167,13 @@ const ADJACENT_BOUNDED_CONTRACT_CASES: readonly DifferentialCase[] = [
 const CONTRACT_CASES: readonly DifferentialCase[] = [
     { name: "valid contract", input: managedSiteContract, valid: true },
     {
+      name: "valid unknown business postal address",
+      input: changed(managedSiteContract, (input) => {
+        objectAt(input, ["internalSeo", "businessIdentity"]).postalAddress = null;
+      }),
+      valid: true,
+    },
+    {
       name: "valid generated route",
       input: changed(managedSiteContract, (input) => {
         objectAt(input, ["pages", 0]).route = {

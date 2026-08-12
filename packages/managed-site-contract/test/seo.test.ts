@@ -37,4 +37,14 @@ describe("internal SEO schemas", () => {
     };
     assert.throws(() => parseManagedSiteSeoDescriptor(unsafeRedirect));
   });
+
+  it("represents an unknown postal address without inventing business data", () => {
+    const input = structuredClone(seoDescriptor());
+    const businessIdentity = input.businessIdentity as Record<string, unknown>;
+    businessIdentity.postalAddress = null;
+
+    const parsed = parseManagedSiteSeoDescriptor(input);
+
+    assert.equal(parsed.businessIdentity.postalAddress, null);
+  });
 });
