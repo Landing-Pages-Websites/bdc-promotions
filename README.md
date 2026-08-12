@@ -24,6 +24,11 @@ structured content, build pages, ship.
 
 ## Building a new site — step by step
 
+For a new customer site, use the current template from the beginning. For a
+site already under construction, follow the
+[managed-site adoption guide](docs/managed-site-adoption.md); do not copy these
+files into a live customer repository as an unreviewed bulk migration.
+
 1. Create a repo from this template and clone it.
 2. Fill every field in `src/site.config.ts`, `src/content/site.json`, and
    `src/content/pages/home.json` (no `TODO_` left).
