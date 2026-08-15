@@ -2,6 +2,12 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import { siteConfig } from "@/site.config";
+import {
+  captureLeadContext,
+  initAttribution,
+  type Attribution,
+  type LeadContext,
+} from "@/lib/megaLeadContext";
 
 /**
  * Mega lead submission hook — canonical implementation from the
@@ -10,44 +16,19 @@ import { siteConfig } from "@/site.config";
  * Google/Meta click IDs, session/visitor IDs). NEVER submit leads any other
  * way — no direct database access from frontend code.
  *
+ * Attribution capture lives in `@/lib/megaLeadContext` so a form that cannot
+ * use this hook can still send a complete lead. Do not re-implement it here.
+ *
  * Customer/site IDs and source provider come from src/site.config.ts.
  */
 
 const ENDPOINT = "https://analytics.gomega.ai/submission/submit";
 
-const STORAGE_KEYS = {
-  VISITOR_ID: "_mega_vid",
-  SESSION_ID: "_mega_sid",
-  ATTRIBUTION: "_mega_attr",
-};
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface Attribution {
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
-  utm_term: string | null;
-  utm_content: string | null;
-  gclid: string | null;
-  gbraid: string | null;
-  wbraid: string | null;
-  fbclid: string | null;
-  fbp: string | null;
-  fbc: string | null;
-}
-
-interface SubmissionPayload extends Attribution {
+interface SubmissionPayload extends LeadContext {
   customer_id: string;
   site_id: string;
   source_provider: string;
   form_data: Record<string, unknown>;
-  url: string;
-  referrer_url: string | null;
-  session_id: string;
-  visitor_id: string;
 }
 
 export interface SubmissionResponse {
@@ -55,132 +36,7 @@ export interface SubmissionResponse {
   id?: string;
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-const generateId = (prefix: string): string => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return `${prefix}_${crypto.randomUUID()}`;
-  }
-  return `${prefix}_${"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-    /[xy]/g,
-    (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    },
-  )}`;
-};
-
-const getCookie = (name: string): string | null => {
-  if (typeof document === "undefined") return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    return parts.pop()?.split(";").shift() || null;
-  }
-  return null;
-};
-
-const getVisitorId = (): string => {
-  if (typeof localStorage === "undefined") return generateId("vis");
-  let visitorId = localStorage.getItem(STORAGE_KEYS.VISITOR_ID);
-  if (!visitorId) {
-    visitorId = generateId("vis");
-    localStorage.setItem(STORAGE_KEYS.VISITOR_ID, visitorId);
-  }
-  return visitorId;
-};
-
-const getSessionId = (): string => {
-  if (typeof sessionStorage === "undefined") return generateId("sess");
-  let sessionId = sessionStorage.getItem(STORAGE_KEYS.SESSION_ID);
-  if (!sessionId) {
-    sessionId = generateId("sess");
-    sessionStorage.setItem(STORAGE_KEYS.SESSION_ID, sessionId);
-  }
-  return sessionId;
-};
-
-// ============================================================================
-// ATTRIBUTION CAPTURE
-// ============================================================================
-
-const captureAttribution = (): Attribution => {
-  if (typeof window === "undefined") {
-    return {
-      utm_source: null,
-      utm_medium: null,
-      utm_campaign: null,
-      utm_term: null,
-      utm_content: null,
-      gclid: null,
-      gbraid: null,
-      wbraid: null,
-      fbclid: null,
-      fbp: null,
-      fbc: null,
-    };
-  }
-
-  const url = new URL(window.location.href);
-  const params = url.searchParams;
-
-  const attribution: Attribution = {
-    utm_source: params.get("utm_source"),
-    utm_medium: params.get("utm_medium"),
-    utm_campaign: params.get("utm_campaign"),
-    utm_term: params.get("utm_term"),
-    utm_content: params.get("utm_content"),
-    gclid: params.get("gclid"),
-    gbraid: params.get("gbraid"),
-    wbraid: params.get("wbraid"),
-    fbclid: params.get("fbclid"),
-    fbp: getCookie("_fbp"),
-    fbc: getCookie("_fbc"),
-  };
-
-  // Generate fbc from fbclid if cookie doesn't exist (required for Meta CAPI)
-  if (attribution.fbclid && !attribution.fbc) {
-    attribution.fbc = `fb.1.${Date.now()}.${attribution.fbclid}`;
-  }
-
-  return attribution;
-};
-
-// Attribution is captured on page load (click IDs / UTMs only exist in the
-// URL on first landing) and persisted so it survives navigation to the form.
-const initAttribution = (): Attribution => {
-  if (typeof window === "undefined" || typeof localStorage === "undefined") {
-    return captureAttribution();
-  }
-
-  const trackingParams = ["utm_source", "gclid", "fbclid", "gbraid", "wbraid"];
-  const url = new URL(window.location.href);
-  const hasTrackingParams = trackingParams.some((param) =>
-    url.searchParams.has(param),
-  );
-
-  if (hasTrackingParams) {
-    const attribution = captureAttribution();
-    localStorage.setItem(STORAGE_KEYS.ATTRIBUTION, JSON.stringify(attribution));
-    return attribution;
-  }
-
-  const stored = localStorage.getItem(STORAGE_KEYS.ATTRIBUTION);
-  if (stored) {
-    try {
-      return JSON.parse(stored) as Attribution;
-    } catch {
-      console.warn("Failed to parse stored attribution");
-    }
-  }
-
-  const attribution = captureAttribution();
-  localStorage.setItem(STORAGE_KEYS.ATTRIBUTION, JSON.stringify(attribution));
-  return attribution;
-};
+export type { Attribution };
 
 // ============================================================================
 // EMAIL VALIDATION — RFC-5322-lite (landing-page-forms Hard Rule #4b)
@@ -250,18 +106,12 @@ export const useMegaLeadForm = (): UseMegaLeadFormReturn => {
         throw new Error("Enter a valid email address");
       }
 
-      const attribution = initAttribution();
-
       const payload: SubmissionPayload = {
         customer_id: siteConfig.megaCustomerId,
         site_id: siteConfig.megaSiteId,
         source_provider: siteConfig.sourceProvider,
         form_data: formData,
-        url: window.location.href,
-        referrer_url: document.referrer || null,
-        session_id: getSessionId(),
-        visitor_id: getVisitorId(),
-        ...attribution,
+        ...captureLeadContext(),
       };
 
       const response = await fetch(ENDPOINT, {
@@ -276,7 +126,9 @@ export const useMegaLeadForm = (): UseMegaLeadFormReturn => {
 
       const json = await response.json();
       if (!json || json.ok !== true) {
-        throw new Error(`Submission rejected: ${JSON.stringify(json)?.slice(0, 200)}`);
+        throw new Error(
+          `Submission rejected: ${JSON.stringify(json)?.slice(0, 200)}`,
+        );
       }
       return json;
     },
