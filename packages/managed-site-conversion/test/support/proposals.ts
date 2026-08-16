@@ -4,9 +4,16 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import type { Candidate } from "../../src/candidates.js";
+import {
+  extractComponent,
+  findComponentDeclarations,
+  resolveTagRoles,
+} from "../../src/extract.js";
 import { isJsonObject, type JsonObject } from "../../src/json-write.js";
 import { propose, type Proposal } from "../../src/propose.js";
 import type { Finding, FindingCode } from "../../src/report.js";
+import { parseModule } from "../../src/scan.js";
 
 /** Shared plumbing for the fixture-driven proposal tests. */
 
@@ -37,6 +44,27 @@ export function run(space: Workspace): Proposal {
     configPath: space.configPath,
     ledgerPath: space.ledgerPath,
   });
+}
+
+export interface ComponentExtraction {
+  readonly candidates: readonly Candidate[];
+  readonly findings: readonly Finding[];
+}
+
+/** Extracts every component one module declares, exactly as the proposer does. */
+export function extractModule(source: string): ComponentExtraction {
+  const directory = mkdtempSync(join(tmpdir(), "managed-site-extract-"));
+  const file = join(directory, "Component.tsx");
+  writeFileSync(file, source, "utf8");
+  const sourceModule = parseModule(file);
+  const roles = resolveTagRoles(sourceModule);
+  const extracted = findComponentDeclarations(sourceModule).map((declaration) =>
+    extractComponent(declaration, roles),
+  );
+  return {
+    candidates: extracted.flatMap((entry) => entry.candidates),
+    findings: extracted.flatMap((entry) => entry.findings),
+  };
 }
 
 export function findingsOf(proposal: Proposal, code: FindingCode): readonly Finding[] {

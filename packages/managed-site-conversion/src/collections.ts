@@ -8,6 +8,7 @@ import {
   headingLevelOf,
   normaliseJsxText,
   tagNameOf,
+  unwrapTransparent,
   type JsxElementNode,
 } from "./jsx-facts.js";
 import {
@@ -30,18 +31,12 @@ export interface MapCall {
   readonly items: readonly ObjectLiteralRecord[];
 }
 
-function unwrapParentheses(expression: ts.Expression): ts.Expression {
-  return ts.isParenthesizedExpression(expression)
-    ? unwrapParentheses(expression.expression)
-    : expression;
-}
-
 function arrowBodyExpression(callback: ts.Expression): ts.Expression | null {
   if (!ts.isArrowFunction(callback)) return null;
   const body = callback.body;
-  if (!ts.isBlock(body)) return unwrapParentheses(body);
+  if (!ts.isBlock(body)) return unwrapTransparent(body);
   const returned = body.statements.find(ts.isReturnStatement);
-  return returned?.expression === undefined ? null : unwrapParentheses(returned.expression);
+  return returned?.expression === undefined ? null : unwrapTransparent(returned.expression);
 }
 
 /** `BINDING.map((item) => <jsx/>)` over a module-level array of flat objects. */

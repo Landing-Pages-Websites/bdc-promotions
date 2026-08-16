@@ -11,11 +11,12 @@ import { analyseItemTemplate, readMapCall, type TagRoles } from "./collections.j
 import {
   attributeExpression,
   childrenOf,
+  containsJsx,
   findAttribute,
   hasAriaHidden,
   headingLevelOf,
   isAriaAttribute,
-  isHostTag,
+  isComponentName,
   jsxExpressionStringValue,
   LANDMARK_TAGS,
   literalAttributeValue,
@@ -35,8 +36,9 @@ import {
 } from "./literals.js";
 import { buildRichTextDocument, partitionChildren } from "./jsx-text.js";
 import { readDestination, destinationDiscriminator } from "./destinations.js";
+import { walkRenderOutput, NO_TRIGGERS } from "./render-output.js";
 import type { Finding, SourceLocation } from "./report.js";
-import { evidenceOf, lineOf, type ParsedModule } from "./scan.js";
+import { evidenceOf, lineOf, namedFunctionsOf, type ParsedModule } from "./scan.js";
 
 export interface ComponentDeclaration {
   readonly name: string;
@@ -54,23 +56,6 @@ export interface ExtractionResult {
 
 const CUSTOMER_EDITABLE: Ownership = "customer_editable";
 const CODE_OWNED: Ownership = "code_owned_interface";
-
-function containsJsx(node: ts.Node): boolean {
-  let found = false;
-  const visit = (child: ts.Node): void => {
-    if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
-      found = true;
-    }
-    if (!found) ts.forEachChild(child, visit);
-  };
-  visit(node);
-  return found;
-}
-
-function isComponentName(name: string): boolean {
-  const first = name[0];
-  return first !== undefined && first === first.toUpperCase() && /^[A-Za-z]/u.test(first);
-}
 
 const CHILDREN_PROP = "children";
 
@@ -95,36 +80,22 @@ function childrenSlotsOf(parameters: readonly ts.ParameterDeclaration[]): Readon
   return slots;
 }
 
+/**
+ * A component is a named function that writes JSX. Which functions a module
+ * names is read from `namedFunctionsOf`, the same enumeration the render walk
+ * resolves callbacks against, so no function shape can be a component to one
+ * reading and invisible to the other.
+ */
 export function findComponentDeclarations(module: ParsedModule): readonly ComponentDeclaration[] {
-  const declarations: ComponentDeclaration[] = [];
-  const consider = (
-    name: string,
-    body: ts.Node,
-    parameters: readonly ts.ParameterDeclaration[],
-  ): void => {
-    if (!isComponentName(name) || !containsJsx(body)) return;
-    declarations.push({
-      name,
+  return namedFunctionsOf(module.source)
+    .filter((entry) => isComponentName(entry.name) && containsJsx(entry.body))
+    .map((entry) => ({
+      name: entry.name,
       module,
-      jsxRoot: body,
-      childrenSlots: childrenSlotsOf(parameters),
-      line: lineOf(module.source, body),
-    });
-  };
-  const visit = (node: ts.Node): void => {
-    if (ts.isFunctionDeclaration(node) && node.name !== undefined && node.body !== undefined) {
-      consider(node.name.text, node.body, node.parameters);
-    }
-    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer !== undefined) {
-      const initializer = node.initializer;
-      if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) {
-        consider(node.name.text, initializer.body, initializer.parameters);
-      }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(module.source);
-  return declarations;
+      jsxRoot: entry.body,
+      childrenSlots: childrenSlotsOf(entry.parameters),
+      line: lineOf(module.source, entry.body),
+    }));
 }
 
 /** Framework-declared roles. Read from the import graph, never from tag spelling alone. */
@@ -190,23 +161,24 @@ class ComponentWalker {
   /**
    * Finds the JSX inside arbitrary statements without inventing structure.
    *
-   * JSX written inside a nested function belongs to that function, never to
-   * this component: it reaches the browser only if something invokes or renders
-   * it, and that is reachability's decision to make, not this walker's. A nested
-   * component that IS rendered is extracted in its own right, under its own name.
+   * Which nested functions this reads is `render-output.ts`'s decision. Every
+   * value here is anchored to a position and every crossing there is a call,
+   * whose JSX renders an unknown number of times, so this reading takes
+   * `NO_TRIGGERS` and crosses none of them. The one reader that can model that
+   * repetition is `collectCollection`, which meets the call where it is written
+   * and refuses it by name when it cannot.
    */
   #walkNode(node: ts.Node, anchor: AnchorPath): void {
-    if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
-      this.#walkElement(node, anchor);
-      return;
-    }
-    if (ts.isJsxFragment(node)) {
-      this.#walkChildren(node.children, anchor);
-      return;
-    }
-    ts.forEachChild(node, (child) => {
-      if (ts.isFunctionLike(child)) return;
-      this.#walkNode(child, anchor);
+    walkRenderOutput(node, NO_TRIGGERS, (current) => {
+      if (ts.isJsxElement(current) || ts.isJsxSelfClosingElement(current)) {
+        this.#walkElement(current, anchor);
+        return true;
+      }
+      if (ts.isJsxFragment(current)) {
+        this.#walkChildren(current.children, anchor);
+        return true;
+      }
+      return false;
     });
   }
 
@@ -299,7 +271,7 @@ class ComponentWalker {
       this.#collectLink(element, tag, scopeAnchor, discriminator);
       return;
     }
-    if (!isHostTag(tag)) {
+    if (isComponentName(tag)) {
       this.#collectAttributes(element, tag, scopeAnchor, discriminator);
       this.#walkChildren(childrenOf(element), scopeAnchor);
       return;

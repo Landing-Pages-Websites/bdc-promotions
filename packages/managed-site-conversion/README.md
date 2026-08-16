@@ -58,7 +58,7 @@ Concretely it refuses, rather than guesses, on:
 | `UNKNOWN_ATTRIBUTE_ROLE` | a literal attribute that is neither structural nor a known accessibility interface |
 | `DUPLICATE_COMPONENT_NAME` | one component name declared in two files |
 | `UNRESOLVED_COMPONENT` | a local import of a rendered component that could not be resolved, so its markup was never read |
-| `UNRESOLVED_RENDER_TARGET` | a rendered element names no traceable declaration — chosen at runtime, arriving as a prop, or an unnamed default export |
+| `UNRESOLVED_RENDER_TARGET` | a rendered element names no traceable declaration — chosen at runtime, arriving as a prop, or an unnamed default export — or a JSX-writing function was handed to a call or to a component and where its result renders could not be read |
 | `COLLECTION_BOUNDS_NOT_DERIVABLE` | item counts are policy, and item IDs were bootstrapped from present array order |
 | `COLLECTION_ITEM_IMAGE_UNSUPPORTED` | items each carry a different image, which one asset slot cannot express |
 | `ASSET_UNREADABLE` | an image whose dimensions could not be read |
@@ -74,20 +74,75 @@ across imports, renames, default exports and barrel re-exports.
 
 A capitalized export sitting beside a page is **not** proposed: an editor for
 markup the browser never shows is worse than no editor at all. Neither is a
-function declared *inside* a component — nested or top level, capitalized or not,
-its JSX renders only if something renders that function, so it is read only when
-the tree reaches it, and then under its own name rather than its parent's.
+function declared *inside* a component and left there — nested or top level,
+capitalized or not, its JSX renders only where something runs or renders that
+function, so it is read only when the tree reaches it, and then under its own
+name rather than its parent's.
+
+Running a function is **not** the same as rendering what it returns.
+`useEffect(() => <Row />)` runs its function and throws the result away, and so
+do `setTimeout` and `forEach`. So the question asked of every nested function is
+not whether something runs it but whether **what it returns reaches the browser
+as markup**. One answer says yes: a call runs it *and* the call's own result
+lands in rendered output — written as a child of an element, or handed back by
+the function it sits in. A component reached that way is still extracted under
+its own name, never its caller's.
+
+Being written as an element's **attribute** is not such an answer. An attribute's
+function renders only if the element renders what it returns, and the attribute
+says nothing about whether it does: `<button onClick={() => <Row />}>` hands the
+result to the DOM, which discards it, and a component is as free to take a
+callback it never renders (`onConfirm`, `onSelect`) as one it does. Nothing is
+followed on attribute spelling. Where the answer is knowable it comes from the
+receiving element and is always no, so the element decides only whether the
+refusal is silent or spoken:
+
+| Given to | Answer | Result |
+| --- | --- | --- |
+| a host element | renders no return value, ever | ignored, **silently** |
+| a component | only its own declaration says | withheld and **reported** |
+
+So `renderItem={() => <Row />}` is reported rather than extracted, even where the
+receiving component does render it: resolving a tag to its declaration and
+proving it renders the prop is beyond what this reads, and a rule right about
+`renderItem` but wrong about `onConfirm` cannot tell you which one you have. The
+refusal is scoped to callbacks that actually write JSX, so ordinary handlers stay
+silent. A dotted tag is a component whatever its case — `<motion.div />` is not a
+`div` — so it is reported rather than ignored.
+
+Which call it is never matters, so no list of method or hook names appears
+anywhere in the rule. One consequence is worth stating: `{items.filter((i) =>
+<Row />)}` puts its result in rendered output, but `filter` passes the items
+through rather than what the function returned, so `Row` is read when nothing
+renders it. Nothing syntactic separates it from `map`, and such a filter is
+already broken — every item is truthy, so it filters nothing.
+
+One call shape does not render what the function returns but builds a component
+out of it: `memo`, `forwardRef`, `lazy`, `dynamic`. They are told apart by what
+the call's **result** becomes, never by the callee's name, which no list could
+keep up with — a result bound to a component-shaped name is a declaration, and
+React reaches a declaration only through a capitalized tag, so that tag is the
+edge.
 
 Where the tree cannot be followed — a component chosen at runtime, one arriving
-as a prop, an import that does not resolve, an unnamed default export — the
+as a prop, an import that does not resolve, an unnamed default export, a call
+given a JSX-writing function whose result goes somewhere unreadable, or a
+component given a JSX-writing function as an attribute — the
 subtree is withheld **and** reported, because a silent drop hides the same
-coverage gap as a silent inclusion. Being unrendered is not such a case: it is a
-resolved answer, so it is left out in silence rather than filed as a decision.
+coverage gap as a silent inclusion. That last case covers `const rows =
+items.map((i) => <Row />)`: following the binding to the place it is read is
+dataflow this proposer does not do, so the call is named rather than guessed at.
 
-The cost of that boundary is deliberate: markup written inside a callback, such
-as a component rendered by `items.map(...)`, is no longer read either. The
-iterated value is already reported where it is written, and a value missed is
-recoverable in a way that a value the customer can edit but never see is not.
+Being unrendered is not such a case: it is a resolved answer, so it is left out
+in silence rather than filed as a decision. A discarded result is resolved in
+the same way — nothing an effect or a `forEach` returns reaches a visitor, so
+there is nothing for a human to decide, and neither does anything returned by a
+host element's handler.
+
+Two shapes are still left out in silence, and both are recoverable by hand: a
+component passed by name rather than written as a tag (`renderItem={Card}`,
+`items.map(Card)`), and a callback named twice in one module, where which
+declaration a call reaches is a scope question the source alone cannot settle.
 
 Internal SEO follows the same chain. `metadata.title`, `metadata.description` and
 `robots` are resolved per route from the route's own module first, then its

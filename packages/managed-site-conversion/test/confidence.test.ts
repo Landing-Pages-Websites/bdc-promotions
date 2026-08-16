@@ -1,15 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import test from "node:test";
 
 import { renderAnchor } from "../src/anchors.js";
 import type { Candidate } from "../src/candidates.js";
-import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
 import { applyConfidenceGate } from "../src/gate.js";
 import type { FindingCode } from "../src/report.js";
-import { parseModule } from "../src/scan.js";
+import { extractModule } from "./support/proposals.js";
 
 interface Outcome {
   readonly accepted: readonly string[];
@@ -18,23 +14,12 @@ interface Outcome {
 }
 
 function walk(source: string): Outcome {
-  const directory = mkdtempSync(join(tmpdir(), "managed-site-gate-"));
-  const file = join(directory, "Component.tsx");
-  writeFileSync(file, source, "utf8");
-  const sourceModule = parseModule(file);
-  const roles = resolveTagRoles(sourceModule);
-  const extracted = findComponentDeclarations(sourceModule).map((declaration) =>
-    extractComponent(declaration, roles),
-  );
-  const candidates = extracted.flatMap((entry) => entry.candidates);
-  const gate = applyConfidenceGate(candidates);
+  const extracted = extractModule(source);
+  const gate = applyConfidenceGate(extracted.candidates);
   return {
     accepted: gate.accepted.map((candidate) => renderAnchor(candidate.anchor)).sort(),
-    findings: [
-      ...extracted.flatMap((entry) => entry.findings),
-      ...gate.findings,
-    ].map((finding) => finding.code),
-    candidates,
+    findings: [...extracted.findings, ...gate.findings].map((finding) => finding.code),
+    candidates: extracted.candidates,
   };
 }
 

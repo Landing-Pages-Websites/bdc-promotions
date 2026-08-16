@@ -1,7 +1,8 @@
 import ts from "typescript";
 
 import { findComponentDeclarations, type ComponentDeclaration } from "./extract.js";
-import { isHostTag } from "./jsx-facts.js";
+import { isComponentName } from "./jsx-facts.js";
+import { walkRenderOutput, EVERY_TRIGGER, type UnreadableRender } from "./render-output.js";
 import type { Finding } from "./report.js";
 import {
   evidenceOf,
@@ -97,27 +98,60 @@ interface RenderedTag {
   readonly node: ts.Node;
 }
 
+interface RenderedOutput {
+  readonly tags: readonly RenderedTag[];
+  /** Hand-offs of a JSX-writing function whose rendering could not be read. */
+  readonly unreadable: readonly UnreadableRender[];
+}
+
+const RENDERED_OUTPUT = new WeakMap<ts.Node, RenderedOutput>();
+
 /**
- * Every component-shaped tag this declaration renders, each named once.
- *
- * Tags written inside a nested function are that function's, not this one's.
- * Reading them here would make a component reachable through a helper nothing
- * ever renders, which is the same defect one level down.
+ * What a human is asked to decide, by what the function was handed to. The two
+ * are separate sentences because they are separate questions: a call renders
+ * its result where the call is written, so the fix is local, while a component
+ * renders a prop wherever its own declaration says, which is where the reader
+ * has to look.
  */
-function renderedTags(declaration: ComponentDeclaration): readonly RenderedTag[] {
+const UNREADABLE_DECISION: Readonly<Record<UnreadableRender["kind"], string>> = {
+  call:
+    "This call is given a function that writes JSX, but whether the call's " +
+    "result is rendered could not be read, so nothing inside it was " +
+    "inspected. Render the result where it is written, or convert this " +
+    "subtree by hand. Nothing was proposed for it.",
+  attribute:
+    "A component is given this function, which writes JSX, but only that " +
+    "component decides whether it renders what the function returns, and an " +
+    "attribute is written the same way whether it does or not. Nothing inside " +
+    "was inspected. Write the JSX where it renders, or convert this subtree " +
+    "by hand. Nothing was proposed for it.",
+};
+
+/**
+ * Every component-shaped tag this declaration renders, each named once, and
+ * every call it could not read. Which nested functions count is
+ * `render-output.ts`'s decision; this reading follows a name wherever the
+ * browser would, so it admits every trigger.
+ *
+ * Cached because a walker is built per route, so a layout's components and
+ * everything they render would otherwise be re-walked once for every route on
+ * the site. The answer depends only on the syntax below `jsxRoot`, which never
+ * changes once parsed.
+ */
+function renderedOutputOf(declaration: ComponentDeclaration): RenderedOutput {
+  const cached = RENDERED_OUTPUT.get(declaration.jsxRoot);
+  if (cached !== undefined) return cached;
   const tags = new Map<string, RenderedTag>();
-  const visit = (node: ts.Node): void => {
+  const walk = walkRenderOutput(declaration.jsxRoot, EVERY_TRIGGER, (node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const name = node.tagName.getText(declaration.module.source);
-      if (!isHostTag(name) && !tags.has(name)) tags.set(name, { name, node });
+      if (isComponentName(name) && !tags.has(name)) tags.set(name, { name, node });
     }
-    ts.forEachChild(node, (child) => {
-      if (ts.isFunctionLike(child)) return;
-      visit(child);
-    });
-  };
-  visit(declaration.jsxRoot);
-  return [...tags.values()];
+    return false;
+  });
+  const found: RenderedOutput = { tags: [...tags.values()], unreadable: walk.unreadable };
+  RENDERED_OUTPUT.set(declaration.jsxRoot, found);
+  return found;
 }
 
 class RenderWalker {
@@ -163,7 +197,25 @@ class RenderWalker {
     if (this.#visited.has(key)) return;
     this.#visited.add(key);
     this.#components.push(declaration);
-    for (const tag of renderedTags(declaration)) this.#follow(tag, declaration);
+    const rendered = renderedOutputOf(declaration);
+    for (const entry of rendered.unreadable) this.#reportUnreadable(entry, declaration);
+    for (const tag of rendered.tags) this.#follow(tag, declaration);
+  }
+
+  /**
+   * A function that writes JSX was handed to something whose rendering could
+   * not be read. Following it would propose markup for something no visitor may
+   * reach, and dropping it quietly would hide the same gap, so nothing inside
+   * is read and the place it was handed over is named.
+   */
+  #reportUnreadable(entry: UnreadableRender, from: ComponentDeclaration): void {
+    this.#findings.push({
+      code: "UNRESOLVED_RENDER_TARGET",
+      anchor: null,
+      location: { file: from.module.file, line: lineOf(from.module.source, entry.node) },
+      evidence: evidenceOf(from.module.source, entry.node),
+      decision: UNREADABLE_DECISION[entry.kind],
+    });
   }
 
   #follow(tag: RenderedTag, from: ComponentDeclaration): void {

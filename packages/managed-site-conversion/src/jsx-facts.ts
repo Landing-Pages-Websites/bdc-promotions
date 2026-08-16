@@ -1,6 +1,9 @@
 import ts from "typescript";
 
-/** Small, purely syntactic readings of JSX. No inference lives here. */
+/**
+ * Small, purely syntactic readings of JSX and the expressions around it. No
+ * inference lives here.
+ */
 
 export type JsxElementNode = ts.JsxElement | ts.JsxSelfClosingElement;
 
@@ -88,9 +91,53 @@ export function headingLevelOf(tag: string): number | null {
   return match === null ? null : Number.parseInt(match[1]!, 10);
 }
 
-export function isHostTag(tag: string): boolean {
-  const first = tag[0];
-  return first !== undefined && first === first.toLowerCase();
+/**
+ * JSX reads a name that begins with a lowercase character as a host element and
+ * every other name as a component. Nothing else about the name matters, and in
+ * particular the alphabet does not: `<Élan />` is a component to the renderer.
+ *
+ * One predicate answers this for every reading. Written as a pair — a host test
+ * and a component test — the two drifted over exactly that alphabet, and a name
+ * one accepted while the other refused it produced a tag the render tree
+ * followed that no declaration could ever answer for.
+ */
+export function isComponentName(name: string): boolean {
+  const first = name[0];
+  return first !== undefined && first !== first.toLowerCase();
+}
+
+/** Wrappers that restate an expression without changing what it is or where it goes. */
+export function isTransparentWrapper(
+  node: ts.Node,
+): node is
+  | ts.ParenthesizedExpression
+  | ts.AsExpression
+  | ts.SatisfiesExpression
+  | ts.NonNullExpression {
+  return (
+    ts.isParenthesizedExpression(node) ||
+    ts.isAsExpression(node) ||
+    ts.isSatisfiesExpression(node) ||
+    ts.isNonNullExpression(node)
+  );
+}
+
+/** The expression a chain of transparent wrappers is written around. */
+export function unwrapTransparent(expression: ts.Expression): ts.Expression {
+  return isTransparentWrapper(expression) ? unwrapTransparent(expression.expression) : expression;
+}
+
+/** Whether anything below this node writes JSX, at any depth. */
+export function containsJsx(node: ts.Node): boolean {
+  let found = false;
+  const visit = (child: ts.Node): void => {
+    if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) {
+      found = true;
+    }
+    if (!found) ts.forEachChild(child, visit);
+  };
+  visit(node);
+  return found;
 }
 
 export interface NamedAttribute {

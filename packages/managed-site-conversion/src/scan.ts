@@ -3,6 +3,8 @@ import { dirname, join, relative, resolve } from "node:path";
 
 import ts from "typescript";
 
+import { unwrapTransparent } from "./jsx-facts.js";
+
 /**
  * Route discovery reads the Next.js App Router convention, which is a framework
  * contract rather than a file-name guess: `app/<segments>/page.tsx` *defines*
@@ -238,6 +240,53 @@ export function reExportsOf(module: ParsedModule, repositoryRoot: string): reado
     }
   }
   return exports;
+}
+
+export interface NamedFunction {
+  readonly name: string;
+  readonly body: ts.Node;
+  readonly parameters: readonly ts.ParameterDeclaration[];
+}
+
+const NAMED_FUNCTIONS = new WeakMap<ts.SourceFile, readonly NamedFunction[]>();
+
+/**
+ * Every function a module declares under a name, at any depth and in source
+ * order: a function declaration, or a name bound to a function expression.
+ *
+ * One enumeration answers both "which components does this module declare" and
+ * "which function can a call name", because two walks reading different shapes
+ * is the silent drop each exists to prevent, wearing the other's clothes: a
+ * body followed into that no declaration answers for, or a declaration whose
+ * markup nothing collects. Teaching this one a new shape teaches both.
+ */
+export function namedFunctionsOf(source: ts.SourceFile): readonly NamedFunction[] {
+  const cached = NAMED_FUNCTIONS.get(source);
+  if (cached !== undefined) return cached;
+  const found: NamedFunction[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isFunctionDeclaration(node) && node.name !== undefined && node.body !== undefined) {
+      found.push({ name: node.name.text, body: node.body, parameters: node.parameters });
+    }
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer !== undefined
+    ) {
+      const initializer = unwrapTransparent(node.initializer);
+      if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) {
+        found.push({
+          name: node.name.text,
+          body: initializer.body,
+          parameters: initializer.parameters,
+        });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  NAMED_FUNCTIONS.set(source, found);
+  return found;
 }
 
 export function lineOf(source: ts.SourceFile, node: ts.Node): number {

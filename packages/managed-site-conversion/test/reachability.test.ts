@@ -4,10 +4,18 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
+import { renderAnchor } from "../src/anchors.js";
+import type { JsonObject } from "../src/json-write.js";
 import { resolveRenderTree } from "../src/reachability.js";
 import type { FindingCode } from "../src/report.js";
 import { ModuleCache } from "../src/scan.js";
-import { findingsOf, run, sourceDocumentOf, workspace } from "./support/proposals.js";
+import {
+  extractModule,
+  findingsOf,
+  run,
+  sourceDocumentOf,
+  workspace,
+} from "./support/proposals.js";
 
 /**
  * A field may only be proposed for a component the rendered route or layout tree
@@ -313,6 +321,17 @@ const REACHABILITY_CASES: readonly ReachabilityCase[] = [
     codes: ["UNRESOLVED_RENDER_TARGET"],
   },
   {
+    name: "a non-ASCII component name is a component to every reading of the name",
+    files: {
+      [ENTRY]: `export default function Page() {
+          const Élan = () => <span id="elan">Flair</span>;
+          return <main><Élan /></main>;
+        }`,
+    },
+    reached: ["Page", "Élan"],
+    codes: [],
+  },
+  {
     name: "components that render each other terminate",
     files: {
       [ENTRY]: `import { A } from "@/components/A";
@@ -327,12 +346,681 @@ const REACHABILITY_CASES: readonly ReachabilityCase[] = [
   },
 ];
 
-test("the render tree is followed where it can be, and named where it cannot", () => {
-  for (const entry of REACHABILITY_CASES) {
+const CARD = `export function Card() { return <section id="c"><p>Card</p></section>; }`;
+const ROW = `export function Row() { return <section id="r"><p>Row</p></section>; }`;
+const BANNER = `export function Banner() { return <section id="b"><p>Never shown</p></section>; }`;
+
+/**
+ * A function a call is handed is run by that call, so what it renders is on the
+ * page. These cases are the shapes that reach a component through one, and the
+ * shapes that only look as though they do.
+ */
+const INVOKED_CALLBACK_CASES: readonly ReachabilityCase[] = [
+  {
+    name: "a component rendered from a map arrow is reached",
+    files: {
+      [ENTRY]: `import { Card } from "@/components/Card";
+        const ITEMS = [{ title: "One" }];
+        export default function Page() {
+          return <main>{ITEMS.map((item) => <Card>{item.title}</Card>)}</main>;
+        }`,
+      "components/Card.tsx": CARD,
+    },
+    reached: ["Card", "Page"],
+    codes: [],
+  },
+  {
+    name: "a component rendered from a map function expression is reached",
+    files: {
+      [ENTRY]: `import { Card } from "@/components/Card";
+        const ITEMS = [{ title: "One" }];
+        export default function Page() {
+          return <main>{ITEMS.map(function (item) { return <Card>{item.title}</Card>; })}</main>;
+        }`,
+      "components/Card.tsx": CARD,
+    },
+    reached: ["Card", "Page"],
+    codes: [],
+  },
+  {
+    name: "a component rendered from a callback named elsewhere is reached",
+    files: {
+      [ENTRY]: `import { Card } from "@/components/Card";
+        const ITEMS = [{ title: "One" }];
+        function renderCard(item: { title: string }) { return <Card>{item.title}</Card>; }
+        export default function Page() {
+          return <main>{ITEMS.map(renderCard)}</main>;
+        }`,
+      "components/Card.tsx": CARD,
+    },
+    reached: ["Card", "Page"],
+    codes: [],
+  },
+  {
+    name: "a callback named twice in one module is not guessed at",
+    files: {
+      [ENTRY]: `import { Card } from "@/components/Card";
+        const ITEMS = [{ title: "One" }];
+        function renderCard() { return <Card />; }
+        export default function Page() {
+          function renderCard() { return <h1>Live</h1>; }
+          return <main>{ITEMS.map(renderCard)}</main>;
+        }`,
+      "components/Card.tsx": CARD,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a callback recursing through its own name terminates",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        const ITEMS = [{ children: [] }];
+        function renderRow(item: { children: never[] }) {
+          return <ul>{item.children.map(renderRow)}<Row /></ul>;
+        }
+        export default function Page() { return <main>{ITEMS.map(renderRow)}</main>; }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    // Where the result goes takes dataflow to answer, so it is named, not guessed.
+    name: "a callback whose result is only bound to a name is refused out loud",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        const ITEMS = [{ label: "One" }];
+        export default function Page() {
+          const rows = ITEMS.map((item) => <Row><span>{item.label}</span></Row>);
+          return <main>{rows}</main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    name: "a callback whose result is rendered through a conditional is crossed",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        const ITEMS = [{ label: "One" }];
+        export default function Page({ show }: { show: boolean }) {
+          return <main>{show ? ITEMS.map(() => <Row />) : null}</main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    name: "a callback whose result a chained call reads is crossed",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        const ITEMS = [{ on: true }];
+        export default function Page() {
+          return <main>{ITEMS.map(() => <Row />).slice(0, 2)}</main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    name: "any call runs the function it is handed, not only map",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        function wrap(render: () => unknown) { return render(); }
+        export default function Page() {
+          return <main>{wrap(() => <Row />)}</main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    /**
+     * `List` does render what it is given, but nothing at the attribute says
+     * so. Refusing here costs this case and buys every case below it.
+     */
+    name: "a component given a function is refused, even one that does render it",
+    files: {
+      [ENTRY]: `import { List } from "@/components/List";
+        import { Row } from "@/components/Row";
+        export default function Page() {
+          return <main><List renderItem={() => <Row />} /></main>;
+        }`,
+      "components/List.tsx": `export function List({ renderItem }: { renderItem: () => unknown }) {
+        return <section id="l">{renderItem()}</section>;
+      }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["List", "Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    /** The counterexample: the DOM is handed the value and renders no part of it. */
+    name: "a host element's handler renders nothing, and says nothing",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        export default function Page() {
+          return <main><button onClick={() => <Row />}>Save</button></main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    /** A component is as free to take a callback it never renders as one it does. */
+    name: "a component's configuration callback is refused, not read as markup",
+    files: {
+      [ENTRY]: `import { Modal } from "@/components/Modal";
+        import { Row } from "@/components/Row";
+        export default function Page() {
+          return <main><Modal onConfirm={() => <Row />} /></main>;
+        }`,
+      "components/Modal.tsx": `export function Modal({ onConfirm }: { onConfirm: () => unknown }) {
+        return <section id="m"><button onClick={() => { onConfirm(); }}>Yes</button></section>;
+      }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Modal", "Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    /**
+     * The verdict and the report read the attribute through one helper, so a
+     * spelling one sees is a spelling the other sees. Written twice, a cast
+     * was followed by one reading and dropped in silence by the other.
+     */
+    name: "a cast makes no difference to which reading sees the attribute",
+    files: {
+      [ENTRY]: `import { List } from "@/components/List";
+        import { Row } from "@/components/Row";
+        type Render = () => JSX.Element;
+        export default function Page() {
+          return <main><List renderItem={((() => <Row />) as Render)} /></main>;
+        }`,
+      "components/List.tsx": `export function List({ renderItem }: { renderItem: () => unknown }) {
+        return <section id="l">{renderItem()}</section>;
+      }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["List", "Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    /**
+     * A dotted tag is a member expression, which JSX resolves as a component
+     * whatever its case, so `<motion.div />` is not a `div` and the DOM is not
+     * provably what receives the value. Reading it as a host element would
+     * spend silence on an unproven case, which is the drop nobody hears.
+     */
+    name: "a dotted tag is not a host element, however lowercase it looks",
+    files: {
+      [ENTRY]: `import { motion } from "framer-motion";
+        import { Row } from "@/components/Row";
+        export default function Page() {
+          return <main><motion.div render={() => <Row />} /></main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    /**
+     * The refusal is scoped to functions that write JSX. Handlers are on nearly
+     * every page and almost none write markup, so a rule that spoke about all
+     * of them would bury the ones that matter.
+     */
+    name: "a callback that writes no JSX is not a decision for a human",
+    files: {
+      [ENTRY]: `import { Modal } from "@/components/Modal";
+        export default function Page() {
+          return <main><Modal onConfirm={() => "saved"} /></main>;
+        }`,
+      "components/Modal.tsx": `export function Modal({ onConfirm }: { onConfirm: () => unknown }) {
+        return <section id="m"><button onClick={() => { onConfirm(); }}>Yes</button></section>;
+      }`,
+    },
+    reached: ["Modal", "Page"],
+    codes: [],
+  },
+  {
+    /**
+     * A component reached for real AND handed to a component elsewhere is still
+     * reached. Narrowing a rule is where something real gets excluded.
+     */
+    name: "a refused attribute does not unreach a component rendered for real",
+    files: {
+      [ENTRY]: `import { Modal } from "@/components/Modal";
+        import { Row } from "@/components/Row";
+        export default function Page() {
+          return <main><Row /><Modal onConfirm={() => <Row />} /></main>;
+        }`,
+      "components/Modal.tsx": `export function Modal({ onConfirm }: { onConfirm: () => unknown }) {
+        return <section id="m"><button onClick={() => { onConfirm(); }}>Yes</button></section>;
+      }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Modal", "Page", "Row"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    name: "an IIFE returning JSX is reached",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        export default function Page() {
+          return <main>{(() => <Row />)()}</main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    name: "a map nested inside a map is followed to the bottom",
+    files: {
+      [ENTRY]: `import { Group } from "@/components/Group";
+        import { Row } from "@/components/Row";
+        const GROUPS = [{ rows: [] }];
+        export default function Page() {
+          return (
+            <main>
+              {GROUPS.map((group) => (
+                <Group>{group.rows.map(() => <Row />)}</Group>
+              ))}
+            </main>
+          );
+        }`,
+      "components/Group.tsx": `export function Group({ children }: { children: React.ReactNode }) {
+        return <section id="g">{children}</section>;
+      }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Group", "Page", "Row"],
+    codes: [],
+  },
+  {
+    name: "a component declared inside a callback and rendered there is reached",
+    files: {
+      [ENTRY]: `const ITEMS = [{ label: "One" }];
+        export default function Page() {
+          return (
+            <main>
+              {ITEMS.map((item) => {
+                const Cell = () => <span id="cell">{item.label}</span>;
+                return <Cell />;
+              })}
+            </main>
+          );
+        }`,
+    },
+    reached: ["Cell", "Page"],
+    codes: [],
+  },
+  {
+    name: "a declaration inside a callback that nothing renders is still left out",
+    files: {
+      [ENTRY]: `import { Banner } from "@/components/Banner";
+        import { Row } from "@/components/Row";
+        const ITEMS = [{ label: "One" }];
+        export default function Page() {
+          return (
+            <main>
+              {ITEMS.map(() => {
+                const UnusedPromo = () => <Banner />;
+                return <Row />;
+              })}
+            </main>
+          );
+        }`,
+      "components/Banner.tsx": BANNER,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    name: "a component a callback renders but cannot name is reported, not dropped",
+    files: {
+      [ENTRY]: `const ITEMS = [{ label: "One" }];
+        export default function Page({ Icon }: { Icon: () => JSX.Element }) {
+          return <main>{ITEMS.map(() => <Icon />)}</main>;
+        }`,
+    },
+    reached: ["Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+];
+
+/**
+ * Running a function is not rendering what it returns. A call written as a
+ * statement throws its result away, so nothing the function wrote reaches the
+ * browser. These are the shapes that run JSX and discard it, and none of them
+ * is recognised by name.
+ */
+const DISCARDED_RESULT_CASES: readonly ReachabilityCase[] = [
+  {
+    name: "an effect runs its function and throws the result away",
+    files: {
+      [ENTRY]: `import { useEffect } from "react";
+        import { Row } from "@/components/Row";
+        export default function Page() {
+          useEffect(() => <Row />);
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a timer runs its function and throws the result away",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        export default function Page() {
+          setTimeout(() => <Row />, 0);
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "forEach returns nothing, so what its function writes renders nothing",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        const ITEMS = [{ label: "One" }];
+        export default function Page() {
+          ITEMS.forEach(() => <Row />);
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a component an effect discards is still reached where it really renders",
+    files: {
+      [ENTRY]: `import { useEffect } from "react";
+        import { Row } from "@/components/Row";
+        export default function Page() {
+          useEffect(() => <Row />);
+          return <main><Row /></main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+  {
+    // A filter callback returning JSX makes every item truthy, so the filter is
+    // already a no-op. Nothing in the syntax tells it from `map`, and telling
+    // them apart by name is the enumeration this rule refuses.
+    name: "a filter callback is read as a map callback, which is the known limit",
+    files: {
+      [ENTRY]: `import { Row } from "@/components/Row";
+        const ITEMS = [{ on: true }];
+        export default function Page() {
+          return <main>{ITEMS.filter(() => <Row />)}</main>;
+        }`,
+      "components/Row.tsx": ROW,
+    },
+    reached: ["Page", "Row"],
+    codes: [],
+  },
+];
+
+/**
+ * `memo`, `forwardRef`, `lazy` and `dynamic` are handed a function like any
+ * other call, but they build a component out of it instead of rendering what it
+ * returns. What gives them away is what the call's RESULT becomes, so no list
+ * of wrapper names decides this and none can fall behind.
+ */
+const COMPONENT_WRAPPER_CASES: readonly ReachabilityCase[] = [
+  {
+    name: "a memo-wrapped declaration nothing renders is left out",
+    files: {
+      [ENTRY]: `import { memo } from "react";
+        import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const UnusedPromo = memo(() => <Banner />);
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a forwardRef-wrapped declaration nothing renders is left out",
+    files: {
+      [ENTRY]: `import { forwardRef } from "react";
+        import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const UnusedField = forwardRef(() => <Banner />);
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a dynamic-style wrapper with options is left out",
+    files: {
+      [ENTRY]: `import dynamic from "next/dynamic";
+        import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const UnusedChart = dynamic(() => <Banner />, { ssr: false });
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "memo around forwardRef is still one component declaration",
+    files: {
+      [ENTRY]: `import { forwardRef, memo } from "react";
+        import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const UnusedField = memo(forwardRef(() => <Banner />));
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a wrapper result cast to a type is still a component declaration",
+    files: {
+      [ENTRY]: `import { memo } from "react";
+        import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const UnusedPromo = memo(() => <Banner />) as () => JSX.Element;
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a memo-wrapped component that IS rendered is reported, never guessed",
+    files: {
+      [ENTRY]: `import { memo } from "react";
+        export default function Page() {
+          const Badge = memo(() => <span id="badge">New</span>);
+          return <main><Badge /></main>;
+        }`,
+    },
+    reached: ["Page"],
+    codes: ["UNRESOLVED_RENDER_TARGET"],
+  },
+  {
+    name: "a non-ASCII component name is a declaration when a wrapper builds it",
+    files: {
+      [ENTRY]: `import { memo } from "react";
+        import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const Élan = memo(() => <Banner />);
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+  {
+    name: "a function stored on an object is not a call away from rendering",
+    files: {
+      [ENTRY]: `import { Banner } from "@/components/Banner";
+        export default function Page() {
+          const slots = { promo: () => <Banner /> };
+          return <main><h1>Live</h1></main>;
+        }`,
+      "components/Banner.tsx": BANNER,
+    },
+    reached: ["Page"],
+    codes: [],
+  },
+];
+
+/**
+ * Every case is judged before anything is reported, because a rule change
+ * usually moves several at once and stopping at the first hides which.
+ */
+function assertCases(cases: readonly ReachabilityCase[]): void {
+  const wrong: string[] = [];
+  for (const entry of cases) {
     const outcome = renderTreeOf(entry.files);
-    assert.deepEqual(outcome.reached, entry.reached, `wrong components for: ${entry.name}`);
-    assert.deepEqual(outcome.codes, entry.codes, `wrong findings for: ${entry.name}`);
+    const reached = outcome.reached.join(", ");
+    const codes = outcome.codes.join(", ");
+    if (reached !== entry.reached.join(", ")) {
+      wrong.push(`${entry.name}: reached [${reached}], wanted [${entry.reached.join(", ")}]`);
+    }
+    if (codes !== entry.codes.join(", ")) {
+      wrong.push(`${entry.name}: findings [${codes}], wanted [${entry.codes.join(", ")}]`);
+    }
   }
+  assert.deepEqual(wrong, [], `${wrong.length} of ${cases.length} cases disagree`);
+}
+
+test("the render tree is followed where it can be, and named where it cannot", () => {
+  assertCases(REACHABILITY_CASES);
+});
+
+test("a component a callback renders is on the page, so it is reached", () => {
+  assertCases(INVOKED_CALLBACK_CASES);
+});
+
+test("a call that runs a function and discards its result has rendered nothing", () => {
+  assertCases(DISCARDED_RESULT_CASES);
+});
+
+test("a call that builds a component out of a function has not rendered it", () => {
+  assertCases(COMPONENT_WRAPPER_CASES);
+});
+
+interface ExtractionCase {
+  readonly name: string;
+  readonly source: string;
+  readonly anchors: readonly string[];
+  readonly codes: readonly FindingCode[];
+}
+
+function extractionOf(source: string): Omit<ExtractionCase, "name" | "source"> {
+  const extracted = extractModule(source);
+  return {
+    anchors: extracted.candidates.map((candidate) => renderAnchor(candidate.anchor)).sort(),
+    codes: extracted.findings.map((finding) => finding.code),
+  };
+}
+
+/**
+ * The extractor reads the same boundary but anchors what it finds to a
+ * position, so it admits only the trigger that has one. What a call runs may
+ * render any number of times, and a field pinned to one place for markup that
+ * appears in several is worse than the refusal it replaces.
+ */
+const EXTRACTION_CASES: readonly ExtractionCase[] = [
+  {
+    /**
+     * Not anchored here, and not reported here either: the render walk reads
+     * every component this one does and names the attribute once, so saying it
+     * again under an anchor would file one gap as two decisions.
+     */
+    name: "a function given to a component is not anchored to the element",
+    source: `export function Page() {
+      return <main><Panel renderFooter={() => <span>Footer note.</span>} /></main>;
+    }`,
+    anchors: [],
+    codes: [],
+  },
+  {
+    name: "a function behind a cast is refused by the same reading, not anchored",
+    source: `type Render = () => JSX.Element;
+    export function Page() {
+      return <main><Panel renderFooter={(() => <span>Footer note.</span>) as Render} /></main>;
+    }`,
+    anchors: [],
+    codes: [],
+  },
+  {
+    /**
+     * A host element's handler is settled, so nothing inside it is content. The
+     * button's own label still is, which is the half a blunter rule would take
+     * with it.
+     */
+    name: "markup written in a host element's handler is never customer content",
+    source: `export function Page() {
+      return <main><button onClick={() => <span>Never shown</span>}>Save</button></main>;
+    }`,
+    anchors: ["component:Page/region:main/role:button/text"],
+    codes: [],
+  },
+  {
+    name: "a map hoisted out of the JSX is refused, not placed where it does not render",
+    source: `const ITEMS = [{ title: "One" }];
+    export function Page() {
+      const rows = ITEMS.map(() => <p>Fixed prose</p>);
+      return <main><section id="s">{rows}</section></main>;
+    }`,
+    anchors: [],
+    codes: ["NON_LITERAL_VALUE"],
+  },
+  {
+    name: "a map template behind a cast still reads its item properties",
+    source: `const ITEMS = [{ title: "One" }, { title: "Two" }];
+    export function Page() {
+      return <section id="s">{ITEMS.map((item) => (<p>{item.title}</p>) as JSX.Element)}</section>;
+    }`,
+    anchors: ["component:Page/region:s/each:ITEMS"],
+    codes: [],
+  },
+];
+
+test("the extractor reads every position it can anchor, and refuses the rest by name", () => {
+  const wrong: string[] = [];
+  for (const entry of EXTRACTION_CASES) {
+    const outcome = extractionOf(entry.source);
+    if (outcome.anchors.join(", ") !== entry.anchors.join(", ")) {
+      wrong.push(`${entry.name}: anchors [${outcome.anchors.join(", ")}]`);
+    }
+    if (outcome.codes.join(", ") !== entry.codes.join(", ")) {
+      wrong.push(`${entry.name}: findings [${outcome.codes.join(", ")}]`);
+    }
+  }
+  assert.deepEqual(wrong, [], `${wrong.length} of ${EXTRACTION_CASES.length} cases disagree`);
 });
 
 test("only what a route renders becomes an editable field", () => {
@@ -410,6 +1098,64 @@ test("a component rendered only by the layout is proposed once, for every route"
   assert.equal(scope.length, 2, "one per value the layout renders on every route");
   for (const finding of scope) {
     assert.ok(finding.location?.file.endsWith("components/SiteFooter.tsx"));
+  }
+});
+
+/** Collection item IDs are minted per run by design, so they carry no identity here. */
+function withMintedIdsMasked(document: JsonObject): unknown {
+  return JSON.parse(JSON.stringify(document).replace(/item_[a-z0-9]+/gu, "item_x")) as unknown;
+}
+
+/**
+ * The shape that used to fail in silence: the collection reads item properties,
+ * so it is proposed cleanly, and the component the template renders carries
+ * literal markup of its own that nothing pointed a human at.
+ *
+ * The whole document is pinned, so several failures land here as well: markup
+ * placed under the page that maps over it, anything an effect discards reaching
+ * a customer, a component rendered both for real and inside an effect being
+ * proposed twice, and markup a host element's handler writes being offered as
+ * customer content.
+ */
+test("a component rendered from a callback contributes its own markup", () => {
+  const proposal = run(workspace("callbacks", null));
+  const home = sourceDocumentOf(proposal, "src/content/pages/home.json");
+  assert.deepEqual(withMintedIdsMasked(home), {
+    home: {
+      main: {
+        offers: {
+          h2: { text: "What you get" },
+          offers: {
+            collection: {
+              order: { orderedItemIds: ["item_x", "item_x"] },
+              items: [
+                { id: "item_x", title: "Survey" },
+                { id: "item_x", title: "Publish" },
+              ],
+            },
+          },
+        },
+        // Neither span is here: what `Panel` does with the function it is given
+        // is not readable from the attribute, and a handler's return value is
+        // never markup. The button's own label is content and stays.
+        button: { text: "Save" },
+      },
+    },
+    // Reached only through the map callback, and proposed under its own name.
+    card: { card: { p: { text: "Included with every offer." } } },
+    panel: { panel: { h2: { text: "How it works" } } },
+  });
+
+  // The refusals are not silent where they are not settled: `Panel` is named
+  // once, and nothing points a human at the handler, which is settled.
+  const refused = findingsOf(proposal, "UNRESOLVED_RENDER_TARGET");
+  assert.equal(refused.length, 1, "one decision, for the one attribute nothing here can read");
+  assert.ok(refused[0]?.evidence.includes("renderFooter"), refused[0]?.evidence);
+  for (const finding of proposal.report.findings) {
+    assert.ok(
+      !finding.evidence.includes("Never shown from a handler"),
+      `a settled refusal was filed as a decision: ${finding.code}`,
+    );
   }
 });
 
