@@ -30,5 +30,13 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    // Fixtures are deliberately unconverted source for the conversion
+    // tool to read. They stand in for a customer repository, so their
+    // path aliases resolve against that imagined site rather than this
+    // one, and type-checking them here would be checking someone
+    // else's tsconfig.
+    "packages/managed-site-conversion/test/fixtures/**"
+  ]
 }

@@ -47,6 +47,12 @@ jobs:
       - name: Build managed-site contract and verify schema artifact
         run: npm --workspace @landing-pages-websites/managed-site-contract run build
 
+      - name: Type-check managed-site conversion proposer
+        run: npm --workspace @landing-pages-websites/managed-site-conversion run type-check
+
+      - name: Test managed-site conversion proposer
+        run: npm --workspace @landing-pages-websites/managed-site-conversion run test
+
       - name: Conform Astro reference content
         run: npm run conformance:astro-reference
 

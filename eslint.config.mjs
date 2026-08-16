@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "packages/**/dist/**",
     // Astro emits framework-owned declarations during check/build.
     "**/.astro/**",
+    // Conversion-proposer fixtures are deliberately unconverted sample sites.
+    "packages/managed-site-conversion/test/fixtures/**",
   ]),
 ]);
 
