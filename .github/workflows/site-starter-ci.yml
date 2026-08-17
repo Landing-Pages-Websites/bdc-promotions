@@ -31,9 +31,13 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
+          registry-url: https://npm.pkg.github.com
+          scope: "@landing-pages-websites"
 
       - name: Install exact dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
 
       - name: Test starter behavior
         run: npm test
