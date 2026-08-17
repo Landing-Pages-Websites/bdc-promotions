@@ -3,7 +3,6 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const PACKAGE_NAME = "@landing-pages-websites/managed-site-contract";
-const PACKAGE_VERSION = "0.1.3";
 
 function repositoryFile(path) {
   return new URL(`../${path}`, import.meta.url);
@@ -18,15 +17,22 @@ async function readJson(path) {
 }
 
 test("pins one restricted GitHub Packages identity across the workspace", async () => {
-  const [root, fixture, contract, lock] = await Promise.all([
+  const [root, fixture, contract, conversion, lock] = await Promise.all([
     readJson("package.json"),
     readJson("fixtures/astro-reference/package.json"),
     readJson("packages/managed-site-contract/package.json"),
+    readJson("packages/managed-site-conversion/package.json"),
     readJson("package-lock.json"),
   ]);
 
+  // Taken from the package rather than restated, so releasing a version needs
+  // no edit here and every other reference is still held to it. Written as a
+  // literal, this test asked to be updated in step with the thing it exists to
+  // keep in step, and a pin left behind reads as a stale expectation.
+  const PACKAGE_VERSION = contract.version;
+  assert.match(PACKAGE_VERSION, /^\d+\.\d+\.\d+$/u);
+
   assert.equal(contract.name, PACKAGE_NAME);
-  assert.equal(contract.version, PACKAGE_VERSION);
   assert.equal(contract.private, undefined);
   assert.deepEqual(contract.publishConfig, {
     access: "restricted",
@@ -39,6 +45,15 @@ test("pins one restricted GitHub Packages identity across the workspace", async 
   });
   assert.equal(root.dependencies[PACKAGE_NAME], PACKAGE_VERSION);
   assert.equal(fixture.dependencies[PACKAGE_NAME], PACKAGE_VERSION);
+  // The conversion workspace depends on it too and was absent here, which is
+  // how a bump reached CI with one pin still on the previous version.
+  assert.equal(conversion.dependencies[PACKAGE_NAME], PACKAGE_VERSION);
+  assert.equal(
+    lock.packages["packages/managed-site-conversion"].dependencies[
+      PACKAGE_NAME
+    ],
+    PACKAGE_VERSION,
+  );
   assert.equal(lock.packages[""].dependencies[PACKAGE_NAME], PACKAGE_VERSION);
   assert.equal(
     lock.packages["fixtures/astro-reference"].dependencies[PACKAGE_NAME],

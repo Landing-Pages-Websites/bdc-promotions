@@ -12,6 +12,11 @@ concurrency:
 
 permissions:
   contents: read
+  # The contract package lives in GitHub Packages, and npm reaches for its
+  # metadata even when the lockfile resolves it through the workspace link.
+  # Without this the job's token authenticates and is then refused: 403,
+  # "Permission installation not allowed to Read organization package".
+  packages: read
 
 jobs:
   verify:
