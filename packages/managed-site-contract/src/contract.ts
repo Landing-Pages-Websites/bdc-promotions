@@ -25,8 +25,8 @@ export const managedSiteAdapterDescriptorSchema = z.strictObject({
 });
 
 const managedSiteBridgeDeliverySchema = z.strictObject({
-  version: z.literal("v4"),
-  src: z.literal("https://app.gomega.ai/review-bridge/v4/review-bridge.js"),
+  version: z.literal("v6"),
+  src: z.literal("https://app.gomega.ai/review-bridge/v6/review-bridge.js"),
   integrity: z.string().regex(/^sha384-[A-Za-z0-9+/]{64}$/),
   crossOrigin: z.literal("anonymous"),
   load: z.literal("head_defer"),

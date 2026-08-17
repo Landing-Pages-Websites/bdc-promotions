@@ -4,9 +4,9 @@ import test from "node:test";
 
 const FIXTURE = "fixtures/astro-reference";
 const BRIDGE_SOURCE =
-  "https://app.gomega.ai/review-bridge/v4/review-bridge.js";
+  "https://app.gomega.ai/review-bridge/v6/review-bridge.js";
 const BRIDGE_INTEGRITY =
-  "sha384-TWiiCKVSJzu92YjNDVu/A8HtnwVY8JTMkRUOCZRgi59PfAXr6Ya06VSizDsbEP9L";
+  "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn";
 
 function repositoryFile(path) {
   return new URL(`../${path}`, import.meta.url);
@@ -72,7 +72,7 @@ test("defines one exact Astro contract and projected content checkpoint", async 
     editProtocol: 2,
     annotationVersion: 1,
     delivery: {
-      version: "v4",
+      version: "v6",
       src: BRIDGE_SOURCE,
       integrity: BRIDGE_INTEGRITY,
       crossOrigin: "anonymous",

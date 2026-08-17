@@ -436,8 +436,8 @@ const MANAGED_SITE_CONTRACT = {
       editProtocol: 2,
       annotationVersion: 1,
       delivery: {
-        version: "v4",
-        src: "https://app.gomega.ai/review-bridge/v4/review-bridge.js",
+        version: "v6",
+        src: "https://app.gomega.ai/review-bridge/v6/review-bridge.js",
         integrity: `sha384-${"a".repeat(64)}`,
         crossOrigin: "anonymous",
         load: "head_defer",

@@ -7,12 +7,12 @@ import {
 import { managedSiteContract } from "./schema-fixtures.js";
 
 describe("managed site contract v1", () => {
-  it("accepts the exact protocol-1/edit-2/v4 root contract", () => {
+  it("accepts the exact protocol-1/edit-2 root contract at the promoted delivery", () => {
     const parsed = parseManagedSiteContractV1(managedSiteContract());
     assert.equal(parsed.schemaVersion, "1.0");
     assert.equal(parsed.bridge.reviewProtocol, 1);
     assert.equal(parsed.bridge.editProtocol, 2);
-    assert.equal(parsed.bridge.delivery.version, "v4");
+    assert.equal(parsed.bridge.delivery.version, "v6");
   });
 
   it("rejects unknown root keys, old bridge deliveries, and unsafe URLs", () => {

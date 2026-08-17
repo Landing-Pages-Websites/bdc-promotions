@@ -15,9 +15,9 @@ const CONFIG = {
   contentRoot: "src/content",
   assetRoot: "public",
   bridge: {
-    version: "v4",
-    src: "https://app.gomega.ai/review-bridge/v4/review-bridge.js",
-    integrity: "sha384-TWiiCKVSJzu92YjNDVu/A8HtnwVY8JTMkRUOCZRgi59PfAXr6Ya06VSizDsbEP9L",
+    version: "v6",
+    src: "https://app.gomega.ai/review-bridge/v6/review-bridge.js",
+    integrity: "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn",
     crossOrigin: "anonymous",
     load: "head_defer",
   },

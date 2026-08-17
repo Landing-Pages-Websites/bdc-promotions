@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
  */
 
 export interface BridgeDelivery {
-  readonly version: "v4";
+  readonly version: "v6";
   readonly src: string;
   readonly integrity: string;
   readonly crossOrigin: "anonymous";

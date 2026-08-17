@@ -13,7 +13,7 @@ import {
   stableId,
 } from "./schema-fixtures.js";
 
-const BRIDGE_SRC = "https://app.gomega.ai/review-bridge/v4/review-bridge.js";
+const BRIDGE_SRC = "https://app.gomega.ai/review-bridge/v6/review-bridge.js";
 
 function withBridgeDelivery(patch: Record<string, unknown>): Record<string, unknown> {
   const contract = managedSiteContract();
@@ -38,21 +38,22 @@ function generatedRoute(pattern: string): Record<string, unknown> {
 }
 
 describe("contract-local identity boundaries", () => {
-  it("pins edit protocol 2 to the one promoted v4 bridge source", () => {
+  it("pins edit protocol 2 to the one promoted bridge source", () => {
     assert.doesNotThrow(() =>
-      parseManagedSiteContractV1(withBridgeDelivery({ version: "v4", src: BRIDGE_SRC })),
+      parseManagedSiteContractV1(withBridgeDelivery({ version: "v6", src: BRIDGE_SRC })),
     );
-    for (const version of ["v1", "v3", "v5", "v999"]) {
+    for (const version of ["v1", "v3", "v4", "v5", "v999"]) {
       assert.throws(() => parseManagedSiteContractV1(withBridgeDelivery({ version })));
     }
     for (const src of [
-      "https://evil.example/review-bridge/v4/review-bridge.js",
+      "https://evil.example/review-bridge/v6/review-bridge.js",
       "https://app.gomega.ai/review-bridge/v3/review-bridge.js",
-      "https://app.gomega.ai/review-bridge/v4/alternate.js",
+      "https://app.gomega.ai/review-bridge/v4/review-bridge.js",
+      "https://app.gomega.ai/review-bridge/v6/alternate.js",
       `${BRIDGE_SRC}?candidate=1`,
       `${BRIDGE_SRC}#alternate`,
-      "https://user@app.gomega.ai/review-bridge/v4/review-bridge.js",
-      "http://app.gomega.ai/review-bridge/v4/review-bridge.js",
+      "https://user@app.gomega.ai/review-bridge/v6/review-bridge.js",
+      "http://app.gomega.ai/review-bridge/v6/review-bridge.js",
     ]) {
       assert.throws(() => parseManagedSiteContractV1(withBridgeDelivery({ src })));
     }
