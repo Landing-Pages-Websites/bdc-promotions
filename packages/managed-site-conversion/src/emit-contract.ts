@@ -92,7 +92,7 @@ function markKindsOf(candidate: Candidate): readonly ManagedRichTextMarkKind[] {
   for (const block of candidate.document.content) {
     if (block.type !== "paragraph") continue;
     for (const node of block.content) {
-      for (const mark of node.marks) {
+      for (const mark of node.marks ?? []) {
         if (mark.type !== "link") kinds.add(mark.type);
       }
     }

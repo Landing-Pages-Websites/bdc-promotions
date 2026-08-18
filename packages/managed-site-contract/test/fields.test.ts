@@ -100,7 +100,7 @@ describe("managed field schemas", () => {
     assert.throws(() =>
       parseManagedRichTextDocument({
         type: "doc",
-        content: [{ type: "paragraph", content: [{ type: "text", text: "x".repeat(131_073), marks: [] }] }],
+        content: [{ type: "paragraph", content: [{ type: "text", text: "x".repeat(131_073) }] }],
       }),
     );
   });
@@ -237,7 +237,7 @@ describe("managed field schemas", () => {
 
   it("uses one semantic rich-text node count at every validation layer", () => {
     const direct = richTextDocument([
-      { type: "paragraph", content: [{ type: "text", text: "x", marks: [] }] },
+      { type: "paragraph", content: [{ type: "text", text: "x" }] },
     ]);
     const linked = richTextDocument([
       {
@@ -260,7 +260,7 @@ describe("managed field schemas", () => {
           type: "list_item",
           content: [{
             type: "paragraph",
-            content: [{ type: "text", text: "x", marks: [] }],
+            content: [{ type: "text", text: "x" }],
           }],
         }],
       },

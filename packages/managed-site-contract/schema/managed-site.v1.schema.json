@@ -32,6 +32,7 @@
             "$ref": "#/$defs/__schema13"
           },
           "maxItems": 3,
+          "minItems": 1,
           "type": "array"
         },
         "__schema13": {
@@ -1258,8 +1259,7 @@
           },
           "required": [
             "type",
-            "text",
-            "marks"
+            "text"
           ],
           "type": "object"
         }

@@ -43,7 +43,7 @@ const collectionContentValue = {
   value: { orderedItemIds: [stableId("item")] },
 };
 const richDocument = richTextDocument([
-  { type: "paragraph", content: [{ type: "text", text: "Hello", marks: [] }] },
+  { type: "paragraph", content: [{ type: "text", text: "Hello" }] },
 ]);
 
 const surfaces: readonly Surface[] = [

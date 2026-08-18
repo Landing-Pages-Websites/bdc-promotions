@@ -66,15 +66,23 @@ export const managedRichTextMarkSchema = z.discriminatedUnion("type", [
  */
 export const managedRichTextMarkKindSchema = z.enum(["bold", "italic"]);
 
-/** One of each mark at most: two of the same kind is not a distinguishable state. */
+/**
+ * Unmarked text omits `marks` entirely rather than carrying an empty array, so
+ * one run of prose has exactly one spelling. The stored blob is hashed, and two
+ * spellings of the same text would hash differently while meaning the same
+ * thing. It is also what the writer accepts and what this family of editors
+ * serialises.
+ *
+ * One of each mark at most: two of the same kind is not a distinguishable state.
+ */
 const managedRichTextTextSchema = z
   .strictObject({
     type: z.literal("text"),
     text: z.string(),
-    marks: z.array(managedRichTextMarkSchema).max(3),
+    marks: z.array(managedRichTextMarkSchema).min(1).max(3).optional(),
   })
   .refine((node) => {
-    const kinds = node.marks.map((mark) => mark.type);
+    const kinds = (node.marks ?? []).map((mark) => mark.type);
     return new Set(kinds).size === kinds.length;
   });
 

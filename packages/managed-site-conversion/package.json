@@ -10,7 +10,7 @@
     "type-check": "tsc --project tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@landing-pages-websites/managed-site-contract": "0.3.0",
+    "@landing-pages-websites/managed-site-contract": "0.4.0",
     "typescript": "^5"
   },
   "devDependencies": {

@@ -77,10 +77,16 @@ function inlinesFor(
 ): readonly TextInline[] | null {
   const direct = directTextOf(child);
   if (direct !== null) {
-    // Kinds are accumulated while walking and become mark objects only here,
-    // which is the shape a document carries.
+    if (direct.length === 0) return [];
+    // Kinds are accumulated while walking and become mark objects only here.
+    // Unmarked text omits the key rather than carrying an empty array, so one
+    // run of prose has exactly one spelling and one hash.
     const marks = markKinds.map((kind) => ({ type: kind }) as const);
-    return direct.length === 0 ? [] : [{ type: "text", text: direct, marks }];
+    return [
+      marks.length === 0
+        ? { type: "text", text: direct }
+        : { type: "text", text: direct, marks },
+    ];
   }
   if (!isElementChild(child)) return null;
   const mark = MARK_BY_TAG.get(tagNameOf(child));

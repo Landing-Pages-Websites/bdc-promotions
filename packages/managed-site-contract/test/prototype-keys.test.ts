@@ -92,7 +92,7 @@ const STRUCTURED_CASES: readonly StructuredCase[] = [
   {
     name: "nested rich-text union",
     input: () => richTextDocument([
-      { type: "paragraph", content: [{ type: "text", text: "copy", marks: [] }] },
+      { type: "paragraph", content: [{ type: "text", text: "copy" }] },
     ]),
     path: ["content", 0],
     parse: parseManagedRichTextDocument,

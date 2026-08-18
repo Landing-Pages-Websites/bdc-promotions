@@ -15,10 +15,11 @@ const { document } = Astro.props;
  * renders, which is more than the previous renderer managed with a link node.
  */
 function has(
-  marks: readonly ManagedRichTextMark[],
+  marks: readonly ManagedRichTextMark[] | undefined,
   kind: ManagedRichTextMark["type"],
 ): boolean {
-  return marks.some((mark) => mark.type === kind);
+  // Unmarked text omits the key, so absent and empty mean the same thing here.
+  return (marks ?? []).some((mark) => mark.type === kind);
 }
 ---
 

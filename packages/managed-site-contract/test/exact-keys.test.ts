@@ -92,7 +92,7 @@ function exactOwners(): readonly ExactKeyCase[] {
 
 function exactRenderedContentValues(): readonly Record<string, unknown>[] {
   const rich = richTextDocument([
-    { type: "paragraph", content: [{ type: "text", text: "copy", marks: [] }] },
+    { type: "paragraph", content: [{ type: "text", text: "copy" }] },
   ]);
   return [
     contentValue("plain_text", "copy"),
@@ -153,7 +153,7 @@ function exactDestinations(): readonly ExactKeyCase[] {
 }
 
 function exactRichTextNodes(): readonly ExactKeyCase[] {
-  const text = { type: "text", text: "copy", marks: [] };
+  const text = { type: "text", text: "copy" };
   const linkMark = {
     type: "link",
     destination: { kind: "external", url: "https://example.com" },

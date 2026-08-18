@@ -303,14 +303,14 @@ function validateRichText(
   // companions below, which is where they were governed when a link was a node,
   // so nothing has to be added to `allowedMarks` for links to keep working.
   const marksAllowed = stats.textNodes.every((node) =>
-    node.marks.every(
+    (node.marks ?? []).every(
       (mark) =>
         mark.type === "link" ||
         field.constraints.allowedMarks.includes(mark.type),
     ),
   );
   const linksAllowed = stats.textNodes.every((node) =>
-    node.marks.every(
+    (node.marks ?? []).every(
       (mark) => mark.type !== "link" || richTextLinkAllowed(field, mark),
     ),
   );

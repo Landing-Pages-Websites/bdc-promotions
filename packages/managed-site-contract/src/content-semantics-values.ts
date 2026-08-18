@@ -91,7 +91,7 @@ function validateLinkDestination(
   // Prose links live on the text they cover, so the page a link names is reached
   // through marks rather than through a node of its own.
   for (const node of summarizeManagedRichText(value.value).textNodes) {
-    for (const mark of node.marks) {
+    for (const mark of node.marks ?? []) {
       if (mark.type === "link" && mark.destination.kind === "internal") {
         assertLivePage(facts, mark.destination.pageId);
       }
