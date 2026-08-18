@@ -356,15 +356,15 @@ const INVALID_CONTENT_CASES: readonly DifferentialCase[] = [
     invalidContent("invalid manifest MIME", (input) => { objectAt(input, ["assetManifest", 0]).mimeType = "image/svg+xml"; }),
     invalidContent("raw HTML rich-text node", (input) => {
       input.values = [richTextContentValue("https://example.com")];
-      objectAt(input, ["values", 0, "value"]).children = [{ type: "html", value: "<b>bad</b>" }];
+      objectAt(input, ["values", 0, "value"]).content = [{ type: "html", value: "<b>bad</b>" }];
     }),
     invalidContent("duplicate rich-text marks", (input) => {
       input.values = [richTextContentValue("https://example.com")];
-      objectAt(input, ["values", 0, "value", "children", 0, "children", 0, "children", 0]).marks = ["bold", "bold"];
+      objectAt(input, ["values", 0, "value", "content", 0, "content", 0]).marks = [{ type: "bold" }, { type: "bold" }];
     }),
     invalidContent("rich-text semantic node overflow", (input) => {
       const texts = Array.from({ length: 2_000 }, () => ({ type: "text", text: "x", marks: [] }));
-      input.values = [{ fieldId: stableId("field"), owner: { kind: "site" }, type: "rich_text", value: { type: "document", children: [{ type: "paragraph", children: texts }] } }];
+      input.values = [{ fieldId: stableId("field"), owner: { kind: "site" }, type: "rich_text", value: { type: "doc", content: [{ type: "paragraph", content: texts }] } }];
     }),
     invalidContent("executable link destination", (input) => {
       input.values = [linkContentValue({ label: "Bad", destination: { kind: "external", url: "javascript:alert(1)" }, target: "same_window" })];

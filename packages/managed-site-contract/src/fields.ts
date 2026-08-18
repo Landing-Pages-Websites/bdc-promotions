@@ -2,7 +2,7 @@ import * as z from "zod";
 
 import type { DeepReadonly } from "./deep-readonly.js";
 import { managedInternalValueTypeSchema } from "./internal-value-types.js";
-import { managedRichTextMarkSchema } from "./rich-text.js";
+import { managedRichTextMarkKindSchema } from "./rich-text.js";
 import { withManagedSiteJsonSchemaSemantic } from "./schema-semantics.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
@@ -108,7 +108,7 @@ const richTextConstraintsSchema = z
     maxCharacters: z.number().int().positive().max(131_072),
     maxNodes: z.number().int().positive().max(2_000),
     allowedBlocks: z.array(z.enum(["paragraph", "bullet_list", "ordered_list"])).min(1),
-    allowedMarks: z.array(managedRichTextMarkSchema),
+    allowedMarks: z.array(managedRichTextMarkKindSchema),
     allowLinks: z.boolean(),
     allowedExternalHosts: uniqueHostsSchema,
     allowedTargets: z.array(managedLinkTargetSchema),

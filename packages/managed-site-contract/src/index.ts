@@ -151,6 +151,7 @@ export type {
   ManagedRichTextDocument,
   ManagedRichTextInline,
   ManagedRichTextMark,
+  ManagedRichTextMarkKind,
 } from "./rich-text.js";
 export type {
   ManagedGeneratedPageSeoDescriptor,

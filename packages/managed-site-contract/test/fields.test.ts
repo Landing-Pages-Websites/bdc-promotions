@@ -13,7 +13,7 @@ import {
   imageField,
   imageValue,
   invalidLinkValues,
-  invalidRichTextChildren,
+  invalidRichTextContent,
   linkedListDocument,
   linkContentValue,
   linkField,
@@ -91,7 +91,7 @@ describe("managed field schemas", () => {
       ),
     );
 
-    for (const child of invalidRichTextChildren) {
+    for (const child of invalidRichTextContent) {
       assert.throws(() =>
         parseManagedRichTextDocument(richTextDocument([child])),
       );
@@ -99,8 +99,8 @@ describe("managed field schemas", () => {
 
     assert.throws(() =>
       parseManagedRichTextDocument({
-        type: "document",
-        children: [{ type: "paragraph", children: [{ type: "text", text: "x".repeat(131_073), marks: [] }] }],
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "x".repeat(131_073), marks: [] }] }],
       }),
     );
   });
@@ -120,12 +120,15 @@ describe("managed field schemas", () => {
 
     const markedLinkValue = structuredClone(richValue);
     const richDocument = markedLinkValue.value as Record<string, unknown>;
-    const richParagraph = (richDocument.children as Record<string, unknown>[])[0];
-    const richLink = (richParagraph.children as Record<string, unknown>[])[0];
-    richLink.destination = { kind: "external", url: "https://example.com" };
-    ((richLink.children as Record<string, unknown>[])[0].marks as string[]) = [
-      "italic",
-    ];
+    const richParagraph = (richDocument.content as Record<string, unknown>[])[0];
+    const richText = (richParagraph.content as Record<string, unknown>[])[0];
+    const richMarks = richText.marks as Record<string, unknown>[];
+    // Point the link at a permitted host so the refusal below can only come from
+    // the formatting mark, which this field does not allow.
+    const linkMark = richMarks.find((mark) => mark.type === "link");
+    assert.ok(linkMark);
+    linkMark.destination = { kind: "external", url: "https://example.com" };
+    richText.marks = [...richMarks, { type: "italic" }];
     const boldOnlyField = structuredClone(richTextField());
     (boldOnlyField.constraints as Record<string, unknown>).allowedMarks = ["bold"];
     assert.throws(() => validateManagedFieldValue(boldOnlyField, markedLinkValue));
@@ -234,32 +237,35 @@ describe("managed field schemas", () => {
 
   it("uses one semantic rich-text node count at every validation layer", () => {
     const direct = richTextDocument([
-      { type: "paragraph", children: [{ type: "text", text: "x", marks: [] }] },
+      { type: "paragraph", content: [{ type: "text", text: "x", marks: [] }] },
     ]);
     const linked = richTextDocument([
       {
         type: "paragraph",
-        children: [{
-          type: "link",
-          destination: { kind: "external", url: "https://example.com" },
-          target: "same_window",
-          children: [{ type: "text", text: "x", marks: [] }],
+        content: [{
+          type: "text",
+          text: "x",
+          marks: [{
+            type: "link",
+            destination: { kind: "external", url: "https://example.com" },
+            target: "same_window",
+          }],
         }],
       },
     ]);
     const listed = richTextDocument([
       {
         type: "bullet_list",
-        children: [{
+        content: [{
           type: "list_item",
-          children: [{
+          content: [{
             type: "paragraph",
-            children: [{ type: "text", text: "x", marks: [] }],
+            content: [{ type: "text", text: "x", marks: [] }],
           }],
         }],
       },
     ]);
-    for (const [document, exactNodes] of [[direct, 3], [linked, 4], [listed, 5]] as const) {
+    for (const [document, exactNodes] of [[direct, 3], [linked, 3], [listed, 5]] as const) {
       const field = structuredClone(richTextField());
       (field.constraints as Record<string, unknown>).maxNodes = exactNodes;
       assert.doesNotThrow(() =>

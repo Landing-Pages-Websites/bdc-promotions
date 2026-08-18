@@ -4,7 +4,7 @@ import type {
   ManagedCollectionItemField,
   ManagedFieldCapability,
   ManagedFieldDescriptor,
-  ManagedRichTextMark,
+  ManagedRichTextMarkKind,
   StableId,
 } from "@landing-pages-websites/managed-site-contract";
 
@@ -77,16 +77,27 @@ function textConstraints(maxLength: number): {
   return { minLength: 1, maxLength, newlines: "forbid" };
 }
 
-function marksOf(candidate: Candidate): readonly ManagedRichTextMark[] {
+/**
+ * The mark kinds a document actually uses, which is what a constraint names.
+ * Collecting the mark objects instead would dedupe by identity rather than by
+ * kind and report the same mark repeatedly.
+ *
+ * Link marks are excluded because a converted document never carries one, and
+ * `allowedMarks` covers formatting only; prose links stay governed by
+ * `allowLinks` and its companions.
+ */
+function markKindsOf(candidate: Candidate): readonly ManagedRichTextMarkKind[] {
   if (candidate.kind !== "rich_text") return [];
-  const marks = new Set<ManagedRichTextMark>();
-  for (const block of candidate.document.children) {
-    for (const inline of block.children) {
-      if (inline.type !== "text") continue;
-      for (const mark of inline.marks) marks.add(mark);
+  const kinds = new Set<ManagedRichTextMarkKind>();
+  for (const block of candidate.document.content) {
+    if (block.type !== "paragraph") continue;
+    for (const node of block.content) {
+      for (const mark of node.marks) {
+        if (mark.type !== "link") kinds.add(mark.type);
+      }
     }
   }
-  return [...marks];
+  return [...kinds];
 }
 
 function linkConstraints(
@@ -302,9 +313,10 @@ export class ContractEmitter {
   }
 
   #emitRichText(binding: FieldBinding): void {
-    const marks = marksOf(binding.candidate);
-    const markCapabilities = marks.map(
-      (mark): ManagedFieldCapability => (mark === "bold" ? "rich_text.mark.bold" : "rich_text.mark.italic"),
+    const markKinds = markKindsOf(binding.candidate);
+    const markCapabilities = markKinds.map(
+      (kind): ManagedFieldCapability =>
+        kind === "bold" ? "rich_text.mark.bold" : "rich_text.mark.italic",
     );
     this.#fields.push({
       ...commonOf(binding),
@@ -314,7 +326,7 @@ export class ContractEmitter {
         maxCharacters: this.#context.config.text.richTextMaxCharacters,
         maxNodes: this.#context.config.text.richTextMaxNodes,
         allowedBlocks: ["paragraph"],
-        allowedMarks: marks,
+        allowedMarks: markKinds,
         allowLinks: false,
         allowedExternalHosts: [],
         allowedTargets: [],

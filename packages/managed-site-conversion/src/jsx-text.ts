@@ -3,7 +3,7 @@ import ts from "typescript";
 import type {
   ManagedRichTextDocument,
   ManagedRichTextInline,
-  ManagedRichTextMark,
+  ManagedRichTextMarkKind,
 } from "@landing-pages-websites/managed-site-contract";
 
 import {
@@ -64,7 +64,7 @@ export function partitionChildren(children: readonly ts.JsxChild[]): ChildPartit
   };
 }
 
-const MARK_BY_TAG: ReadonlyMap<string, ManagedRichTextMark> = new Map([
+const MARK_BY_TAG: ReadonlyMap<string, ManagedRichTextMarkKind> = new Map([
   ["em", "italic"],
   ["i", "italic"],
   ["strong", "bold"],
@@ -73,16 +73,19 @@ const MARK_BY_TAG: ReadonlyMap<string, ManagedRichTextMark> = new Map([
 
 function inlinesFor(
   child: ts.JsxChild,
-  marks: readonly ManagedRichTextMark[],
+  markKinds: readonly ManagedRichTextMarkKind[],
 ): readonly TextInline[] | null {
   const direct = directTextOf(child);
   if (direct !== null) {
+    // Kinds are accumulated while walking and become mark objects only here,
+    // which is the shape a document carries.
+    const marks = markKinds.map((kind) => ({ type: kind }) as const);
     return direct.length === 0 ? [] : [{ type: "text", text: direct, marks }];
   }
   if (!isElementChild(child)) return null;
   const mark = MARK_BY_TAG.get(tagNameOf(child));
   if (mark === undefined) return null;
-  const nested = [...marks, mark];
+  const nested = [...markKinds, mark];
   const collected: TextInline[] = [];
   for (const grandchild of childrenOf(child)) {
     const inlines = inlinesFor(grandchild, nested);
@@ -104,7 +107,7 @@ export function buildRichTextDocument(
   }
   const trimmed = trimInlineEdges(inlines);
   if (trimmed.length === 0) return null;
-  return { type: "document", children: [{ type: "paragraph", children: trimmed }] };
+  return { type: "doc", content: [{ type: "paragraph", content: trimmed }] };
 }
 
 function trimInlineEdges(

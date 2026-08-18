@@ -43,7 +43,7 @@ const collectionContentValue = {
   value: { orderedItemIds: [stableId("item")] },
 };
 const richDocument = richTextDocument([
-  { type: "paragraph", children: [{ type: "text", text: "Hello", marks: [] }] },
+  { type: "paragraph", content: [{ type: "text", text: "Hello", marks: [] }] },
 ]);
 
 const surfaces: readonly Surface[] = [
@@ -114,7 +114,7 @@ function assertDeepReadonlyTypes(
   // @ts-expect-error nested content owners are deeply readonly
   content.values[0].owner.kind = "site";
   // @ts-expect-error nested rich-text arrays are deeply readonly
-  richText.children[0].children = [];
+  richText.content[0].content = [];
   // @ts-expect-error source-document paths are readonly
   source.path = "content/other.json";
   // @ts-expect-error Next adapter data is deeply readonly
@@ -200,9 +200,10 @@ describe("public managed-site surface", () => {
   it("rejects oversized rich text through every accepting public surface", () => {
     const oversized = richTextContentValue("https://example.com");
     const value = oversized.value as Record<string, unknown>;
-    const paragraph = (value.children as Record<string, unknown>[])[0];
-    const link = (paragraph.children as Record<string, unknown>[])[0];
-    (link.children as Record<string, unknown>[])[0].text = "x".repeat(131_073);
+    const paragraph = (value.content as Record<string, unknown>[])[0];
+    // The linked text is the node itself now, so the oversized string goes on it
+    // rather than on a child of a link node.
+    (paragraph.content as Record<string, unknown>[])[0].text = "x".repeat(131_073);
     const document = {
       schemaVersion: "1.0",
       values: [oversized],

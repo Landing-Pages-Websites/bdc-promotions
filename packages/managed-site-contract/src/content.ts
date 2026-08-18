@@ -15,7 +15,7 @@ import {
   parseManagedRichTextDocument,
   summarizeManagedRichText,
   type ManagedRichTextDocument,
-  type ManagedRichTextInline,
+  type ManagedRichTextMark,
 } from "./rich-text.js";
 import {
   MANAGED_SITE_ROOT_SEMANTICS,
@@ -298,22 +298,32 @@ function validateRichText(
   const blocksAllowed = stats.blocks.every((block) =>
     field.constraints.allowedBlocks.includes(block.type),
   );
+  // A mark is an object now, so what a constraint names is its kind. Link marks
+  // are excluded here on purpose: they are governed by `allowLinks` and its
+  // companions below, which is where they were governed when a link was a node,
+  // so nothing has to be added to `allowedMarks` for links to keep working.
   const marksAllowed = stats.textNodes.every((node) =>
-    node.marks.every((mark) => field.constraints.allowedMarks.includes(mark)),
+    node.marks.every(
+      (mark) =>
+        mark.type === "link" ||
+        field.constraints.allowedMarks.includes(mark.type),
+    ),
   );
-  const linksAllowed = stats.inlines.every((inline) =>
-    inline.type === "text" || richTextLinkAllowed(field, inline),
+  const linksAllowed = stats.textNodes.every((node) =>
+    node.marks.every(
+      (mark) => mark.type !== "link" || richTextLinkAllowed(field, mark),
+    ),
   );
   return withinEnvelope && blocksAllowed && marksAllowed && linksAllowed;
 }
 
 function richTextLinkAllowed(
   field: Extract<ManagedValueField, { type: "rich_text" }>,
-  inline: Extract<ManagedRichTextInline, { type: "link" }>,
+  mark: Extract<ManagedRichTextMark, { type: "link" }>,
 ): boolean {
   if (!field.constraints.allowLinks) return false;
-  if (!field.constraints.allowedTargets.includes(inline.target)) return false;
-  const host = externalHost(inline.destination);
+  if (!field.constraints.allowedTargets.includes(mark.target)) return false;
+  const host = externalHost(mark.destination);
   return host === null || field.constraints.allowedExternalHosts.includes(host);
 }
 

@@ -98,16 +98,22 @@ function richConstraints(): JsonObject {
 
 function richValue(pageId: string): JsonObject {
   return {
-    type: "document",
-    children: [
+    type: "doc",
+    content: [
       {
         type: "paragraph",
-        children: [
+        content: [
           {
-            type: "link",
-            destination: { kind: "internal", pageId, fragment: null },
-            target: "same_window",
-            children: [{ type: "text", text: "Details", marks: ["bold"] }],
+            type: "text",
+            text: "Details",
+            marks: [
+              { type: "bold" },
+              {
+                type: "link",
+                destination: { kind: "internal", pageId, fragment: null },
+                target: "same_window",
+              },
+            ],
           },
         ],
       },

@@ -19,11 +19,11 @@
     "heading": "Seasonal home care",
     "summary": "A calm, methodical reset for the details that protect your home through the next season.",
     "body": {
-      "type": "document",
-      "children": [
+      "type": "doc",
+      "content": [
         {
           "type": "paragraph",
-          "children": [
+          "content": [
             {
               "type": "text",
               "text": "We inspect the small systems that quietly prevent larger repairs: exterior seals, drainage, hardware, ventilation, and the visible signs of seasonal wear.",
@@ -33,17 +33,21 @@
         },
         {
           "type": "bullet_list",
-          "children": [
+          "content": [
             {
               "type": "list_item",
-              "children": [
+              "content": [
                 {
                   "type": "paragraph",
-                  "children": [
+                  "content": [
                     {
                       "type": "text",
                       "text": "One prioritized home-care checklist",
-                      "marks": ["bold"]
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -51,10 +55,10 @@
             },
             {
               "type": "list_item",
-              "children": [
+              "content": [
                 {
                   "type": "paragraph",
-                  "children": [
+                  "content": [
                     {
                       "type": "text",
                       "text": "Minor adjustments completed during the visit",
@@ -100,11 +104,11 @@
     "heading": "Finish repairs",
     "summary": "Measured repairs for drywall, trim, doors, and the small visual breaks that keep a room from feeling complete.",
     "body": {
-      "type": "document",
-      "children": [
+      "type": "doc",
+      "content": [
         {
           "type": "paragraph",
-          "children": [
+          "content": [
             {
               "type": "text",
               "text": "We match the repair to the room, not just the damaged spot, so lines, reveals, sheen, and hardware feel intentional when the work is done.",
@@ -114,11 +118,15 @@
         },
         {
           "type": "paragraph",
-          "children": [
+          "content": [
             {
               "type": "text",
               "text": "Every scope is documented before work begins, with any hidden conditions discussed before the plan changes.",
-              "marks": ["italic"]
+              "marks": [
+                {
+                  "type": "italic"
+                }
+              ]
             }
           ]
         }

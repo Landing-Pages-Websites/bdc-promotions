@@ -349,8 +349,12 @@ describe("managed value and asset semantics", () => {
       code: "CONTENT_LINK_PAGE_UNRESOLVED",
       mutate: (fixture: ContentSemanticsFixture) => {
         const rich = object(contentValue(fixture, fixture.ids.richField).value);
-        const paragraph = objects(rich.children)[0];
-        const link = objects(paragraph.children)[0];
+        const paragraph = objects(rich.content)[0];
+        // The link is one mark among several on the text it covers, so it is
+        // found by kind rather than by position.
+        const marks = objects(objects(paragraph.content)[0].marks);
+        const link = marks.find((mark) => mark.type === "link");
+        if (link === undefined) throw new Error("fixture lost its link mark");
         object(link.destination).pageId = fixtureId("page");
       },
     },

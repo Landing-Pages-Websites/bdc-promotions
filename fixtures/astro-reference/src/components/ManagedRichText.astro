@@ -1,4 +1,6 @@
 ---
+import type { ManagedRichTextMark } from "@landing-pages-websites/managed-site-contract";
+
 import type { ManagedAstroRichText } from "../lib/managed-site";
 
 interface Props {
@@ -6,48 +8,56 @@ interface Props {
 }
 
 const { document } = Astro.props;
+
+/**
+ * Marks are objects, so a kind is matched rather than compared. A link mark
+ * carries a destination this reference site does not resolve yet; its text still
+ * renders, which is more than the previous renderer managed with a link node.
+ */
+function has(
+  marks: readonly ManagedRichTextMark[],
+  kind: ManagedRichTextMark["type"],
+): boolean {
+  return marks.some((mark) => mark.type === kind);
+}
 ---
 
 <div class="managed-rich-text">
   {
-    document.children.map((block) => {
+    document.content.map((block) => {
       if (block.type === "paragraph") {
         return (
           <p>
-            {block.children.map((inline) =>
-              inline.type === "text" ? (
-                <span
-                  class:list={{
-                    "managed-rich-text__bold": inline.marks.includes("bold"),
-                    "managed-rich-text__italic": inline.marks.includes("italic"),
-                  }}
-                >
-                  {inline.text}
-                </span>
-              ) : null,
-            )}
+            {block.content.map((text) => (
+              <span
+                class:list={{
+                  "managed-rich-text__bold": has(text.marks, "bold"),
+                  "managed-rich-text__italic": has(text.marks, "italic"),
+                }}
+              >
+                {text.text}
+              </span>
+            ))}
           </p>
         );
       }
       const List = block.type === "ordered_list" ? "ol" : "ul";
       return (
         <List>
-          {block.children.map((item) => (
+          {block.content.map((item) => (
             <li>
-              {item.children.map((paragraph) => (
+              {item.content.map((paragraph) => (
                 <p>
-                  {paragraph.children.map((inline) =>
-                    inline.type === "text" ? (
-                      <span
-                        class:list={{
-                          "managed-rich-text__bold": inline.marks.includes("bold"),
-                          "managed-rich-text__italic": inline.marks.includes("italic"),
-                        }}
-                      >
-                        {inline.text}
-                      </span>
-                    ) : null,
-                  )}
+                  {paragraph.content.map((text) => (
+                    <span
+                      class:list={{
+                        "managed-rich-text__bold": has(text.marks, "bold"),
+                        "managed-rich-text__italic": has(text.marks, "italic"),
+                      }}
+                    >
+                      {text.text}
+                    </span>
+                  ))}
                 </p>
               ))}
             </li>

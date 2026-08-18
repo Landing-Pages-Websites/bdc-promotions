@@ -1,6 +1,6 @@
 {
   "name": "@landing-pages-websites/managed-site-contract",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "bin": {
     "gomega-managed-site-conformance": "./dist/conformance-cli.js"

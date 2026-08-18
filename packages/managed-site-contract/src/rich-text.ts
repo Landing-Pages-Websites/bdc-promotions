@@ -16,46 +16,92 @@ export const MAX_RICH_TEXT_BYTES = 131_072;
 const MAX_RICH_TEXT_JSON_DEPTH = MAX_RICH_TEXT_DEPTH * 2;
 const MAX_RICH_TEXT_JSON_NODES = MAX_RICH_TEXT_NODES * 10;
 
-export const managedRichTextMarkSchema = z.enum(["bold", "italic"]);
+/**
+ * A document names its children `content` and its root `doc`, and carries marks
+ * as objects rather than strings, because this is the one shape an editor can
+ * round-trip without translating. The editors in this family serialise to
+ * `type`/`content`/`marks` and cannot be told to call the child array anything
+ * else, so any other spelling puts a conversion step between every keystroke and
+ * the stored value, which is where a read and a write start to disagree.
+ */
+const managedRichTextBoldMarkSchema = z.strictObject({
+  type: z.literal("bold"),
+});
 
+const managedRichTextItalicMarkSchema = z.strictObject({
+  type: z.literal("italic"),
+});
+
+/**
+ * A link is a mark, not a node wrapping text, so it composes with bold and
+ * italic instead of nesting against them.
+ *
+ * It carries the same destination union a `link` field carries, so prose links
+ * and link fields cannot drift apart on what a destination is, and an internal
+ * link names a `pageId` rather than a path: a path breaks the moment a route is
+ * renamed, and a stable id does not.
+ */
+const managedRichTextLinkMarkSchema = z.strictObject({
+  type: z.literal("link"),
+  destination: managedLinkDestinationSchema,
+  target: managedLinkTargetSchema,
+});
+
+export const managedRichTextMarkSchema = z.discriminatedUnion("type", [
+  managedRichTextBoldMarkSchema,
+  managedRichTextItalicMarkSchema,
+  managedRichTextLinkMarkSchema,
+]);
+
+/**
+ * The mark kinds a field's constraints may name. Constraints narrow by kind
+ * while a document carries whole mark objects, so these are two schemas rather
+ * than one doing both jobs, and a constraint list stays the plain strings it has
+ * always been.
+ *
+ * `link` is absent deliberately. Prose links are governed by `allowLinks` and
+ * its companions, exactly as they were when a link was a node rather than a
+ * mark, so becoming a mark does not quietly introduce a second switch that also
+ * has to be set.
+ */
+export const managedRichTextMarkKindSchema = z.enum(["bold", "italic"]);
+
+/** One of each mark at most: two of the same kind is not a distinguishable state. */
 const managedRichTextTextSchema = z
   .strictObject({
     type: z.literal("text"),
     text: z.string(),
-    marks: z.array(managedRichTextMarkSchema).max(2),
+    marks: z.array(managedRichTextMarkSchema).max(3),
   })
-  .refine((node) => new Set(node.marks).size === node.marks.length);
+  .refine((node) => {
+    const kinds = node.marks.map((mark) => mark.type);
+    return new Set(kinds).size === kinds.length;
+  });
 
-const managedRichTextLinkSchema = z.strictObject({
-  type: z.literal("link"),
-  destination: managedLinkDestinationSchema,
-  target: managedLinkTargetSchema,
-  children: z.array(managedRichTextTextSchema).min(1),
-});
-
-export const managedRichTextInlineSchema = z.discriminatedUnion("type", [
-  managedRichTextTextSchema,
-  managedRichTextLinkSchema,
-]);
+/**
+ * Inline content is text and nothing else now that links are marks. The name is
+ * kept because callers reason about "the inline level" of a document.
+ */
+export const managedRichTextInlineSchema = managedRichTextTextSchema;
 
 const managedRichTextParagraphSchema = z.strictObject({
   type: z.literal("paragraph"),
-  children: z.array(managedRichTextInlineSchema).min(1),
+  content: z.array(managedRichTextTextSchema).min(1),
 });
 
 const managedRichTextListItemSchema = z.strictObject({
   type: z.literal("list_item"),
-  children: z.array(managedRichTextParagraphSchema).min(1),
+  content: z.array(managedRichTextParagraphSchema).min(1),
 });
 
 const managedRichTextBulletListSchema = z.strictObject({
   type: z.literal("bullet_list"),
-  children: z.array(managedRichTextListItemSchema).min(1),
+  content: z.array(managedRichTextListItemSchema).min(1),
 });
 
 const managedRichTextOrderedListSchema = z.strictObject({
   type: z.literal("ordered_list"),
-  children: z.array(managedRichTextListItemSchema).min(1),
+  content: z.array(managedRichTextListItemSchema).min(1),
 });
 
 export const managedRichTextBlockSchema = z.discriminatedUnion("type", [
@@ -65,19 +111,28 @@ export const managedRichTextBlockSchema = z.discriminatedUnion("type", [
 ]);
 
 export const managedRichTextDocumentSchema = z.strictObject({
-  type: z.literal("document"),
-  children: z.array(managedRichTextBlockSchema).min(1),
+  type: z.literal("doc"),
+  content: z.array(managedRichTextBlockSchema).min(1),
 });
 
-export type ManagedRichTextMark = z.infer<typeof managedRichTextMarkSchema>;
-export type ManagedRichTextInline = DeepReadonly<z.infer<typeof managedRichTextInlineSchema>>;
-export type ManagedRichTextBlock = DeepReadonly<z.infer<typeof managedRichTextBlockSchema>>;
-export type ManagedRichTextDocument = DeepReadonly<z.infer<
-  typeof managedRichTextDocumentSchema
->>;
+export type ManagedRichTextMark = DeepReadonly<
+  z.infer<typeof managedRichTextMarkSchema>
+>;
+export type ManagedRichTextMarkKind = z.infer<
+  typeof managedRichTextMarkKindSchema
+>;
+export type ManagedRichTextInline = DeepReadonly<
+  z.infer<typeof managedRichTextInlineSchema>
+>;
+export type ManagedRichTextBlock = DeepReadonly<
+  z.infer<typeof managedRichTextBlockSchema>
+>;
+export type ManagedRichTextDocument = DeepReadonly<
+  z.infer<typeof managedRichTextDocumentSchema>
+>;
 
 type RichTextParagraph = Extract<ManagedRichTextBlock, { type: "paragraph" }>;
-type RichTextText = Extract<ManagedRichTextInline, { type: "text" }>;
+type RichTextText = ManagedRichTextInline;
 
 export interface ManagedRichTextSummary {
   readonly characters: number;
@@ -87,24 +142,16 @@ export interface ManagedRichTextSummary {
   readonly textNodes: readonly RichTextText[];
 }
 
-function countInlineNodes(inline: ManagedRichTextInline): number {
-  return inline.type === "text" ? 1 : 1 + inline.children.length;
-}
-
-function countParagraphNodes(
-  paragraph: Extract<ManagedRichTextBlock, { type: "paragraph" }>,
-): number {
-  return (
-    1 + paragraph.children.reduce((sum, inline) => sum + countInlineNodes(inline), 0)
-  );
+function countParagraphNodes(paragraph: RichTextParagraph): number {
+  return 1 + paragraph.content.length;
 }
 
 function countListItemNodes(
-  item: Extract<ManagedRichTextBlock, { type: "bullet_list" }>['children'][number],
+  item: Extract<ManagedRichTextBlock, { type: "bullet_list" }>["content"][number],
 ): number {
   return (
     1 +
-    item.children.reduce(
+    item.content.reduce(
       (sum, paragraph) => sum + countParagraphNodes(paragraph),
       0,
     )
@@ -113,41 +160,36 @@ function countListItemNodes(
 
 function countBlockNodes(block: ManagedRichTextBlock): number {
   if (block.type === "paragraph") return countParagraphNodes(block);
-  return (
-    1 +
-    block.children.reduce(
-      (sum, item) => sum + countListItemNodes(item),
-      0,
-    )
-  );
+  return 1 + block.content.reduce((sum, item) => sum + countListItemNodes(item), 0);
 }
 
 function countDocumentNodes(document: ManagedRichTextDocument): number {
-  return (
-    1 + document.children.reduce((sum, block) => sum + countBlockNodes(block), 0)
-  );
+  return 1 + document.content.reduce((sum, block) => sum + countBlockNodes(block), 0);
 }
 
 function collectParagraphs(
   blocks: readonly ManagedRichTextBlock[],
 ): readonly RichTextParagraph[] {
   return blocks.flatMap((block) =>
-    block.type === "paragraph" ? [block] : block.children.flatMap((item) => item.children),
+    block.type === "paragraph"
+      ? [block]
+      : block.content.flatMap((item) => item.content),
   );
 }
 
 export function summarizeManagedRichText(
   document: ManagedRichTextDocument,
 ): ManagedRichTextSummary {
-  const blocks = document.children;
-  const inlines = collectParagraphs(blocks).flatMap((paragraph) => paragraph.children);
-  const textNodes = inlines.flatMap((inline) =>
-    inline.type === "text" ? [inline] : inline.children,
+  const blocks = document.content;
+  // Text is the whole inline level, so the inline and text collections are the
+  // same values rather than one being unwrapped from the other.
+  const textNodes = collectParagraphs(blocks).flatMap(
+    (paragraph) => paragraph.content,
   );
   return {
     characters: textNodes.reduce((sum, node) => sum + node.text.length, 0),
     nodes: countDocumentNodes(document),
-    inlines,
+    inlines: textNodes,
     blocks,
     textNodes,
   };

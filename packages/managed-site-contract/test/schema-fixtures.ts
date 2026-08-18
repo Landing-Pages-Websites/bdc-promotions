@@ -46,29 +46,34 @@ export const resolver = {
 export const usage = { pageId: stableId("page"), itemId: null };
 export const richTextParagraph = {
   type: "paragraph",
-  children: [{ type: "text", text: "Trusted copy", marks: ["bold"] }],
+  content: [{ type: "text", text: "Trusted copy", marks: [{ type: "bold" }] }],
 };
 
-export function richTextDocument(children: readonly unknown[]): Record<string, unknown> {
-  return { type: "document", children };
+export function richTextDocument(content: readonly unknown[]): Record<string, unknown> {
+  return { type: "doc", content };
 }
 
 export function linkedListDocument(): Record<string, unknown> {
   return richTextDocument([
     {
       type: "bullet_list",
-      children: [
+      content: [
         {
           type: "list_item",
-          children: [
+          content: [
             {
               type: "paragraph",
-              children: [
+              content: [
                 {
-                  type: "link",
-                  destination: { kind: "external", url: "https://example.com/path" },
-                  target: "same_window",
-                  children: [{ type: "text", text: "Safe", marks: [] }],
+                  type: "text",
+                  text: "Safe",
+                  marks: [
+                    {
+                      type: "link",
+                      destination: { kind: "external", url: "https://example.com/path" },
+                      target: "same_window",
+                    },
+                  ],
                 },
               ],
             },
@@ -79,14 +84,14 @@ export function linkedListDocument(): Record<string, unknown> {
   ]);
 }
 
-export const invalidRichTextChildren = [
-  { type: "heading", level: 1, children: [] },
+export const invalidRichTextContent = [
+  { type: "heading", level: 1, content: [] },
   { type: "html", value: "<script>alert(1)</script>" },
   { type: "embed", src: "https://example.com" },
   { ...richTextParagraph, onClick: "alert(1)" },
   {
     type: "paragraph",
-    children: [{ type: "text", text: "bad", marks: ["underline"] }],
+    content: [{ type: "text", text: "bad", marks: [{ type: "underline" }] }],
   },
 ];
 
@@ -125,12 +130,17 @@ export function richTextContentValue(url: string): Record<string, unknown> {
     value: richTextDocument([
       {
         type: "paragraph",
-        children: [
+        content: [
           {
-            type: "link",
-            destination: { kind: "external", url },
-            target: "same_window",
-            children: [{ type: "text", text: "Link", marks: [] }],
+            type: "text",
+            text: "Link",
+            marks: [
+              {
+                type: "link",
+                destination: { kind: "external", url },
+                target: "same_window",
+              },
+            ],
           },
         ],
       },

@@ -92,7 +92,7 @@ function exactOwners(): readonly ExactKeyCase[] {
 
 function exactRenderedContentValues(): readonly Record<string, unknown>[] {
   const rich = richTextDocument([
-    { type: "paragraph", children: [{ type: "text", text: "copy", marks: [] }] },
+    { type: "paragraph", content: [{ type: "text", text: "copy", marks: [] }] },
   ]);
   return [
     contentValue("plain_text", "copy"),
@@ -154,29 +154,28 @@ function exactDestinations(): readonly ExactKeyCase[] {
 
 function exactRichTextNodes(): readonly ExactKeyCase[] {
   const text = { type: "text", text: "copy", marks: [] };
-  const link = {
+  const linkMark = {
     type: "link",
     destination: { kind: "external", url: "https://example.com" },
     target: "same_window",
-    children: [text],
   };
-  const paragraph = { type: "paragraph", children: [text] };
-  const listItem = { type: "list_item", children: [paragraph] };
+  const paragraph = { type: "paragraph", content: [text] };
+  const listItem = { type: "list_item", content: [paragraph] };
   const blocks = [
     paragraph,
-    { type: "bullet_list", children: [listItem] },
-    { type: "ordered_list", children: [listItem] },
+    { type: "bullet_list", content: [listItem] },
+    { type: "ordered_list", content: [listItem] },
   ];
   return [
-    { name: "rich:inline:text", parse: () => parseManagedRichTextDocument(richTextDocument([{ ...paragraph, children: [extra(text)] }])) },
-    { name: "rich:inline:link", parse: () => parseManagedRichTextDocument(richTextDocument([{ ...paragraph, children: [extra(link)] }])) },
+    { name: "rich:inline:text", parse: () => parseManagedRichTextDocument(richTextDocument([{ ...paragraph, content: [extra(text)] }])) },
+    { name: "rich:mark:link", parse: () => parseManagedRichTextDocument(richTextDocument([{ ...paragraph, content: [{ ...text, marks: [extra(linkMark)] }] }])) },
     ...blocks.map((block) => ({
       name: `rich:block:${block.type}`,
       parse: () => parseManagedRichTextDocument(richTextDocument([extra(block)])),
     })),
     {
       name: "rich:list_item",
-      parse: () => parseManagedRichTextDocument(richTextDocument([{ type: "bullet_list", children: [extra(listItem)] }])),
+      parse: () => parseManagedRichTextDocument(richTextDocument([{ type: "bullet_list", content: [extra(listItem)] }])),
     },
   ];
 }
