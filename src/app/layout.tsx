@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { LeadAttribution } from "@/components/analytics/LeadAttribution";
@@ -35,6 +36,10 @@ export default function RootLayout({
     >
       <head>
         <GomegaReviewBridge />
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="beforeInteractive"
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <a href="#main-content" className="skip-link">

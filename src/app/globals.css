@@ -46,6 +46,15 @@ body {
   left: 0;
 }
 
+/* Off-screen honeypot — not display:none, which bots skip. */
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 /* Accessibility baseline: zero out animation for users who ask for it. */
 @media (prefers-reduced-motion: reduce) {
   *,

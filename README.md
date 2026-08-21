@@ -45,14 +45,18 @@ files into a live customer repository as an unreviewed bulk migration.
    - Use the schema builders (`buildBusinessSchema`, `buildFaqSchema`,
      `buildBreadcrumbSchema`, `buildArticleSchema`) with `<JsonLd />` where
      appropriate.
-   - Use `<LeadForm />` for lead capture — it submits to the Mega
-     submission API (`analytics.gomega.ai/submission/submit`) with full
-     attribution, fires analytics events, and redirects to `/thank-you`.
+   - Use `<LeadForm />` for lead capture — it validates a real email and a
+     10-digit US phone (landing-page Hard Rules 4/4b), protects the POST with
+     Cloudflare Turnstile + a honeypot, submits through `/api/lead` to the Mega
+     submission API with full attribution, fires analytics events, and
+     redirects to `/thank-you`.
      It reads `megaCustomerId` / `megaSiteId` / `sourceProvider` /
      `budgetQualifier` from `src/site.config.ts`. The Mega optimizer needs
      `megaSiteKey` (sk_… from MEGA Admin Conversions tab) — set it in
      `src/site.config.ts` or the optimizer cannot function. NEVER submit leads any
      other way (no direct database access from frontend code).
+     Turnstile keys (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`)
+     are minted by the provisioning bot; without them `/api/lead` fail-closes.
      - `sourceProvider` uses the `website-<slug>` convention — the
        `website-` prefix distinguishes website leads from ad/LP leads in
        Keystone.
@@ -96,8 +100,8 @@ everything under `src/app/*/page.tsx`, and `public/` assets.
 
 ## Env vars
 
-All optional; the site works with none of them. Set in **Vercel project env**
-(Production + Preview), never committed.
+All optional except Turnstile, which go-live QA requires before launch. Set in
+**Vercel project env** (Production + Preview), never committed.
 
 | Var | Who sets it | Where | Required when |
 | --- | --- | --- | --- |
@@ -105,6 +109,9 @@ All optional; the site works with none of them. Set in **Vercel project env**
 | `NEXT_PUBLIC_POSTHOG_KEY` | provisioning bot | Vercel env | PostHog project is provisioned |
 | `NEXT_PUBLIC_POSTHOG_HOST` | provisioning bot | Vercel env | Only for non-US PostHog (defaults to US cloud) |
 | `NEXT_PUBLIC_GSC_VERIFICATION` | provisioning bot | Vercel env | Search Console verification is requested |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | provisioning bot | Vercel env | Lead forms (go-live blocker) |
+| `TURNSTILE_SECRET_KEY` | provisioning bot | Vercel env | Lead forms (go-live blocker) |
+| `TURNSTILE_HOSTNAMES` | provisioning bot | Vercel env | Lead forms — production hostnames only |
 | `ALLOW_TODO` | builder | build command / CI only | Preview builds while config is unfinished |
 
 GA4 and PostHog loaders are **consent-aware**, controlled by

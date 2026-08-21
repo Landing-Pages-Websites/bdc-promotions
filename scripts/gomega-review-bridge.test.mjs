@@ -33,5 +33,6 @@ test("mounts the bridge once in the root layout head", async () => {
     /import \{ GomegaReviewBridge \} from "@\/components\/analytics\/GomegaReviewBridge";/u
   );
   assert.equal((layout.match(/<GomegaReviewBridge \/>/gu) ?? []).length, 1);
-  assert.match(layout, /<head>\s*<GomegaReviewBridge \/>\s*<\/head>/u);
+  assert.match(layout, /<head>[\s\S]*<GomegaReviewBridge \/>[\s\S]*<\/head>/u);
+  assert.doesNotMatch(layout, /<body[\s\S]*<GomegaReviewBridge/u);
 });

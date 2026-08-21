@@ -37,6 +37,7 @@
     // path aliases resolve against that imagined site rather than this
     // one, and type-checking them here would be checking someone
     // else's tsconfig.
-    "packages/managed-site-conversion/test/fixtures/**"
+    "packages/managed-site-conversion/test/fixtures/**",
+    "**/*.test.ts"
   ]
 }

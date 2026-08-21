@@ -15,8 +15,11 @@ import {
   isValidPhone,
   useMegaLeadForm,
 } from "@/hooks/useMegaLeadForm";
+import { HONEYPOT_FIELD_NAME } from "@/lib/leadValidation";
 import { getPostHogClient } from "@/lib/posthog-client";
 import { siteConfig } from "@/site.config";
+import HoneypotField from "@/components/HoneypotField";
+import TurnstileWidget, { type TurnstileHandle } from "@/components/TurnstileWidget";
 
 const inputClasses =
   "w-full rounded-md border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
@@ -66,6 +69,7 @@ export function LeadForm(): ReactElement {
   const { submit } = useMegaLeadForm();
 
   const formRef = useRef<HTMLFormElement>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
   // Synchronous duplicate-submit gate: React state is batched, so a
   // double-click in one tick would see submitting=false twice. A ref flips
   // immediately. Cleared in finally so a failed submit can be retried; a
@@ -74,6 +78,7 @@ export function LeadForm(): ReactElement {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -88,14 +93,25 @@ export function LeadForm(): ReactElement {
     lastName.trim() !== "" &&
     isValidEmail(email) &&
     isValidPhone(phone) &&
-    budgetAnswered;
+    budgetAnswered &&
+    Boolean(turnstileToken);
 
   function handleClick(): void {
-    if (!canSubmit) {
-      formRef.current?.reportValidity(); // shows browser tooltips
+    if (
+      firstName.trim() === "" ||
+      lastName.trim() === "" ||
+      !isValidEmail(email) ||
+      !isValidPhone(phone) ||
+      !budgetAnswered
+    ) {
+      formRef.current?.reportValidity();
       return;
     }
-    formRef.current?.requestSubmit(); // fires <form onSubmit>
+    if (!turnstileToken) {
+      setSubmitError("Please wait a moment for the security check, then try again.");
+      return;
+    }
+    formRef.current?.requestSubmit();
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
@@ -109,11 +125,18 @@ export function LeadForm(): ReactElement {
     inFlightRef.current = true; // flips IMMEDIATELY, not next render
     setSubmitting(true);
     setSubmitError(null);
+    const honeypotInput = formRef.current?.elements.namedItem(
+      HONEYPOT_FIELD_NAME,
+    );
+    const honeypotValue =
+      honeypotInput instanceof HTMLInputElement ? honeypotInput.value : "";
     const formData = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),
       phone: phone.trim(),
+      [HONEYPOT_FIELD_NAME]: honeypotValue,
+      turnstileToken,
       ...(budgetQualifier === null ? {} : { budget }),
     };
     try {
@@ -123,7 +146,13 @@ export function LeadForm(): ReactElement {
       if (res?.ok !== true) {
         throw new Error("Submission not confirmed by server.");
       }
-      trackFormSubmission(formData);
+      trackFormSubmission({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        ...(budgetQualifier === null ? {} : { budget }),
+      });
       setSubmitted(true);
       router.push(siteConfig.thankYouPath);
     } catch (error) {
@@ -131,6 +160,8 @@ export function LeadForm(): ReactElement {
       // fire no analytics, and do not advance to the thank-you page.
       console.error("Form submission error:", error);
       setSubmitError(SUBMIT_ERROR_MESSAGE);
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     } finally {
       inFlightRef.current = false;
       setSubmitting(false);
@@ -141,6 +172,7 @@ export function LeadForm(): ReactElement {
     <form
       ref={formRef}
       onSubmit={handleSubmit}
+      data-lead-protection="turnstile"
       className="flex w-full max-w-md flex-col gap-4"
     >
       <div className="flex flex-col gap-1">
@@ -234,6 +266,8 @@ export function LeadForm(): ReactElement {
           </div>
         </fieldset>
       )}
+      <HoneypotField />
+      <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
       {submitError ? (
         <p
           role="alert"
