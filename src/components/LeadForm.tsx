@@ -43,16 +43,16 @@ declare global {
  * dataLayer event name is `form_submission` (distinct from the optimizer's
  * own `form_submit`) so any dataLayer consumer has its own trigger — and the
  * manual MegaTag.trackEvent("form_submit", …) ships alongside it ("never one
- * without the other"). The dataLayer push is a guarded no-op when nothing
- * consumes it (dataLayer is also populated by gtag.js/GA4).
+ * without the other"). Lead PII never goes on either event: Keystone already
+ * received the fields on `/api/lead`.
  */
-function trackFormSubmission(formData: Record<string, string>): void {
+function trackFormSubmission(): void {
   if (typeof window === "undefined") {
     return;
   }
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: "form_submission" });
-  window.MegaTag?.trackEvent?.("form_submit", formData);
+  window.MegaTag?.trackEvent?.("form_submit", { form: "lead" });
   getPostHogClient()?.capture("lead_form_submit");
 }
 
@@ -150,13 +150,7 @@ export function LeadForm(): ReactElement {
         setSubmitted(true);
         return;
       }
-      trackFormSubmission({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        ...(budgetQualifier === null ? {} : { budget }),
-      });
+      trackFormSubmission();
       setSubmitted(true);
       router.push(siteConfig.thankYouPath);
     } catch (error) {
