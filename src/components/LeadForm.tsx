@@ -146,6 +146,10 @@ export function LeadForm(): ReactElement {
       if (res?.ok !== true) {
         throw new Error("Submission not confirmed by server.");
       }
+      if (res.ignored === true) {
+        setSubmitted(true);
+        return;
+      }
       trackFormSubmission({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -171,6 +175,8 @@ export function LeadForm(): ReactElement {
   return (
     <form
       ref={formRef}
+      method="post"
+      action="/api/lead"
       onSubmit={handleSubmit}
       data-lead-protection="turnstile"
       className="flex w-full max-w-md flex-col gap-4"

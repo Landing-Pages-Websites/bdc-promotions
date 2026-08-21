@@ -26,6 +26,7 @@ export type { Attribution };
 export interface SubmissionResponse {
   ok: boolean;
   id?: string;
+  ignored?: boolean;
 }
 
 interface UseMegaLeadFormReturn {
@@ -75,17 +76,25 @@ export const useMegaLeadForm = (): UseMegaLeadFormReturn => {
       }
 
       const json: unknown = await response.json();
-      if (
-        typeof json !== "object" ||
-        json === null ||
-        !("ok" in json) ||
-        (json as { ok: unknown }).ok !== true
-      ) {
-        throw new Error(
-          `Submission rejected: ${JSON.stringify(json)?.slice(0, 200)}`,
-        );
-      }
-      return json as SubmissionResponse;
+        if (
+          typeof json !== "object" ||
+          json === null ||
+          !("ok" in json) ||
+          (json as { ok: unknown }).ok !== true
+        ) {
+          throw new Error(
+            `Submission rejected: ${JSON.stringify(json)?.slice(0, 200)}`,
+          );
+        }
+        const ignored =
+          "ignored" in json && (json as { ignored: unknown }).ignored === true;
+        return {
+          ok: true,
+          ...("id" in json && typeof (json as { id: unknown }).id === "string"
+            ? { id: (json as { id: string }).id }
+            : {}),
+          ...(ignored ? { ignored: true } : {}),
+        };
     },
     [],
   );

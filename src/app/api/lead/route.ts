@@ -48,7 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ? payload[HONEYPOT_FIELD_NAME].trim()
       : "";
   if (honeypot.length > 0) {
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ignored: true });
   }
 
   const parsed = parseLeadFields(payload);
