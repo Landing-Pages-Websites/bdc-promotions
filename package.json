@@ -14,7 +14,7 @@
     "start": "next start",
     "lint": "eslint",
     "check-config": "node scripts/check-config.mjs",
-    "test": "node --test scripts/*.test.mjs && node --experimental-strip-types --test src/lib/leadValidation.test.ts src/lib/blog-images.test.ts",
+    "test": "node --test scripts/*.test.mjs && node --experimental-strip-types --test src/lib/leadValidation.test.ts src/lib/blog-images.test.ts src/lib/markdown.test.ts",
     "test:managed-site": "tsx --test",
     "conformance:astro-reference": "npm --workspace @gomega/managed-site-astro-reference run conformance",
     "check:astro-reference": "npm --workspace @gomega/managed-site-astro-reference run check",

@@ -34,6 +34,42 @@ test("starter ships a blog index, post template, and markdown content dir", () =
   assert.match(read("next.config.ts"), /megaArticleImageRemotePatterns/);
 });
 
+test("the renderer supports the block set the MEGA migrator emits", () => {
+  // The go-live blog migrator converts a customer's existing posts into this
+  // markdown subset. A block the renderer cannot draw ships as literal
+  // markdown on a live site, so the set is a contract, not an implementation
+  // detail. Keep in sync with BLOCK_KINDS in src/lib/markdown.ts.
+  const markdown = read("src/lib/markdown.ts");
+  for (const kind of [
+    "heading",
+    "paragraph",
+    "list",
+    "blockquote",
+    "table",
+    "code",
+    "image",
+  ]) {
+    assert.match(
+      markdown,
+      new RegExp(`kind:\\s*"${kind}"`),
+      `src/lib/markdown.ts no longer emits the "${kind}" block`,
+    );
+  }
+  // The renderer must handle every kind the parser can emit. Asserting on
+  // branches rather than on literal tags: the list tag is chosen dynamically,
+  // so matching "<ol" would fail on a correct renderer.
+  const renderer = read("src/components/blog/MarkdownBody.tsx");
+  for (const kind of ["heading", "list", "blockquote", "table", "code", "image"]) {
+    assert.match(
+      renderer,
+      new RegExp(`case "${kind}"`),
+      `MarkdownBody has no branch for the "${kind}" block`,
+    );
+  }
+  // paragraph is the default branch, so it has no case label.
+  assert.match(renderer, /default:/, "MarkdownBody lost its paragraph fallback");
+});
+
 test("check-config treats a missing blog contract as a hard failure", () => {
   const source = read("scripts/check-config.mjs");
   assert.match(source, /collectBlogContractProblems/);
