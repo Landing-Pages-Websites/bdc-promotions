@@ -23,5 +23,6 @@ export const siteRoutes: RouteEntry[] = [
   { path: "/terms", title: "Terms of Service", priority: 0.2, hideFromKeyPages: true },
   { path: "/cookie-policy", title: "Cookie Policy", priority: 0.2, hideFromKeyPages: true },
   { path: "/thank-you", title: "Thank You", priority: 0.1, hideFromKeyPages: true },
+  { path: "/blog", title: "Blog", priority: 0.7 },
   // Builders: append new pages below this line.
 ];

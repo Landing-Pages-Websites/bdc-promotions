@@ -39,7 +39,9 @@ files into a live customer repository as an unreviewed bulk migration.
    you build the site's pages. Render only values returned by the managed-site
    adapter and preserve stable page/field annotations.
    - Register every new page in `src/lib/routes.ts` (drives sitemap.xml,
-     llms.txt, and the 404 page).
+     llms.txt, and the 404 page). The template already registers `/blog`.
+     Add future articles as markdown under `content/blog/` — do not remove
+     `src/app/blog/page.tsx` or `src/app/blog/[slug]/page.tsx`.
    - Use `buildMetadata({ title, description, path })` for every page's
      `export const metadata`.
    - Use the schema builders (`buildBusinessSchema`, `buildFaqSchema`,
@@ -92,6 +94,7 @@ the complete public site. The Gomega review bridge is immutable v4 plumbing:
 value and anonymous cross-origin mode. Do not replace any of those values.
 
 What you DO edit: `src/site.config.ts`, `src/content/`,
+`content/blog/*.md` (articles; the `/blog` page and `[slug]` template stay),
 `src/lib/routes.ts` (append pages),
 `src/lib/redirects.ts` (migrations only: map every old-site URL to its new
 slug — inventory the old site while it's still live, BEFORE DNS flips;

@@ -23,6 +23,7 @@ test("sitemap gives every registered prelaunch route a weekly crawl default", as
   const siteRoutes = [{ path: "/", priority: 1 }, { path: "/services" }];
   const { default: sitemap } = await loadMetadataRoute(sitemapPath, {
     'import type { MetadataRoute } from "next";': "",
+    'import { listPublishedPosts } from "@/lib/blog";': "const listPublishedPosts = () => [];",
     'import { siteRoutes } from "@/lib/routes";': `const siteRoutes = ${JSON.stringify(siteRoutes)};`,
     'import { absoluteUrl } from "@/lib/seo";': 'const absoluteUrl = (path) => `https://preview.example${path}`;',
   });
