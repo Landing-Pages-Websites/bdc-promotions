@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { megaArticleImageRemotePatterns } from "./src/lib/blog-images";
 import { redirectMap } from "./src/lib/redirects";
 
 const POSTHOG_HOST =
@@ -14,6 +15,9 @@ const nextConfig: NextConfig = {
   // make Next.js guess wrong.
   turbopack: {
     root: __dirname,
+  },
+  images: {
+    remotePatterns: megaArticleImageRemotePatterns,
   },
   async redirects() {
     // 301-equivalent redirects for migrations. Builders fill the map in

@@ -8,7 +8,7 @@ export interface MetadataOverrides {
   siteName?: string;
   /** Site path or absolute canonical URL. Defaults to "/". */
   path?: string;
-  /** Override OG image path (under /public). Defaults to siteConfig.ogImagePath. */
+  /** Override OG image: a /public path, or an absolute MEGA S3 article URL. */
   ogImagePath?: string;
   /** Per-page crawler directives, supplied by internal protected SEO content. */
   robots?: Metadata["robots"];

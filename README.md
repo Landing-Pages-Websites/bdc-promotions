@@ -41,7 +41,9 @@ files into a live customer repository as an unreviewed bulk migration.
    - Register every new page in `src/lib/routes.ts` (drives sitemap.xml,
      llms.txt, and the 404 page). The template already registers `/blog`.
      Add future articles as markdown under `content/blog/` — do not remove
-     `src/app/blog/page.tsx` or `src/app/blog/[slug]/page.tsx`.
+     `src/app/blog/page.tsx` or `src/app/blog/[slug]/page.tsx`. MEGA writes
+     article images as S3 URLs; keep `megaArticleImageRemotePatterns` in
+     `next.config.ts` so `next/image` can load them.
    - Use `buildMetadata({ title, description, path })` for every page's
      `export const metadata`.
    - Use the schema builders (`buildBusinessSchema`, `buildFaqSchema`,

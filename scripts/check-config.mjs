@@ -23,10 +23,7 @@ function jsonFiles(relativeDirectory) {
   });
 }
 
-const configFiles = [
-  "src/site.config.ts",
-  ...jsonFiles("src/content").sort(),
-];
+const configFiles = ["src/site.config.ts", ...jsonFiles("src/content").sort()];
 
 function collectProblems(source, relativePath) {
   const problems = [];
@@ -72,22 +69,48 @@ function collectBlogContractProblems() {
   ];
   const problems = requiredFiles
     .filter((relativePath) => !existsSync(join(repositoryRoot, relativePath)))
-    .map((relativePath) => `${relativePath}: missing — every site needs a blog index and post template`);
+    .map(
+      (relativePath) =>
+        `${relativePath}: missing — every site needs a blog index and post template`,
+    );
   const routes = readConfig("src/lib/routes.ts");
   if (!/path:\s*"\/blog"/.test(routes)) {
-    problems.push('src/lib/routes.ts: missing { path: "/blog" } — sitemap and 404 key pages will hide the blog');
+    problems.push(
+      'src/lib/routes.ts: missing { path: "/blog" } — sitemap and 404 key pages will hide the blog',
+    );
   }
   const postsDirectory = join(repositoryRoot, "content/blog");
   if (!existsSync(postsDirectory)) {
-    problems.push("content/blog: directory missing — MEGA git-as-CMS publishes markdown here");
+    problems.push(
+      "content/blog: directory missing — MEGA git-as-CMS publishes markdown here",
+    );
     return problems;
   }
-  const posts = readdirSync(postsDirectory).filter((name) =>
-    name.endsWith(".md") || name.endsWith(".mdx"),
+  const posts = readdirSync(postsDirectory).filter(
+    (name) => name.endsWith(".md") || name.endsWith(".mdx"),
   );
   if (posts.length === 0) {
     problems.push(
       "content/blog: no markdown posts — add at least one so /blog/<slug> proves the post template",
+    );
+  }
+  if (!existsSync(join(repositoryRoot, "src/lib/blog-images.ts"))) {
+    problems.push(
+      "src/lib/blog-images.ts: missing — MEGA writes article images as S3 URLs that next/image must allow",
+    );
+  } else if (
+    !/zleague-public-prod\.s3\.us-east-2\.amazonaws\.com/.test(
+      readConfig("src/lib/blog-images.ts"),
+    )
+  ) {
+    problems.push(
+      "src/lib/blog-images.ts: missing MEGA article image host zleague-public-prod.s3.us-east-2.amazonaws.com",
+    );
+  }
+  const nextConfig = readConfig("next.config.ts");
+  if (!/megaArticleImageRemotePatterns/.test(nextConfig)) {
+    problems.push(
+      "next.config.ts: images.remotePatterns must use megaArticleImageRemotePatterns so MEGA S3 article images load",
     );
   }
   return problems;
@@ -100,15 +123,18 @@ const blogProblems = collectBlogContractProblems();
 const problems = [...todoProblems, ...blogProblems];
 
 if (problems.length === 0) {
-  console.log("check-config: operational config, managed content, and blog contract look complete.");
+  console.log(
+    "check-config: operational config, managed content, and blog contract look complete.",
+  );
   process.exit(0);
 }
 
 const allowTodo = process.env.ALLOW_TODO === "1";
 const blocking = allowTodo ? blogProblems : problems;
-const label = allowTodo && todoProblems.length > 0 && blogProblems.length === 0
-  ? "WARNING"
-  : "ERROR";
+const label =
+  allowTodo && todoProblems.length > 0 && blogProblems.length === 0
+    ? "WARNING"
+    : "ERROR";
 
 console[label === "WARNING" ? "warn" : "error"](
   `check-config ${label}: site configuration is not filled in:\n` +

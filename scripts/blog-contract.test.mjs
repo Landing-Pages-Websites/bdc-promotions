@@ -27,6 +27,11 @@ test("starter ships a blog index, post template, and markdown content dir", () =
   assert.ok(posts.length >= 1, "content/blog needs at least one markdown post");
   const sample = read(`content/blog/${posts[0]}`);
   assert.match(sample, /^---[\s\S]*title:/);
+  assert.match(
+    read("src/lib/blog-images.ts"),
+    /zleague-public-prod\.s3\.us-east-2\.amazonaws\.com/,
+  );
+  assert.match(read("next.config.ts"), /megaArticleImageRemotePatterns/);
 });
 
 test("check-config treats a missing blog contract as a hard failure", () => {

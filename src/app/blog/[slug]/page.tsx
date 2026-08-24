@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 import MarkdownBody from "@/components/blog/MarkdownBody";
+import BlogImage from "@/components/blog/BlogImage";
 import { JsonLd } from "@/components/schema/JsonLd";
 import { buildArticleSchema } from "@/components/schema/builders";
 import { getPublishedPost, listPublishedPosts } from "@/lib/blog";
@@ -26,6 +27,7 @@ export async function generateMetadata({
     title: post.title,
     description: post.description || post.title,
     path: `/blog/${post.slug}`,
+    ogImagePath: post.image ?? undefined,
   });
 }
 
@@ -63,6 +65,15 @@ export default async function BlogArticlePage({
       <h1 className="mt-6 text-3xl font-bold">{post.title}</h1>
       {post.author ? (
         <p className="mt-2 text-sm text-neutral-500">By {post.author}</p>
+      ) : null}
+      {post.image ? (
+        <div className="mt-8">
+          <BlogImage
+            src={post.image}
+            alt={post.imageAlt ?? post.title}
+            priority
+          />
+        </div>
       ) : null}
       <div className="mt-10">
         <MarkdownBody source={post.body} />
