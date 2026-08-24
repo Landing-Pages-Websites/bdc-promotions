@@ -23,7 +23,8 @@ export const megaArticleImageRemotePatterns = [
 
 /** True when next/image can optimize this src (local path or allowlisted S3). */
 export function canOptimizeBlogImage(src: string): boolean {
-  if (src.startsWith("/")) return true;
+  // `//host/x` starts with `/` but is a remote URL, not a site path.
+  if (src.startsWith("/") && !src.startsWith("//")) return true;
   try {
     const url = new URL(src);
     if (url.protocol !== "https:") return false;

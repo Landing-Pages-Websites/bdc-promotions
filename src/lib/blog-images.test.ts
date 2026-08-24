@@ -30,4 +30,11 @@ test("canOptimizeBlogImage rejects other remotes so they render unoptimized", ()
     false,
   );
   assert.equal(canOptimizeBlogImage("not a url"), false);
+  assert.equal(canOptimizeBlogImage("//cdn.example.com/x.webp"), false);
+  assert.equal(
+    canOptimizeBlogImage(
+      `//${MEGA_ARTICLE_IMAGE_HOST}/article_images/acme/cover.webp`,
+    ),
+    false,
+  );
 });
