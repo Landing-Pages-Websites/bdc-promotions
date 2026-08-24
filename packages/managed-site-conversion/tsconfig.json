@@ -2,7 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "incremental": false,
-    "rootDir": ".",
+    // Widened past this package: `image-probe.ts` imports the repository's one
+    // image header parser from `src/lib/`, which has to live there because the
+    // starter's `src/` is copied wholesale into customer sites that have no
+    // workspace packages. Nothing is emitted from this project, so `rootDir`
+    // only decides which files `tsc` will accept.
+    "rootDir": "../..",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2022",

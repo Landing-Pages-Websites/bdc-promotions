@@ -47,11 +47,11 @@ function png(width: number, height: number): Buffer {
   ]);
 }
 
-function gif(width: number, height: number): Buffer {
+function gif(width: number, height: number, signature = "GIF89a"): Buffer {
   const screen = Buffer.alloc(7);
   screen.writeUInt16LE(width, 0);
   screen.writeUInt16LE(height, 2);
-  return Buffer.concat([Buffer.from("GIF89a"), screen]);
+  return Buffer.concat([Buffer.from(signature, "latin1"), screen]);
 }
 
 function bmp(width: number, height: number, headerSize = 40): Buffer {
@@ -185,6 +185,8 @@ interface AvifOptions {
   wideItemIds?: boolean;
   /** Flag bit 0 widens each association to two bytes. */
   wideIndices?: boolean;
+  /** `ftyp` major brand, and the compatible brands after the minor version. */
+  brands?: { major: string; compatible?: string[] };
 }
 
 function avif({
@@ -193,6 +195,7 @@ function avif({
   primary,
   wideItemIds = false,
   wideIndices = false,
+  brands = { major: "avif" },
 }: AvifOptions): Buffer {
   const writeId = (target: Buffer, value: number, at: number): void => {
     if (wideItemIds) target.writeUInt32BE(value, at);
@@ -238,7 +241,15 @@ function avif({
       ),
     ]),
   );
-  return Buffer.concat([box("ftyp", Buffer.from("avifavif")), meta]);
+  const ftyp = box(
+    "ftyp",
+    Buffer.concat([
+      Buffer.from(brands.major, "latin1"),
+      be32(0), // minor version
+      ...(brands.compatible ?? []).map((brand) => Buffer.from(brand, "latin1")),
+    ]),
+  );
+  return Buffer.concat([ftyp, meta]);
 }
 
 /** The simplest conforming AVIF: one item, one `ispe`. */
@@ -407,6 +418,96 @@ test("an avif reports the same size however wide its tables are", () => {
       );
       assert.deepEqual(readLocalImageSize(src), expected, name);
     }
+  }
+});
+
+// --- Identifying a format, not a container -----------------------------------
+
+test("an ISO-BMFF file is read only when a ftyp brand says AVIF", () => {
+  // A `ftyp` box means "some ISO-BMFF file". HEIC and HEIF carry one, and HEIF
+  // shares the `meta`/`iprp`/`ispe` boxes read here, so the container cannot be
+  // the evidence: a HEIC would be reported as AVIF and the conversion manifest
+  // would claim `image/avif` for bytes no managed site can serve.
+  const accepted: Array<[string, { major: string; compatible?: string[] }]> = [
+    ["a plain avif major brand", { major: "avif" }],
+    ["an avif image sequence", { major: "avis" }],
+    // What Pillow, sharp and Apple actually emit: the brand is in the
+    // compatible list, alongside the generic HEIF brands.
+    ["avif among the compatible brands", { major: "mif1", compatible: ["avif", "miaf"] }],
+    ["Apple's ordering", { major: "MiPr", compatible: ["avif", "miaf", "mif1"] }],
+    ["avis among the compatible brands", { major: "mif1", compatible: ["miaf", "avis"] }],
+  ];
+  for (const [name, brands] of accepted) {
+    const src = publish(
+      `blog/brand/ok-${brands.major}-${(brands.compatible ?? []).join("")}.avif`,
+      avif({ properties: [spatialExtents(640, 1024)], items: { 1: [1] }, primary: 1, brands }),
+    );
+    assert.deepEqual(readLocalImageSize(src), { width: 640, height: 1024 }, name);
+  }
+
+  const rejected: Array<[string, { major: string; compatible?: string[] }]> = [
+    // A real `sips -s format heic` file: heic major, mif1 among compatible.
+    ["heic", { major: "heic", compatible: ["mif1", "MiPr", "miaf", "MiHB", "heic"] }],
+    ["heix", { major: "heix", compatible: ["mif1"] }],
+    // `mif1` and `miaf` are generic HEIF brands that AVIF files list too, so on
+    // their own they are not evidence either way.
+    ["mif1 alone", { major: "mif1", compatible: ["miaf"] }],
+    ["mif1 with no compatible brands", { major: "mif1" }],
+    // Brands the reviewer did not name: video containers carry ftyp as well.
+    ["mp4", { major: "isom", compatible: ["isom", "mp42", "avc1"] }],
+    ["quicktime", { major: "qt  " }],
+    // A brand that merely starts with the same bytes must not slip through.
+    ["avi (not avif)", { major: "avi " }],
+  ];
+  for (const [name, brands] of rejected) {
+    const src = publish(
+      `blog/brand/no-${brands.major.trim()}-${(brands.compatible ?? []).join("")}.avif`,
+      avif({ properties: [spatialExtents(640, 1024)], items: { 1: [1] }, primary: 1, brands }),
+    );
+    assert.equal(readLocalImageSize(src), null, name);
+  }
+});
+
+test("the brand walk stops at a sane cap rather than trusting a huge ftyp", () => {
+  // A real ftyp lists a handful of brands. Padding it with hundreds and hiding
+  // the avif brand past the cap must fail closed: the box structure here is
+  // valid, so only the brand walk can reject it.
+  const padding = Array.from({ length: 400 }, () => "xxxx");
+  const src = publish(
+    "blog/brand/capped.avif",
+    avif({
+      properties: [spatialExtents(640, 1024)],
+      items: { 1: [1] },
+      primary: 1,
+      brands: { major: "mif1", compatible: [...padding, "avif"] },
+    }),
+  );
+  assert.equal(readLocalImageSize(src), null);
+
+  // The same file with the brand inside the cap is read, so the case above is
+  // rejected by the cap and not by something else in the header.
+  const near = publish(
+    "blog/brand/near.avif",
+    avif({
+      properties: [spatialExtents(640, 1024)],
+      items: { 1: [1] },
+      primary: 1,
+      brands: { major: "mif1", compatible: ["xxxx", "avif", ...padding] },
+    }),
+  );
+  assert.deepEqual(readLocalImageSize(near), { width: 640, height: 1024 });
+});
+
+test("a gif needs its whole six-byte signature", () => {
+  for (const signature of ["GIF87a", "GIF89a"]) {
+    const src = publish(`blog/sig/${signature}.gif`, gif(640, 1024, signature));
+    assert.deepEqual(readLocalImageSize(src), { width: 640, height: 1024 }, signature);
+  }
+  // `GIF` is three bytes of a six-byte magic. Accepting the prefix reads the
+  // next four bytes of an unrelated file as its dimensions.
+  for (const signature of ["GIFT n", "GIF88a", "GIF89b", "GIF97a", "GIF\0\0\0", "gif89a"]) {
+    const src = publish(`blog/sig/bad-${signature.replace(/\W/gu, "_")}.gif`, gif(640, 1024, signature));
+    assert.equal(readLocalImageSize(src), null, JSON.stringify(signature));
   }
 });
 
