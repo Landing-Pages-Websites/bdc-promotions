@@ -34,7 +34,14 @@ function renderInline(nodes: InlineNode[]): ReactNode[] {
           </a>
         );
       case "image":
-        return <BlogImage key={index} src={node.src} alt={node.alt} />;
+        return (
+          <BlogImage
+            key={index}
+            src={node.src}
+            alt={node.alt}
+            variant="body"
+          />
+        );
       default:
         return node.value;
     }
@@ -141,7 +148,7 @@ function renderBlock(block: Block, key: number): ReactElement {
     case "image":
       return (
         <div key={key} className="mt-6">
-          <BlogImage src={block.src} alt={block.alt} />
+          <BlogImage src={block.src} alt={block.alt} variant="body" />
         </div>
       );
     default:

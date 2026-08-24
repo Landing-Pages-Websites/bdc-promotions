@@ -21,10 +21,18 @@ export const megaArticleImageRemotePatterns = [
   },
 ];
 
+/**
+ * True when `src` is a path this site serves itself, so the bytes are on disk
+ * under `public/` at build time.
+ */
+export function isLocalBlogImage(src: string): boolean {
+  // `//host/x` starts with `/` but is a remote URL, not a site path.
+  return src.startsWith("/") && !src.startsWith("//");
+}
+
 /** True when next/image can optimize this src (local path or allowlisted S3). */
 export function canOptimizeBlogImage(src: string): boolean {
-  // `//host/x` starts with `/` but is a remote URL, not a site path.
-  if (src.startsWith("/") && !src.startsWith("//")) return true;
+  if (isLocalBlogImage(src)) return true;
   try {
     const url = new URL(src);
     if (url.protocol !== "https:") return false;

@@ -71,6 +71,7 @@ export default async function BlogArticlePage({
           <BlogImage
             src={post.image}
             alt={post.imageAlt ?? post.title}
+            variant="banner"
             priority
           />
         </div>
