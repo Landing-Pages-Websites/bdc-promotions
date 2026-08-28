@@ -115,7 +115,7 @@ export function conformingContract(): Record<string, unknown> {
       reviewProtocol: 1,
       editProtocol: 2,
       annotationVersion: 1,
-      delivery: { version: "v6", src: "https://app.gomega.ai/review-bridge/v6/review-bridge.js", integrity: `sha384-${"a".repeat(64)}`, crossOrigin: "anonymous", load: "head_defer" },
+      delivery: { version: "v7", src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js", integrity: `sha384-${"a".repeat(64)}`, crossOrigin: "anonymous", load: "head_defer" },
       framing: "authenticated_preview_gateway",
     },
     pages: [

@@ -1810,11 +1810,11 @@
                   "type": "string"
                 },
                 "src": {
-                  "const": "https://app.gomega.ai/review-bridge/v6/review-bridge.js",
+                  "const": "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
                   "type": "string"
                 },
                 "version": {
-                  "const": "v6",
+                  "const": "v7",
                   "type": "string"
                 }
               },

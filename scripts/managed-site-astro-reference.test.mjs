@@ -3,10 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const FIXTURE = "fixtures/astro-reference";
-const BRIDGE_SOURCE =
-  "https://app.gomega.ai/review-bridge/v6/review-bridge.js";
+const BRIDGE_SOURCE = "https://app.gomega.ai/review-bridge/v7/review-bridge.js";
 const BRIDGE_INTEGRITY =
-  "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn";
+  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
 
 function repositoryFile(path) {
   return new URL(`../${path}`, import.meta.url);
@@ -30,8 +29,9 @@ function collectResolverPaths(value, paths = new Set()) {
 }
 
 function generatedRoute(contract) {
-  const page = contract.pages.find((candidate) =>
-    candidate.route?.kind === "generated");
+  const page = contract.pages.find(
+    (candidate) => candidate.route?.kind === "generated",
+  );
   assert.notEqual(page, undefined);
   return page;
 }
@@ -72,7 +72,7 @@ test("defines one exact Astro contract and projected content checkpoint", async 
     editProtocol: 2,
     annotationVersion: 1,
     delivery: {
-      version: "v6",
+      version: "v7",
       src: BRIDGE_SOURCE,
       integrity: BRIDGE_INTEGRITY,
       crossOrigin: "anonymous",
@@ -86,8 +86,9 @@ test("defines one exact Astro contract and projected content checkpoint", async 
     `${FIXTURE}/src/content/site.json`,
   ]);
   assert.equal(
-    contract.pages.some((page) =>
-      page.route?.kind === "static" && page.route.path === "/"),
+    contract.pages.some(
+      (page) => page.route?.kind === "static" && page.route.path === "/",
+    ),
     true,
   );
   const generated = generatedRoute(contract);
@@ -114,10 +115,12 @@ test("defines one exact Astro contract and projected content checkpoint", async 
     },
   );
   assert.equal(
-    collection?.uniqueness.some((rule) =>
-      rule.comparison === "exact" &&
-      rule.fieldIds.length === 1 &&
-      rule.fieldIds[0] === routeKey?.id),
+    collection?.uniqueness.some(
+      (rule) =>
+        rule.comparison === "exact" &&
+        rule.fieldIds.length === 1 &&
+        rule.fieldIds[0] === routeKey?.id,
+    ),
     true,
   );
   assert.equal(contract.internalSeo.pages.length, 1);
@@ -188,7 +191,10 @@ test("renders only validated models through static and generated Astro pages", a
   assert.match(servicePage, /managedSiteFieldAttributesV1/u);
   assert.match(renderSource, /application\/ld\+json/u);
   assert.doesNotMatch(renderSource, /set:html/u);
-  assert.doesNotMatch(renderSource, /content\/(?:site|pages|collections).*\.json/u);
+  assert.doesNotMatch(
+    renderSource,
+    /content\/(?:site|pages|collections).*\.json/u,
+  );
   assert.match(styles, /prefers-reduced-motion/u);
   assert.match(styles, /:focus-visible/u);
 });
@@ -214,4 +220,40 @@ test("makes projection, conformance, Astro check, and Astro build required", asy
   assert.match(checker, /canonicalizeJson/u);
   assert.match(checker, /gomega-managed-site-conformance/u);
   assert.doesNotMatch(checker, /writeFile|appendFile/u);
+});
+
+/**
+ * The built HTML is tracked, so it is a deliverable: consuming or deploying it
+ * runs whatever bridge it names, not whatever the source says. It had drifted
+ * twice over -- still naming v6 after the layout moved to v7, and carrying no
+ * item annotations at all after the templates started emitting them -- so the
+ * artifact was describing a reference that no longer existed.
+ *
+ * Asserted against the same constants the source is, rather than against
+ * whatever the file happens to contain, so a source change without a rebuild
+ * fails here instead of shipping.
+ */
+test("the tracked Astro output matches the source it was built from", async () => {
+  const pages = await Promise.all([
+    readSource(`${FIXTURE}/dist/index.html`),
+    readSource(`${FIXTURE}/dist/services/finish-repairs/index.html`),
+    readSource(`${FIXTURE}/dist/services/seasonal-home-care/index.html`),
+  ]);
+
+  for (const page of pages) {
+    assert.ok(
+      page.includes(BRIDGE_SOURCE),
+      "built page names the promoted bridge",
+    );
+    assert.ok(page.includes(BRIDGE_INTEGRITY), "built page pins its integrity");
+    assert.doesNotMatch(
+      page,
+      /review-bridge\/v(?!7\/)[0-9]+\//u,
+      "built page names no superseded delivery",
+    );
+    // Every value the reference renders inside a collection item is annotated
+    // with the item that owns it, or an editor reading the page cannot tell two
+    // rows apart. A rebuild is what puts them here.
+    assert.match(page, /data-gomega-item-id="item_/u);
+  }
 });

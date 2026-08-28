@@ -27,7 +27,7 @@ import { FINDING_CODES } from "../src/report.js";
 import { run, workspace, type Workspace } from "./support/proposals.js";
 
 const VALID_SRI =
-  "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn";
+  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
 
 function configWith(bridge: unknown): string {
   const directory = mkdtempSync(join(tmpdir(), "conversion-config-"));
@@ -213,18 +213,28 @@ describe("bridge delivery in a conversion config", () => {
   });
 
   /**
-   * The loader must not be looser than the canonical parser. A `v7` config that
-   * loaded cleanly would fail later as `contract: null`, with the config that
-   * caused it already accepted and nothing saying why.
+   * The loader must not be looser than the canonical parser. A config naming a
+   * version the contract cannot express would load cleanly and fail later as
+   * `contract: null`, with the config that caused it already accepted and
+   * nothing saying why.
+   *
+   * The version and the expected message are both derived from the supported
+   * one, so promoting the next bridge cannot leave this test asserting that the
+   * newly supported version is refused -- which is exactly what a find-and-
+   * replace did to it when v6 became v7.
    */
   it("refuses a version the contract cannot express", () => {
+    const unsupported = `v${Number(SUPPORTED_BRIDGE_VERSION.slice(1)) + 1}`;
     const next = {
       ...VALID_BRIDGE,
-      version: "v7",
-      src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
+      version: unsupported,
+      src: `https://app.gomega.ai/review-bridge/${unsupported}/review-bridge.js`,
     };
 
-    assert.throws(() => loadConfig(configWith(next)), /is not the supported v6/u);
+    assert.throws(
+      () => loadConfig(configWith(next)),
+      new RegExp(`is not the supported ${SUPPORTED_BRIDGE_VERSION}`, "u"),
+    );
   });
 
   /**

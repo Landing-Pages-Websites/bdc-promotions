@@ -58,10 +58,10 @@ function configFor(root: string, staticRoutes: readonly string[]): string {
     path,
     JSON.stringify({
       bridge: {
-        version: "v6",
-        src: "https://app.gomega.ai/review-bridge/v6/review-bridge.js",
+        version: "v7",
+        src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
         integrity:
-          "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn",
+          "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ",
         crossOrigin: "anonymous",
         load: "head_defer",
       },

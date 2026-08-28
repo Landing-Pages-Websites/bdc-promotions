@@ -33,7 +33,7 @@ export const managedSiteAdapterDescriptorSchema = z.strictObject({
  * The asset is immutable per version and never rebuilt, so promoting the next
  * bridge is a change here and nowhere else.
  */
-export const SUPPORTED_BRIDGE_VERSION = "v6";
+export const SUPPORTED_BRIDGE_VERSION = "v7";
 export const SUPPORTED_BRIDGE_SRC =
   `https://app.gomega.ai/review-bridge/${SUPPORTED_BRIDGE_VERSION}/review-bridge.js` as const;
 

@@ -12,7 +12,7 @@ describe("managed site contract v1", () => {
     assert.equal(parsed.schemaVersion, "1.0");
     assert.equal(parsed.bridge.reviewProtocol, 1);
     assert.equal(parsed.bridge.editProtocol, 2);
-    assert.equal(parsed.bridge.delivery.version, "v6");
+    assert.equal(parsed.bridge.delivery.version, "v7");
   });
 
   it("rejects unknown root keys, old bridge deliveries, and unsafe URLs", () => {

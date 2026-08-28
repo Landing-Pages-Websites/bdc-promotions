@@ -1,9 +1,9 @@
 import type { ReactElement } from "react";
 
 const GOMEGA_REVIEW_BRIDGE_SOURCE =
-  "https://app.gomega.ai/review-bridge/v6/review-bridge.js";
+  "https://app.gomega.ai/review-bridge/v7/review-bridge.js";
 const GOMEGA_REVIEW_BRIDGE_INTEGRITY =
-  "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn";
+  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
 
 export function GomegaReviewBridge(): ReactElement {
   return (

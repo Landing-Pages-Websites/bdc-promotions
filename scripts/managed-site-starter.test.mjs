@@ -3,9 +3,9 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const BRIDGE_SOURCE = "https://app.gomega.ai/review-bridge/v6/review-bridge.js";
+const BRIDGE_SOURCE = "https://app.gomega.ai/review-bridge/v7/review-bridge.js";
 const BRIDGE_INTEGRITY =
-  "sha384-nc3lydHgACX1I4grJK8tx+cbhMQEJhzmiAEbB9GdkXPVDtFYEJvegLSKbbT3pJAn";
+  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
 
 function repositoryFile(path) {
   return new URL(`../${path}`, import.meta.url);
@@ -46,7 +46,7 @@ test("defines the exact structured starter contract and source documents", async
     editProtocol: 2,
     annotationVersion: 1,
     delivery: {
-      version: "v6",
+      version: "v7",
       src: BRIDGE_SOURCE,
       integrity: BRIDGE_INTEGRITY,
       crossOrigin: "anonymous",
