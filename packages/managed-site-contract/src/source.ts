@@ -17,7 +17,24 @@ export interface SourceAddress {
 const MAX_REPOSITORY_PATH_BYTES = 512;
 const MAX_REPOSITORY_PATH_SEGMENT_BYTES = 255;
 const MAX_JSON_POINTER_BYTES = 2_048;
-const PORTABLE_SEGMENT_PATTERN = /^[A-Za-z0-9._-]+$/;
+/**
+ * Portable across every filesystem we target, and able to express the directory
+ * syntax the frameworks reserve.
+ *
+ * Next.js App Router encodes routing in directory names -- `(group)` for route
+ * groups, `[param]`, `[...catchAll]` and `[[...optional]]` for dynamic segments,
+ * `@slot` for parallel routes -- so a repository that uses any of them had no
+ * representable source path at all. The starter uses none of these, which is why
+ * the omission went unnoticed until a real site was converted.
+ *
+ * Derived from what the frameworks reserve rather than from what one repository
+ * happened to contain, so the next site does not reopen this. Every one of the
+ * added characters is legal in a Windows filename; the ones that are not, and
+ * the ones that make a path ambiguous, are still refused below and by
+ * `isValidRepositoryPath`: `\`, `%`, `?`, `#`, `:`, control characters,
+ * whitespace, traversal, and non-NFKC forms.
+ */
+const PORTABLE_SEGMENT_PATTERN = /^[A-Za-z0-9._@()[\]-]+$/;
 const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
 const INVALID_POINTER_ESCAPE_PATTERN = /~(?![01])/u;

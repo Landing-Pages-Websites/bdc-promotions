@@ -30,6 +30,52 @@ describe("portable repository source paths", () => {
       ".gomega/contract.json");
   });
 
+  /**
+   * The frameworks encode routing in directory names, so a path that cannot
+   * express them cannot address a real repository. Next.js App Router reserves
+   * all four of these shapes, and the starter itself uses none of them, which is
+   * how a converter could reject an ordinary customer site at its first field.
+   */
+  it("accepts the directory syntax Next.js reserves for routing", () => {
+    const valid = [
+      "app/(site)/page.tsx",
+      "app/(marketing)/(legal)/terms/page.tsx",
+      "app/blog/[slug]/page.tsx",
+      "app/(site)/[...slug]/page.tsx",
+      "app/shop/[[...filters]]/page.tsx",
+      "app/@modal/(.)photo/[id]/page.tsx",
+    ];
+
+    for (const value of valid) {
+      assert.equal(parseRepositoryPath(value), value);
+    }
+  });
+
+  /**
+   * Widening the segment alphabet must not widen anything else. These are the
+   * characters that make a path ambiguous, unsafe, or unportable, and every one
+   * of them is still refused.
+   */
+  it("keeps refusing the characters that made a path unsafe", () => {
+    const invalid = [
+      "app/(site)/page .tsx",
+      "app/(site)/pa:ge.tsx",
+      "app/(site)/pa*ge.tsx",
+      "app/(site)/pa|ge.tsx",
+      "app/(site)/pa<ge.tsx",
+      "app/(site)/pa\"ge.tsx",
+      "app/(site)/../secrets.tsx",
+      "app/(site)/%2e%2e/secrets.tsx",
+    ];
+
+    for (const value of invalid) {
+      expectContractError(
+        () => parseRepositoryPath(value),
+        "SOURCE_PATH_INVALID",
+      );
+    }
+  });
+
   it("rejects absolute, traversal, empty, encoded, and platform-specific paths", () => {
     const invalid = [
       "/src/content.json",
