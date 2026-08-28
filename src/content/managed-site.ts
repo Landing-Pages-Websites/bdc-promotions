@@ -175,7 +175,15 @@ function faqItem(
     owner,
     type: "plain_text",
   });
-  return Object.freeze({ itemId, question: question.value, answer: answer.value });
+  // Each cell carries its field id beside its value, exactly as a page-owned
+  // value does, so the template can name the cell it renders. A cell is named by
+  // its field AND its item: the collection declares the field once and renders
+  // it once per item, so the field id alone names a column.
+  return Object.freeze({
+    itemId,
+    question: Object.freeze({ fieldId: questionField.id, value: question.value }),
+    answer: Object.freeze({ fieldId: answerField.id, value: answer.value }),
+  });
 }
 
 function faqItems() {

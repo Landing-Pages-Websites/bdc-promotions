@@ -154,6 +154,34 @@ test("renders only validated models through static and generated Astro pages", a
   assert.ok(layout.includes(BRIDGE_INTEGRITY));
   assert.match(homePage, /managedAstroHome/u);
   assert.match(homePage, /managedSiteFieldAttributesV1/u);
+  // The same rule as the Next starter: a value inside a collection item is named
+  // by its field and its item, or it is not addressable from the page at all.
+  assert.match(
+    homePage,
+    /managedSiteFieldAttributesV1\(service\.heading\.fieldId, service\.itemId\)/u,
+  );
+  assert.match(
+    homePage,
+    /managedSiteFieldAttributesV1\(service\.summary\.fieldId, service\.itemId\)/u,
+  );
+  // The generated service route renders the same item's fields, so every value
+  // it annotates is item-owned. A page-owned annotation there names a column and
+  // leaves the row unaddressable, which is the whole defect one route over.
+  for (const field of ["heading", "summary", "image", "body"]) {
+    assert.match(
+      servicePage,
+      new RegExp(
+        `managedSiteFieldAttributesV1\\(service\\.${field}\\.fieldId, service\\.itemId\\)`,
+        "u",
+      ),
+      `the generated service route must name the item for ${field}`,
+    );
+  }
+  // Nothing on that route is page-owned, so a bare annotation is a miss.
+  assert.doesNotMatch(
+    servicePage,
+    /managedSiteFieldAttributesV1\(service\.[a-z]+\.fieldId\)/u,
+  );
   assert.match(servicePage, /GetStaticPaths/u);
   assert.match(servicePage, /getStaticPaths/u);
   assert.match(servicePage, /managedAstroServicePaths/u);

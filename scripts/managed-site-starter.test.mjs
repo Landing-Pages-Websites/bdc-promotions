@@ -80,6 +80,17 @@ test("renders the managed home without code-owned copy", async () => {
   assert.match(page, /from "@\/content\/managed-site"/u);
   assert.match(page, /managedSitePageAttributesV1/u);
   assert.match(renderedSource, /managedSiteFieldAttributesV1/u);
+  // A collection renders one declared field once per item, so the field id names
+  // a column. Without the item the markup cannot name the cell, and an editor
+  // reading the page can say what was clicked but not which one.
+  assert.match(
+    renderedSource,
+    /managedSiteFieldAttributesV1\(\s*item\.question\.fieldId,\s*item\.itemId,?\s*\)/u,
+  );
+  assert.match(
+    renderedSource,
+    /managedSiteFieldAttributesV1\(\s*item\.answer\.fieldId,\s*item\.itemId,?\s*\)/u,
+  );
   assert.match(renderedSource, /<Image/u);
   assert.match(renderedSource, /\bunoptimized\b/u);
   assert.doesNotMatch(renderedSource, /const demoFaqs/u);

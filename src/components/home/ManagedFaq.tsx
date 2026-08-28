@@ -16,9 +16,17 @@ export function ManagedFaq(): ReactElement {
       <dl className="mt-6 space-y-6">
         {items.map((item) => (
           <div key={item.itemId}>
-            <dt className="font-medium">{item.question}</dt>
-            <dd className="mt-1 text-neutral-600 dark:text-neutral-400">
-              {item.answer}
+            <dt
+              className="font-medium"
+              {...managedSiteFieldAttributesV1(item.question.fieldId, item.itemId)}
+            >
+              {item.question.value}
+            </dt>
+            <dd
+              className="mt-1 text-neutral-600 dark:text-neutral-400"
+              {...managedSiteFieldAttributesV1(item.answer.fieldId, item.itemId)}
+            >
+              {item.answer.value}
             </dd>
           </div>
         ))}

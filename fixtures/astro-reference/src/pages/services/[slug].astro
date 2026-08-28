@@ -35,18 +35,18 @@ if (Astro.params.slug !== service.slug) {
   <article class="service-detail shell">
     <div class="service-detail__intro">
       <p class="eyebrow">Service field note</p>
-      <h1 {...managedSiteFieldAttributesV1(service.heading.fieldId)}>
+      <h1 {...managedSiteFieldAttributesV1(service.heading.fieldId, service.itemId)}>
         {service.heading.value}
       </h1>
-      <p class="service-detail__summary" {...managedSiteFieldAttributesV1(service.summary.fieldId)}>
+      <p class="service-detail__summary" {...managedSiteFieldAttributesV1(service.summary.fieldId, service.itemId)}>
         {service.summary.value}
       </p>
     </div>
-    <div class="service-detail__image" {...managedSiteFieldAttributesV1(service.image.fieldId)}>
+    <div class="service-detail__image" {...managedSiteFieldAttributesV1(service.image.fieldId, service.itemId)}>
       <span>Measured. Mended. Made right.</span>
       <img src={service.image.src} alt={service.image.alt} width="512" height="512" />
     </div>
-    <div class="service-detail__body" {...managedSiteFieldAttributesV1(service.body.fieldId)}>
+    <div class="service-detail__body" {...managedSiteFieldAttributesV1(service.body.fieldId, service.itemId)}>
       <ManagedRichText document={service.body.value} />
       <a class="text-link" href={`mailto:${managedAstroIdentity.email}?subject=${encodeURIComponent(service.heading.value)}`}>
         Ask about this service <span aria-hidden="true">↗</span>

@@ -6,6 +6,7 @@ import {
   createManagedSiteNextV1,
   managedSiteFieldAttributesV1,
   managedSitePageAttributesV1,
+  mintStableId,
   normalizeManagedSiteArtifactsV1,
   parseManagedSiteContractV1,
   projectManagedSiteContentDocumentV1,
@@ -222,6 +223,43 @@ describe("managed-site Next.js adapter", () => {
     }
   });
 
+  /**
+   * A collection declares its fields once and renders them once per item, so a
+   * field id alone names a column. Without the row, two items' copies of one
+   * field are indistinguishable in the page -- which is why item values used to
+   * carry no annotation rather than an ambiguous one.
+   */
+  it("names the item as well as the field for a collection's copy", () => {
+    const site = createFixtureSite();
+    const fieldId = site.content.values[0].fieldId;
+    const itemId = mintStableId("item");
+
+    assert.deepEqual(managedSiteFieldAttributesV1(fieldId, itemId), {
+      "data-gomega-field-id": fieldId,
+      "data-gomega-item-id": itemId,
+    });
+  });
+
+  it("leaves the item out for a value the page owns", () => {
+    const site = createFixtureSite();
+    const fieldId = site.content.values[0].fieldId;
+
+    assert.deepEqual(
+      Object.keys(managedSiteFieldAttributesV1(fieldId)),
+      ["data-gomega-field-id"],
+    );
+  });
+
+  it("freezes the annotation whether or not it names an item", () => {
+    const site = createFixtureSite();
+    const fieldId = site.content.values[0].fieldId;
+
+    assert.equal(
+      Object.isFrozen(managedSiteFieldAttributesV1(fieldId, mintStableId("item"))),
+      true,
+    );
+  });
+
   it("rejects cross-kind annotation IDs", () => {
     const site = createFixtureSite();
     expectCode(
@@ -235,6 +273,17 @@ describe("managed-site Next.js adapter", () => {
       () =>
         managedSiteFieldAttributesV1(
           site.contract.pages[0].id as unknown as StableId<"field">,
+        ),
+      "STABLE_ID_KIND_MISMATCH",
+    );
+    // An item id is held to its own kind: a field id in that slot would produce
+    // markup naming a row that is really a column, and nothing downstream could
+    // tell.
+    expectCode(
+      () =>
+        managedSiteFieldAttributesV1(
+          site.content.values[0].fieldId,
+          site.contract.pages[0].id as unknown as StableId<"item">,
         ),
       "STABLE_ID_KIND_MISMATCH",
     );

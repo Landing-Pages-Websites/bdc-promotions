@@ -29,7 +29,15 @@ export const metadata: Metadata = buildMetadata({
 });
 
 const businessSchema = buildBusinessSchema(identity);
-const faqSchema = buildFaqSchema(managedHome.faq.items);
+// The schema wants the words; the content module carries the words and the
+// identity of the cell they came from. Narrowed here rather than teaching the
+// schema builders what a field id is.
+const faqSchema = buildFaqSchema(
+  managedHome.faq.items.map((item) => ({
+    answer: item.answer.value,
+    question: item.question.value,
+  })),
+);
 
 export default function HomePage(): ReactElement {
   return (

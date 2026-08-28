@@ -51,8 +51,12 @@ const home = managedAstroHome;
           <a href={`/services/${service.slug}`}>
             <div class="service-card__index">0{index + 1}</div>
             <img src={service.image.src} alt="" width="512" height="512" loading="lazy" />
-            <h3>{service.heading.value}</h3>
-            <p>{service.summary.value}</p>
+            <h3 {...managedSiteFieldAttributesV1(service.heading.fieldId, service.itemId)}>
+              {service.heading.value}
+            </h3>
+            <p {...managedSiteFieldAttributesV1(service.summary.fieldId, service.itemId)}>
+              {service.summary.value}
+            </p>
             <span class="service-card__arrow" aria-hidden="true">↗</span>
           </a>
         </article>
