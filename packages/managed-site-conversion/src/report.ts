@@ -41,6 +41,8 @@ export const FINDING_CODES = Object.freeze([
   "SCOPE_NOT_OBSERVABLE",
   /** Text/link length policy is a governance default, not a migration fact. */
   "CONSTRAINTS_DEFAULTED",
+  /** A dynamic route is a template for many URLs, so it is not one page. */
+  "DYNAMIC_ROUTE_NOT_A_PAGE",
 ] as const);
 
 export type FindingCode = (typeof FINDING_CODES)[number];

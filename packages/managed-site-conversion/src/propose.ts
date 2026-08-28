@@ -213,6 +213,34 @@ function assembleContract(
   } as JsonValue;
 }
 
+/**
+ * `app/blog/[slug]/page.tsx` is one file serving many URLs, and the contract
+ * addresses pages by concrete route. Emitting `/blog/[slug]` would put a string
+ * that is not a URL where a URL belongs, which the contract's route rule rejects
+ * outright -- so the whole proposal failed rather than the one route.
+ *
+ * Reported instead, because which URLs a template serves is not readable from
+ * the source: the data behind it decides, and on a real site most of it belongs
+ * in a collection rather than as pages at all. That is a person's decision, and
+ * naming it is what this tool is for.
+ */
+function isDynamicRoute(routePath: string): boolean {
+  return routePath.includes("[");
+}
+
+function dynamicRouteFinding(route: RouteModule): Finding {
+  return {
+    code: "DYNAMIC_ROUTE_NOT_A_PAGE",
+    anchor: null,
+    location: { file: route.file, line: 1 },
+    evidence: `route ${route.routePath} is a template, not a URL`,
+    decision:
+      "Decide what this template serves: model its data as a collection, " +
+      "or declare the concrete routes it renders as pages. It is excluded " +
+      "from the proposal either way.",
+  };
+}
+
 export function propose(options: ProposeOptions): Proposal {
   const config = loadConfig(options.configPath);
   const ledger = IdLedger.load(options.ledgerPath);
@@ -220,9 +248,12 @@ export function propose(options: ProposeOptions): Proposal {
   collector.addMany(bridgeFindings(config));
 
   const cache = new ModuleCache();
-  const scanned = discoverRoutes(options.repositoryRoot).map((route) =>
-    scanRoute(route, options.repositoryRoot, cache, ledger),
-  );
+  const discovered = discoverRoutes(options.repositoryRoot);
+  const templates = discovered.filter((route) => isDynamicRoute(route.routePath));
+  collector.addMany(templates.map(dynamicRouteFinding));
+  const scanned = discovered
+    .filter((route) => !isDynamicRoute(route.routePath))
+    .map((route) => scanRoute(route, options.repositoryRoot, cache, ledger));
   for (const entry of scanned) collector.addMany(entry.findings);
 
   const components = extractRendered(scanned);
