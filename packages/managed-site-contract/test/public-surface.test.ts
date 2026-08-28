@@ -12,23 +12,28 @@ import type {
 } from "../src/index.js";
 import {
   assetSlot,
+  collectionBounds,
   collectionDescriptor,
   contentDocument,
   imageValue,
   internalProtectedField,
   managedSiteContract,
+  performanceBudget,
   plainTextField,
+  richTextConstraints,
   richTextContentValue,
   richTextDocument,
   seoDescriptor,
+  sitemapPolicy,
   stableId,
+  textConstraints,
 } from "./schema-fixtures.js";
 import { conformingContract } from "./contract-semantics-fixture.js";
 
 type Surface = {
   readonly name: string;
-  readonly args: readonly object[];
-  readonly invoke: (args: readonly object[]) => unknown;
+  readonly args: readonly unknown[];
+  readonly invoke: (args: readonly unknown[]) => unknown;
 };
 
 const plainContentValue = {
@@ -54,6 +59,15 @@ const surfaces: readonly Surface[] = [
   surface("parseManagedSiteContentDocument", [contentDocument()]),
   surface("parseManagedInternalProtectedField", [internalProtectedField()]),
   surface("parseManagedSiteSeoDescriptor", [seoDescriptor()]),
+  surface("parseManagedSitemapPolicy", [sitemapPolicy()]),
+  surface("parseManagedTextConstraints", [textConstraints()]),
+  surface("parseManagedLinkLabelConstraints", [textConstraints()]),
+  surface("parseManagedRichTextConstraints", [richTextConstraints()]),
+  surface("parseManagedCollectionBounds", [collectionBounds()]),
+  surface("parseManagedAbsoluteHttpsUrl", ["https://example.com/"]),
+  surface("parseManagedInternalString", ["Example Holdings Ltd"]),
+  surface("parseManagedInternalStringList", [["https://example.com/"]]),
+  surface("parseManagedPerformanceBudget", [performanceBudget()]),
   surface("parseManagedSiteContractV1", [managedSiteContract()]),
   surface("validateManagedFieldValue", [plainTextField(), plainContentValue]),
   surface("validateManagedCollectionValue", [
@@ -65,11 +79,11 @@ const surfaces: readonly Surface[] = [
 
 function surface(
   name: keyof typeof publicApi,
-  args: readonly object[],
+  args: readonly unknown[],
 ): Surface {
   const candidate = publicApi[name];
   assert.equal(typeof candidate, "function", `${name} must be a function`);
-  const callable = candidate as (...values: readonly object[]) => unknown;
+  const callable = candidate as (...values: readonly unknown[]) => unknown;
   return { name, args, invoke: (values) => callable(...values) };
 }
 
@@ -169,17 +183,23 @@ describe("public managed-site surface", () => {
     );
   });
 
+  /**
+   * Object arguments only: the probes replace an argument with one whose keys are
+   * getters, or with a revoked proxy, and a string has neither. Skipping them is
+   * the absence of a question, not a weakened answer.
+   */
   it("rejects accessors and revoked proxies at every argument boundary", () => {
     for (const target of surfaces) {
-      for (const [index] of target.args.entries()) {
+      for (const [index, argument] of target.args.entries()) {
+        if (typeof argument !== "object" || argument === null) continue;
         const calls = { count: 0 };
         const accessorArgs = target.args.map((arg, argIndex) =>
-          argIndex === index ? accessorInput(arg, calls) : arg,
+          argIndex === index ? accessorInput(arg as object, calls) : arg,
         );
         assert.throws(() => target.invoke(accessorArgs), target.name);
         assert.equal(calls.count, 0, target.name);
         const proxyArgs = target.args.map((arg, argIndex) =>
-          argIndex === index ? revokedProxy(arg) : arg,
+          argIndex === index ? revokedProxy(arg as object) : arg,
         );
         assert.throws(() => target.invoke(proxyArgs), target.name);
       }

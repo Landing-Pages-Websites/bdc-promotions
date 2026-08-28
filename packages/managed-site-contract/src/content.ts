@@ -24,6 +24,7 @@ import {
 import { parseSchemaInput } from "./schema-input.js";
 import {
   absoluteHttpsUrlSchema,
+  MAX_URL_VALUE_CHARACTERS,
   MAX_LINK_LABEL_CHARACTERS,
   managedImageMimeTypeSchema,
   managedImageValueSchema,
@@ -105,6 +106,23 @@ const internalContentBase = {
 
 const boundedInternalStringSchema = z.string().max(10_000);
 const boundedStringListSchema = z.array(z.string().min(1).max(2_048)).max(100);
+
+/**
+ * The bounds an internal-protected value is held to, parseable on their own.
+ *
+ * A migration tool collects business identity from an operator before any
+ * content document exists, and those strings are emitted as these values
+ * unchanged. Without this it would have to restate the caps to check them at its
+ * own boundary, and a restated cap drifts; with it, a value that loads there
+ * cannot fail here.
+ */
+export function parseManagedInternalString(input: unknown): string {
+  return parseSchemaInput(boundedInternalStringSchema, input) as string;
+}
+
+export function parseManagedInternalStringList(input: unknown): readonly string[] {
+  return parseSchemaInput(boundedStringListSchema, input) as readonly string[];
+}
 const nonemptyNfcString = (maxLength: number): z.ZodString =>
   z.string().min(1).max(maxLength).refine((value) => value.normalize("NFC") === value);
 
@@ -183,7 +201,7 @@ const indexingDirectivesSchema = z.strictObject({
 
 const internalProtectedContentValueSchema = z.discriminatedUnion("valueType", [
   z.strictObject({ ...internalContentBase, valueType: z.literal("string"), value: boundedInternalStringSchema }),
-  z.strictObject({ ...internalContentBase, valueType: z.literal("url"), value: absoluteHttpsUrlSchema.max(2_048) }),
+  z.strictObject({ ...internalContentBase, valueType: z.literal("url"), value: absoluteHttpsUrlSchema.max(MAX_URL_VALUE_CHARACTERS) }),
   z.strictObject({ ...internalContentBase, valueType: z.literal("boolean"), value: z.boolean() }),
   z.strictObject({ ...internalContentBase, valueType: z.literal("number"), value: z.number().finite() }),
   z.strictObject({ ...internalContentBase, valueType: z.literal("string_list"), value: boundedStringListSchema }),

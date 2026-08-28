@@ -433,6 +433,39 @@ const SEO_DESCRIPTOR = {
     ],
 };
 
+export function textConstraints(): Record<string, unknown> {
+  return { minLength: 0, maxLength: 160, newlines: "forbid" };
+}
+
+export function richTextConstraints(): Record<string, unknown> {
+  return {
+    maxCharacters: 2_000,
+    maxNodes: 200,
+    allowedBlocks: ["paragraph"],
+    allowedMarks: [],
+    allowLinks: false,
+    allowedExternalHosts: [],
+    allowedTargets: [],
+  };
+}
+
+export function collectionBounds(): Record<string, unknown> {
+  return { minItems: 1, maxItems: 24 };
+}
+
+export function sitemapPolicy(): Record<string, unknown> {
+  return { included: true, changeFrequency: "monthly", priority: 1 };
+}
+
+export function performanceBudget(): Record<string, unknown> {
+  return {
+    maxLcpMilliseconds: 2_500,
+    maxCls: 0.1,
+    maxInpMilliseconds: 200,
+    maxPageBytes: 1_500_000,
+  };
+}
+
 export function seoDescriptor(): Record<string, unknown> {
   return structuredClone(SEO_DESCRIPTOR);
 }

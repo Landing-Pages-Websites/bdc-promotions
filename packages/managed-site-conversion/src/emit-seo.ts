@@ -64,6 +64,18 @@ function missing(semantic: string, why: string): Finding {
   };
 }
 
+function unservedRoute(route: string): Finding {
+  return {
+    code: "SEO_INPUT_REQUIRED",
+    anchor: `config:${route}`,
+    location: null,
+    evidence: `The conversion config declares the route '${route}'.`,
+    decision:
+      `This repository serves no such route, so nothing reads that declaration. ` +
+      "Correct the route, or remove it from the config.",
+  };
+}
+
 class SeoBuilder {
   readonly #input: SeoInput;
   readonly #fields: SeoField[] = [];
@@ -293,7 +305,24 @@ class SeoBuilder {
     };
   }
 
+  /**
+   * A declared route the scan never found is an input nobody reads.
+   *
+   * The proposer matches config pages to scanned routes by exact path, so a typo
+   * or a stale route -- `/about/` for `/about`, a page since deleted -- goes
+   * nowhere. What that produces on its own is `SEO_INPUT_REQUIRED` against the
+   * real route, which sends a person to add a declaration they already wrote.
+   */
+  #reportUndeclaredRoutes(): void {
+    const scanned = new Set(this.#input.pages.map((page) => page.routePath));
+    for (const route of this.#input.config.pages.keys()) {
+      if (scanned.has(route)) continue;
+      this.#findings.push(unservedRoute(route));
+    }
+  }
+
   build(): SeoEmission {
+    this.#reportUndeclaredRoutes();
     const businessIdentity = this.#businessIdentity();
     const pages = businessIdentity === null
       ? []

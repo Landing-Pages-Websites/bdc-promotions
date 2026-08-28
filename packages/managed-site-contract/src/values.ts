@@ -18,6 +18,7 @@ const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
 const SHA256 = /^[a-f0-9]{64}$/;
 const MAX_JSON_SCHEMA_DEPTH = 8;
 export const MAX_LINK_LABEL_CHARACTERS = 2_000;
+export const MAX_URL_VALUE_CHARACTERS = 2_048;
 
 function accepts(check: () => unknown): boolean {
   try {
@@ -134,6 +135,17 @@ export const absoluteHttpsUrlSchema = withManagedSiteJsonSchemaSemantic(
     .url()
     .refine(validateExternalUrl, "URL must be absolute HTTPS without credentials or hash"),
 );
+
+/**
+ * The bound an internal-SEO `url` value is held to, parseable on its own, so a
+ * tool that collects a canonical URL from an operator can refuse "not-a-url"
+ * where the operator wrote it rather than three stages later.
+ */
+const managedAbsoluteHttpsUrlValueSchema = absoluteHttpsUrlSchema.max(MAX_URL_VALUE_CHARACTERS);
+
+export function parseManagedAbsoluteHttpsUrl(input: unknown): string {
+  return parseSchemaInput(managedAbsoluteHttpsUrlValueSchema, input) as string;
+}
 
 const STATIC_ROUTE_PATTERN = /^\/(?:[A-Za-z0-9._~-]+(?:\/[A-Za-z0-9._~-]+)*)?$/;
 const GENERATED_SEGMENT_PATTERN = /^\[[A-Za-z][A-Za-z0-9_]*\]$/;

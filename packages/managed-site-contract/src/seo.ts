@@ -44,19 +44,30 @@ const managedBusinessIdentitySchema = z.strictObject({
   sameAs: nullableFieldId,
 });
 
+/**
+ * The page purposes, as a value as well as a type.
+ *
+ * A tool that collects a purpose from a person before any descriptor exists --
+ * a migration config, an operator form -- has to state the choices, and the
+ * copy is what drifts. Exported the same way field scopes and capabilities are.
+ */
+export const MANAGED_PAGE_PURPOSES = Object.freeze([
+  "home",
+  "service",
+  "location",
+  "service_location",
+  "about",
+  "contact",
+  "article",
+  "landing",
+  "legal",
+  "other",
+] as const);
+
+const managedPagePurposeSchema = z.enum(MANAGED_PAGE_PURPOSES);
+
 const managedPageIntentSchema = z.strictObject({
-  purpose: z.enum([
-    "home",
-    "service",
-    "location",
-    "service_location",
-    "about",
-    "contact",
-    "article",
-    "landing",
-    "legal",
-    "other",
-  ]),
+  purpose: managedPagePurposeSchema,
   primaryEntity: fieldId,
   services: z.array(fieldId),
   locations: z.array(fieldId),
@@ -189,6 +200,11 @@ export type ManagedGeneratedPageSeoDescriptor = DeepReadonly<z.infer<
 export type ManagedSiteSeoDescriptor = DeepReadonly<z.infer<
   typeof managedSiteSeoDescriptorSchema
 >>;
+export type ManagedPagePurpose = (typeof MANAGED_PAGE_PURPOSES)[number];
+export type ManagedSitemapPolicy = DeepReadonly<z.infer<typeof managedSitemapSchema>>;
+export type ManagedPerformanceBudget = DeepReadonly<z.infer<
+  typeof managedPerformanceBudgetSchema
+>>;
 
 export function parseManagedInternalProtectedField(
   input: unknown,
@@ -200,4 +216,20 @@ export function parseManagedSiteSeoDescriptor(
   input: unknown,
 ): ManagedSiteSeoDescriptor {
   return parseSchemaInput(managedSiteSeoDescriptorSchema, input);
+}
+
+/**
+ * The two page-level SEO objects a migration tool takes from a person rather
+ * than from source, parseable on their own.
+ *
+ * Anything that collects these before a descriptor exists would otherwise have
+ * to restate the priority and budget bounds, and a restatement drifts. It checks
+ * them here, against the schema the descriptor itself is held to.
+ */
+export function parseManagedSitemapPolicy(input: unknown): ManagedSitemapPolicy {
+  return parseSchemaInput(managedSitemapSchema, input);
+}
+
+export function parseManagedPerformanceBudget(input: unknown): ManagedPerformanceBudget {
+  return parseSchemaInput(managedPerformanceBudgetSchema, input);
 }

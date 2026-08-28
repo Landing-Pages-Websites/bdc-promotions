@@ -24,9 +24,22 @@ export const managedSiteAdapterDescriptorSchema = z.strictObject({
   adapterVersion: z.literal("1.0"),
 });
 
+/**
+ * The review-bridge version a contract may name, and the only URL that delivers
+ * it. Exported because the conversion proposer must accept exactly what this
+ * parser accepts: a loader that admitted a version this schema rejects would
+ * turn a clear config error into a contract that silently fails to parse.
+ *
+ * The asset is immutable per version and never rebuilt, so promoting the next
+ * bridge is a change here and nowhere else.
+ */
+export const SUPPORTED_BRIDGE_VERSION = "v6";
+export const SUPPORTED_BRIDGE_SRC =
+  `https://app.gomega.ai/review-bridge/${SUPPORTED_BRIDGE_VERSION}/review-bridge.js` as const;
+
 const managedSiteBridgeDeliverySchema = z.strictObject({
-  version: z.literal("v6"),
-  src: z.literal("https://app.gomega.ai/review-bridge/v6/review-bridge.js"),
+  version: z.literal(SUPPORTED_BRIDGE_VERSION),
+  src: z.literal(SUPPORTED_BRIDGE_SRC),
   integrity: z.string().regex(/^sha384-[A-Za-z0-9+/]{64}$/),
   crossOrigin: z.literal("anonymous"),
   load: z.literal("head_defer"),

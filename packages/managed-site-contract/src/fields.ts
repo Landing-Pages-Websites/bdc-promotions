@@ -58,6 +58,32 @@ const linkLabelConstraintsSchema = textConstraintsSchema.refine(
   (constraints) => constraints.maxLength <= MAX_LINK_LABEL_CHARACTERS,
 );
 
+/**
+ * The constraint bounds, parseable on their own.
+ *
+ * A migration tool takes these limits from an operator long before any field
+ * descriptor exists, and would otherwise have to restate the maxima and the
+ * minimum-below-maximum rule to check them at its own boundary. A restatement
+ * drifts; this parses the same schema the descriptor is held to, so a limit that
+ * loads there cannot fail here.
+ */
+export type ManagedTextConstraints = DeepReadonly<z.infer<typeof textConstraintsSchema>>;
+export type ManagedRichTextConstraints = DeepReadonly<
+  z.infer<typeof richTextConstraintsSchema>
+>;
+
+export function parseManagedTextConstraints(input: unknown): ManagedTextConstraints {
+  return parseSchemaInput(textConstraintsSchema, input);
+}
+
+export function parseManagedLinkLabelConstraints(input: unknown): ManagedTextConstraints {
+  return parseSchemaInput(linkLabelConstraintsSchema, input);
+}
+
+export function parseManagedRichTextConstraints(input: unknown): ManagedRichTextConstraints {
+  return parseSchemaInput(richTextConstraintsSchema, input);
+}
+
 const commonFieldShape = {
   id: stableIdSchema("field"),
   scope: managedFieldScopeSchema,
@@ -300,6 +326,32 @@ const uniquenessRuleSchema = z.strictObject({
   comparison: z.enum(["exact", "case_folded"]),
 });
 
+/**
+ * How many items a collection may hold. Stated here once, and spread into the
+ * descriptor below, so a tool collecting the numbers from an operator checks
+ * them against the same bounds the descriptor enforces.
+ */
+const collectionBoundsShape = {
+  minItems: z.number().int().nonnegative().max(500),
+  maxItems: z.number().int().positive().max(500),
+};
+
+function boundsAreOrdered(bounds: { readonly minItems: number; readonly maxItems: number }): boolean {
+  return bounds.minItems <= bounds.maxItems;
+}
+
+const managedCollectionBoundsSchema = z
+  .strictObject(collectionBoundsShape)
+  .refine(boundsAreOrdered);
+
+export type ManagedCollectionBounds = DeepReadonly<
+  z.infer<typeof managedCollectionBoundsSchema>
+>;
+
+export function parseManagedCollectionBounds(input: unknown): ManagedCollectionBounds {
+  return parseSchemaInput(managedCollectionBoundsSchema, input);
+}
+
 export const managedCollectionDescriptorSchema = withManagedSiteJsonSchemaSemantic(
   "collection-descriptor",
   z.strictObject({
@@ -308,15 +360,14 @@ export const managedCollectionDescriptorSchema = withManagedSiteJsonSchemaSemant
     resolver: jsonPointerSourceResolverSchema,
     itemIdPointer: jsonPointerSchema,
     itemIdPolicy: z.literal("server_minted"),
-    minItems: z.number().int().nonnegative().max(500),
-    maxItems: z.number().int().positive().max(500),
+    ...collectionBoundsShape,
     itemFields: z.array(managedCollectionItemFieldSchema).min(1),
     uniqueness: z.array(uniquenessRuleSchema),
     deletion: z.strictObject({
       whenReferenced: z.enum(["restrict", "cascade"]),
       restorable: z.boolean(),
     }),
-  }).refine((collection) => collection.minItems <= collection.maxItems),
+  }).refine(boundsAreOrdered),
 );
 
 export type ManagedFieldCapability = z.infer<typeof managedFieldCapabilitySchema>;

@@ -14,8 +14,13 @@ export interface SourceAddress {
   readonly tokens: readonly string[];
 }
 
-const MAX_REPOSITORY_PATH_BYTES = 512;
-const MAX_REPOSITORY_PATH_SEGMENT_BYTES = 255;
+/**
+ * The bounds a repository path is held to. Exported because callers that build
+ * a path out of parts -- a configured root plus what gets appended beneath it --
+ * can only check their own budget against the same numbers this file enforces.
+ */
+export const MAX_REPOSITORY_PATH_BYTES = 512;
+export const MAX_REPOSITORY_PATH_SEGMENT_BYTES = 255;
 const MAX_JSON_POINTER_BYTES = 2_048;
 /**
  * Portable across every filesystem we target, and able to express the directory

@@ -10,6 +10,7 @@ import type { Candidate, CollectionCandidate, RawDestination } from "./candidate
 import type { FieldBinding, PageBinding } from "./bindings.js";
 import type { ContractParts } from "./emit-contract.js";
 import type { ConversionConfig } from "./config.js";
+import { assetRepositoryPath } from "./paths.js";
 import { probeImage } from "./image-probe.js";
 import { cloneJson, isJsonObject, writeAtPointer, type JsonObject } from "./json-write.js";
 
@@ -61,8 +62,8 @@ function imageValueFor(
   altText: string | null,
   context: ContentContext,
 ): JsonValue | null {
-  const relative = source.startsWith("/") ? source.slice(1) : source;
-  const repositoryPath = `${context.config.assetRoot}/${relative}`;
+  const repositoryPath = assetRepositoryPath(context.config.assetRoot, source);
+  if (repositoryPath === null) return null;
   const probed = probeImage(`${context.repositoryRoot}/${repositoryPath}`);
   if (probed === null) return null;
   return {

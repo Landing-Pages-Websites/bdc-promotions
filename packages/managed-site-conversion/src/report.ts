@@ -35,6 +35,8 @@ export const FINDING_CODES = Object.freeze([
   "COLLECTION_ITEM_IMAGE_UNSUPPORTED",
   /** An image referenced by the source could not be read or probed. */
   "ASSET_UNREADABLE",
+  /** The asset root plus the referenced file is not a path the contract can carry. */
+  "ASSET_PATH_UNREPRESENTABLE",
   /** An internal-SEO value has no source to migrate from. */
   "SEO_INPUT_REQUIRED",
   /** A field-scope decision needs more than one route to be observable. */
@@ -43,6 +45,8 @@ export const FINDING_CODES = Object.freeze([
   "CONSTRAINTS_DEFAULTED",
   /** A dynamic route is a template for many URLs, so it is not one page. */
   "DYNAMIC_ROUTE_NOT_A_PAGE",
+  /** A route folds into a slug the content path cannot carry. */
+  "ROUTE_PATH_UNREPRESENTABLE",
 ] as const);
 
 export type FindingCode = (typeof FINDING_CODES)[number];

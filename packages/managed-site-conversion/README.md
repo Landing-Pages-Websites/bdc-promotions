@@ -62,8 +62,12 @@ Concretely it refuses, rather than guesses, on:
 | `COLLECTION_BOUNDS_NOT_DERIVABLE` | item counts are policy, and item IDs were bootstrapped from present array order |
 | `COLLECTION_ITEM_IMAGE_UNSUPPORTED` | items each carry a different image, which one asset slot cannot express |
 | `ASSET_UNREADABLE` | an image whose dimensions could not be read |
+| `ASSET_PATH_UNREPRESENTABLE` | the configured `assetRoot` joined to the referenced file is not a path the standard can carry |
 | `SEO_INPUT_REQUIRED` | an internal-SEO or platform fact with no source in the repository |
 | `SCOPE_NOT_OBSERVABLE` | a component renders on several routes, so site scope was assumed and needs confirming |
+| `CONSTRAINTS_DEFAULTED` | a length or node limit came from policy rather than from anything the source proves |
+| `DYNAMIC_ROUTE_NOT_A_PAGE` | a route template stands for many URLs, so it is not one page to convert |
+| `ROUTE_PATH_UNREPRESENTABLE` | a route folds into a file name longer than one path segment may be, so no content file can hold it |
 
 ## What counts as customer content
 
@@ -209,6 +213,23 @@ sitemap policy, performance budget, page intent, or the current review-bridge
 integrity hash. Those come from `--config` (see `example.conversion.json`).
 Anything missing is reported as `SEO_INPUT_REQUIRED` and the contract is withheld
 — it is never defaulted into place.
+
+A key nobody wrote takes the default. A key somebody wrote, with a value the
+loader cannot use, is refused by name — `"pages": 42` is a mistake in the file,
+and loading it as no declared pages hides the one thing the writer needs told.
+An explicit `null` is how JSON says "not set", so it counts as absence. The
+values the standard defines — page purpose, sitemap policy, performance budget —
+are checked by the standard's own parser rather than by a second description of
+them here.
+
+`contentRoot` and `assetRoot` are checked against the paths derived beneath them,
+not only their own shape, because the standard bounds a whole path: a root that
+loads must not be able to fail at emission. A content root has to leave room for
+`/pages/<slug>.json` at the longest slug that can exist. An asset root has to
+leave room for one file name at the longest the standard permits — an asset path
+is whatever the repository already calls the file, so anything deeper is decided
+when that path is built, and reported as `ASSET_PATH_UNREPRESENTABLE` naming
+whichever of the two is at fault.
 
 What *is* migrated automatically: `metadata.title`, `metadata.description` and
 `robots`, resolved per route from the Next.js `metadata` exports along that

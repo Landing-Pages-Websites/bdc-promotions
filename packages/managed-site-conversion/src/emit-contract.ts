@@ -15,6 +15,7 @@ import type { ConversionConfig } from "./config.js";
 import type { IdLedger } from "./id-ledger.js";
 import { aspectRatioOf, probeImage, type ProbedImage } from "./image-probe.js";
 import type { Finding } from "./report.js";
+import { assetRepositoryPath, assetRootIsAtFault } from "./paths.js";
 import { pointerFor, resolverFor } from "./source-address.js";
 
 const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
@@ -204,6 +205,25 @@ function unreadableAsset(candidate: Candidate, source: string): Finding {
   };
 }
 
+function unrepresentableAssetPath(
+  candidate: Candidate,
+  source: string,
+  config: ConversionConfig,
+): Finding {
+  const cause = assetRootIsAtFault(config.assetRoot, source)
+    ? `the configured assetRoot '${config.assetRoot}' leaves no room for it`
+    : "the file path itself is not one the standard can carry";
+  return {
+    code: "ASSET_PATH_UNREPRESENTABLE",
+    anchor: renderAnchor(candidate.anchor),
+    location: candidate.location,
+    evidence: candidate.evidence,
+    decision:
+      `'${source}' cannot be addressed as a repository path because ${cause}. ` +
+      "Shorten the asset root or move the file, then re-run.",
+  };
+}
+
 function collectionBoundsFinding(candidate: CollectionCandidate, itemCount: number): Finding {
   return {
     code: "COLLECTION_BOUNDS_NOT_DERIVABLE",
@@ -335,15 +355,22 @@ export class ContractEmitter {
   }
 
   #probe(source: string): ProbedImage | null {
-    const relative = source.startsWith("/") ? source.slice(1) : source;
-    return probeImage(
-      `${this.#context.repositoryRoot}/${this.#context.config.assetRoot}/${relative}`,
-    );
+    const repositoryPath = assetRepositoryPath(this.#context.config.assetRoot, source);
+    if (repositoryPath === null) return null;
+    return probeImage(`${this.#context.repositoryRoot}/${repositoryPath}`);
   }
 
   #emitImage(binding: FieldBinding): void {
     const candidate = binding.candidate;
     if (candidate.kind !== "image") return;
+    // An asset the contract could not name is a different decision from one that
+    // could not be read, and only one of the two is fixed in the config.
+    if (assetRepositoryPath(this.#context.config.assetRoot, candidate.source) === null) {
+      this.#findings.push(
+        unrepresentableAssetPath(candidate, candidate.source, this.#context.config),
+      );
+      return;
+    }
     const image = this.#probe(candidate.source);
     if (image === null) {
       this.#findings.push(unreadableAsset(candidate, candidate.source));

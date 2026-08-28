@@ -22,6 +22,7 @@ import { applyConfidenceGate } from "./gate.js";
 import { IdLedger } from "./id-ledger.js";
 import { isJsonObject, writeAtPointer, type JsonObject } from "./json-write.js";
 import { readNextMetadata, type NextMetadata } from "./next-metadata.js";
+import { isRepositoryPath } from "./paths.js";
 import { declarationKey, resolveRenderTree } from "./reachability.js";
 import {
   CONFIDENCE_RULE,
@@ -228,6 +229,24 @@ function isDynamicRoute(routePath: string): boolean {
   return routePath.includes("[");
 }
 
+/** `<contentRoot>/pages/<slug>.json`, the one file a page's content lives in. */
+function contentPathOf(contentRoot: string, slug: string): string {
+  return `${contentRoot}/pages/${slug}.json`;
+}
+
+function unrepresentableRouteFinding(page: PageBinding, contentRoot: string): Finding {
+  return {
+    code: "ROUTE_PATH_UNREPRESENTABLE",
+    anchor: null,
+    location: null,
+    evidence: `route ${page.routePath} folds into the file name '${page.slug}.json'`,
+    decision:
+      `That name is longer than the standard allows for one path segment, so no ` +
+      `content file can be written for this route under '${contentRoot}'. Shorten ` +
+      "the route, or convert this page by hand. It is excluded from the proposal.",
+  };
+}
+
 function dynamicRouteFinding(route: RouteModule): Finding {
   return {
     code: "DYNAMIC_ROUTE_NOT_A_PAGE",
@@ -262,7 +281,21 @@ export function propose(options: ProposeOptions): Proposal {
   const gate = applyConfidenceGate(components.candidates);
   collector.addMany(gate.findings);
 
-  const pages = scanned.map((entry) => entry.binding);
+  // The load-time budget on `contentRoot` guarantees room for the longest slug a
+  // single route segment can produce. A route is up to 2,048 characters and folds
+  // into ONE segment, so a long enough route is unrepresentable under any root.
+  // That is a fact about the route, and it is reported here, where the routes are
+  // known, rather than reaching the contract as an invalid path.
+  const routable = scanned.filter((entry) =>
+    isRepositoryPath(contentPathOf(config.contentRoot, entry.binding.slug)),
+  );
+  collector.addMany(
+    scanned
+      .filter((entry) => !routable.includes(entry))
+      .map((entry) => unrepresentableRouteFinding(entry.binding, config.contentRoot)),
+  );
+
+  const pages = routable.map((entry) => entry.binding);
   const bound = bindCandidates(gate.accepted, pages, ledger, config.contentRoot);
   collector.addMany(bound.findings);
 

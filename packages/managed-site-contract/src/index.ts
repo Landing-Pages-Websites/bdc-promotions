@@ -27,6 +27,8 @@ export {
   validateManagedSiteContractV1JsonSchema,
 } from "./json-schema-validator.js";
 export {
+  MAX_REPOSITORY_PATH_BYTES,
+  MAX_REPOSITORY_PATH_SEGMENT_BYTES,
   assertDistinctRepositoryPaths,
   parseJsonPointer,
   parseRepositoryPath,
@@ -34,6 +36,8 @@ export {
 } from "./source.js";
 
 export {
+  parseManagedInternalString,
+  parseManagedInternalStringList,
   parseManagedSiteContentDocument,
   parseManagedSiteContentValue,
   validateManagedCollectionValue,
@@ -41,7 +45,11 @@ export {
 } from "./content.js";
 export { validateManagedSiteContractV1ContentSemantics } from "./content-semantics.js";
 export { validateManagedSiteContractV1Compatibility } from "./contract-compatibility-policy.js";
-export { parseManagedSiteContractV1 } from "./contract.js";
+export {
+  parseManagedSiteContractV1,
+  SUPPORTED_BRIDGE_SRC,
+  SUPPORTED_BRIDGE_VERSION,
+} from "./contract.js";
 export { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 export { normalizeManagedSiteArtifactsV1 } from "./normalized-artifacts.js";
 export {
@@ -58,8 +66,12 @@ export { projectManagedSiteContentDocumentV1 } from "./source-projection.js";
 export {
   MANAGED_FIELD_CAPABILITIES,
   MANAGED_FIELD_SCOPES,
+  parseManagedCollectionBounds,
   parseManagedCollectionDescriptor,
   parseManagedFieldDescriptor,
+  parseManagedLinkLabelConstraints,
+  parseManagedRichTextConstraints,
+  parseManagedTextConstraints,
 } from "./fields.js";
 export {
   MAX_RICH_TEXT_BYTES,
@@ -68,10 +80,18 @@ export {
   parseManagedRichTextDocument,
 } from "./rich-text.js";
 export {
+  MANAGED_PAGE_PURPOSES,
   parseManagedInternalProtectedField,
+  parseManagedPerformanceBudget,
+  parseManagedSitemapPolicy,
   parseManagedSiteSeoDescriptor,
 } from "./seo.js";
-export { validateManagedImageValue } from "./values.js";
+export {
+  MAX_LINK_LABEL_CHARACTERS,
+  MAX_URL_VALUE_CHARACTERS,
+  parseManagedAbsoluteHttpsUrl,
+  validateManagedImageValue,
+} from "./values.js";
 
 export type { DeepReadonly } from "./deep-readonly.js";
 export type { StableId, StableIdKind } from "./ids.js";
@@ -138,6 +158,7 @@ export type {
   ManagedSiteContractV1,
 } from "./contract.js";
 export type {
+  ManagedCollectionBounds,
   ManagedCollectionDescriptor,
   ManagedCollectionItemField,
   ManagedContentClassification,
@@ -145,6 +166,8 @@ export type {
   ManagedFieldDescriptor,
   ManagedFieldScope,
   ManagedInternalProtectedCollectionItemField,
+  ManagedRichTextConstraints,
+  ManagedTextConstraints,
 } from "./fields.js";
 export type {
   ManagedRichTextBlock,
@@ -156,6 +179,9 @@ export type {
 export type {
   ManagedGeneratedPageSeoDescriptor,
   ManagedInternalProtectedField,
+  ManagedPagePurpose,
+  ManagedPerformanceBudget,
+  ManagedSitemapPolicy,
   ManagedSiteSeoDescriptor,
 } from "./seo.js";
 export type {
