@@ -1424,3 +1424,79 @@ for (const [description, repository] of REFUSES) {
     assert.equal(resolve(repository), null);
   });
 }
+
+/**
+ * An export specifier has TWO names: the one the outside asks for, and the one
+ * this module declared. `export { copy as label }` makes those differ, and a
+ * reader that wanted one and used the other looked up nothing.
+ *
+ * The escape index is where that mattered. Handing a whole namespace to
+ * something opaque must escape every declaration behind it, but the barrel's
+ * public name is `label` while the lookup was made under `copy` — so it found
+ * no export, recorded no escape, and a later read of `label.title` resolved
+ * source text a mutator had already replaced.
+ */
+test("a namespace handed out escapes a binding re-exported under an alias", () => {
+  assert.equal(
+    resolve({
+      files: {
+        "content.ts": `export const copy = { title: "Original" };\n`,
+        "barrel.ts": `import { copy } from "./content";\nexport { copy as label };\n`,
+        "hand-out.ts":
+          `import * as barrel from "./barrel";\n` +
+          `declare function sink(value: unknown): void;\nsink(barrel);\n`,
+        "probe.tsx": `import { label } from "./barrel";\n` + probe("label.title"),
+      },
+      expression: "",
+    }),
+    null,
+  );
+});
+
+/** The same barrel, with nothing handing the namespace out, still reads. */
+test("a binding re-exported under an alias is read when nothing hands it out", () => {
+  const resolved = resolve({
+    files: {
+      "content.ts": `export const copy = { title: "Original" };\n`,
+      "barrel.ts": `import { copy } from "./content";\nexport { copy as label };\n`,
+      "probe.tsx": `import { label } from "./barrel";\n` + probe("label.title"),
+    },
+    expression: "",
+  });
+  assert.equal(resolved?.value, "Original");
+});
+
+/**
+ * A lowercase JSX tag names an ELEMENT, not a binding.
+ *
+ * React reads it as a string, so `<main>` is not a use of anything called
+ * `main`. Counting it as one made the escape index believe a module-level
+ * `main` had been handed out, and every read of it was refused — the safe
+ * direction, but wrong, and it hides copy the site plainly renders.
+ */
+test("a host tag sharing a binding's name does not hand that binding out", () => {
+  const resolved = resolve({
+    files: {
+      "probe.tsx":
+        `const main = { title: "Hello" };\n` +
+        `export function Probe() {\n  return <main>{main.title}</main>;\n}\n`,
+      },
+    expression: "main.title",
+  });
+  assert.equal(resolved?.value, "Hello");
+});
+
+/** A CAPITALISED tag is a use of the binding it names, and still escapes. */
+test("a component tag sharing a binding's name does hand it out", () => {
+  assert.equal(
+    resolve({
+      files: {
+        "probe.tsx":
+          `const Main = { title: "Hello" } as unknown as () => JSX.Element;\n` +
+          `export function Probe() {\n  return <div><Main />{(Main as any).title}</div>;\n}\n`,
+      },
+      expression: "(Main as any).title",
+    }),
+    null,
+  );
+});

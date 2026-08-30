@@ -2,6 +2,7 @@ import ts from "typescript";
 
 import { type AnchorPath, type AnchorSegment } from "./anchors.js";
 import { stringValueOf } from "./literals.js";
+import { isBoundBetween, isValueReference } from "./scopes.js";
 import {
   importedBindingsOf,
   reExportsOf,
@@ -129,120 +130,13 @@ export function readPath(expression: ts.Expression): PathRead | null {
   return null;
 }
 
-/** Every name a binding introduces, including destructured and renamed ones. */
-function bindingNames(name: ts.BindingName, into: Set<string>): void {
-  if (ts.isIdentifier(name)) {
-    into.add(name.text);
-    return;
-  }
-  if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name)) {
-    for (const element of name.elements) {
-      if (ts.isBindingElement(element)) bindingNames(element.name, into);
-    }
-  }
-}
-
-/** Every name a declaration list binds, destructuring included. */
-function declarationNames(list: ts.VariableDeclarationList, into: Set<string>): void {
-  for (const declaration of list.declarations) {
-    bindingNames(declaration.name, into);
-  }
-}
-
-/** Every `var` in a function body, which binds the FUNCTION however deeply nested. */
-function hoistedVarNames(body: ts.Node, into: Set<string>): void {
-  const visit = (node: ts.Node): void => {
-    // A nested function has its own `var` scope; its declarations are not ours.
-    if (
-      ts.isFunctionDeclaration(node) ||
-      ts.isFunctionExpression(node) ||
-      ts.isArrowFunction(node) ||
-      ts.isMethodDeclaration(node)
-    ) {
-      return;
-    }
-    if (ts.isVariableStatement(node) && (node.declarationList.flags & ts.NodeFlags.Let) === 0) {
-      const isVar =
-        (node.declarationList.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0;
-      if (isVar) declarationNames(node.declarationList, into);
-    }
-    ts.forEachChild(node, visit);
-  };
-  ts.forEachChild(body, visit);
-}
-
-function declaresName(node: ts.Node, name: string): boolean {
-  const names = new Set<string>();
-  if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
-    for (const parameter of node.parameters) bindingNames(parameter.name, names);
-  }
-  if (ts.isMethodDeclaration(node)) {
-    for (const parameter of node.parameters) bindingNames(parameter.name, names);
-  }
-  if (
-    (ts.isFunctionDeclaration(node) ||
-      ts.isFunctionExpression(node) ||
-      ts.isArrowFunction(node) ||
-      ts.isMethodDeclaration(node)) &&
-    node.body !== undefined
-  ) {
-    hoistedVarNames(node.body, names);
-  }
-  if (ts.isCatchClause(node) && node.variableDeclaration !== undefined) {
-    bindingNames(node.variableDeclaration.name, names);
-  }
-  // A named function or class EXPRESSION binds its own name inside itself, so
-  // `const P = function copy() { … copy … }` refers to the function.
-  if (
-    (ts.isFunctionExpression(node) ||
-      ts.isClassExpression(node) ||
-      ts.isFunctionDeclaration(node) ||
-      ts.isClassDeclaration(node)) &&
-    node.name !== undefined
-  ) {
-    names.add(node.name.text);
-  }
-  // A `case` body holds statements directly, without being a Block, so a
-  // `const` written there was invisible to a scan that looked only at blocks.
-  if (ts.isBlock(node) || ts.isCaseClause(node) || ts.isDefaultClause(node)) {
-    for (const statement of node.statements) {
-      if (ts.isVariableStatement(statement)) {
-        declarationNames(statement.declarationList, names);
-        continue;
-      }
-      // A nested `function copy() {}` or `class copy {}` shadows the module's
-      // `copy` just as firmly as a `const` does.
-      if (
-        (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) &&
-        statement.name !== undefined
-      ) {
-        names.add(statement.name.text);
-      }
-    }
-  }
-  // A loop declares its own binding OUTSIDE its body block, so reading only
-  // block statements would miss `for (const copy of rows)` entirely.
-  if (ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node)) {
-    const initializer = node.initializer;
-    if (initializer !== undefined && ts.isVariableDeclarationList(initializer)) {
-      declarationNames(initializer, names);
-    }
-  }
-  return names.has(name);
-}
-
 /**
  * Whether a nearer binding than the module's owns this name at this position.
  * A component prop named `copy` makes the module's `copy` unreadable here, and
  * reading the module's anyway would publish a value the page never rendered.
  */
 export function isShadowed(node: ts.Node, name: string): boolean {
-  let current: ts.Node | undefined = node.parent;
-  while (current !== undefined && !ts.isSourceFile(current)) {
-    if (declaresName(current, name)) return true;
-    current = current.parent;
-  }
-  return false;
+  return isBoundBetween(node, null, name);
 }
 
 /**
@@ -812,47 +706,6 @@ function isWriteTarget(outer: ts.Expression): boolean {
   return false;
 }
 
-/**
- * Whether an identifier is a USE of a value, rather than a place a name is
- * written down. A declaration's own name, a property key, a binding element and
- * an import specifier all spell the name without reading the object, and
- * counting them as uses would report every declaration as escaped — including
- * the line that declares it.
- */
-function isValueReference(node: ts.Identifier): boolean {
-  const parent = node.parent;
-  if (parent === undefined) return false;
-  if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
-  if (ts.isElementAccessExpression(parent) && parent.argumentExpression === node) return false;
-  if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
-  if (ts.isPropertySignature(parent)) return false;
-  if (ts.isPropertyDeclaration(parent)) return parent.initializer === node;
-  if (ts.isVariableDeclaration(parent) && parent.name === node) return false;
-  if (ts.isFunctionDeclaration(parent) || ts.isClassDeclaration(parent)) return false;
-  if (ts.isFunctionExpression(parent) || ts.isClassExpression(parent)) return false;
-  // A parameter, a binding element and a class field each have a NAME and a
-  // VALUE. Only the name is a mention; `function f(value = copy)` and
-  // `class M { field = copy }` hand the object out exactly as any other
-  // expression does.
-  if (ts.isParameter(parent)) return parent.initializer === node;
-  if (ts.isBindingElement(parent)) return parent.initializer === node;
-  if (ts.isJsxAttribute(parent) && parent.name === node) return false;
-  if (ts.isImportSpecifier(parent) || ts.isExportSpecifier(parent)) return false;
-  if (ts.isImportClause(parent) || ts.isNamespaceImport(parent)) return false;
-  if (ts.isImportEqualsDeclaration(parent)) return false;
-  if (ts.isMethodDeclaration(parent) || ts.isMethodSignature(parent)) return false;
-  if (ts.isEnumMember(parent) || ts.isTypeReferenceNode(parent)) return false;
-  if (ts.isQualifiedName(parent)) return false;
-  // `typeof copy` names the value's TYPE. No type can write to it.
-  if (ts.isTypeQueryNode(parent)) return false;
-  if (ts.isLabeledStatement(parent) || ts.isBreakOrContinueStatement(parent)) return false;
-  // `{ copy }` is deliberately NOT excluded. The identifier is both the key and
-  // the value there, and as the value it hands the object out — so treating the
-  // shorthand as a name-only mention would miss `const w = { copy };
-  // w.copy.title = …` entirely.
-  return true;
-}
-
 const INCREMENTS: ReadonlySet<ts.SyntaxKind> = new Set([
   ts.SyntaxKind.PlusPlusToken,
   ts.SyntaxKind.MinusMinusToken,
@@ -890,13 +743,19 @@ function recordEscape(
 }
 
 /**
- * Every `const` a module exports, under the name it was declared with.
+ * Every name this module exports, as the OUTSIDE asks for it.
  *
  * Used when something obtains the whole module rather than one of its
  * exports — then no single declaration can be named, and all of them are
- * reachable by whoever holds it.
+ * reachable by whoever holds it. The caller resolves each name back to a
+ * declaration through `findExports`, which takes a public name.
+ *
+ * An export specifier has two names, and this wants the public one.
+ * `export { copy as label }` puts `label` on the namespace; looking the
+ * declaration up under `copy` found no export at all, recorded no escape, and
+ * left a mutated value reading as its original source text.
  */
-function exportedConstNames(module: ParsedModule): readonly string[] {
+function exportedPublicNames(module: ParsedModule): readonly string[] {
   const names = new Set<string>();
   for (const statement of module.source.statements) {
     if (ts.isVariableStatement(statement)) {
@@ -914,7 +773,7 @@ function exportedConstNames(module: ParsedModule): readonly string[] {
     const clause = statement.exportClause;
     if (clause === undefined || !ts.isNamedExports(clause)) continue;
     for (const element of clause.elements) {
-      names.add((element.propertyName ?? element.name).text);
+      names.add(element.name.text);
     }
   }
   return [...names];
@@ -977,7 +836,7 @@ function visibleExportNames(
 ): readonly string[] {
   if (visited.has(module.file) || visited.size > MAX_MODULE_HOPS) return [];
   const nextVisited = new Set(visited).add(module.file);
-  const names = new Set<string>(exportedConstNames(module));
+  const names = new Set<string>(exportedPublicNames(module));
   for (const reExport of reExportsOf(module, context.repositoryRoot)) {
     if (!reExport.isRepositoryLocal || reExport.resolvedFile === null) continue;
     if (reExport.exportedName !== null) {
