@@ -93,7 +93,11 @@ function scanRoute(
  * reach it. Deduplicating *candidates* instead would hide the very anchor
  * collisions the confidence gate exists to catch.
  */
-function extractRendered(routes: readonly RouteScan[]): ComponentScan {
+function extractRendered(
+  routes: readonly RouteScan[],
+  repositoryRoot: string,
+  cache: ModuleCache,
+): ComponentScan {
   const candidates: Candidate[] = [];
   const findings: Finding[] = [];
   const walked = new Set<string>();
@@ -106,7 +110,7 @@ function extractRendered(routes: readonly RouteScan[]): ComponentScan {
       walked.add(key);
       const roles = rolesByFile.get(file) ?? resolveTagRoles(declaration.module);
       rolesByFile.set(file, roles);
-      const extracted = extractComponent(declaration, roles);
+      const extracted = extractComponent(declaration, roles, repositoryRoot, cache);
       candidates.push(...extracted.candidates);
       findings.push(...extracted.findings);
     }
@@ -275,7 +279,7 @@ export function propose(options: ProposeOptions): Proposal {
     .map((route) => scanRoute(route, options.repositoryRoot, cache, ledger));
   for (const entry of scanned) collector.addMany(entry.findings);
 
-  const components = extractRendered(scanned);
+  const components = extractRendered(scanned, options.repositoryRoot, cache);
   collector.addMany(components.findings);
 
   const gate = applyConfidenceGate(components.candidates);

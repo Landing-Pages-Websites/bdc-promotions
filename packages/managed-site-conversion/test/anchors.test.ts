@@ -6,7 +6,7 @@ import test from "node:test";
 
 import { renderAnchor } from "../src/anchors.js";
 import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
-import { parseModule } from "../src/scan.js";
+import { ModuleCache, parseModule } from "../src/scan.js";
 
 function anchorsOf(source: string): readonly string[] {
   const directory = mkdtempSync(join(tmpdir(), "managed-site-anchors-"));
@@ -14,8 +14,9 @@ function anchorsOf(source: string): readonly string[] {
   writeFileSync(file, source, "utf8");
   const sourceModule = parseModule(file);
   const roles = resolveTagRoles(sourceModule);
+  const cache = new ModuleCache();
   return findComponentDeclarations(sourceModule)
-    .flatMap((declaration) => extractComponent(declaration, roles).candidates)
+    .flatMap((declaration) => extractComponent(declaration, roles, directory, cache).candidates)
     .map((candidate) => renderAnchor(candidate.anchor))
     .sort();
 }

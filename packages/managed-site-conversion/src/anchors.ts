@@ -34,22 +34,37 @@ export type AnchorPath = readonly AnchorSegment[];
 
 const SEGMENT_SEPARATOR = "/";
 
+/**
+ * A rendered anchor is compared as a STRING, so a name containing the
+ * separator would let two different paths render identically:
+ * `copy["a/b"]` and `copy.a.b` are different properties and would both come
+ * out as `each:copy/prop:a/b`. The gate would then merge readings of two
+ * values and keep one of them.
+ *
+ * Escaping is done once, here, for every segment kind — a property name is
+ * only the first place a separator can appear, and an `id` attribute or a
+ * component name can carry one too.
+ */
+function escapeSegmentName(name: string): string {
+  return name.replaceAll("~", "~0").replaceAll(SEGMENT_SEPARATOR, "~1");
+}
+
 function renderSegment(segment: AnchorSegment): string {
   switch (segment.kind) {
     case "component":
-      return `component:${segment.name}`;
+      return `component:${escapeSegmentName(segment.name)}`;
     case "region":
-      return `region:${segment.name}`;
+      return `region:${escapeSegmentName(segment.name)}`;
     case "role":
       return segment.attribute === null
-        ? `role:${segment.tag}`
-        : `role:${segment.tag}#${segment.attribute}`;
+        ? `role:${escapeSegmentName(segment.tag)}`
+        : `role:${escapeSegmentName(segment.tag)}#${escapeSegmentName(segment.attribute)}`;
     case "discriminator":
-      return `at:${segment.value}`;
+      return `at:${escapeSegmentName(segment.value)}`;
     case "binding":
-      return `each:${segment.name}`;
+      return `each:${escapeSegmentName(segment.name)}`;
     case "property":
-      return `prop:${segment.name}`;
+      return `prop:${escapeSegmentName(segment.name)}`;
     case "text":
       return "text";
   }
@@ -112,11 +127,21 @@ function words(raw: string): readonly string[] {
     .map((word) => word.toLowerCase());
 }
 
-/** Pointer tokens use the raw structural name, never the friendly synonym. */
+/**
+ * Pointer tokens use the raw structural name, never the friendly synonym.
+ *
+ * A role names an element AND the attribute a value flows into, and dropping
+ * the element made those two facts one: `<PageHero imageAlt=…>` and
+ * `<FeatureRow imageAlt=…>` on one page are different values that both
+ * addressed `/…/imageAlt/text`, so emission wrote one over the other. The
+ * anchors were always distinct; only the address collapsed them.
+ */
 function structuralWords(segment: AnchorSegment): readonly string[] {
   switch (segment.kind) {
     case "role":
-      return words(segment.attribute ?? segment.tag);
+      return segment.attribute === null
+        ? words(segment.tag)
+        : [...words(segment.tag), ...words(segment.attribute)];
     case "discriminator":
       return discriminatorWords(segment.value);
     case "text":

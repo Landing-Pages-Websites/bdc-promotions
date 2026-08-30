@@ -82,7 +82,9 @@ test("it proposes the values it can name and refuses the rest", () => {
   assert.ok(byPointer.has("/home/services/p/text"));
   assert.ok(byPointer.has("/home/services/a/contact/link"));
   assert.ok(byPointer.has("/home/services/img/hero/image"));
-  assert.ok(byPointer.has("/chrome/header/nav/ariaLabel/text"));
+  // The element is part of the address, so two components taking the same
+  // prop on one page cannot claim it.
+  assert.ok(byPointer.has("/chrome/header/nav/navAriaLabel/text"));
 
   // The unnamed section's twin paragraphs are not.
   assert.equal(
@@ -109,7 +111,7 @@ test("accessibility labels and self links stay out of customer authority", () =>
     .sort();
   assert.deepEqual(codeOwned, [
     "/chrome/header/a/self/link",
-    "/chrome/header/nav/ariaLabel/text",
+    "/chrome/header/nav/navAriaLabel/text",
   ]);
   for (const field of fields) {
     if (field.classification !== "code_owned_interface") continue;

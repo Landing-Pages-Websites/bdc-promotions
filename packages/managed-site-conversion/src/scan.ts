@@ -1,5 +1,12 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  type Dirent,
+} from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import ts from "typescript";
 
@@ -24,6 +31,27 @@ export interface ParsedModule {
 const PAGE_BASENAMES = Object.freeze(["page.tsx", "page.jsx", "page.ts", "page.js"]);
 const LAYOUT_BASENAMES = Object.freeze(["layout.tsx", "layout.jsx", "layout.ts", "layout.js"]);
 const MODULE_EXTENSIONS = Object.freeze([".tsx", ".ts", ".jsx", ".js"]);
+
+/**
+ * Extensions the repository WALK considers, which is deliberately wider than
+ * the ones a specifier resolves to.
+ *
+ * The two lists answer different questions. Resolution asks "what does this
+ * specifier name", and this codebase writes extensionless specifiers, so the
+ * short list is right there. The walk asks "what could contain a write", and
+ * an answer that is too short reports a mutation as absent — the direction that
+ * publishes a stale value as a customer's content. So the walk is a superset.
+ */
+const WALKED_EXTENSIONS = Object.freeze([
+  ".tsx",
+  ".ts",
+  ".jsx",
+  ".js",
+  ".mts",
+  ".cts",
+  ".mjs",
+  ".cjs",
+]);
 const IGNORED_DIRECTORIES = new Set([
   "node_modules",
   ".git",
@@ -105,10 +133,76 @@ export function discoverLayoutChain(
   return chain;
 }
 
+/**
+ * Parses a module under its REAL path.
+ *
+ * A module's file is its identity: escapes, declaration keys and the ledger all
+ * key on it. Two names for one file — an in-repository symlink and its target,
+ * or a path through a symlinked parent directory — would otherwise be two
+ * modules, and a write through one would not invalidate a read through the
+ * other. Canonicalising here covers every route into a `ParsedModule`.
+ */
 export function parseModule(file: string): ParsedModule {
-  const text = readFileSync(file, "utf8");
-  const source = ts.createSourceFile(file, text, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
-  return { file, source };
+  const real = realPathOf(file);
+  const text = readFileSync(real, "utf8");
+  const source = ts.createSourceFile(real, text, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
+  return { file: real, source };
+}
+
+/** Directories that never hold the repository's own source. */
+const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
+  "node_modules",
+  ".git",
+  ".next",
+  ".turbo",
+  "dist",
+  "build",
+  "out",
+  "coverage",
+]);
+
+/**
+ * Every module in the repository.
+ *
+ * Some questions cannot be answered from the modules a route reaches. Whether a
+ * `const` object is ever mutated is one: the write may sit in a third module
+ * that neither declares nor renders it, and reading only the render graph would
+ * report the value as unchanged when the site shows something else.
+ */
+export function repositoryModuleFiles(root: string): readonly string[] {
+  const files: string[] = [];
+  const visit = (directory: string): void => {
+    let entries: readonly Dirent[];
+    try {
+      entries = readdirSync(directory, { withFileTypes: true, encoding: "utf8" });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (SKIPPED_DIRECTORIES.has(entry.name)) continue;
+        visit(path);
+        continue;
+      }
+      if (entry.isSymbolicLink()) {
+        const real = realPathOf(path);
+        if (
+          isInsideRepository(real, root) &&
+          WALKED_EXTENSIONS.some((extension) => real.endsWith(extension))
+        ) {
+          files.push(real);
+        }
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (WALKED_EXTENSIONS.some((extension) => entry.name.endsWith(extension))) {
+        files.push(realPathOf(path));
+      }
+    }
+  };
+  visit(root);
+  return [...new Set(files)];
 }
 
 /** Parses each module once. Routes overlap heavily, and layouts wrap every one. */
@@ -119,9 +213,53 @@ export class ModuleCache {
     const existing = this.#modules.get(file);
     if (existing !== undefined) return existing;
     const parsed = parseModule(file);
+    // Keyed under BOTH the requested name and the real one, so a second route
+    // to the same file returns the same module rather than a second identity.
     this.#modules.set(file, parsed);
+    this.#modules.set(parsed.file, parsed);
     return parsed;
   }
+}
+
+/**
+ * Whether a resolved file is inside the repository.
+ *
+ * A specifier's PREFIX says it is repository-local; it does not say where it
+ * lands. `../../outside/content` and an `@/` alias pointing through a symlink
+ * both start local and end somewhere else, and every reader here goes on to
+ * publish what it finds as the customer's own site content. So containment is
+ * checked against the real path, after symlinks, and anything outside is not
+ * ours to read.
+ */
+function isInsideRepository(file: string, repositoryRoot: string): boolean {
+  const realFile = realPathOf(file);
+  const realRoot = realPathOf(repositoryRoot);
+  const inside = relative(realRoot, realFile);
+  return inside !== "" && !inside.startsWith("..") && !isAbsolute(inside);
+}
+
+function realPathOf(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolve(path);
+  }
+}
+
+/**
+ * The repository file a specifier names, or null when it is not ours to read.
+ *
+ * Exposed because a specifier does not only appear in an import statement:
+ * `import("./m")` and `require("./m")` name a module too, and a reading that
+ * only knows about import statements cannot see them.
+ */
+export function repositoryFileForSpecifier(
+  specifier: string,
+  fromFile: string,
+  repositoryRoot: string,
+): string | null {
+  if (!isRepositoryLocalSpecifier(specifier)) return null;
+  return resolveSpecifierToFile(specifier, fromFile, repositoryRoot);
 }
 
 function resolveSpecifierToFile(specifier: string, fromFile: string, repositoryRoot: string): string | null {
@@ -131,12 +269,21 @@ function resolveSpecifierToFile(specifier: string, fromFile: string, repositoryR
       ? resolve(dirname(fromFile), specifier)
       : null;
   if (base === null) return null;
-  for (const extension of MODULE_EXTENSIONS) {
-    if (existsSync(`${base}${extension}`)) return `${base}${extension}`;
-    const indexFile = join(base, `index${extension}`);
-    if (existsSync(indexFile)) return indexFile;
-  }
-  return existsSync(base) && statSync(base).isFile() ? base : null;
+  const candidate = ((): string | null => {
+    for (const extension of MODULE_EXTENSIONS) {
+      if (existsSync(`${base}${extension}`)) return `${base}${extension}`;
+      const indexFile = join(base, `index${extension}`);
+      if (existsSync(indexFile)) return indexFile;
+    }
+    return existsSync(base) && statSync(base).isFile() ? base : null;
+  })();
+  if (candidate === null) return null;
+  if (!isInsideRepository(candidate, repositoryRoot)) return null;
+  // The REAL path is returned, not the one written. Two names for one file —
+  // an in-repository symlink and its target — would otherwise be two modules
+  // with two declaration identities, and a write through one would not
+  // invalidate a read through the other.
+  return realPathOf(candidate);
 }
 
 /** Where one name in a module comes from. `null` names cover the whole module. */
@@ -221,6 +368,15 @@ export function reExportsOf(module: ParsedModule, repositoryRoot: string): reado
     if (clause === undefined) {
       exports.push({
         exportedName: null,
+        ...referenceTo(module, repositoryRoot, specifier.text, null, statement),
+      });
+      continue;
+    }
+    // `export * as content from "./m"` exports the whole MODULE under a name.
+    // Skipping it made the barrel look as if it forwarded nothing.
+    if (ts.isNamespaceExport(clause)) {
+      exports.push({
+        exportedName: clause.name.text,
         ...referenceTo(module, repositoryRoot, specifier.text, null, statement),
       });
       continue;

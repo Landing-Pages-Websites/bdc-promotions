@@ -19,5 +19,11 @@
     "noImplicitOverride": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  // The root config excludes `**/*.test.ts` for the Next.js app. Inheriting it
+  // here made this project's `include` a lie: the suites were listed and never
+  // checked, so a signature change could break every caller in `test/` while
+  // `tsc --noEmit` still exited 0. Fixtures stay excluded for the reason the
+  // root config gives — they are a stand-in customer repository.
+  "exclude": ["node_modules", "test/fixtures/**"]
 }

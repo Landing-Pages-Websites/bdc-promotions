@@ -1,12 +1,14 @@
 import ts from "typescript";
 
 import { extendAnchor, type AnchorPath, type AnchorSegment } from "./anchors.js";
-import type {
-  Candidate,
-  CollectionItemValue,
-  Ownership,
-  RawDestination,
+import {
+  POSITION_IDENTITY,
+  type Candidate,
+  type CollectionItemValue,
+  type Ownership,
+  type RawDestination,
 } from "./candidates.js";
+import { resolveStaticValue, type ResolutionContext } from "./evaluate.js";
 import { analyseItemTemplate, readMapCall, type TagRoles } from "./collections.js";
 import {
   attributeExpression,
@@ -38,7 +40,7 @@ import { buildRichTextDocument, partitionChildren } from "./jsx-text.js";
 import { readDestination, destinationDiscriminator } from "./destinations.js";
 import { walkRenderOutput, NO_TRIGGERS } from "./render-output.js";
 import type { Finding, SourceLocation } from "./report.js";
-import { evidenceOf, lineOf, namedFunctionsOf, type ParsedModule } from "./scan.js";
+import { evidenceOf, lineOf, namedFunctionsOf, ModuleCache, type ParsedModule } from "./scan.js";
 
 export interface ComponentDeclaration {
   readonly name: string;
@@ -119,11 +121,18 @@ class ComponentWalker {
   readonly #declaration: ComponentDeclaration;
   readonly #constants: ModuleConstants;
   readonly #roles: TagRoles;
+  readonly #resolution: ResolutionContext;
 
-  constructor(declaration: ComponentDeclaration, constants: ModuleConstants, roles: TagRoles) {
+  constructor(
+    declaration: ComponentDeclaration,
+    constants: ModuleConstants,
+    roles: TagRoles,
+    resolution: ResolutionContext,
+  ) {
     this.#declaration = declaration;
     this.#constants = constants;
     this.#roles = roles;
+    this.#resolution = resolution;
   }
 
   run(): ExtractionResult {
@@ -209,11 +218,42 @@ class ComponentWalker {
       this.#collectCollection(child, mapCall, anchor);
       return;
     }
+    if (this.#collectDeclaredValue(expression, child)) return;
     this.#report(
       "NON_LITERAL_VALUE",
       child,
       "Decide whether this computed value is customer content; if it is, move it to a declared field first.",
     );
+  }
+
+  /**
+   * A value read out of a declared binding is anchored on the binding, not on
+   * where the markup happens to read it. The page is showing `ctas.primary.label`
+   * — that chain of names is what the customer edits, and it survives the
+   * paragraph moving, being restyled, or being read from a second component.
+   */
+  #collectDeclaredValue(expression: ts.Expression, node: ts.Node): boolean {
+    const resolved = resolveStaticValue(expression, this.#resolution);
+    if (resolved === null) return false;
+    // An exported name is shared, so every component reading it names one value.
+    // A module-private name means only what its own module says it means, so the
+    // component reading it is part of its identity — two page modules each
+    // declaring `LAST_UPDATED` are two dates, not one ambiguous field.
+    const anchor = resolved.shared
+      ? resolved.path
+      : extendAnchor([{ kind: "component", name: this.#declaration.name }], ...resolved.path);
+    this.#candidates.push({
+      kind: "plain_text",
+      anchor,
+      componentNames: [this.#declaration.name],
+      location: this.#locationOf(node),
+      evidence: this.#evidenceOf(node),
+      ownership: CUSTOMER_EDITABLE,
+      identity: { kind: "declaration", module: resolved.declaredIn },
+      semantic: "body",
+      value: resolved.value,
+    });
+    return true;
   }
 
   #literalIdOf(element: JsxElementNode): string | null {
@@ -337,7 +377,8 @@ class ComponentWalker {
     this.#candidates.push({
       kind: "plain_text",
       anchor,
-      componentName: this.#declaration.name,
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
       location: this.#locationOf(node),
       evidence: this.#evidenceOf(node),
       ownership: CODE_OWNED,
@@ -369,7 +410,8 @@ class ComponentWalker {
     this.#candidates.push({
       kind: "image",
       anchor,
-      componentName: this.#declaration.name,
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: CUSTOMER_EDITABLE,
@@ -406,7 +448,8 @@ class ComponentWalker {
     this.#candidates.push({
       kind: "link",
       anchor,
-      componentName: this.#declaration.name,
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: isContentDestination(destination) ? CUSTOMER_EDITABLE : CODE_OWNED,
@@ -491,7 +534,8 @@ class ComponentWalker {
     this.#candidates.push({
       kind: "rich_text",
       anchor,
-      componentName: this.#declaration.name,
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: CUSTOMER_EDITABLE,
@@ -509,7 +553,8 @@ class ComponentWalker {
   ): void {
     const shared = {
       anchor,
-      componentName: this.#declaration.name,
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: CUSTOMER_EDITABLE,
@@ -561,7 +606,8 @@ class ComponentWalker {
     this.#candidates.push({
       kind: "collection",
       anchor: collectionAnchor,
-      componentName: this.#declaration.name,
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
       location: this.#locationOf(child),
       evidence: this.#evidenceOf(child),
       ownership: CUSTOMER_EDITABLE,
@@ -592,9 +638,16 @@ function isContentDestination(destination: RawDestination): boolean {
 export function extractComponent(
   declaration: ComponentDeclaration,
   roles: TagRoles,
+  repositoryRoot: string,
+  cache: ModuleCache,
 ): ExtractionResult {
   const constants = collectModuleConstants(declaration.module.source);
-  return new ComponentWalker(declaration, constants, roles).run();
+  const resolution: ResolutionContext = {
+    module: declaration.module,
+    repositoryRoot,
+    cache,
+  };
+  return new ComponentWalker(declaration, constants, roles, resolution).run();
 }
 
 export { itemPropertyRead, resolvedStringValueOf };

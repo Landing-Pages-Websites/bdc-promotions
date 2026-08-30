@@ -45,10 +45,38 @@ export function routeSlug(routePath: string): string {
   return routePath.slice(1).replaceAll("/", "-");
 }
 
+/**
+ * The part of an anchor that names the section a field sits in.
+ *
+ * A value anchored on a declaration has neither a component nor a region — it
+ * belongs to the binding it is read from, and grouping `ctas.primary.label`
+ * with `ctas.rfp.label` is what a person would expect. Falling through to an
+ * empty path instead put every such field in one nameless section.
+ */
 function sectionAnchorOf(anchor: AnchorPath): AnchorPath {
   const regions = anchor.filter((segment) => segment.kind === "region");
   const component = anchor.find((segment) => segment.kind === "component");
-  return component === undefined ? regions : [component, ...regions];
+  if (component !== undefined) return [component, ...regions];
+  if (regions.length > 0) return regions;
+  const binding = anchor.find((segment) => segment.kind === "binding");
+  return binding === undefined ? [] : [binding];
+}
+
+/**
+ * A section belongs to exactly one page, so the page is part of its key rather
+ * than something the last candidate to arrive gets to decide. Two fields that
+ * share a section anchor but render on different routes are two sections.
+ */
+function sectionKeyOf(anchor: AnchorPath, page: PageBinding): string {
+  const rendered = renderAnchor(sectionAnchorOf(anchor));
+  if (rendered === "") {
+    throw new Error(`Anchor ${renderAnchor(anchor)} names no section`);
+  }
+  // Joined unambiguously rather than concatenated. An anchor segment can hold
+  // any character an `id` attribute can, and a Next.js parallel route is
+  // spelled with `@`, so a separator either half may contain cannot be the
+  // thing that keeps two keys apart.
+  return JSON.stringify([rendered, page.routePath]);
 }
 
 function sectionNameOf(anchor: AnchorPath, componentName: string): string {
@@ -65,8 +93,16 @@ function humanise(raw: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
 }
 
-function pagesUsing(componentName: string, pages: readonly PageBinding[]): readonly PageBinding[] {
-  return pages.filter((page) => page.componentNames.has(componentName));
+/**
+ * Every route that renders any of the components this value appears in. A value
+ * read from a declared binding can be rendered by several components, and it is
+ * on every route any one of them reaches.
+ */
+function pagesUsing(
+  componentNames: readonly string[],
+  pages: readonly PageBinding[],
+): readonly PageBinding[] {
+  return pages.filter((page) => componentNames.some((name) => page.componentNames.has(name)));
 }
 
 /**
@@ -89,20 +125,61 @@ function pointerFor(candidate: Candidate): string {
   return base.endsWith(`/${leaf}`) ? base : `${base}/${leaf}`;
 }
 
-function assertNoPrefixCollisions(fields: readonly FieldBinding[]): void {
-  const byPath = new Map<string, string[]>();
+/**
+ * No two fields may share a content address, and none may be a prefix of
+ * another.
+ *
+ * Equality is the case that loses data rather than merely nesting it. A pointer
+ * is a READABLE address derived from the anchor, and that derivation is not
+ * injective: `copy["foo-bar"]` and `copy.fooBar` are different properties with
+ * different anchors, and both normalise to `fooBar`. The prefix check does not
+ * catch equality — `a.startsWith(a + "/")` is false — so emission wrote one
+ * value over the other and the site silently lost a field.
+ *
+ * This fails loudly instead. Making the pointer injective would be the other
+ * answer, at the cost of every readable address in every contract.
+ */
+function assertNoPointerCollisions(fields: readonly FieldBinding[]): void {
+  const byPath = new Map<string, FieldBinding[]>();
   for (const field of fields) {
-    const pointers = byPath.get(field.sourcePath) ?? [];
-    pointers.push(field.pointer);
-    byPath.set(field.sourcePath, pointers);
+    const bucket = byPath.get(field.sourcePath) ?? [];
+    bucket.push(field);
+    byPath.set(field.sourcePath, bucket);
   }
-  for (const [path, pointers] of byPath) {
-    const sorted = [...pointers].sort();
-    for (const [index, pointer] of sorted.entries()) {
+  for (const [path, bucket] of byPath) {
+    const sorted = [...bucket].sort((a, b) => a.pointer.localeCompare(b.pointer));
+    for (const [index, field] of sorted.entries()) {
       const next = sorted[index + 1];
-      if (next !== undefined && next.startsWith(`${pointer}/`)) {
-        throw new Error(`Proposed pointers ${pointer} and ${next} overlap in ${path}`);
+      if (next === undefined) continue;
+      if (next.pointer === field.pointer) {
+        throw new Error(
+          `Proposed pointer ${field.pointer} in ${path} is claimed by two anchors: ` +
+            `${renderAnchor(field.candidate.anchor)} and ` +
+            `${renderAnchor(next.candidate.anchor)}`,
+        );
       }
+      if (next.pointer.startsWith(`${field.pointer}/`)) {
+        throw new Error(
+          `Proposed pointers ${field.pointer} and ${next.pointer} overlap in ${path}`,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Every field a section holds must be addressed to that section's page. The key
+ * makes this true by construction; the check is here so a future change to the
+ * key cannot quietly reintroduce a section spanning routes.
+ */
+function assertSectionsOwnTheirFields(sections: readonly SectionBinding[]): void {
+  for (const section of sections) {
+    for (const field of section.fields) {
+      if (field.scope === "site") continue;
+      if (field.pageIds.length === 1 && field.pageIds[0] === section.pageId) continue;
+      throw new Error(
+        `Section ${section.key} holds a field addressed to another page`,
+      );
     }
   }
 }
@@ -123,8 +200,8 @@ function scopeFinding(candidate: Candidate, pageCount: number): Finding {
     location: candidate.location,
     evidence: candidate.evidence,
     decision:
-      `Component '${candidate.componentName}' renders on ${pageCount} routes, so this ` +
-      "value was proposed as site-scoped. Confirm that every route should share one value.",
+      `This value renders on ${pageCount} routes, so it was proposed as ` +
+      "site-scoped. Confirm that every route should share one value.",
   };
 }
 
@@ -145,14 +222,14 @@ export function bindCandidates(
   const sectionMeta = new Map<string, { readonly name: string; readonly page: PageBinding }>();
 
   for (const candidate of candidates) {
-    const owners = pagesUsing(candidate.componentName, pages);
+    const owners = pagesUsing(candidate.componentNames, pages);
     const owner = owners[0];
     if (owner === undefined) continue;
     const scope: "site" | "page" = owners.length > 1 ? "site" : "page";
     if (scope === "site") findings.push(scopeFinding(candidate, owners.length));
 
-    const sectionKey = renderAnchor(sectionAnchorOf(candidate.anchor));
-    const name = sectionNameOf(candidate.anchor, candidate.componentName);
+    const sectionKey = sectionKeyOf(candidate.anchor, owner);
+    const name = sectionNameOf(candidate.anchor, candidate.componentNames[0] ?? "");
     sectionMeta.set(sectionKey, { name, page: owner });
 
     const bucket = bySection.get(sectionKey) ?? [];
@@ -185,6 +262,7 @@ export function bindCandidates(
   });
 
   const fields = sections.flatMap((section) => section.fields);
-  assertNoPrefixCollisions(fields);
+  assertNoPointerCollisions(fields);
+  assertSectionsOwnTheirFields(sections);
   return { sections, fields, findings };
 }

@@ -7,12 +7,37 @@ import type { SourceLocation } from "./report.js";
 
 export type Ownership = "customer_editable" | "code_owned_interface";
 
+/**
+ * What decided a candidate's identity, which decides what a *collision* means.
+ *
+ * `position` — the anchor names a place inside one component's markup. Two
+ * candidates sharing it are two places nothing can tell apart, so the gate
+ * refuses both rather than attributing the value to whichever was walked first.
+ *
+ * `declaration` — the anchor names a binding the developer wrote, so every
+ * render site of that binding shows the same string and they are ONE value. The
+ * gate merges them when they name the same declaration. When two modules
+ * declare the same name the anchor would name two different values, so the gate
+ * refuses those instead of picking one.
+ */
+export type CandidateIdentity =
+  | { readonly kind: "position" }
+  | { readonly kind: "declaration"; readonly module: string };
+
+export const POSITION_IDENTITY: CandidateIdentity = Object.freeze({ kind: "position" });
+
 export interface CandidateBase {
   readonly anchor: AnchorPath;
-  readonly componentName: string;
+  /**
+   * Every component that renders this value. More than one only for candidates
+   * whose identity is a declaration: the same binding read from two components
+   * is one value, so the gate merges them rather than calling them ambiguous.
+   */
+  readonly componentNames: readonly string[];
   readonly location: SourceLocation;
   readonly evidence: string;
   readonly ownership: Ownership;
+  readonly identity: CandidateIdentity;
 }
 
 export interface PlainTextCandidate extends CandidateBase {

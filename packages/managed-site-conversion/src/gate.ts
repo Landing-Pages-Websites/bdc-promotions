@@ -27,15 +27,41 @@ function groupByAnchor(candidates: readonly Candidate[]): ReadonlyMap<string, Ca
 function duplicateComponentNames(candidates: readonly Candidate[]): ReadonlySet<string> {
   const filesByComponent = new Map<string, Set<string>>();
   for (const candidate of candidates) {
-    const files = filesByComponent.get(candidate.componentName) ?? new Set<string>();
-    files.add(candidate.location.file);
-    filesByComponent.set(candidate.componentName, files);
+    for (const name of candidate.componentNames) {
+      const files = filesByComponent.get(name) ?? new Set<string>();
+      files.add(candidate.location.file);
+      filesByComponent.set(name, files);
+    }
   }
   return new Set(
     [...filesByComponent.entries()]
       .filter(([, files]) => files.size > 1)
       .map(([name]) => name),
   );
+}
+
+/**
+ * Two readings of one declared binding are one value, not two rival claims on
+ * an anchor: whatever the page shows for `ctas.primary.label` in the header, it
+ * shows the same string in the footer, because both read the same declaration.
+ * They merge, carrying every component that renders them.
+ *
+ * They merge ONLY when they name the same declaration. Two modules that each
+ * declare `copy` produce one anchor naming two different values, which is the
+ * ambiguity this gate exists to refuse — so that group falls through to the
+ * ordinary refusal below rather than picking whichever was walked first.
+ */
+function mergeDeclaredReadings(group: readonly Candidate[]): readonly Candidate[] {
+  const first = group[0];
+  if (first === undefined || group.length === 1) return group;
+  const modules = new Set<string>();
+  for (const candidate of group) {
+    if (candidate.identity.kind !== "declaration") return group;
+    modules.add(candidate.identity.module);
+  }
+  if (modules.size !== 1) return group;
+  const names = new Set(group.flatMap((candidate) => candidate.componentNames));
+  return [{ ...first, componentNames: [...names] }];
 }
 
 function ambiguityFinding(anchor: string, candidate: Candidate, siblings: number): Finding {
@@ -51,14 +77,14 @@ function ambiguityFinding(anchor: string, candidate: Candidate, siblings: number
   };
 }
 
-function duplicateComponentFinding(candidate: Candidate): Finding {
+function duplicateComponentFinding(candidate: Candidate, name: string): Finding {
   return {
     code: "DUPLICATE_COMPONENT_NAME",
     anchor: renderAnchor(candidate.anchor),
     location: candidate.location,
     evidence: candidate.evidence,
     decision:
-      `Component '${candidate.componentName}' is declared in more than one file, ` +
+      `Component '${name}' is declared in more than one file, ` +
       "so its anchors are not unique. Rename one of them before converting.",
   };
 }
@@ -93,7 +119,12 @@ function inheritedAmbiguityFinding(anchor: string, candidate: Candidate, parent:
  */
 export function applyConfidenceGate(candidates: readonly Candidate[]): GateResult {
   const shadowed = duplicateComponentNames(candidates);
-  const groups = groupByAnchor(candidates);
+  const groups = new Map(
+    [...groupByAnchor(candidates)].map(([anchor, group]) => [
+      anchor,
+      mergeDeclaredReadings(group),
+    ]),
+  );
   const ambiguous = [...groups.entries()]
     .filter(([, group]) => group.length > 1)
     .map(([anchor]) => containerPrefixOf(anchor));
@@ -103,8 +134,9 @@ export function applyConfidenceGate(candidates: readonly Candidate[]): GateResul
   for (const [anchor, group] of groups) {
     const inherited = ambiguous.find((prefix) => anchor.startsWith(`${prefix}/`));
     for (const candidate of group) {
-      if (shadowed.has(candidate.componentName)) {
-        findings.push(duplicateComponentFinding(candidate));
+      const duplicated = candidate.componentNames.find((name) => shadowed.has(name));
+      if (duplicated !== undefined) {
+        findings.push(duplicateComponentFinding(candidate, duplicated));
         continue;
       }
       if (group.length > 1) {

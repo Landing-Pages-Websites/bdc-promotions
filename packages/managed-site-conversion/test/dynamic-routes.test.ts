@@ -97,7 +97,6 @@ function configFor(root: string, staticRoutes: readonly string[]): string {
 function proposeFrom(root: string, staticRoutes?: readonly string[]) {
   return propose({
     repositoryRoot: root,
-    outputDirectory: join(root, ".out"),
     configPath: staticRoutes === undefined ? null : configFor(root, staticRoutes),
     ledgerPath: join(root, ".out", "idmap.json"),
   });

@@ -13,7 +13,7 @@ import {
 import { isJsonObject, type JsonObject } from "../../src/json-write.js";
 import { propose, type Proposal } from "../../src/propose.js";
 import type { Finding, FindingCode } from "../../src/report.js";
-import { parseModule } from "../../src/scan.js";
+import { ModuleCache, parseModule } from "../../src/scan.js";
 
 /** Shared plumbing for the fixture-driven proposal tests. */
 
@@ -58,8 +58,9 @@ export function extractModule(source: string): ComponentExtraction {
   writeFileSync(file, source, "utf8");
   const sourceModule = parseModule(file);
   const roles = resolveTagRoles(sourceModule);
+  const cache = new ModuleCache();
   const extracted = findComponentDeclarations(sourceModule).map((declaration) =>
-    extractComponent(declaration, roles),
+    extractComponent(declaration, roles, directory, cache),
   );
   return {
     candidates: extracted.flatMap((entry) => entry.candidates),

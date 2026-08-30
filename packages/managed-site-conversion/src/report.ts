@@ -11,8 +11,10 @@ export const CONFIDENCE_RULE =
   "and its classification are each decided by a rule reading exclusively from " +
   "structural source facts (declared identifiers, JSX tags, attribute names, " +
   "literal syntactic kind), and no other candidate in the repository resolves " +
-  "to the same anchor path. If any one of the three is undetermined, the value " +
-  "is reported here and NOTHING is written into the contract for it.";
+  "to the same anchor path — unless those candidates name the same declaration, " +
+  "which makes them one value seen more than once rather than two rival claims " +
+  "on one name. If any one of the three is undetermined, the value is reported " +
+  "here and NOTHING is written into the contract for it.";
 
 export const FINDING_CODES = Object.freeze([
   /** Two or more candidates resolve to the same anchor path. */
