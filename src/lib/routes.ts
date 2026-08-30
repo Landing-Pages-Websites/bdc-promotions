@@ -4,6 +4,10 @@
  * Site builders APPEND an entry here for every page they add. The registry
  * drives sitemap.xml, llms.txt, and the 404 page's "key pages" links, so a
  * missing entry means the page is invisible to search engines and LLMs.
+ *
+ * Blog posts are the one exception: they are not registered here. They come
+ * from `listPublishedPosts()` in `src/lib/blog.ts`, which sitemap.xml and
+ * llms.txt both read, so a published post reaches both without an entry.
  */
 
 export interface RouteEntry {

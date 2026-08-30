@@ -6,7 +6,7 @@ import MarkdownBody from "@/components/blog/MarkdownBody";
 import BlogImage from "@/components/blog/BlogImage";
 import { JsonLd } from "@/components/schema/JsonLd";
 import { buildArticleSchema } from "@/components/schema/builders";
-import { getPublishedPost, listPublishedPosts } from "@/lib/blog";
+import { getPublishedPost, listPublishedPosts, publishedDate } from "@/lib/blog";
 import { buildMetadata } from "@/lib/seo";
 
 interface ArticleParams {
@@ -16,6 +16,16 @@ interface ArticleParams {
 export function generateStaticParams(): Array<{ slug: string }> {
   return listPublishedPosts().map((post) => ({ slug: post.slug }));
 }
+
+/**
+ * Only the params `generateStaticParams` returned are valid routes.
+ *
+ * Without this, `dynamicParams` defaults to true: Next renders ANY slug on
+ * demand, the page calls `notFound()` mid-stream, and the 404 comes back with
+ * an EMPTY <body> because the shell had already flushed. A crawler or a stale
+ * inbound link gets a blank page with no header and no way back into the site.
+ */
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,
@@ -38,15 +48,21 @@ export default async function BlogArticlePage({
   const post = getPublishedPost(slug);
   if (!post) notFound();
   const path = `/blog/${post.slug}`;
+  // The Article schema and the <time> element are both machine-readable, so
+  // both need a date that actually parses rather than whatever text the
+  // frontmatter carried: Google rejects a rich result with a bad
+  // datePublished, and an invalid dateTime attribute is worse than no <time>.
+  // The date the author wrote is still shown either way.
+  const publishedIso = publishedDate(post)?.toISOString() ?? null;
   return (
     <article className="mx-auto w-full max-w-2xl px-6 py-16">
-      {post.date ? (
+      {publishedIso ? (
         <JsonLd
           data={buildArticleSchema({
             headline: post.title,
             description: post.description || post.title,
             path,
-            datePublished: post.date,
+            datePublished: publishedIso,
             imagePath: post.image ?? undefined,
           })}
         />
@@ -58,7 +74,11 @@ export default async function BlogArticlePage({
         {post.date ? (
           <>
             {" · "}
-            <time dateTime={post.date}>{post.date}</time>
+            {publishedIso ? (
+              <time dateTime={publishedIso}>{post.date}</time>
+            ) : (
+              post.date
+            )}
           </>
         ) : null}
       </p>
