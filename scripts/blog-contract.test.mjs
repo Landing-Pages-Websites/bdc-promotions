@@ -39,8 +39,7 @@ test("the renderer supports the block set the MEGA migrator emits", () => {
   // markdown subset. A block the renderer cannot draw ships as literal
   // markdown on a live site, so the set is a contract, not an implementation
   // detail. Keep in sync with BLOCK_KINDS in src/lib/markdown.ts.
-  const markdown = read("src/lib/markdown.ts");
-  for (const kind of [
+  const documented = [
     "heading",
     "paragraph",
     "list",
@@ -48,12 +47,46 @@ test("the renderer supports the block set the MEGA migrator emits", () => {
     "table",
     "code",
     "image",
-  ]) {
+  ];
+  const markdown = read("src/lib/markdown.ts");
+  for (const kind of documented) {
     assert.match(
       markdown,
       new RegExp(`kind:\\s*"${kind}"`),
       `src/lib/markdown.ts no longer emits the "${kind}" block`,
     );
+  }
+  // The block set and the inline set are separate contracts that happen to
+  // share two names ("code", "image"), so each is derived from its own type
+  // declaration rather than from one union of string literals.
+  const union = (name) => {
+    const declaration = markdown.match(
+      new RegExp(`export type ${name} =([\\s\\S]*?);\\n`),
+    );
+    assert.ok(declaration, `cannot read the ${name} declaration`);
+    const kinds = [...declaration[1].matchAll(/kind:\s*"([a-z]+)"/g)].map((m) => m[1]);
+    assert.ok(kinds.length > 0, `${name} declares no kinds`);
+    return kinds;
+  };
+  assert.deepEqual(
+    [...new Set(union("Block"))].sort(),
+    [...documented].sort(),
+    "the Block type and the documented set disagree",
+  );
+
+  // The HTML body parser emits the same two types, so it is a second place the
+  // sets could be widened without markdown.ts changing. A kind it names that is
+  // in neither declaration means the migrator in mega-clawhub
+  // (SUPPORTED_BLOCKS) and the CMS rich-text grammar are now out of sync.
+  const known = new Set([...union("Block"), ...union("InlineNode")]);
+  const html = read("src/lib/html-blocks.ts");
+  assert.match(
+    html,
+    /import type \{[^}]*\bBlock\b[^}]*\} from "\.\/markdown"/,
+    "src/lib/html-blocks.ts no longer takes its Block type from markdown.ts",
+  );
+  for (const [, kind] of html.matchAll(/kind:\s*"([a-z]+)"/g)) {
+    assert.ok(known.has(kind), `src/lib/html-blocks.ts emits the unknown kind "${kind}"`);
   }
   // The renderer must handle every kind the parser can emit. Asserting on
   // branches rather than on literal tags: the list tag is chosen dynamically,
