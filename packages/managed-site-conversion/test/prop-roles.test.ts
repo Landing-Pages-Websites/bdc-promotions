@@ -1360,3 +1360,70 @@ function findFirstJsxTag(root: ts.Node, tag: string): ts.Node | null {
   visit(root);
   return found;
 }
+
+/**
+ * A value that SELECTS something is being consulted, not shown.
+ *
+ * `variants[variant]` reads the value's identity to pick a different value,
+ * which is the same act as `variant === "primary"` — already read as code. The
+ * design-system `variant` prop is the commonest shape there is on a real site,
+ * and it was undecided on every one of its call sites.
+ *
+ * What the selection RESULT is used for makes no difference: the key is code
+ * whether the lookup lands in a class name or is rendered as text, because the
+ * thing rendered is the table's entry, never the key.
+ */
+const SELECTORS: readonly (readonly [string, string])[] = [
+  ["an element access key in a class name", `<p className={STYLES[value]} />`],
+  ["an element access key rendered as text", `<p>{STYLES[value]}</p>`],
+  ["an element access key inside a call", `<p className={join(STYLES[value])} />`],
+  ["an optional element access key", `<p className={STYLES?.[value]} />`],
+  ["a computed property name", `<p className={({ [value]: "x" }).x} />`],
+];
+
+for (const [description, body] of SELECTORS) {
+  test(`reads ${description} as code`, () => {
+    const role = roleOf(
+      {
+        "Target.tsx":
+          `const STYLES: Record<string, string> = { a: "x" };\n` +
+          `declare function join(x: string): string;\n` +
+          `export function Target({ value }: { value?: string }) {\n  return ${body};\n}\n`,
+      },
+      "Target",
+      "value",
+    );
+    assert.equal(role, "code");
+  });
+}
+
+/** The OBJECT of an access is not the key, and reading a property off the prop
+ * itself settles nothing about the prop. */
+test("refuses a prop that is itself indexed", () => {
+  const role = roleOf(
+    {
+      "Target.tsx":
+        `export function Target({ value }: { value?: string[] }) {\n` +
+        `  return <p>{value[0]}</p>;\n}\n`,
+    },
+    "Target",
+    "value",
+  );
+  assert.equal(role, null);
+});
+
+/** Shown in one place and used as a key in another: the uses disagree. */
+test("refuses a prop both rendered and used as a key", () => {
+  const role = roleOf(
+    {
+      "Target.tsx":
+        `const STYLES: Record<string, string> = { a: "x" };\n` +
+        `export function Target({ value }: { value?: string }) {\n` +
+        `  return <p className={STYLES[value]}>{value}</p>;\n}\n`,
+    },
+    "Target",
+    "value",
+  );
+  assert.equal(role, null);
+});
+

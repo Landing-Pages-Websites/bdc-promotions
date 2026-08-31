@@ -308,7 +308,10 @@ export function isValueReference(node: ts.Identifier): boolean {
   const parent = node.parent;
   if (parent === undefined) return false;
   if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
-  if (ts.isElementAccessExpression(parent) && parent.argumentExpression === node) return false;
+  // `obj.name` NAMES a property; `obj[key]` USES the binding `key`. The two
+  // look alike and are not: excluding the computed key made a value read as a
+  // lookup key invisible, so a prop used that way looked unread.
+  if (ts.isElementAccessExpression(parent) && parent.argumentExpression === node) return true;
   if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
   if (ts.isPropertySignature(parent)) return false;
   if (ts.isPropertyDeclaration(parent)) return parent.initializer === node;

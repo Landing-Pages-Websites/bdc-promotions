@@ -432,6 +432,15 @@ function roleOfReference(
       }
       return null;
     }
+    // A value that SELECTS something is being consulted, not shown.
+    // `variants[variant]` reads the value's identity to pick a different value,
+    // exactly as `variant === "primary"` does; what gets rendered is the
+    // table's entry, never the key.
+    if (ts.isElementAccessExpression(parent) && parent.argumentExpression === current) {
+      return "code";
+    }
+    if (ts.isComputedPropertyName(parent) && parent.expression === current) return "code";
+
     if (ts.isPrefixUnaryExpression(parent)) {
       return parent.operator === ts.SyntaxKind.ExclamationToken ? INERT : null;
     }
