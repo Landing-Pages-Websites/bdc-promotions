@@ -3,6 +3,7 @@ import ts from "typescript";
 import {
   containsJsx,
   isComponentName,
+  isProvablyHostTag,
   isTransparentWrapper,
   unwrapTransparent,
 } from "./jsx-facts.js";
@@ -235,7 +236,7 @@ function isProvablyHostElement(
   element: ts.JsxOpeningElement | ts.JsxSelfClosingElement,
 ): boolean {
   const tag = element.tagName;
-  return ts.isIdentifier(tag) && !isComponentName(tag.text);
+  return ts.isIdentifier(tag) && isProvablyHostTag(tag.text);
 }
 
 /** What becomes of this function's JSX, as part of the enclosing component's render. */

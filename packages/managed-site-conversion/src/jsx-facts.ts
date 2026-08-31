@@ -130,6 +130,20 @@ export function headingLevelOf(tag: string): number | null {
  * one accepted while the other refused it produced a tag the render tree
  * followed that no declaration could ever answer for.
  */
+/**
+ * Is the DOM provably on the other side of a tag with this name?
+ *
+ * Deliberately stronger than "not a component name", and not a second answer to
+ * the question that predicate settles. `isComponentName` reads which of two
+ * things JSX treats a NAME as; this reads whether the browser is provably what
+ * receives a value, and only a bare lowercase name settles that. A dotted tag
+ * is a member expression, which JSX resolves as a component whatever its case
+ * — `<motion.div />` is not a `div` — so it is not called settled.
+ */
+export function isProvablyHostTag(name: string): boolean {
+  return !name.includes(".") && !isComponentName(name);
+}
+
 export function isComponentName(name: string): boolean {
   const first = name[0];
   return first !== undefined && first !== first.toLowerCase();

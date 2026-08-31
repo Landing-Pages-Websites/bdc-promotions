@@ -21,6 +21,7 @@ import {
   headingLevelOf,
   isAriaAttribute,
   isComponentName,
+  isProvablyHostTag,
   isWalkedElement,
   jsxExpressionStringValue,
   LANDMARK_TAGS,
@@ -125,6 +126,14 @@ export function resolveTagRoles(module: ParsedModule): TagRoles {
   }
   return { imageTags, linkTags };
 }
+
+/**
+ * The attributes that give a landmark its name, strongest first.
+ *
+ * `aria-labelledby` holds an ID, which is the same kind of durable token an
+ * `id` is, so it outranks the inline spelling.
+ */
+const ACCESSIBLE_NAME_ATTRIBUTES: readonly string[] = ["aria-labelledby", "aria-label"];
 
 class ComponentWalker {
   readonly #candidates: Candidate[] = [];
@@ -280,10 +289,24 @@ class ComponentWalker {
     return true;
   }
 
+  /**
+   * The literal value this element really carries under a name.
+   *
+   * A later spread decides the attribute instead: JSX applies attributes left
+   * to right, so `<section id="hero" {...rest}>` is named whatever `rest` says
+   * `id` is. An identity read from the literal there names an element that may
+   * not have it, which is the one way this reading can be confidently wrong.
+   */
+  #durableAttributeOf(element: JsxElementNode, name: string): string | null {
+    const attribute = findAttribute(element, name);
+    if (attribute === null) return null;
+    if (overriddenByLaterSpread(attribute)) return null;
+    const value = literalAttributeValue(attribute);
+    return value !== null && value.length > 0 ? value : null;
+  }
+
   #literalIdOf(element: JsxElementNode): string | null {
-    const idAttribute = findAttribute(element, "id");
-    const literalId = idAttribute === null ? null : literalAttributeValue(idAttribute);
-    return literalId !== null && literalId.length > 0 ? literalId : null;
+    return this.#durableAttributeOf(element, "id");
   }
 
   /**
@@ -291,6 +314,25 @@ class ComponentWalker {
    * own text only tells that leaf apart from its siblings. Promoting every
    * `id` to a region would split a section per paragraph.
    */
+  /**
+   * The name a landmark is given for assistive technology, when it is written
+   * as a literal.
+   *
+   * `aria-labelledby` holds an ID, which is exactly the kind of name an `id`
+   * attribute is. `aria-label` holds the name inline. Both are written by a
+   * developer, and this tool already classifies them as code rather than
+   * customer copy — so they are as durable as an `id` and are read the same
+   * way. Reading only `id` left sections that carry one of these unnamed, and
+   * everything inside them could then be told apart only by position.
+   */
+  #accessibleNameOf(element: JsxElementNode): string | null {
+    for (const attributeName of ACCESSIBLE_NAME_ATTRIBUTES) {
+      const value = this.#durableAttributeOf(element, attributeName);
+      if (value !== null) return value;
+    }
+    return null;
+  }
+
   #namingOf(
     element: JsxElementNode,
     tag: string,
@@ -304,6 +346,20 @@ class ComponentWalker {
       return { region: { kind: "region", name: literalId }, discriminator: null };
     }
     if (literalId !== null) return { region: null, discriminator: literalId };
+    // An `id` is the strongest name, so it is tried first; an accessible name
+    // is the next-strongest and names the same kind of thing.
+    //
+    // Host elements only. `aria-label` means something fixed on a host element
+    // and nothing in particular on a component, which is free to render it as
+    // copy -- `#collectAttributes` states that same rule for the same reason,
+    // and asks the component rather than assuming a host meaning. A name taken
+    // from a prop the customer can then edit would move the anchors of every
+    // descendant, which is the one thing an anchor must never do.
+    const accessibleName =
+      isContainer && isProvablyHostTag(tag) ? this.#accessibleNameOf(element) : null;
+    if (accessibleName !== null) {
+      return { region: { kind: "region", name: accessibleName }, discriminator: null };
+    }
     if (LANDMARK_TAGS.has(tag)) {
       return { region: { kind: "region", name: tag }, discriminator: null };
     }
@@ -320,8 +376,8 @@ class ComponentWalker {
         "NO_DURABLE_ANCHOR",
         element,
         "This section has no durable name, so its values can only be told apart by " +
-          "position. Give it an `id` attribute or extract it into a named component, " +
-          "then re-run.",
+          "position. Give it an `id`, an `aria-label`, or an `aria-labelledby` " +
+          "written as a literal, or extract it into a named component, then re-run.",
       );
     }
     const scopeAnchor = region === null ? anchor : extendAnchor(anchor, region);
