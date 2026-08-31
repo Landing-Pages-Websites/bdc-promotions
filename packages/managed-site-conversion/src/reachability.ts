@@ -8,7 +8,7 @@ import { declarationOfName, scopeOfDeclaration } from "./scopes.js";
 import {
   evidenceOf,
   importedBindingsOf,
-  lineOf,
+  locationOf,
   reExportsOf,
   type ModuleCache,
   type ModuleReference,
@@ -189,7 +189,10 @@ class RenderWalker {
     this.#findings.push({
       code: "UNRESOLVED_RENDER_TARGET",
       anchor: null,
-      location: { file, line: statement === null ? 1 : lineOf(entry.source, statement) },
+      location:
+        statement === null
+          ? { file, line: 1, offset: 0 }
+          : locationOf(entry.source, file, statement),
       evidence:
         statement === null ? "no default export" : evidenceOf(entry.source, statement),
       decision:
@@ -218,7 +221,7 @@ class RenderWalker {
     this.#findings.push({
       code: "UNRESOLVED_RENDER_TARGET",
       anchor: null,
-      location: { file: from.module.file, line: lineOf(from.module.source, entry.node) },
+      location: locationOf(from.module.source, from.module.file, entry.node),
       evidence: evidenceOf(from.module.source, entry.node),
       decision: UNREADABLE_DECISION[entry.kind],
     });
@@ -288,7 +291,7 @@ class RenderWalker {
     this.#findings.push({
       code: "UNRESOLVED_RENDER_TARGET",
       anchor: null,
-      location: { file: from.module.file, line: lineOf(from.module.source, tag.node) },
+      location: locationOf(from.module.source, from.module.file, tag.node),
       evidence: evidenceOf(from.module.source, tag.node),
       decision:
         `'${tag.name}' does not name a component declared in this repository, so ` +
@@ -436,7 +439,7 @@ function unresolvedImportFinding(reference: ModuleReference, file: string): Find
   return {
     code: "UNRESOLVED_COMPONENT",
     anchor: null,
-    location: { file, line: reference.line },
+    location: { file, line: reference.line, offset: reference.offset },
     evidence: `import "${reference.specifier}"`,
     decision:
       "This local import could not be resolved, so the component it renders was " +

@@ -111,6 +111,26 @@ export function attributesOf(node: JsxElementNode): readonly ts.JsxAttributeLike
   return opening.attributes.properties;
 }
 
+/**
+ * Whether an `id` written here would name a REGION rather than tell one leaf
+ * from its siblings.
+ *
+ * A sectioning or landmark tag always does. Anything else does only when it
+ * holds element children -- a `<div>` whose only child is `{rows.map(...)}`
+ * holds a JSX EXPRESSION, so its id becomes a discriminator that the walk drops
+ * before the collection inside is anchored.
+ *
+ * Stated once because two readers need the same answer: `extract.ts` decides
+ * what an id means, and `name-anchors.ts` must not write one where it would
+ * mean nothing.
+ */
+export function namesARegion(element: JsxElementNode, tag: string): boolean {
+  if (SECTIONING_TAGS.has(tag) || LANDMARK_TAGS.has(tag)) return true;
+  return childrenOf(element).some(
+    (child) => ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child),
+  );
+}
+
 export function childrenOf(node: JsxElementNode): readonly ts.JsxChild[] {
   return ts.isJsxElement(node) ? node.children : [];
 }

@@ -2,6 +2,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 
+import {
+  applyAnchorNames,
+  describeName,
+  nameAmbiguousAnchors,
+  revertAnchorNames,
+  verifyAnchorNames,
+} from "./name-anchors.js";
 import { propose } from "./propose.js";
 import { renderReportText } from "./report.js";
 
@@ -11,6 +18,8 @@ interface CliOptions {
   readonly configPath: string | null;
   readonly ledgerPath: string;
   readonly writeSources: boolean;
+  readonly nameAnchors: boolean;
+  readonly applyAnchorNames: boolean;
 }
 
 const USAGE = `Usage: propose --repo <path> [--out <path>] [--config <path>] [--ledger <path>] [--write-sources]
@@ -23,6 +32,8 @@ classify with confidence are reported, never guessed.
   --config         conversion config supplying platform and governance facts
   --ledger         anchor-to-ID ledger (default: <out>/managed-site.idmap.json)
   --write-sources  also write the proposed src/content JSON documents
+  --name-anchors   also propose an \`id\` for every ambiguity it can name safely
+  --apply-anchors  write those ids into the repository (implies --name-anchors)
 `;
 
 function readOptions(argv: readonly string[]): CliOptions | null {
@@ -53,6 +64,8 @@ function readOptions(argv: readonly string[]): CliOptions | null {
       values.get("ledger") ?? join(outputDirectory, "managed-site.idmap.json"),
     ),
     writeSources: flags.has("write-sources"),
+    nameAnchors: flags.has("name-anchors") || flags.has("apply-anchors"),
+    applyAnchorNames: flags.has("apply-anchors"),
   };
 }
 
@@ -85,6 +98,47 @@ export function run(argv: readonly string[]): number {
   if (options.writeSources) {
     for (const [path, document] of proposal.sourceDocuments) {
       writeJson(join(options.outputDirectory, "sources", path), document);
+    }
+  }
+  if (options.nameAnchors) {
+    const naming = nameAmbiguousAnchors(
+      proposal.ambiguous,
+      options.repositoryRoot,
+      options.outputDirectory,
+    );
+    writeJson(join(options.outputDirectory, "anchor-names.json"), naming);
+    writeFileSync(
+      join(options.outputDirectory, "anchor-names.txt"),
+      `${naming.names.map(describeName).join("\n")}\n`,
+      "utf8",
+    );
+    const applied = options.applyAnchorNames ? applyAnchorNames(naming.names) : null;
+    process.stdout.write(
+      `anchor names: ${naming.names.length} proposed, ${naming.findings.length} left to a person` +
+        (applied === null ? "\n" : `, written into ${applied.files.length} files\n`),
+    );
+    for (const file of applied?.rejected ?? []) {
+      process.stdout.write(`anchor names: NOT written, the edited file would not parse: ${file}\n`);
+    }
+    // The edit is checked against what it promised, by re-reading the
+    // repository rather than by trusting the analysis that produced it. A
+    // duplicate id or a surviving ambiguity withdraws the whole edit.
+    if (applied !== null && applied.files.length > 0) {
+      const after = propose({
+        repositoryRoot: options.repositoryRoot,
+        configPath: options.configPath,
+        ledgerPath: options.ledgerPath,
+      });
+      const broken = verifyAnchorNames(naming.names, after.ambiguous, options.repositoryRoot);
+      if (broken.length > 0) {
+        revertAnchorNames(applied);
+        for (const reason of broken) {
+          process.stdout.write(`anchor names: WITHDRAWN, ${reason}\n`);
+        }
+        process.stdout.write(
+          `anchor names: ${String(applied.files.length)} files put back as they were\n`,
+        );
+      }
     }
   }
   proposal.ledger.save(options.ledgerPath);

@@ -46,6 +46,12 @@ export interface Proposal {
   readonly report: ProposalReport;
   readonly ledger: IdLedger;
   readonly validationError: string | null;
+  /**
+   * The rival groups the confidence gate refused, kept as groups. A report only
+   * says a value was refused; a tool that WRITES the missing names needs to
+   * know which values are rivals of which.
+   */
+  readonly ambiguous: readonly (readonly Candidate[])[];
 }
 
 interface RouteScan {
@@ -256,7 +262,7 @@ function dynamicRouteFinding(route: RouteModule): Finding {
   return {
     code: "DYNAMIC_ROUTE_NOT_A_PAGE",
     anchor: null,
-    location: { file: route.file, line: 1 },
+    location: { file: route.file, line: 1, offset: 0 },
     evidence: `route ${route.routePath} is a template, not a URL`,
     decision:
       "Decide what this template serves: model its data as a collection, " +
@@ -357,6 +363,7 @@ export function propose(options: ProposeOptions): Proposal {
     },
     ledger,
     validationError: validation.error,
+    ambiguous: gate.ambiguous,
   };
 }
 

@@ -56,6 +56,12 @@ export type FindingCode = (typeof FINDING_CODES)[number];
 export interface SourceLocation {
   readonly file: string;
   readonly line: number;
+  /**
+   * Character offset of the node the location points at. A line number finds
+   * the right neighbourhood; an offset finds the exact node, which is what a
+   * tool that EDITS the source needs to act without re-deriving the reading.
+   */
+  readonly offset: number;
 }
 
 export interface Finding {

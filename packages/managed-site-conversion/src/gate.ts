@@ -11,6 +11,12 @@ import type { Finding } from "./report.js";
 export interface GateResult {
   readonly accepted: readonly Candidate[];
   readonly findings: readonly Finding[];
+  /**
+   * The rival groups, kept as groups. A report only needs to say a value was
+   * refused; a tool that GIVES the rivals names needs to know which values are
+   * rivals of which, and that is lost the moment they are flattened.
+   */
+  readonly ambiguous: readonly (readonly Candidate[])[];
 }
 
 function groupByAnchor(candidates: readonly Candidate[]): ReadonlyMap<string, Candidate[]> {
@@ -130,8 +136,12 @@ export function applyConfidenceGate(candidates: readonly Candidate[]): GateResul
     .map(([anchor]) => containerPrefixOf(anchor));
   const findings: Finding[] = [];
   const accepted: Candidate[] = [];
+  const rivals: (readonly Candidate[])[] = [];
 
   for (const [anchor, group] of groups) {
+    if (group.length > 1 && !group.some((c) => c.componentNames.some((n) => shadowed.has(n)))) {
+      rivals.push(group);
+    }
     const inherited = ambiguous.find((prefix) => anchor.startsWith(`${prefix}/`));
     for (const candidate of group) {
       const duplicated = candidate.componentNames.find((name) => shadowed.has(name));
@@ -150,5 +160,5 @@ export function applyConfidenceGate(candidates: readonly Candidate[]): GateResul
       accepted.push(candidate);
     }
   }
-  return { accepted, findings };
+  return { accepted, findings, ambiguous: rivals };
 }

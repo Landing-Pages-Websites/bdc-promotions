@@ -39,6 +39,7 @@ import {
   jsxExpressionStringValue,
   LANDMARK_TAGS,
   literalAttributeValue,
+  namesARegion,
   overriddenByLaterSpread,
   refReachesComponents,
   namedAttributes,
@@ -65,6 +66,7 @@ import type { Finding, SourceLocation } from "./report.js";
 import {
   evidenceOf,
   lineOf,
+  locationOf,
   namedFunctionsOf,
   ModuleCache,
   reactMajorOf,
@@ -172,6 +174,7 @@ export function findComponentDeclarations(module: ParsedModule): readonly Compon
       jsxRoot: entry.body,
       childrenSlots: childrenSlotsOf(entry.parameters),
       line: lineOf(module.source, entry.body),
+      offset: entry.body.getStart(module.source),
     }));
 }
 
@@ -266,10 +269,7 @@ class ComponentWalker {
   }
 
   #locationOf(node: ts.Node): SourceLocation {
-    return {
-      file: this.#declaration.module.file,
-      line: lineOf(this.#declaration.module.source, node),
-    };
+    return locationOf(this.#declaration.module.source, this.#declaration.module.file, node);
   }
 
   #evidenceOf(node: ts.Node): string {
@@ -553,10 +553,7 @@ class ComponentWalker {
     tag: string,
   ): { readonly region: AnchorSegment | null; readonly discriminator: AnchorName | null } {
     const literalId = this.#durableAttributeOf(element, tag, ID_ATTRIBUTE);
-    const isContainer =
-      SECTIONING_TAGS.has(tag) ||
-      LANDMARK_TAGS.has(tag) ||
-      childrenOf(element).some((child) => ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child));
+    const isContainer = namesARegion(element, tag);
     if (literalId !== null && isContainer) {
       return { region: { kind: "region", name: literalId }, discriminator: null };
     }

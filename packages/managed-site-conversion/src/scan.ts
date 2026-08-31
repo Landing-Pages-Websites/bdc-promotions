@@ -6,9 +6,11 @@ import {
   statSync,
   type Dirent,
 } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import ts from "typescript";
+
+import type { SourceLocation } from "./report.js";
 
 import { unwrapTransparent } from "./jsx-facts.js";
 
@@ -112,6 +114,22 @@ export function discoverRoutes(repositoryRoot: string): readonly RouteModule[] {
 }
 
 /**
+ * Whether `child` is `parent` or sits underneath it.
+ *
+ * A textual prefix is NOT containment: `/repo/app` would swallow
+ * `/repo/apples`, attaching a sibling directory's layout to a route that is not
+ * under `app/` at all. Containment needs a path-component boundary. Both sides
+ * go through `realPathOf` because a scratch root is `/var/...` before
+ * resolution and `/private/var/...` after, and comparing the two spellings
+ * matches nothing while looking like it works.
+ */
+export function containsPath(parent: string, child: string): boolean {
+  const top = realPathOf(parent);
+  const under = (path: string): boolean => path === top || path.startsWith(top + sep);
+  return under(child) || under(realPathOf(child));
+}
+
+/**
  * Every layout between a route and the app root wraps that route, and only that
  * branch of the tree. Nearest first, because Next.js resolves the nearest
  * declaration and lets it fall back outwards.
@@ -124,7 +142,7 @@ export function discoverLayoutChain(
   if (appDirectory === null) return [];
   const chain: string[] = [];
   let directory = dirname(routeFile);
-  while (directory.startsWith(appDirectory)) {
+  while (containsPath(appDirectory, directory)) {
     const layout = firstExisting(directory, LAYOUT_BASENAMES);
     if (layout !== null) chain.push(layout);
     if (directory === appDirectory) break;
@@ -170,6 +188,14 @@ const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
  * report the value as unchanged when the site shows something else.
  */
 export function repositoryModuleFiles(root: string): readonly string[] {
+  return repositoryFiles(root, WALKED_EXTENSIONS);
+}
+
+/** Every file in the repository with one of these extensions. */
+export function repositoryFiles(
+  root: string,
+  extensions: readonly string[],
+): readonly string[] {
   const files: string[] = [];
   const visit = (directory: string): void => {
     let entries: readonly Dirent[];
@@ -189,14 +215,14 @@ export function repositoryModuleFiles(root: string): readonly string[] {
         const real = realPathOf(path);
         if (
           isInsideRepository(real, root) &&
-          WALKED_EXTENSIONS.some((extension) => real.endsWith(extension))
+          extensions.some((extension) => real.endsWith(extension))
         ) {
           files.push(real);
         }
         continue;
       }
       if (!entry.isFile()) continue;
-      if (WALKED_EXTENSIONS.some((extension) => entry.name.endsWith(extension))) {
+      if (extensions.some((extension) => entry.name.endsWith(extension))) {
         files.push(realPathOf(path));
       }
     }
@@ -347,6 +373,7 @@ export interface ModuleReference {
   readonly isRepositoryLocal: boolean;
   readonly resolvedFile: string | null;
   readonly line: number;
+  readonly offset: number;
 }
 
 /** A name a module re-exports. `exportedName` is null for `export * from`. */
@@ -374,6 +401,7 @@ function referenceTo(
       ? resolveSpecifierToFile(specifier, module.file, repositoryRoot)
       : null,
     line: lineOf(module.source, node),
+    offset: node.getStart(module.source),
   };
 }
 
@@ -499,6 +527,11 @@ export function namedFunctionsOf(source: ts.SourceFile): readonly NamedFunction[
 
 export function lineOf(source: ts.SourceFile, node: ts.Node): number {
   return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+}
+
+/** Where a node is, precisely enough for a reader AND for an editor. */
+export function locationOf(source: ts.SourceFile, file: string, node: ts.Node): SourceLocation {
+  return { file, line: lineOf(source, node), offset: node.getStart(source) };
 }
 
 const MAX_EVIDENCE_LENGTH = 160;

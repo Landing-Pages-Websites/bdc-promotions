@@ -29,6 +29,35 @@ Output:
 The process exits non-zero while anything is unresolved, so it can gate a
 conversion pull request.
 
+## Writing the names it is missing
+
+`AMBIGUOUS_ANCHOR` is the largest refusal on a real site, and the advice in
+every one of those findings is the same sentence: give this element a durable
+name. That is a mechanical edit, so the tool can make it:
+
+```bash
+npm --workspace @landing-pages-websites/managed-site-conversion run propose -- \
+  --repo ../some-customer-site --out /tmp/proposal --apply-anchors
+```
+
+`--name-anchors` writes `anchor-names.json` and `anchor-names.txt` and changes
+nothing. `--apply-anchors` also writes the ids into the repository, so the next
+run reads a site whose elements have names. On All Points Media that is 64 ids
+across 8 files, and it moves the proposal from 254 fields with 291 refusals to
+324 fields with 225.
+
+Every name it writes is prefixed `ms-`. The prefix is not decoration: an id is
+spoken for by anything that can NAME one — a `#fragment` link, a stylesheet
+rule, a `getElementById` — and a namespace removes that collision class by
+construction rather than by enumeration. It also reserves every `#name` written
+anywhere in the repository, stylesheets included.
+
+It refuses to name a component (which need not pass an id anywhere), an element
+carrying a spread or a non-literal `id`, and an element rendered once per item.
+A group of rivals is named as a whole or not at all, and the edited file is
+parsed before it is written: a file whose new text would not parse is left
+exactly as it was.
+
 ## The confidence rule
 
 > A value enters the proposed contract only when its **identity**, its **field

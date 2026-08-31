@@ -8,7 +8,7 @@ import { renderAnchor } from "../src/anchors.js";
 import type { JsonObject } from "../src/json-write.js";
 import { resolveRenderTree } from "../src/reachability.js";
 import type { FindingCode } from "../src/report.js";
-import { ModuleCache } from "../src/scan.js";
+import { discoverLayoutChain, ModuleCache } from "../src/scan.js";
 import {
   extractModule,
   findingsOf,
@@ -1206,4 +1206,51 @@ test("a heading the layout renders is in the outline of every route it wraps", (
       "the layout's heading is missing from a route it renders on",
     );
   }
+});
+
+/**
+ * A sibling directory whose name merely STARTS with the app directory's.
+ *
+ * The layout walk asked `directory.startsWith(appDirectory)`, so a file under
+ * `apples/` counted as being under `app/` and picked up that sibling's
+ * `layout.tsx` -- fields from a tree the route never renders. Same defect as
+ * the output-directory exclusion in `name-anchors.ts`; both now ask
+ * `containsPath`, which requires a path-component boundary.
+ */
+for (const sibling of ["apples", "app-legacy", "appendix/deep"] as const) {
+  test(`a layout under ${sibling} is not in an app route's chain`, () => {
+    const root = mkdtempSync(join(tmpdir(), "layout-boundary-"));
+    const files: Record<string, string> = {
+      "app/page.tsx": "export default function Page() {\n  return <p>Hello</p>;\n}\n",
+      [`${sibling}/layout.tsx`]:
+        "export default function Wrong({ children }: { children: React.ReactNode }) {\n" +
+        "  return <div>{children}</div>;\n}\n",
+      [`${sibling}/page.tsx`]: "export default function Other() {\n  return <p>Other</p>;\n}\n",
+    };
+    for (const [relative, text] of Object.entries(files)) {
+      const file = join(root, relative);
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, text, "utf8");
+    }
+    const chain = discoverLayoutChain(root, join(root, sibling, "page.tsx"));
+    assert.deepEqual(chain, [], `${sibling} borrowed the app/ walk`);
+  });
+}
+
+/** A real layout IS found, so the rows above fail for the reason they claim. */
+test("a layout in the route's own directory is in the chain", () => {
+  const root = mkdtempSync(join(tmpdir(), "layout-boundary-"));
+  for (const [relative, text] of Object.entries({
+    "app/page.tsx": "export default function Page() {\n  return <p>Hello</p>;\n}\n",
+    "app/layout.tsx":
+      "export default function Root({ children }: { children: React.ReactNode }) {\n" +
+      "  return <div>{children}</div>;\n}\n",
+  })) {
+    const file = join(root, relative);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, text, "utf8");
+  }
+  assert.deepEqual(discoverLayoutChain(root, join(root, "app/page.tsx")), [
+    join(root, "app/layout.tsx"),
+  ]);
 });
