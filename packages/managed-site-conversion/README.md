@@ -42,6 +42,29 @@ conversion pull request.
 The rule is printed at the top of every report, so a reader never has to infer
 what "confident" meant for a given run.
 
+### A component's props are read from the component
+
+A host element's attributes are a fixed vocabulary, so a list can classify
+them. A component's props are not: `title` is customer copy on one component
+and a tooltip on another, and `as` is never copy anywhere. So the role is not
+read from the NAME — it is read from what the receiving component does with the
+value, in that component.
+
+A prop rendered as text is content. A prop that ends up in an `aria-*` or `alt`
+attribute is an accessibility interface. A prop that is tested, used as a tag,
+used as a key into a lookup, or lands in a structural attribute is code.
+
+Nothing is guessed. The reading returns nothing — and the value is reported
+exactly as any other refusal — when the prop's uses disagree, when the
+receiving component cannot be read, when the value crosses a call this reader
+cannot see through, when a later spread could replace it, or when the props
+object reaches anything this reader cannot follow.
+
+One prop's meaning depends on the site rather than on the code: `ref` reaches a
+function component from React 19 and is consumed before it. That is read from
+the repository being converted, and a manifest that does not PIN a major
+answers unknown, which fails closed.
+
 The trade this makes is deliberate. A wrong classification is a silent failure:
 either internal SEO copy becomes customer-editable, or content the customer
 needs is locked away, and neither is discovered until much later. An unresolved
@@ -55,7 +78,7 @@ Concretely it refuses, rather than guesses, on:
 | `AMBIGUOUS_ANCHOR` | two or more values resolve to the same anchor; both are withheld, and so is anything nested inside them |
 | `NO_DURABLE_ANCHOR` | a `<section>` with no `id` and no component of its own |
 | `NON_LITERAL_VALUE` | the rendered value is computed, not a literal that can be migrated |
-| `UNKNOWN_ATTRIBUTE_ROLE` | a literal attribute that is neither structural nor a known accessibility interface |
+| `UNKNOWN_ATTRIBUTE_ROLE` | on a host element, a literal attribute that is neither structural nor a known accessibility interface; on a COMPONENT, one whose receiver was read but does not decide what the prop is |
 | `DUPLICATE_COMPONENT_NAME` | one component name declared in two files |
 | `UNRESOLVED_COMPONENT` | a local import of a rendered component that could not be resolved, so its markup was never read |
 | `UNRESOLVED_RENDER_TARGET` | a rendered element names no traceable declaration — chosen at runtime, arriving as a prop, or an unnamed default export — or a JSX-writing function was handed to a call or to a component and where its result renders could not be read |

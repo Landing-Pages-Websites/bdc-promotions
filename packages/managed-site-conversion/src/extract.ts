@@ -9,21 +9,25 @@ import {
   type RawDestination,
 } from "./candidates.js";
 import { resolveStaticValue, type ResolutionContext } from "./evaluate.js";
+import { propRoleOf, type PropRole, type PropRoleContext } from "./prop-roles.js";
 import { analyseItemTemplate, readMapCall, type TagRoles } from "./collections.js";
 import {
   attributeExpression,
+  bindingPropertyName,
+  CALLER_CONSUMED_ATTRIBUTES,
   childrenOf,
   containsJsx,
   findAttribute,
-  hasAriaHidden,
   headingLevelOf,
   isAriaAttribute,
   isComponentName,
+  isWalkedElement,
   jsxExpressionStringValue,
   LANDMARK_TAGS,
   literalAttributeValue,
+  overriddenByLaterSpread,
+  refReachesComponents,
   namedAttributes,
-  OPAQUE_TAGS,
   SECTIONING_TAGS,
   STRUCTURAL_ATTRIBUTES,
   tagNameOf,
@@ -40,7 +44,15 @@ import { buildRichTextDocument, partitionChildren } from "./jsx-text.js";
 import { readDestination, destinationDiscriminator } from "./destinations.js";
 import { walkRenderOutput, NO_TRIGGERS } from "./render-output.js";
 import type { Finding, SourceLocation } from "./report.js";
-import { evidenceOf, lineOf, namedFunctionsOf, ModuleCache, type ParsedModule } from "./scan.js";
+import {
+  evidenceOf,
+  lineOf,
+  namedFunctionsOf,
+  ModuleCache,
+  reactMajorOf,
+  type ParsedModule,
+} from "./scan.js";
+import { resolveTagAt, tagResolver, type TagResolver } from "./reachability.js";
 
 export interface ComponentDeclaration {
   readonly name: string;
@@ -74,8 +86,7 @@ function childrenSlotsOf(parameters: readonly ts.ParameterDeclaration[]): Readon
     }
     if (!ts.isObjectBindingPattern(parameter.name)) continue;
     for (const element of parameter.name.elements) {
-      const property = element.propertyName ?? element.name;
-      if (!ts.isIdentifier(property) || property.text !== CHILDREN_PROP) continue;
+      if (bindingPropertyName(element) !== CHILDREN_PROP) continue;
       if (ts.isIdentifier(element.name)) slots.add(element.name.text);
     }
   }
@@ -122,23 +133,36 @@ class ComponentWalker {
   readonly #constants: ModuleConstants;
   readonly #roles: TagRoles;
   readonly #resolution: ResolutionContext;
+  readonly #tags: TagResolver;
 
   constructor(
     declaration: ComponentDeclaration,
     constants: ModuleConstants,
     roles: TagRoles,
     resolution: ResolutionContext,
+    tags: TagResolver,
   ) {
     this.#declaration = declaration;
     this.#constants = constants;
     this.#roles = roles;
     this.#resolution = resolution;
+    this.#tags = tags;
   }
 
   run(): ExtractionResult {
     const base: AnchorPath = [{ kind: "component", name: this.#declaration.name }];
     this.#walkNode(this.#declaration.jsxRoot, base);
     return { candidates: this.#candidates, findings: this.#findings };
+  }
+
+  /** One reading of the repository's React version, shared by both sides. */
+  #propRoleContext(): PropRoleContext {
+    return {
+      resolver: this.#tags,
+      refReachesComponents: refReachesComponents(
+        reactMajorOf(this.#resolution.repositoryRoot),
+      ),
+    };
   }
 
   #locationOf(node: ts.Node): SourceLocation {
@@ -287,9 +311,8 @@ class ComponentWalker {
   }
 
   #walkElement(element: JsxElementNode, anchor: AnchorPath): void {
-    if (hasAriaHidden(element)) return;
+    if (!isWalkedElement(element)) return;
     const tag = tagNameOf(element);
-    if (OPAQUE_TAGS.has(tag)) return;
 
     const { region, discriminator } = this.#namingOf(element, tag);
     if (region === null && SECTIONING_TAGS.has(tag)) {
@@ -337,13 +360,54 @@ class ComponentWalker {
     scopeAnchor: AnchorPath,
     discriminator: string | null,
   ): void {
+    const isComponent = isComponentName(tag);
     for (const attribute of namedAttributes(element)) {
-      if (STRUCTURAL_ATTRIBUTES.has(attribute.name)) continue;
       if (this.#isHandledElsewhere(tag, attribute.name)) continue;
+      // React consumes `key` before the component ever sees it, so nothing
+      // written there renders — on a host element or a component alike.
+      if (CALLER_CONSUMED_ATTRIBUTES.has(attribute.name)) continue;
+      // `ref` is a handle on a host element, and on a COMPONENT it is a prop
+      // only from React 19. Which applies is a fact about the repository being
+      // read, so it is read from there and fails closed when it cannot be.
+      if (
+        attribute.name === "ref" &&
+        (!isComponent || !refReachesComponents(reactMajorOf(this.#resolution.repositoryRoot)))
+      ) {
+        continue;
+      }
       const value = literalAttributeValue(attribute.node);
       if (value === null) continue;
+      // A component prop is asked of the component BEFORE any host rule, for
+      // the same reason `prop-roles.ts` does it in that order: `className` and
+      // `aria-label` mean something fixed on a host element and nothing in
+      // particular on a component, which is free to render either as copy.
+      if (isComponent) {
+        if (overriddenByLaterSpread(attribute.node)) {
+          this.#report(
+            "UNKNOWN_ATTRIBUTE_ROLE",
+            attribute.node,
+            `A spread after '${attribute.name}' may replace it, so what this component ` +
+              "receives is not decided here. Move the spread before the literal, or set " +
+              "the value without one.",
+          );
+          continue;
+        }
+        // Host semantics are facts about HOST elements. None of them is true of
+        // a component merely because its answer was not available, so this
+        // always settles a component's prop — with a field when it can, and
+        // with a finding naming WHICH half was missing when it cannot. There
+        // is no fall-through to the host rules below, which is why it returns
+        // nothing to branch on.
+        this.#collectComponentProp(
+          attribute.name, tag, value, scopeAnchor, discriminator, attribute.node,
+        );
+        continue;
+      }
+      if (STRUCTURAL_ATTRIBUTES.has(attribute.name)) continue;
       if (isAriaAttribute(attribute.name)) {
-        this.#pushAttributeText(attribute.name, tag, value, scopeAnchor, discriminator, attribute.node);
+        this.#pushAttributeText(
+          attribute.name, tag, value, scopeAnchor, discriminator, attribute.node, CODE_OWNED,
+        );
         continue;
       }
       this.#report(
@@ -361,6 +425,55 @@ class ComponentWalker {
     return this.#roles.linkTags.has(tag) && attributeName === "href";
   }
 
+  /**
+   * A prop the receiving component renders as text is the customer's copy; a
+   * prop it puts in an `aria-*` or `alt` attribute is an accessibility
+   * interface; a prop it tests, styles with, or uses as a tag is code and is
+   * left alone. `prop-roles.ts` reads that from the component itself, so no
+   * list of prop names decides it here.
+   */
+  #collectComponentProp(
+    attributeName: string,
+    tag: string,
+    value: string,
+    scopeAnchor: AnchorPath,
+    discriminator: string | null,
+    node: ts.Node,
+  ): void {
+    const target = resolveTagAt(this.#tags, tag, node, this.#declaration);
+    if (target === null) {
+      this.#report(
+        "UNKNOWN_ATTRIBUTE_ROLE",
+        node,
+        `'${tag}' does not resolve to a component declared in this repository, so what ` +
+          `it does with '${attributeName}' cannot be read. Host attribute names mean ` +
+          "nothing here: a component may render any of them as visible copy.",
+      );
+      return;
+    }
+    const role: PropRole | null = propRoleOf(target, attributeName, this.#propRoleContext());
+    if (role === null) {
+      this.#report(
+        "UNKNOWN_ATTRIBUTE_ROLE",
+        node,
+        `'${tag}' was read, but what it does with '${attributeName}' is not decided by ` +
+          "its source. Decide whether this value is customer content, an accessibility " +
+          "interface, or code.",
+      );
+      return;
+    }
+    if (role === "code") return;
+    this.#pushAttributeText(
+      attributeName,
+      tag,
+      value,
+      scopeAnchor,
+      discriminator,
+      node,
+      role === "content" ? CUSTOMER_EDITABLE : CODE_OWNED,
+    );
+  }
+
   #pushAttributeText(
     attributeName: string,
     tag: string,
@@ -368,6 +481,7 @@ class ComponentWalker {
     scopeAnchor: AnchorPath,
     discriminator: string | null,
     node: ts.Node,
+    ownership: Ownership,
   ): void {
     const role: AnchorSegment = { kind: "role", tag, attribute: attributeName };
     const anchor =
@@ -381,7 +495,7 @@ class ComponentWalker {
       identity: POSITION_IDENTITY,
       location: this.#locationOf(node),
       evidence: this.#evidenceOf(node),
-      ownership: CODE_OWNED,
+      ownership,
       semantic: "label",
       value,
     });
@@ -631,6 +745,14 @@ function readItemValues(
   });
 }
 
+/**
+ * Whether a spread AFTER this attribute could replace what it sets.
+ *
+ * `<Inner label="Original" {...runtimeProps} />` renders whatever
+ * `runtimeProps.label` holds, so the literal written here is not what the
+ * component receives. JSX resolves attributes left to right, so only a spread
+ * that follows the attribute can overwrite it.
+ */
 function isContentDestination(destination: RawDestination): boolean {
   return destination.kind !== "self";
 }
@@ -640,6 +762,7 @@ export function extractComponent(
   roles: TagRoles,
   repositoryRoot: string,
   cache: ModuleCache,
+  tags: TagResolver = tagResolver(repositoryRoot, cache),
 ): ExtractionResult {
   const constants = collectModuleConstants(declaration.module.source);
   const resolution: ResolutionContext = {
@@ -647,7 +770,7 @@ export function extractComponent(
     repositoryRoot,
     cache,
   };
-  return new ComponentWalker(declaration, constants, roles, resolution).run();
+  return new ComponentWalker(declaration, constants, roles, resolution, tags).run();
 }
 
 export { itemPropertyRead, resolvedStringValueOf };

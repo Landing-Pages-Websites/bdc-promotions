@@ -235,6 +235,15 @@ class RenderWalker {
     return resolution.kind === "declaration" ? resolution.declaration : null;
   }
 
+  resolveTagAtSite(
+    tagName: string,
+    from: ComponentDeclaration,
+    at: ts.Node,
+  ): ComponentDeclaration | null {
+    const resolution = this.#resolutionOf(tagName, from, at);
+    return resolution.kind === "declaration" ? resolution.declaration : null;
+  }
+
   /**
    * `at` is the JSX the tag is written in, when the caller has it.
    *
@@ -450,15 +459,66 @@ export function resolveRenderTree(
 /** Resolves a JSX tag to the component it renders, by the render walk's rules. */
 export interface TagResolver {
   resolve(tagName: string, from: ComponentDeclaration): ComponentDeclaration | null;
+  /**
+   * The same question asked from MODULE scope only, for a use site that has no
+   * nearer binding. The render walk wants breadth and a wrong answer only adds
+   * a component; a reading that classifies a value needs the declaration that
+   * is actually visible where the tag is written.
+   */
+  /**
+   * The same question asked AT a use site, which is the only way to answer it:
+   * the nearest binding, and only what the module itself binds when there is
+   * none. The render walk asks it too, so one rule decides what a tag renders
+   * and what a reading may conclude about it.
+   */
+  resolveAt(
+    tagName: string,
+    from: ComponentDeclaration,
+    at: ts.Node,
+  ): ComponentDeclaration | null;
 }
 
 export function tagResolver(repositoryRoot: string, cache: ModuleCache): TagResolver {
   const walker = new RenderWalker(cache, repositoryRoot);
   return {
     resolve: (tagName, from) => walker.resolveTag(tagName, from),
+    resolveAt: (tagName, from, at) => walker.resolveTagAtSite(tagName, from, at),
   };
 }
 
+/**
+ * Resolves a tag to the declaration it names AT the place it is written.
+ *
+ * `resolve` answers by name, from the module. That is what the render walk
+ * wants — it visits everything reachable and a wrong answer only adds a
+ * component. A reading that CLASSIFIES a value cannot afford it: with
+ * `import { Inner } from "./Inner"` and a local `function Inner()`, the page
+ * renders the local one, and reading the import would describe a prop from a
+ * component the page never renders.
+ *
+ * Which declaration a tag names is a LEXICAL question, and two heuristics
+ * standing in for it were wrong in opposite directions. "Any binding means
+ * unresolvable" rejected a local component this reader can read perfectly
+ * well. "The name matches mine means recursion" accepted a parameter that
+ * shadows the component's own name, and described a prop of a component the
+ * page never renders.
+ *
+ * So the question is asked directly: find the NEAREST binding of the name
+ * between the JSX and the module. No binding means the module answers.
+ * A binding that is a component in this module means that component — which is
+ * also how recursion resolves, with no exemption, because a component's own
+ * declaration is the nearest binding of its own name. Any other binding — a
+ * parameter, a local holding a call's result — is opaque, and the tag is
+ * unresolved.
+ */
+export function resolveTagAt(
+  resolver: TagResolver,
+  tagName: string,
+  node: ts.Node,
+  from: ComponentDeclaration,
+): ComponentDeclaration | null {
+  return resolver.resolveAt(tagName, from, node);
+}
 
 /** The nearest syntax binding this name between the node and the module. */
 function nearestBinding(node: ts.Node, name: string): ts.Node | null {

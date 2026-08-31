@@ -23,7 +23,7 @@ import { IdLedger } from "./id-ledger.js";
 import { isJsonObject, writeAtPointer, type JsonObject } from "./json-write.js";
 import { readNextMetadata, type NextMetadata } from "./next-metadata.js";
 import { isRepositoryPath } from "./paths.js";
-import { declarationKey, resolveRenderTree } from "./reachability.js";
+import { declarationKey, resolveRenderTree, tagResolver } from "./reachability.js";
 import {
   CONFIDENCE_RULE,
   FindingCollector,
@@ -102,6 +102,7 @@ function extractRendered(
   const findings: Finding[] = [];
   const walked = new Set<string>();
   const rolesByFile = new Map<string, TagRoles>();
+  const tags = tagResolver(repositoryRoot, cache);
   for (const route of routes) {
     for (const declaration of route.components) {
       const file = declaration.module.file;
@@ -110,7 +111,7 @@ function extractRendered(
       walked.add(key);
       const roles = rolesByFile.get(file) ?? resolveTagRoles(declaration.module);
       rolesByFile.set(file, roles);
-      const extracted = extractComponent(declaration, roles, repositoryRoot, cache);
+      const extracted = extractComponent(declaration, roles, repositoryRoot, cache, tags);
       candidates.push(...extracted.candidates);
       findings.push(...extracted.findings);
     }

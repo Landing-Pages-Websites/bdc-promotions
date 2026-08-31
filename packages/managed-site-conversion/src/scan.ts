@@ -205,6 +205,58 @@ export function repositoryModuleFiles(root: string): readonly string[] {
   return [...new Set(files)];
 }
 
+/**
+ * The major React version a repository PINS, or null when it does not pin one.
+ *
+ * A fact about the site being CONVERTED, not about this tool: `ref` reaches a
+ * function component as a prop from React 19 and is consumed before it, so a
+ * reader that assumed either would be wrong on half the fleet.
+ *
+ * This does not parse semver ranges, and three attempts to say what a range
+ * permits each got a different spelling wrong — the first number of
+ * `^19 || ^18`, then the lowest of each clause, then `<19`, whose only number
+ * is a major the range EXCLUDES. Deciding a range needs a semver
+ * implementation, and guessing at operators is how each of those happened.
+ *
+ * So the question asked is narrower and answerable: does this declaration pin
+ * ONE major? A bare version, optionally with `^` or `~`, does. Every operator,
+ * alternation, hyphen range and wildcard does not, and answers null — which
+ * the caller fails closed on. The cost is a field for a component that renders
+ * its own `ref` on a site pinned with `>=19`, which nothing does; the cost of
+ * the other direction is offering a customer a field that edits nothing.
+ */
+const PINNED_MAJOR = /^[\^~]?(\d+)(?:\.\d+){0,2}(?:-[\w.-]+)?$/u;
+
+const REACT_MAJOR = new Map<string, number | null>();
+
+export function reactMajorOf(repositoryRoot: string): number | null {
+  const cached = REACT_MAJOR.get(repositoryRoot);
+  if (cached !== undefined) return cached;
+  const major = readReactMajor(repositoryRoot);
+  REACT_MAJOR.set(repositoryRoot, major);
+  return major;
+}
+
+function readReactMajor(repositoryRoot: string): number | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8"));
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null) return null;
+  const manifest = parsed as Record<string, unknown>;
+  for (const field of ["dependencies", "devDependencies", "peerDependencies"] as const) {
+    const group = manifest[field];
+    if (typeof group !== "object" || group === null) continue;
+    const range = (group as Record<string, unknown>)["react"];
+    if (typeof range !== "string") continue;
+    const major = PINNED_MAJOR.exec(range.trim())?.[1];
+    if (major !== undefined) return Number(major);
+  }
+  return null;
+}
+
 /** Parses each module once. Routes overlap heavily, and layouts wrap every one. */
 export class ModuleCache {
   readonly #modules = new Map<string, ParsedModule>();

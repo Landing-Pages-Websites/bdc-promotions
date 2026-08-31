@@ -1,0 +1,719 @@
+import ts from "typescript";
+
+import type { ComponentDeclaration } from "./extract.js";
+import {
+  bindingPropertyName,
+  CALLER_CONSUMED_ATTRIBUTES,
+  isAriaAttribute,
+  isComponentName,
+  isWalkedElement,
+  OPAQUE_TAGS,
+  overriddenByLaterSpread,
+  STRUCTURAL_ATTRIBUTES,
+  tagNameOf,
+} from "./jsx-facts.js";
+import { resolveTagAt, type TagResolver } from "./reachability.js";
+import { renderVerdictOf } from "./render-output.js";
+import {
+  isBoundBetween,
+  isFunctionLike,
+  isScopeNode,
+  isValueReference,
+} from "./scopes.js";
+
+/**
+ * What a prop passed to a component in this repository actually is.
+ *
+ * A host element's attributes are a fixed vocabulary, so a list can classify
+ * them. A component's props are not: `title` is customer copy on one component
+ * and a tooltip on another, and `as` is never copy anywhere. The role is not a
+ * property of the NAME — it is a property of what the receiving component does
+ * with the value, which is written down in that component.
+ *
+ * So this reads it there. A prop rendered as text is content; a prop that ends
+ * up in an `aria-*` or `alt` attribute is an accessibility interface; a prop
+ * that is tested, used as a tag, or lands in a structural attribute is code.
+ *
+ * Nothing is guessed. A prop whose uses disagree, whose component cannot be
+ * read, that reaches a call this cannot see through, or that could arrive by
+ * spread, returns null and is reported to a human exactly as before.
+ */
+
+export type PropRole = "content" | "accessibility" | "code";
+
+/**
+ * A reading that carries no evidence about what the value is.
+ *
+ * Checking whether a value is PRESENT — `x ? a : b`, `!x`, `x && <p/>` — is a
+ * question about absence, not about meaning, and a React `key` or `ref` is
+ * bookkeeping that accepts any value at all. Counting those as evidence would
+ * make `{title ? title : "Untitled"}` self-contradictory: tested once, shown
+ * once, and therefore refused, when it is plainly copy.
+ *
+ * Comparing a value to something else is different. `tone === "invert"` uses it
+ * as an enum the component switches on, which is exactly what code looks like.
+ */
+const INERT = "inert";
+type Reading = PropRole | typeof INERT | null;
+
+const MAX_COMPONENT_DEPTH = 6;
+
+const CHILDREN_PROP = "children";
+
+export interface PropRoleContext {
+  readonly resolver: TagResolver;
+  /**
+   * Whether `ref` written on a component in THIS repository reaches it. React
+   * 19 passes it like any other prop; React 18 consumes it first. The same
+   * fact decides the caller side in `extract.ts`, so it is read once from the
+   * repository and handed to both rather than asked twice.
+   */
+  readonly refReachesComponents: boolean;
+}
+
+/** How a component names the prop inside its own body. */
+type PropBinding =
+  /** Destructured: `{ title }` or `{ title: heading }`, possibly several. */
+  | { readonly kind: "names"; readonly names: readonly string[] }
+  /**
+   * Whole-props parameter: references are `props.title`. The PROPERTY is part
+   * of the binding — matching any `props.*` would report `variant` as content
+   * because the component happens to render `props.label` somewhere else.
+   */
+  | { readonly kind: "member"; readonly object: string; readonly property: string };
+
+function bindingFor(
+  declaration: ComponentDeclaration,
+  propName: string,
+): PropBinding | null {
+  const parameters = parametersOf(declaration);
+  if (parameters === null || parameters.length !== 1) return null;
+  const parameter = parameters[0];
+  if (parameter === undefined) return null;
+
+  // A REST parameter holds the argument list, so `props.title` on one is
+  // `undefined` — a field built from a caller's literal there edits text the
+  // page never shows.
+  if (parameter.dotDotDotToken !== undefined) return null;
+  if (ts.isIdentifier(parameter.name)) {
+    return { kind: "member", object: parameter.name.text, property: propName };
+  }
+  if (!ts.isObjectBindingPattern(parameter.name)) return null;
+
+  const names: string[] = [];
+  for (const element of parameter.name.elements) {
+    // `{ ...rest }` can carry this prop onward invisibly, so the pattern can no
+    // longer say where the value goes.
+    if (element.dotDotDotToken !== undefined) return null;
+    const declared = bindingPropertyName(element);
+    if (declared === null) return null;
+    if (declared !== propName) continue;
+    if (!ts.isIdentifier(element.name)) return null;
+    names.push(element.name.text);
+  }
+  return { kind: "names", names };
+}
+
+function parametersOf(
+  declaration: ComponentDeclaration,
+): readonly ts.ParameterDeclaration[] | null {
+  const owner = declaration.jsxRoot.parent;
+  if (owner === undefined) return null;
+  // `scopes.js` owns what counts as a function body. A private list of three
+  // kinds here meant a method, a constructor and an accessor were not seen as
+  // function boundaries at all, so a value discarded inside one read as though
+  // the page rendered it.
+  return isFunctionLike(owner) ? owner.parameters : null;
+}
+
+/**
+ * The object and property a member access names.
+ *
+ * Deliberately NOT `readPath` in `evaluate.js`, which refuses optional
+ * chaining: that reader asks what string a path DENOTES, and `a?.b` may denote
+ * nothing, so resolving it could publish a value the page does not render.
+ * This one asks whether a prop is USED, and `props?.value` uses it — refusing
+ * here would make a prop read only that way look unread, and classify a
+ * component's copy as code.
+ *
+ * Two readers of one syntax, asking two questions, is the one case where two
+ * implementations are right; a comment says so because the next reader will
+ * otherwise consolidate them.
+ */
+function propertyRead(
+  node: ts.Node,
+): { readonly object: ts.Expression; readonly property: string } | null {
+  if (ts.isPropertyAccessExpression(node)) {
+    return { object: node.expression, property: node.name.text };
+  }
+  if (ts.isElementAccessExpression(node) && ts.isStringLiteral(node.argumentExpression)) {
+    return { object: node.expression, property: node.argumentExpression.text };
+  }
+  return null;
+}
+
+type Reachability = "renders" | "discarded" | "unreadable";
+
+/**
+ * Whether what happens at `node` reaches the page.
+ *
+ * Running a function is not the same as rendering what it returns, and
+ * `render-output.ts` is this repository's one statement of that boundary. A
+ * reading has to pass it BEFORE its JSX position is believed:
+ * `<button onClick={() => <p>{value}</p>} />` puts `value` in child position
+ * inside a handler whose result the DOM throws away.
+ */
+function reachabilityOf(node: ts.Node, root: ts.Node): Reachability {
+  let current: ts.Node | undefined = node;
+  while (current !== undefined && current !== root) {
+    // The extractor never enters a hidden or opaque subtree, so text found
+    // there is not content a customer can edit. A reading that disagreed with
+    // the walk proposed a field for markup the model deliberately excludes.
+    if (
+      (ts.isJsxElement(current) || ts.isJsxSelfClosingElement(current)) &&
+      !isWalkedElement(current)
+    ) {
+      return "discarded";
+    }
+    if (isFunctionLike(current)) {
+      const verdict = renderVerdictOf(current);
+      if (verdict === "resolved") return "discarded";
+      if (verdict !== "call") return "unreadable";
+    }
+    current = current.parent;
+  }
+  return "renders";
+}
+
+/**
+ * The local names a whole-props object is destructured into, for ONE property.
+ *
+ * `const { value } = props` and `const { value: shown } = alias` bind the prop
+ * to a name, and a reference to that name is a reference to the prop. Reading
+ * only `props.value` counted those as zero references and answered `code` —
+ * "this prop renders nothing" — for a prop the component visibly renders.
+ *
+ * A pattern this cannot read exactly (a rest element, a nested pattern, a
+ * computed key) contributes no name, and `propsEscape` refuses the whole
+ * reading for the same reason: a binding the reader cannot follow is one it
+ * cannot vouch for.
+ */
+/**
+ * Whether every binding this pattern creates can be named AND followed.
+ *
+ * The predicate that ACCEPTS a destructuring as a property read and the one
+ * that FOLLOWS its names must be the same, or the object is vouched for while
+ * a binding out of it goes unwatched. A rest element binds keys that cannot be
+ * named; so does a computed key; and a nested or array pattern binds something
+ * that is not a name this reader can follow to its uses.
+ */
+function isFollowable(pattern: ts.ObjectBindingPattern): boolean {
+  return pattern.elements.every(
+    (element) =>
+      element.dotDotDotToken === undefined &&
+      bindingPropertyName(element) !== null &&
+      ts.isIdentifier(element.name),
+  );
+}
+
+function destructuredNames(
+  root: ts.Node,
+  objects: readonly AliasBinding[],
+  property: string,
+): readonly AliasBinding[] {
+  const names: AliasBinding[] = [];
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isObjectBindingPattern(node.name) &&
+      node.initializer !== undefined &&
+      ts.isIdentifier(node.initializer) &&
+      bindingAt(objects, node.initializer) !== null &&
+      isFollowable(node.name)
+    ) {
+      for (const element of node.name.elements) {
+        if (bindingPropertyName(element) !== property) continue;
+        if (ts.isIdentifier(element.name)) {
+          names.push({ name: element.name.text, scope: declaringScope(node) });
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(root);
+  return names;
+}
+
+function referencesTo(root: ts.Node, binding: PropBinding): readonly ts.Node[] {
+  if (binding.kind === "member") {
+    const objects = aliasesOf(root, binding.object);
+    const names = destructuredNames(root, objects, binding.property);
+    const reads: ts.Node[] = [];
+    const visit = (node: ts.Node): void => {
+      const read = propertyRead(node);
+      if (
+        read !== null &&
+        ts.isIdentifier(read.object) &&
+        read.property === binding.property &&
+        bindingAt(objects, read.object) !== null
+      ) {
+        reads.push(node);
+      }
+      if (
+        ts.isIdentifier(node) &&
+        isValueReference(node) &&
+        bindingAt(names, node) !== null
+      ) {
+        reads.push(node);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(root);
+    return reads;
+  }
+  const found: ts.Node[] = [];
+  const visit = (node: ts.Node): void => {
+    if (binding.kind === "names" && ts.isIdentifier(node)) {
+      // What counts as a USE rather than a mention is `scopes.js`'s predicate,
+      // not a list kept here. A list missed JSX attribute names, so a host
+      // `title="tooltip"` read as a rival reading of the `title` PROP and made
+      // the component disagree with itself.
+      const isReference = binding.names.includes(node.text) && isValueReference(node);
+      if (isReference && !isBoundBetween(node, root, node.text)) found.push(node);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(root);
+  return found;
+}
+
+/**
+ * The single role every informative reading agrees on. Inert readings are
+ * skipped; a value read only inertly is never rendered, so it is code.
+ */
+function agreedRole(readings: readonly Reading[]): PropRole | null {
+  if (readings.some((reading) => reading === null)) return null;
+  const informative = readings.filter(
+    (reading): reading is PropRole => reading !== null && reading !== INERT,
+  );
+  const first = informative[0];
+  if (first === undefined) return readings.length === 0 ? null : "code";
+  return informative.every((reading) => reading === first) ? first : null;
+}
+
+function attributeOwnerTag(attribute: ts.JsxAttribute): string | null {
+  const attributes = attribute.parent;
+  const element = attributes.parent;
+  if (ts.isJsxSelfClosingElement(element)) return element.tagName.getText();
+  if (ts.isJsxOpeningElement(element)) return element.tagName.getText();
+  return null;
+}
+
+function roleOfAttribute(
+  attribute: ts.JsxAttribute,
+  context: PropRoleContext,
+  from: ComponentDeclaration,
+  depth: number,
+): Reading {
+  const name = attribute.name.getText();
+  if (CALLER_CONSUMED_ATTRIBUTES.has(name)) return INERT;
+
+  const tag = attributeOwnerTag(attribute);
+  if (tag === null) return null;
+
+  // A spread AFTER this attribute may replace it, so what the element actually
+  // receives is not decided here. `extract.ts` has refused a caller's literal
+  // on this ground since it was written; the same fact applies to a value
+  // being classified by where it lands.
+  if (overriddenByLaterSpread(attribute)) return null;
+
+  // `alt` and `aria-*` mean something fixed on a HOST element. On a component
+  // they are ordinary prop names, and a component is free to render `alt` as
+  // visible copy — so the receiver is asked before the name is trusted.
+  if (isComponentName(tag)) {
+    // A `ref` React consumes never reaches the component, so what that
+    // component does with a prop of that name says nothing about this value.
+    if (name === "ref" && !context.refReachesComponents) return INERT;
+    const target = resolveTagAt(context.resolver, tag, attribute, from);
+    if (target === null) return null;
+    return propRoleOf(target, name, context, depth + 1);
+  }
+
+  if (isAriaAttribute(name) || name === "alt") return "accessibility";
+  if (STRUCTURAL_ATTRIBUTES.has(name)) return "code";
+  // A host attribute this far is neither structural nor accessible —
+  // `jsx-facts` does not classify it, and neither can this.
+  return null;
+}
+
+/**
+ * What a value in CHILD position is.
+ *
+ * Being written between an element's tags does not mean it is shown. A host
+ * element renders its children as markup, but `extract.ts` skips `OPAQUE_TAGS`
+ * because a `<script>` body is executable text rather than prose — and this
+ * reading has to agree with it, or a prop used only there becomes editable.
+ *
+ * A COMPONENT is different again: the child fills its `children` prop, and only
+ * that component says whether it renders it. `<Sink>{value}</Sink>` shows
+ * nothing when `Sink` drops its children, so the question is answered where the
+ * answer lives.
+ */
+function roleOfChild(
+  host: ts.JsxElement,
+  context: PropRoleContext,
+  from: ComponentDeclaration,
+  depth: number,
+): Reading {
+  const tag = tagNameOf(host);
+  if (OPAQUE_TAGS.has(tag)) return INERT;
+  if (!isComponentName(tag)) return "content";
+  const target = resolveTagAt(context.resolver, tag, host, from);
+  if (target === null) return null;
+  return propRoleOf(target, CHILDREN_PROP, context, depth + 1);
+}
+
+/**
+ * Walks up from a reference to the JSX position it reaches, deciding on the
+ * way whether the value is still the thing being rendered. Crossing a test —
+ * a comparison, a negation, a condition, the left of `&&` — means the value is
+ * being consulted rather than shown, which makes it code.
+ */
+function roleOfReference(
+  reference: ts.Node,
+  context: PropRoleContext,
+  from: ComponentDeclaration,
+  depth: number,
+): Reading {
+  const reachability = reachabilityOf(reference, from.jsxRoot);
+  if (reachability === "discarded") return INERT;
+  if (reachability === "unreadable") return null;
+
+  let current: ts.Node = reference;
+  for (;;) {
+    const parent: ts.Node | undefined = current.parent;
+    if (parent === undefined) return null;
+
+
+    if (ts.isJsxExpression(parent)) {
+      const host = parent.parent;
+      if (ts.isJsxFragment(host)) return "content";
+      if (ts.isJsxElement(host)) return roleOfChild(host, context, from, depth);
+      if (ts.isJsxAttribute(host)) return roleOfAttribute(host, context, from, depth);
+      return null;
+    }
+    if (ts.isJsxAttribute(parent)) {
+      return roleOfAttribute(parent, context, from, depth);
+    }
+    if (
+      ts.isJsxOpeningElement(parent) ||
+      ts.isJsxSelfClosingElement(parent) ||
+      ts.isJsxClosingElement(parent)
+    ) {
+      // The value names the element being rendered, not anything shown in it.
+      // The closing tag repeats the same name, so it is read the same way.
+      return parent.tagName === current ? "code" : null;
+    }
+
+    if (ts.isBinaryExpression(parent)) {
+      const operator = parent.operatorToken.kind;
+      if (COMPARISONS.has(operator)) return "code";
+      // `a && b` shows b, so its left side is only ever a predicate. `a || b`
+      // and `a ?? b` show A whenever it is present, so their left side is the
+      // value and must be followed like any other.
+      if (operator === ts.SyntaxKind.AmpersandAmpersandToken) {
+        if (parent.left === current) return INERT;
+        current = parent;
+        continue;
+      }
+      if (FALLBACK_OPERATORS.has(operator)) {
+        current = parent;
+        continue;
+      }
+      return null;
+    }
+    if (ts.isPrefixUnaryExpression(parent)) {
+      return parent.operator === ts.SyntaxKind.ExclamationToken ? INERT : null;
+    }
+    if (ts.isConditionalExpression(parent)) {
+      if (parent.condition === current) return INERT;
+      current = parent;
+      continue;
+    }
+    if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+      // `const Tag = as;` — the alias carries the value, so read ITS uses,
+      // scoped to the block that declares it. Reading them against the whole
+      // component would see that very declaration as a rebinding and find none.
+      return roleOfAlias(parent.name.text, declaringScope(parent), context, from, depth);
+    }
+    if (ts.isCallExpression(parent)) {
+      // The callee is not the value being passed.
+      if (parent.expression === current) return null;
+      // An argument FLOWS INTO the call's result, so where that result lands
+      // still bounds what the value can be — but only downwards. `cn(value)`
+      // in a `className` can only ever contribute to a class name, so `code`
+      // is safe to conclude. `format(value)` shown as text is NOT safe to call
+      // content: the value may be a key the helper looks up, and offering a
+      // customer a key to edit as if it were their copy is the failure this
+      // whole reading exists to avoid.
+      const beyond = roleOfReference(parent, context, from, depth);
+      return beyond === "code" || beyond === INERT ? beyond : null;
+    }
+    if (
+      ts.isPropertyAccessExpression(parent) &&
+      parent.expression === current &&
+      parent.name.text === "map"
+    ) {
+      // `lines.map(...)` — the callback renders the elements, so the list holds
+      // whatever the callback's parameter turns out to be.
+      const call = parent.parent;
+      if (!ts.isCallExpression(call)) return null;
+      return roleOfMapCallback(call, context, from, depth);
+    }
+    if (
+      ts.isParenthesizedExpression(parent) ||
+      ts.isAsExpression(parent) ||
+      ts.isTemplateSpan(parent) ||
+      ts.isTemplateExpression(parent) ||
+      ts.isArrayLiteralExpression(parent)
+    ) {
+      current = parent;
+      continue;
+    }
+    return null;
+  }
+}
+
+const FALLBACK_OPERATORS: ReadonlySet<ts.SyntaxKind> = new Set([
+  ts.SyntaxKind.BarBarToken,
+  ts.SyntaxKind.QuestionQuestionToken,
+]);
+
+const COMPARISONS: ReadonlySet<ts.SyntaxKind> = new Set([
+  ts.SyntaxKind.EqualsEqualsToken,
+  ts.SyntaxKind.EqualsEqualsEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsToken,
+  ts.SyntaxKind.ExclamationEqualsEqualsToken,
+  ts.SyntaxKind.LessThanToken,
+  ts.SyntaxKind.GreaterThanToken,
+  ts.SyntaxKind.LessThanEqualsToken,
+  ts.SyntaxKind.GreaterThanEqualsToken,
+]);
+
+function roleOfMapCallback(
+  call: ts.CallExpression,
+  context: PropRoleContext,
+  from: ComponentDeclaration,
+  depth: number,
+): Reading {
+  const [callback] = call.arguments;
+  if (callback === undefined) return null;
+  if (!ts.isArrowFunction(callback) && !ts.isFunctionExpression(callback)) return null;
+  const [item] = callback.parameters;
+  if (item === undefined || !ts.isIdentifier(item.name)) return null;
+  const references = referencesTo(callback.body, {
+    kind: "names",
+    names: [item.name.text],
+  });
+  return agreedRole(
+    references.map((reference) => roleOfReference(reference, context, from, depth)),
+  );
+}
+
+/** The nearest enclosing block or function body a declaration lives in. */
+/**
+ * The scope a declaration governs.
+ *
+ * Its nearest SCOPE, not its nearest block: a `for` initializer binds to the
+ * loop, condition included, and recording it against the surrounding block put
+ * the condition outside its own alias's scope. `isScopeNode` is the one
+ * statement of what introduces a binding, so this asks that.
+ */
+function declaringScope(declaration: ts.VariableDeclaration): ts.Node {
+  let current: ts.Node = declaration;
+  while (current.parent !== undefined && !isScopeNode(current.parent)) {
+    current = current.parent;
+  }
+  return current.parent ?? declaration;
+}
+
+function roleOfAlias(
+  name: string,
+  scope: ts.Node,
+  context: PropRoleContext,
+  from: ComponentDeclaration,
+  depth: number,
+): Reading {
+  const references = referencesTo(scope, { kind: "names", names: [name] }).filter(
+    (reference) => !ts.isVariableDeclaration(reference.parent),
+  );
+  return agreedRole(
+    references.map((reference) => roleOfReference(reference, context, from, depth)),
+  );
+}
+
+/**
+ * Whether a component's props object gets anywhere other than a property read.
+ *
+ * Enumerating the ways to forward it does not terminate: a JSX spread, an
+ * object spread, `Object.assign`, a call argument, a return, an array element,
+ * a shorthand property. Each one hands the whole object to something this
+ * reader cannot see, and a child is then free to consume `title` as behaviour
+ * while the local `props.title` renders as text.
+ *
+ * The question that DOES terminate is the inverse: every reference to the
+ * object must resolve right there to one of its properties. Reading `props.x`,
+ * destructuring `const { x } = props`, and naming an alias this walk already
+ * follows are the whole list; anything else escapes and the prop's role is no
+ * longer decided here.
+ */
+function propsEscape(root: ts.Node, object: string): boolean {
+  const bindings = aliasesOf(root, object);
+  let escaped = false;
+  const visit = (node: ts.Node): void => {
+    if (escaped) return;
+    if (ts.isIdentifier(node) && isValueReference(node) && bindingAt(bindings, node) !== null) {
+      if (!isPropertyRead(node, bindings)) {
+        escaped = true;
+        return;
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(root);
+  return escaped;
+}
+
+/** Whether this reference resolves, right there, to a property of the object. */
+function isPropertyRead(node: ts.Identifier, bindings: readonly AliasBinding[]): boolean {
+  const parent = node.parent;
+  if (parent === undefined) return false;
+  if (ts.isPropertyAccessExpression(parent)) return parent.expression === node;
+  // `alias[key]` hands out a property this reader cannot name, so it cannot
+  // say where that property goes. Only a written key is a named read.
+  if (ts.isElementAccessExpression(parent)) {
+    return parent.expression === node && ts.isStringLiteral(parent.argumentExpression);
+  }
+  // `const { title } = props` reads properties; `const alias = props` is a
+  // name this walk already treats as the same object.
+  //
+  // A REST element is neither. `const { known, ...rest } = props` binds every
+  // key this reader did not name, and `<Child {...rest} />` then hands them on
+  // while the local `props.value` still reads as text. The keys it carries
+  // cannot be enumerated from here, so the object has escaped.
+  if (ts.isVariableDeclaration(parent) && parent.initializer === node) {
+    if (ts.isObjectBindingPattern(parent.name)) return isFollowable(parent.name);
+    return (
+      ts.isIdentifier(parent.name) &&
+      bindings.some(
+        (binding) =>
+          binding.name === (parent.name as ts.Identifier).text &&
+          binding.scope === declaringScope(parent),
+      )
+    );
+  }
+  return false;
+}
+
+/** Every name that stands for the same object, following `const b = a` chains. */
+/**
+ * A binding this reader is following: a name AND the scope it governs.
+ *
+ * Matching by spelling and then asking whether anything between the use and
+ * the component root rebinds that spelling is wrong in both directions. The
+ * block that declares an alias lies between its own use and the root, so a
+ * valid read reads as shadowed; and an unrelated nested binding of the same
+ * spelling is accepted, lending its name to a reference that never read the
+ * prop. A binding is its declaration, so it is carried as one.
+ */
+interface AliasBinding {
+  readonly name: string;
+  readonly scope: ts.Node;
+}
+
+/** The binding a reference resolves to, or null when it resolves to none. */
+function bindingAt(
+  bindings: readonly AliasBinding[],
+  reference: ts.Identifier,
+): AliasBinding | null {
+  // At most one binding can survive both tests: a nested one shadows the outer,
+  // and a sibling one does not reach the reference at all. So there is nothing
+  // to rank — a tie-break here would be a decision no program can exercise.
+  return (
+    bindings.find(
+      (binding) =>
+        binding.name === reference.text &&
+        encloses(binding.scope, reference) &&
+        // Nothing NEARER than the binding's own scope may rebind the name.
+        !isBoundBetween(reference, binding.scope, binding.name),
+    ) ?? null
+  );
+}
+
+function encloses(outer: ts.Node, inner: ts.Node): boolean {
+  let current: ts.Node | undefined = inner;
+  while (current !== undefined) {
+    if (current === outer) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+/** Every binding that stands for the same object, followed through `const b = a`. */
+function aliasesOf(root: ts.Node, object: string): readonly AliasBinding[] {
+  const bindings: AliasBinding[] = [{ name: object, scope: root }];
+  for (let pass = 0; pass <= MAX_COMPONENT_DEPTH; pass += 1) {
+    const before = bindings.length;
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.initializer !== undefined &&
+        ts.isIdentifier(node.initializer) &&
+        bindingAt(bindings, node.initializer) !== null &&
+        !bindings.some(
+          (binding) =>
+            binding.name === (node.name as ts.Identifier).text &&
+            binding.scope === declaringScope(node),
+        )
+      ) {
+        bindings.push({ name: node.name.text, scope: declaringScope(node) });
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(root);
+    if (bindings.length === before) break;
+  }
+  return bindings;
+}
+
+/**
+ * The role a component gives one of its props, read from that component's own
+ * body. Returns null whenever the answer is not decided by the source.
+ */
+export function propRoleOf(
+  declaration: ComponentDeclaration,
+  propName: string,
+  context: PropRoleContext,
+  depth = 0,
+): PropRole | null {
+  if (depth > MAX_COMPONENT_DEPTH) return null;
+  const binding = bindingFor(declaration, propName);
+  if (binding === null) return null;
+
+  // A receiver whose props object escapes hands this one onward too, and the
+  // child is free to use it as behaviour. What it does with `props.title` here
+  // is then only half the answer.
+  if (binding.kind === "member" && propsEscape(declaration.jsxRoot, binding.object)) {
+    return null;
+  }
+
+  const references = referencesTo(declaration.jsxRoot, binding);
+  // A prop the component never reads renders nothing. It is part of the
+  // component's interface, not of the page's copy.
+  if (references.length === 0) return "code";
+
+  return agreedRole(
+    references.map((reference) => roleOfReference(reference, context, declaration, depth)),
+  );
+}

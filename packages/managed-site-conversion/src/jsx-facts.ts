@@ -8,6 +8,35 @@ import ts from "typescript";
 export type JsxElementNode = ts.JsxElement | ts.JsxSelfClosingElement;
 
 /**
+ * Props React consumes on the CALLER's side. They are never passed on to the
+ * receiving component, so no value written into one can render — whatever a
+ * same-named prop does inside that component describes something else.
+ *
+ * Only `key` is universal. `ref` reaches a function component as an ordinary
+ * prop from React 19 onward, and is consumed before it from React 18 back, so
+ * whether it is caller-consumed is a fact about the REPOSITORY BEING READ, not
+ * about this one. `reactMajorOf` answers it from there.
+ */
+export const CALLER_CONSUMED_ATTRIBUTES: ReadonlySet<string> = new Set(["key"]);
+
+/** The first React version that hands a function component its `ref` prop. */
+const REF_IS_A_PROP_FROM = 19;
+
+/**
+ * Whether `ref` written on a component in this repository reaches the
+ * component at all.
+ *
+ * Unknown fails CLOSED — treated as consumed — because the two mistakes are
+ * not equal. Skipping it can only cost a field for a component that renders
+ * its own `ref` as text, which nothing does; asking the receiver when React
+ * consumes it offers a customer a field that edits nothing, which is the
+ * silent failure this tool exists to avoid.
+ */
+export function refReachesComponents(reactMajor: number | null): boolean {
+  return reactMajor !== null && reactMajor >= REF_IS_A_PROP_FROM;
+}
+
+/**
  * Attributes that carry no user-visible or assistive-technology content. This
  * list exists so that everything NOT on it is reported rather than silently
  * dropped: the tool fails towards over-reporting, never towards guessing.
@@ -215,4 +244,48 @@ export function jsxExpressionStringValue(child: ts.JsxExpression): string | null
     return expression.text;
   }
   return null;
+}
+
+/**
+ * Whether a spread after this attribute may replace it.
+ *
+ * JSX applies attributes left to right, so `<x a="1" {...rest} />` receives
+ * whatever `rest` says `a` is. Both the caller side and the receiver side of
+ * the prop reading need this, so it is stated once.
+ */
+export function overriddenByLaterSpread(attribute: ts.JsxAttribute): boolean {
+  const parent = attribute.parent;
+  if (!ts.isJsxAttributes(parent)) return false;
+  const attributes = parent.properties;
+  const index = attributes.indexOf(attribute);
+  if (index < 0) return false;
+  return attributes.slice(index + 1).some(ts.isJsxSpreadAttribute);
+}
+
+/**
+ * The property a binding element names, when it is written down.
+ *
+ * `{ title }`, `{ title: heading }` and `{ "aria-label": label }` all name a
+ * property in the source. Only a COMPUTED key does not, and a prop whose name
+ * is not a valid identifier can be written no other way — which is why
+ * `props["aria-label"]` was always read as a property and the destructured
+ * spelling of the same prop was not.
+ */
+export function bindingPropertyName(element: ts.BindingElement): string | null {
+  const declared = element.propertyName ?? element.name;
+  if (ts.isIdentifier(declared) || ts.isStringLiteral(declared)) return declared.text;
+  return null;
+}
+
+/**
+ * Whether the content walk enters this element at all.
+ *
+ * `aria-hidden` marks a subtree assistive technology ignores, and this tool
+ * follows that: it is decoration, not copy. An opaque tag's body is executable
+ * or machine text rather than prose. Both the extractor and the prop-role
+ * reader need the same answer, or the reader proposes a field for markup the
+ * extractor never visits.
+ */
+export function isWalkedElement(element: JsxElementNode): boolean {
+  return !hasAriaHidden(element) && !OPAQUE_TAGS.has(tagNameOf(element));
 }
