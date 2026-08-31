@@ -91,7 +91,7 @@ export function Panel() {
 test("anchors survive presentation-only refactors", () => {
   const baseline = anchorsOf(BASELINE);
   assert.deepEqual(baseline, [
-    "component:Panel/region:offer/role:a/at:#contact",
+    "component:Panel/region:offer/role:a",
     "component:Panel/region:offer/role:h2/text",
   ]);
   for (const [name, source] of REFACTORS) {
@@ -102,12 +102,20 @@ test("anchors survive presentation-only refactors", () => {
 test("renaming a component moves its anchors, visibly", () => {
   const renamed = anchorsOf(BASELINE.replaceAll("Panel", "OfferPanel"));
   assert.deepEqual(renamed, [
-    "component:OfferPanel/region:offer/role:a/at:#contact",
+    "component:OfferPanel/region:offer/role:a",
     "component:OfferPanel/region:offer/role:h2/text",
   ]);
 });
 
-test("a link's external URL is not identity, but its fragment and constant are", () => {
+/**
+ * A destination the customer may edit is not identity — a fragment included.
+ * `link.destination.edit` rewrites `#services` exactly as it rewrites an
+ * external URL, so only the module constant's NAME survives: the customer
+ * changes the value behind `BOOK_URL`, never the name the markup reads it
+ * through. `editable-anchor-material.test.ts` states the rule for every value
+ * this tool proposes; this pins it for the shape a real nav has.
+ */
+test("only a name the customer cannot edit tells sibling links apart", () => {
   const anchors = anchorsOf(`
 const BOOK_URL = "https://book.example.com";
 export function Links() {
@@ -116,13 +124,15 @@ export function Links() {
       <a href="#services">Services</a>
       <a href={BOOK_URL}>Book</a>
       <a href="https://news.example.com/story">Read</a>
+      <a href="#">Brand</a>
     </nav>
   );
 }
 `);
   assert.deepEqual(anchors, [
     "component:Links/region:links/role:a",
-    "component:Links/region:links/role:a/at:#services",
+    "component:Links/region:links/role:a",
+    "component:Links/region:links/role:a/at:#",
     "component:Links/region:links/role:a/at:const:BOOK_URL",
   ]);
 });

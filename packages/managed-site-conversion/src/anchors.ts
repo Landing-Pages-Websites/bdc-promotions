@@ -1,3 +1,5 @@
+import type { AnchorName } from "./anchor-name.js";
+
 /**
  * Anchor paths are the ONLY source of identity in this tool.
  *
@@ -11,18 +13,35 @@
  *   - DOM / sibling order   (changes when a section moves)
  *   - array index           (changes when an item is reordered)
  *   - file name or path     (changes when a component is extracted)
- *   - external URL literals (a customer edit changes the destination)
+ *
+ * And not anchor material for a second reason, which is about this tool rather
+ * than about the source: ANY value this tool proposes as the customer's to
+ * edit. A link destination under `link.destination.edit`, an image `src` under
+ * `image.upload`, a component prop the receiver renders as copy — the first
+ * edit would re-identify the field and everything nested under it. The rule is
+ * read from the capability the tool grants rather than from a list of value
+ * kinds, so an external URL and a `#fragment` are excluded by it alike, and
+ * `AnchorName` is how a name gets past it: only `anchor-name.ts` mints one, so
+ * a collector cannot reach a segment below with a value nothing asked about.
+ * A module constant's NAME survives, because the customer edits the value
+ * behind `BOOK_URL` and never the name the markup reads it through.
  */
 
 export type AnchorSegment =
   /** A uniquely-named component declaration. Survives file moves. */
   | { readonly kind: "component"; readonly name: string }
-  /** A JSX element carrying a literal `id`, or a unique landmark tag. */
-  | { readonly kind: "region"; readonly name: string }
+  /**
+   * A JSX element carrying a literal `id` or accessible name the customer
+   * cannot edit, or a unique landmark tag.
+   */
+  | { readonly kind: "region"; readonly name: AnchorName }
   /** An element role: its tag, optionally the attribute the value flows into. */
   | { readonly kind: "role"; readonly tag: string; readonly attribute: string | null }
-  /** A durable discriminator when several siblings share a role. */
-  | { readonly kind: "discriminator"; readonly value: string }
+  /**
+   * A discriminator when several siblings share a role: a declared `id`, a
+   * module constant's name, or a destination beyond the customer's reach.
+   */
+  | { readonly kind: "discriminator"; readonly value: AnchorName }
   /** A module-level binding iterated to produce a repeated region. */
   | { readonly kind: "binding"; readonly name: string }
   /** An object-literal property name inside an iterated binding. */

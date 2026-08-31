@@ -76,7 +76,7 @@ Concretely it refuses, rather than guesses, on:
 | code | what it means |
 | --- | --- |
 | `AMBIGUOUS_ANCHOR` | two or more values resolve to the same anchor; both are withheld, and so is anything nested inside them |
-| `NO_DURABLE_ANCHOR` | a `<section>` with no `id` and no component of its own |
+| `NO_DURABLE_ANCHOR` | a `<section>` with no `id` and no component of its own, or an element whose only available name is a value this tool proposes as the customer's — a component prop it renders as copy, an image `src`, an editable link destination |
 | `NON_LITERAL_VALUE` | the rendered value is computed, not a literal that can be migrated |
 | `UNKNOWN_ATTRIBUTE_ROLE` | on a host element, a literal attribute that is neither structural nor a known accessibility interface; on a COMPONENT, one whose receiver was read but does not decide what the prop is |
 | `DUPLICATE_COMPONENT_NAME` | one component name declared in two files |
@@ -196,7 +196,7 @@ A segment may only be:
 - `component:<Name>` — a uniquely named component declaration
 - `region:<name>` — a container's literal `id` attribute (also a URL fragment target), the accessible name a literal `aria-labelledby` or `aria-label` gives it, or a unique landmark element
 - `role:<tag>[#<attribute>]` — the element, or the attribute a value flows into
-- `at:<discriminator>` — a durable way to tell siblings apart: a link fragment, a module constant name, a declared `id`, an image path
+- `at:<discriminator>` — a durable way to tell siblings apart: a declared `id`, a module constant name, a destination the customer is granted nothing over
 - `each:<BINDING>` / `prop:<name>` — a module-level array and an object-literal property name
 - `text` — the direct text run of an element
 
@@ -209,16 +209,38 @@ contents. What the prop is comes from the same reading that decides whether it
 is a field, *A component's props are read from the component* above, and a prop
 that cannot be read names nothing.
 
-Two `at:` discriminators are known exceptions and do not yet go through that
-reading: an image's `src` and a link's `href` fragment. Both are offered to the
-customer as editable, so both identify a field by a value the customer owns.
-Closing that moves existing anchors, so it is tracked as its own change.
+The two `at:` discriminators that used to bypass that reading — an image's `src`
+and a link's `href` fragment — no longer exist. Both were offered to the
+customer as editable, so both identified a field by a value the customer owns:
+`image.upload` replaced the one and `link.destination.edit` rewrote the other,
+and the next run saw a different anchor. A link destination is now named only
+through `ownershipOfDestination`, the single reading `emit-contract.ts` grants
+the capability from, and an image is named only by a literal `id`.
+
+What holds all of it together is `AnchorName`: `region:` and `at:` carry that
+branded type, and only `anchor-name.ts` mints one, from the reading that decided
+the value is not the customer's. A collector cannot reach an anchor segment with
+a value nothing asked about — the two bypasses above were review findings, and
+their shape is now a compile error.
 
 Deliberately excluded, because none of it survives normal work: **visible text**
 (changes on every copy edit), **DOM or sibling order** (changes when a section
-moves), **array index** (changes on reorder), **file name or path** (changes when
-a component is extracted), and **external URL literals** (a customer editing a
-destination would silently re-identify the field).
+moves), **array index** (changes on reorder), and **file name or path** (changes
+when a component is extracted).
+
+And excluded for a second reason, which is about this tool rather than about the
+source: **any value this tool proposes as the customer's to edit**. The rule is
+read from the capability granted, not from a list of value kinds, so an external
+URL, a `mailto:`, a `tel:` and a `#fragment` fall out of it together — this file
+used to name only the external URL, and `destinations.ts` refused only that one
+while keeping the fragment. A module constant's NAME survives, because the
+customer edits the value behind `BOOK_URL` and never the name the markup reads
+it through.
+
+Refusing a name is never silent: the element is reported under
+`NO_DURABLE_ANCHOR`, naming the value declined and the `id` that would replace
+it, and identical siblings that can no longer be told apart are then withheld
+under `AMBIGUOUS_ANCHOR` as any other tie is.
 
 Consequences, all covered by `test/anchors.test.ts`:
 
@@ -298,11 +320,23 @@ The shipped artefacts hold **62 distinct customer-facing and internal values**.
 | after adding `id` to 4 unnamed sections (~5 min) | 36 | 31 (50%) | 16 | **0** |
 | after the full mechanical pass (~30 min) | 62 | 57 (92%) | 3 | **0** |
 
+These three rows were measured **before** the rule that a value the customer may
+edit names nothing, and the `matched` column cannot be recomputed here — it was
+compared by hand against the shipped artefacts. Re-running the untouched-source
+row on the current code moves 6 of its 34 anchors: the nav's three fragment
+links (`#method`, `#proof`, `#research`) now share one anchor and are withheld
+together, and the hero image and the body's `#method` link keep their fields
+under shallower anchors. That is 3 fewer proposed fields (19 to 16), 6 more
+`NO_DURABLE_ANCHOR` findings and 3 more `AMBIGUOUS_ANCHOR`. The mechanical pass
+below closes it: an `id` on each nav link returns all three, on top of the work
+the rows already describe.
+
 The full mechanical pass is: name 4 sections, give 6 sibling paragraphs an `id`,
 declare the three proof metrics as an array, and write the eight partner logos out
 as declared list items. No copy was touched and no layout changed.
 
-**What it got right, unaided.** All eight navigation fields, including the split
+**What it got right, unaided.** Five of the eight navigation fields — the other
+three are the fragment links above, which the current code withholds — including the split
 of `Trend<span>Candy</span>` into two editable values and the `href="#"` brand
 link as `code_owned_interface`. The hero heading as `rich_text` with the `<em>`
 preserved as an italic mark. Every heading, every link with its destination and

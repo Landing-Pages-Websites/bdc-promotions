@@ -80,8 +80,13 @@ test("it proposes the values it can name and refuses the rest", () => {
   // Named regions and durable link targets are proposed.
   assert.ok(byPointer.has("/home/services/h2/text"));
   assert.ok(byPointer.has("/home/services/p/text"));
-  assert.ok(byPointer.has("/home/services/a/contact/link"));
-  assert.ok(byPointer.has("/home/services/img/hero/image"));
+  // Named by their role, because neither `#contact` nor `/hero.png` may name a
+  // field this tool lets the customer rewrite.
+  assert.ok(byPointer.has("/home/services/a/link"));
+  assert.ok(byPointer.has("/home/services/img/image"));
+  // A module constant's NAME is not the customer's to change, so it still tells
+  // the header's third link apart from the other two.
+  assert.ok(byPointer.has("/chrome/header/a/bookUrl/link"));
   // The element is part of the address, so two components taking the same
   // prop on one page cannot claim it.
   // The nav is named by its own `aria-label`, so the address says "primary"
@@ -91,6 +96,12 @@ test("it proposes the values it can name and refuses the rest", () => {
   // The unnamed section's twin paragraphs are not.
   assert.equal(
     fields.filter((field) => field.resolver.pointer === "/home/p/text").length,
+    0,
+  );
+  // The nav's two fragment links differ only by a destination the customer may
+  // rewrite, so neither is proposed and both are reported.
+  assert.equal(
+    fields.filter((field) => field.resolver.pointer.startsWith("/chrome/header/primary/a")).length,
     0,
   );
   const reported = codes(proposal);

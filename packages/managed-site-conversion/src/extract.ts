@@ -1,12 +1,16 @@
 import ts from "typescript";
 
+import {
+  nameFromSourceIdentifier,
+  nameIfDurable,
+  type AnchorName,
+} from "./anchor-name.js";
 import { extendAnchor, type AnchorPath, type AnchorSegment } from "./anchors.js";
 import {
   POSITION_IDENTITY,
   type Candidate,
   type CollectionItemValue,
   type Ownership,
-  type RawDestination,
 } from "./candidates.js";
 import {
   resolveStaticValue,
@@ -51,7 +55,11 @@ import {
   type ModuleConstants,
 } from "./literals.js";
 import { buildRichTextDocument, partitionChildren } from "./jsx-text.js";
-import { readDestination, destinationDiscriminator } from "./destinations.js";
+import {
+  readDestination,
+  destinationDiscriminator,
+  ownershipOfDestination,
+} from "./destinations.js";
 import { walkRenderOutput, NO_TRIGGERS } from "./render-output.js";
 import type { Finding, SourceLocation } from "./report.js";
 import {
@@ -389,7 +397,7 @@ class ComponentWalker {
    * `id` is. An identity read from the literal there names an element that may
    * not have it, which is the one way this reading can be confidently wrong.
    */
-  #durableAttributeOf(element: JsxElementNode, tag: string, name: string): string | null {
+  #durableAttributeOf(element: JsxElementNode, tag: string, name: string): AnchorName | null {
     const attribute = findAttribute(element, name);
     if (attribute === null) return null;
     if (overriddenByLaterSpread(attribute)) return null;
@@ -412,8 +420,9 @@ class ComponentWalker {
       );
       return null;
     }
-    if (verdict.kind === "not_proven") return null;
-    return value;
+    // `nameIfDurable` rather than a bare return, so the proof this reader just
+    // computed is what mints the name. Nothing else in the package can.
+    return nameIfDurable(value, verdict.kind === "durable");
   }
 
   /**
@@ -524,7 +533,7 @@ class ComponentWalker {
    * way. Reading only `id` left sections that carry one of these unnamed, and
    * everything inside them could then be told apart only by position.
    */
-  #accessibleNameOf(element: JsxElementNode, tag: string): string | null {
+  #accessibleNameOf(element: JsxElementNode, tag: string): AnchorName | null {
     for (const attributeName of ACCESSIBLE_NAME_ATTRIBUTES) {
       const value = this.#durableAttributeOf(element, tag, attributeName);
       if (value !== null) return value;
@@ -542,7 +551,7 @@ class ComponentWalker {
   #namingOf(
     element: JsxElementNode,
     tag: string,
-  ): { readonly region: AnchorSegment | null; readonly discriminator: string | null } {
+  ): { readonly region: AnchorSegment | null; readonly discriminator: AnchorName | null } {
     const literalId = this.#durableAttributeOf(element, tag, ID_ATTRIBUTE);
     const isContainer =
       SECTIONING_TAGS.has(tag) ||
@@ -562,7 +571,10 @@ class ComponentWalker {
       return { region: { kind: "region", name: accessibleName }, discriminator: null };
     }
     if (LANDMARK_TAGS.has(tag)) {
-      return { region: { kind: "region", name: tag }, discriminator: null };
+      return {
+        region: { kind: "region", name: nameFromSourceIdentifier(tag) },
+        discriminator: null,
+      };
     }
     return { region: null, discriminator: null };
   }
@@ -603,7 +615,7 @@ class ComponentWalker {
   #elementAnchor(
     scopeAnchor: AnchorPath,
     tag: string,
-    discriminator: string | null,
+    discriminator: AnchorName | null,
   ): AnchorPath {
     const role: AnchorSegment = { kind: "role", tag, attribute: null };
     return discriminator === null
@@ -615,7 +627,7 @@ class ComponentWalker {
     element: JsxElementNode,
     tag: string,
     scopeAnchor: AnchorPath,
-    discriminator: string | null,
+    discriminator: AnchorName | null,
   ): void {
     // Which reading this tag gets. A PascalCase tag is a component beyond
     // doubt, so an unreadable one is reported rather than guessed. A DOTTED tag
@@ -705,7 +717,7 @@ class ComponentWalker {
     tag: string,
     value: string,
     scopeAnchor: AnchorPath,
-    discriminator: string | null,
+    discriminator: AnchorName | null,
     node: ts.Node,
   ): void {
     const reading = this.#componentPropReading(tag, attributeName, node);
@@ -741,7 +753,7 @@ class ComponentWalker {
     tag: string,
     value: string,
     scopeAnchor: AnchorPath,
-    discriminator: string | null,
+    discriminator: AnchorName | null,
     node: ts.Node,
     ownership: Ownership,
   ): void {
@@ -763,11 +775,45 @@ class ComponentWalker {
     });
   }
 
+  /**
+   * A name the source does carry, and that this tool refused because it offers
+   * that same value to the customer.
+   *
+   * `#durableAttributeOf` reports its own refusal against the attribute it
+   * read; these two are reported here because the value is not an attribute
+   * the naming reader ever sees — it is the image or link FIELD itself. Both
+   * land on `NO_DURABLE_ANCHOR`, the code the attribute refusal already uses,
+   * rather than a second code for the same fact.
+   *
+   * Refusing silently would leave a shallower anchor that reads like any
+   * other: identical siblings then collide into `AMBIGUOUS_ANCHOR` with
+   * nothing to say why two values that plainly differ failed to tell their
+   * elements apart, and a lone element is left named by being alone — stable
+   * only until a second one is written beside it.
+   */
+  #reportEditableName(
+    element: JsxElementNode,
+    tag: string,
+    attributeName: string,
+    declined: string,
+  ): void {
+    this.#report(
+      "NO_DURABLE_ANCHOR",
+      element,
+      `'${attributeName}' is "${declined}", and this tool proposes that value as the ` +
+        `customer's to edit, so it cannot also name this '${tag}' — an anchor built ` +
+        "from it would change the moment they changed it. The element is now told " +
+        `apart only by its role, which lasts while it is the only '${tag}' in its ` +
+        "region. Give it a literal `id`, or move it into its own named component, " +
+        "then re-run.",
+    );
+  }
+
   #collectImage(
     element: JsxElementNode,
     tag: string,
     scopeAnchor: AnchorPath,
-    declaredId: string | null,
+    declaredId: AnchorName | null,
   ): void {
     const sourceAttribute = findAttribute(element, "src");
     const source = sourceAttribute === null ? null : literalAttributeValue(sourceAttribute);
@@ -781,8 +827,15 @@ class ComponentWalker {
     }
     const altAttribute = findAttribute(element, "alt");
     const altText = altAttribute === null ? null : literalAttributeValue(altAttribute);
-    const discriminator = declaredId ?? source;
+    // An image field always carries `image.upload`, so `src` IS the value the
+    // customer replaces, and `alt` is `image.alt.edit`. Neither can name this
+    // element: the anchor named `at:/images/team.webp` until now, so the first
+    // upload retired the field and minted a new one for the same asset slot.
+    // There is no reading to make — `source` is a plain string and a name has
+    // to be an `AnchorName`, so the compiler refuses it rather than a comment.
+    const discriminator = declaredId;
     const anchor = this.#elementAnchor(scopeAnchor, tag, discriminator);
+    if (discriminator === null) this.#reportEditableName(element, tag, "src", source);
     this.#candidates.push({
       kind: "image",
       anchor,
@@ -800,7 +853,7 @@ class ComponentWalker {
     element: JsxElementNode,
     tag: string,
     scopeAnchor: AnchorPath,
-    declaredId: string | null,
+    declaredId: AnchorName | null,
   ): void {
     const hrefAttribute = findAttribute(element, "href");
     const expression = hrefAttribute === null ? null : attributeExpression(hrefAttribute);
@@ -817,6 +870,14 @@ class ComponentWalker {
     const discriminator =
       declaredId ?? (expression === null ? null : destinationDiscriminator(destination, expression));
     const anchor = this.#elementAnchor(scopeAnchor, tag, discriminator);
+    if (discriminator === null) {
+      // `destinationDiscriminator` returns a name for a module constant and for
+      // a code-owned destination, so a null here means exactly one thing: the
+      // destination is the customer's to rewrite. The href is resolved only to
+      // show the operator what was declined.
+      const href = expression === null ? null : resolvedStringValueOf(expression, this.#constants);
+      if (href !== null) this.#reportEditableName(element, tag, "href", href);
+    }
     const partition = partitionChildren(childrenOf(element));
     const targetAttribute = findAttribute(element, "target");
     const target = targetAttribute === null ? null : literalAttributeValue(targetAttribute);
@@ -828,7 +889,7 @@ class ComponentWalker {
       identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
-      ownership: isContentDestination(destination) ? CUSTOMER_EDITABLE : CODE_OWNED,
+      ownership: ownershipOfDestination(destination),
       label: partition.allText,
       destination,
       newWindow: target === "_blank",
@@ -848,7 +909,7 @@ class ComponentWalker {
     element: JsxElementNode,
     tag: string,
     scopeAnchor: AnchorPath,
-    declaredId: string | null,
+    declaredId: AnchorName | null,
   ): void {
     const partition = partitionChildren(childrenOf(element));
     const headingLevel = headingLevelOf(tag);
@@ -1061,10 +1122,6 @@ function readItemValues(
  * component receives. JSX resolves attributes left to right, so only a spread
  * that follows the attribute can overwrite it.
  */
-function isContentDestination(destination: RawDestination): boolean {
-  return destination.kind !== "self";
-}
-
 export function extractComponent(
   declaration: ComponentDeclaration,
   roles: TagRoles,

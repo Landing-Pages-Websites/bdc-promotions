@@ -114,9 +114,17 @@ const OWNERSHIP_CASES: readonly (readonly [string, string, string, string])[] = 
     "code_owned_interface",
   ],
   [
+    // The fragment is the customer's to rewrite, so it names nothing; the
+    // ownership it decides is unchanged. Identity moved, capability did not.
     "a link to a declared fragment is customer content",
     `export function A() { return <header id="h"><a href="#pricing">Pricing</a></header>; }`,
-    "component:A/region:h/role:a/at:#pricing",
+    "component:A/region:h/role:a",
+    "customer_editable",
+  ],
+  [
+    "an external destination is customer content",
+    `export function A() { return <header id="h"><a href="https://x.example/y">Out</a></header>; }`,
+    "component:A/region:h/role:a",
     "customer_editable",
   ],
   [
