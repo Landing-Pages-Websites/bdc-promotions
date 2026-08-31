@@ -279,3 +279,135 @@ test("ref on a host element is not a field", () => {
   assert.deepEqual(editableValues(extracted), []);
   assert.deepEqual(extracted.findings.map((finding) => finding.code), []);
 });
+
+/**
+ * A DOTTED tag is a component, and its props are read from the receiver when the
+ * receiver can be read.
+ *
+ * `isComponentName("ui.Card")` is false, so host rules used to decide a dotted
+ * tag's attributes by NAME. That silently dropped a customer's copy: a namespace
+ * component rendering `{id}` as a heading had its caller's `id="..."` skipped as
+ * structural, so no field was proposed and nothing said it had been. `aria-label`
+ * was worse than silent, offered as a code-owned interface, so the customer
+ * could not edit their own heading.
+ *
+ * When the receiver CANNOT be read the host rules still apply, deliberately.
+ * `motion.div` forwards its props to the `div` it names, so those rules describe
+ * it correctly, and asking a package this reader cannot open would turn every
+ * `className` on a `motion.*` tag into a finding a human must dismiss.
+ */
+const DOTTED_PROP_CASES: readonly {
+  readonly description: string;
+  readonly attribute: string;
+  readonly receiver: string;
+  readonly editable: readonly string[];
+  readonly codes: readonly string[];
+}[] = [
+  {
+    description: "renders a resolvable namespace component's id as a heading",
+    attribute: "id",
+    receiver: "return <section><h2>{value}</h2></section>;",
+    editable: ["Copy"],
+    // The two readings agree, which is the point: the value is offered as the
+    // customer's AND refused as a name, with the refusal reported.
+    codes: ["NO_DURABLE_ANCHOR"],
+  },
+  {
+    description: "renders a resolvable namespace component's aria-label as a heading",
+    attribute: "aria-label",
+    receiver: "return <section><h2>{value}</h2></section>;",
+    editable: ["Copy"],
+    codes: [],
+  },
+  {
+    description: "forwards a resolvable namespace component's id to a host id",
+    attribute: "id",
+    receiver: "return <section id={value} />;",
+    editable: [],
+    codes: [],
+  },
+  {
+    description: "puts a resolvable namespace component's id in an aria-label",
+    attribute: "id",
+    receiver: "return <section aria-label={value} />;",
+    editable: [],
+    codes: [],
+  },
+];
+
+for (const row of DOTTED_PROP_CASES) {
+  test(`the caller is asked when the component ${row.description}`, () => {
+    const extracted = extractCaller({
+      "ui.tsx":
+        `export function Card({ "${row.attribute}": value }: Record<string, never>) {\n` +
+        `  ${row.receiver}\n}\n`,
+      "Caller.tsx":
+        `import * as ui from "./ui";\n` +
+        `export function Caller() {\n` +
+        `  return <ui.Card ${row.attribute}="Copy" />;\n}\n`,
+    });
+    assert.deepEqual(editableValues(extracted), [...row.editable]);
+    assert.deepEqual(
+      extracted.findings.map((finding) => finding.code),
+      [...row.codes],
+    );
+  });
+}
+
+/**
+ * An unreadable dotted receiver keeps the host reading, so a package wrapper
+ * costs no new findings.
+ */
+const UNREADABLE_DOTTED: readonly (readonly [string, string, readonly string[], readonly string[]])[] = [
+  ["className stays structural", `className="grid gap-4"`, [], []],
+  ["aria-label stays a code-owned interface", `aria-label="Named"`, [], []],
+  ["an unclassifiable name is still reported", `data-thing="x"`, [], ["UNKNOWN_ATTRIBUTE_ROLE"]],
+];
+
+for (const [description, attribute, editable, codes] of UNREADABLE_DOTTED) {
+  test(`on an unreadable dotted tag, ${description}`, () => {
+    const extracted = extractCaller({
+      "Caller.tsx":
+        `declare const motion: Record<string, (props: never) => null>;\n` +
+        `export function Caller() {\n` +
+        `  return <motion.div ${attribute} />;\n}\n`,
+    });
+    assert.deepEqual(editableValues(extracted), [...editable]);
+    assert.deepEqual(
+      extracted.findings.map((finding) => finding.code),
+      [...codes],
+    );
+  });
+}
+
+/**
+ * `ref` follows the same boundary as every other prop.
+ *
+ * On React 19 a `ref` written on a component reaches it as a prop, so a
+ * resolvable dotted component is asked what it does with one. An unreadable
+ * dotted tag keeps the host reading, where `ref` is a handle the DOM consumes
+ * and nothing renders.
+ */
+test("a resolvable dotted component is asked what it does with ref", () => {
+  const extracted = extractCaller({
+    "package.json": `{"dependencies":{"react":"^19.0.0"}}\n`,
+    "ui.tsx":
+      `export function Card({ ref }: Record<string, never>) {\n` +
+      `  return <section><h2>{ref}</h2></section>;\n}\n`,
+    "Caller.tsx":
+      `import * as ui from "./ui";\n` +
+      `export function Caller() {\n  return <ui.Card ref="Visible" />;\n}\n`,
+  });
+  assert.deepEqual(editableValues(extracted), ["Visible"]);
+});
+
+test("an unreadable dotted tag's ref stays a host handle", () => {
+  const extracted = extractCaller({
+    "package.json": `{"dependencies":{"react":"^19.0.0"}}\n`,
+    "Caller.tsx":
+      `declare const motion: Record<string, (props: never) => null>;\n` +
+      `export function Caller() {\n  return <motion.div ref="Visible" />;\n}\n`,
+  });
+  assert.deepEqual(editableValues(extracted), []);
+  assert.deepEqual(extracted.findings.map((finding) => finding.code), []);
+});

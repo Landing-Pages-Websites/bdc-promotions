@@ -81,6 +81,52 @@ export interface ExtractionResult {
 const CUSTOMER_EDITABLE: Ownership = "customer_editable";
 const CODE_OWNED: Ownership = "code_owned_interface";
 
+/**
+ * Whether a value written in a name-bearing attribute may become anchor
+ * material, and if not, which of the two reasons applies.
+ *
+ * The two refusals are not interchangeable. A value this tool hands to the
+ * customer is refused AND reported, because nothing else mentions the name it
+ * stopped being. A value it simply could not read is refused in silence, because
+ * `#collectComponentProp` already reports the same unreadable receiver against
+ * the prop itself, and saying it twice adds noise rather than an action.
+ */
+type NameVerdict =
+  | { readonly kind: "durable" }
+  | { readonly kind: "the_customer's" }
+  | { readonly kind: "not_proven" };
+
+/** What reading a component's own source yielded about one of its props. */
+type ComponentPropReading =
+  | { readonly kind: "role"; readonly role: PropRole }
+  /** The tag names nothing this repository declares, so nothing can be read. */
+  | { readonly kind: "unresolved_tag" }
+  /** The component was read, and its source does not decide what the prop is. */
+  | { readonly kind: "undecided" };
+
+/**
+ * Whose the value in a component prop is, given what the component does with
+ * it. `null` means the value is offered to nobody: code the page never shows
+ * as text is not part of the contract.
+ *
+ * Two readings need this answer and must never disagree. `#collectAttributes`
+ * needs it to propose a field, and `#durableAttributeOf` needs it to decide
+ * whether a name may become anchor material, because a name this tool also
+ * offers as a field makes a region's identity depend on its own contents.
+ * Stating the mapping once, as a switch over the union, means a new role cannot
+ * be added without both readings being made to account for it.
+ */
+function ownershipOfPropRole(role: PropRole): Ownership | null {
+  switch (role) {
+    case "content":
+      return CUSTOMER_EDITABLE;
+    case "accessibility":
+      return CODE_OWNED;
+    case "code":
+      return null;
+  }
+}
+
 const CHILDREN_PROP = "children";
 
 /**
@@ -144,6 +190,24 @@ export function resolveTagRoles(module: ParsedModule): TagRoles {
  */
 const ACCESSIBLE_NAME_ATTRIBUTES: readonly string[] = ["aria-labelledby", "aria-label"];
 
+const ID_ATTRIBUTE = "id";
+
+/**
+ * Every attribute whose literal this walker may turn into anchor material,
+ * strongest first. An `id` outranks an accessible name, and both are read
+ * through `#durableAttributeOf`.
+ *
+ * Exported because it is a contract with two readers: adding an attribute here
+ * means the value it carries can name a region, and `region-names.test.ts`
+ * checks each one against the routing that decides whether a customer could
+ * edit it. Hand-listing the set in the test instead would let an addition pass
+ * the very check written to catch it.
+ */
+export const NAME_BEARING_ATTRIBUTES: readonly string[] = [
+  ID_ATTRIBUTE,
+  ...ACCESSIBLE_NAME_ATTRIBUTES,
+];
+
 class ComponentWalker {
   readonly #candidates: Candidate[] = [];
   readonly #findings: Finding[] = [];
@@ -152,6 +216,21 @@ class ComponentWalker {
   readonly #roles: TagRoles;
   readonly #resolution: ResolutionContext;
   readonly #tags: TagResolver;
+  readonly #propRoles: PropRoleContext;
+  /**
+   * One reading per attribute, because two readings want the same one.
+   *
+   * `#namingOf` asks what a component does with an `id` before
+   * `#collectAttributes` asks the same question about the same attribute of the
+   * same element, and the answer is a function of that attribute node alone:
+   * the node fixes its own name and its owner's tag, and the walker fixes the
+   * declaration the tag is resolved from. Both callers hold the identical
+   * `ts.JsxAttribute` object, since `findAttribute` returns what
+   * `namedAttributes` built. Without this, naming doubled `propRoleOf` on every
+   * component-named element, and each of those walks the receiver's whole body
+   * and up to `MAX_COMPONENT_DEPTH` receivers behind it.
+   */
+  readonly #propReadings = new WeakMap<ts.Node, ComponentPropReading>();
 
   constructor(
     declaration: ComponentDeclaration,
@@ -165,22 +244,17 @@ class ComponentWalker {
     this.#roles = roles;
     this.#resolution = resolution;
     this.#tags = tags;
+    this.#propRoles = {
+      resolver: tags,
+      // One reading of the repository's React version, shared by both sides.
+      refReachesComponents: refReachesComponents(reactMajorOf(resolution.repositoryRoot)),
+    };
   }
 
   run(): ExtractionResult {
     const base: AnchorPath = [{ kind: "component", name: this.#declaration.name }];
     this.#walkNode(this.#declaration.jsxRoot, base);
     return { candidates: this.#candidates, findings: this.#findings };
-  }
-
-  /** One reading of the repository's React version, shared by both sides. */
-  #propRoleContext(): PropRoleContext {
-    return {
-      resolver: this.#tags,
-      refReachesComponents: refReachesComponents(
-        reactMajorOf(this.#resolution.repositoryRoot),
-      ),
-    };
   }
 
   #locationOf(node: ts.Node): SourceLocation {
@@ -299,30 +373,146 @@ class ComponentWalker {
   }
 
   /**
-   * The literal value this element really carries under a name.
+   * The literal value this element really carries under a name, when that value
+   * is provably not the customer's.
+   *
+   * Every attribute in `NAME_BEARING_ATTRIBUTES` is read through here, so this
+   * is the one place the naming question is asked. It is NOT the only source of
+   * anchor material: `#collectImage` and `#collectLink` build a discriminator
+   * from `src` and `href` without passing through here, and both offer the same
+   * value to the customer. That is the same mistake one segment kind over, and
+   * fixing it moves existing anchors, so it is left to its own change rather
+   * than smuggled in here.
    *
    * A later spread decides the attribute instead: JSX applies attributes left
    * to right, so `<section id="hero" {...rest}>` is named whatever `rest` says
    * `id` is. An identity read from the literal there names an element that may
    * not have it, which is the one way this reading can be confidently wrong.
    */
-  #durableAttributeOf(element: JsxElementNode, name: string): string | null {
+  #durableAttributeOf(element: JsxElementNode, tag: string, name: string): string | null {
     const attribute = findAttribute(element, name);
     if (attribute === null) return null;
     if (overriddenByLaterSpread(attribute)) return null;
     const value = literalAttributeValue(attribute);
-    return value !== null && value.length > 0 ? value : null;
-  }
-
-  #literalIdOf(element: JsxElementNode): string | null {
-    return this.#durableAttributeOf(element, "id");
+    if (value === null || value.length === 0) return null;
+    const verdict = this.#nameVerdictOf(tag, name, attribute);
+    if (verdict.kind === "the_customer's") {
+      // The one refusal with no other signal. An unsettled prop is already
+      // reported against the prop itself by `#collectComponentProp`, and an
+      // element whose name a spread may replace is already reported as unnamed;
+      // but a prop classified as content is proposed as a field without
+      // complaint, so the region it stopped naming would go unmentioned.
+      this.#report(
+        "NO_DURABLE_ANCHOR",
+        attribute,
+        `'${tag}' renders '${name}' as customer copy, so it cannot name this element: ` +
+          "an anchor built from it would change the moment the copy did. Name the " +
+          `element with an attribute '${tag}' does not render, or move the name onto a ` +
+          "host element inside it, then re-run.",
+      );
+      return null;
+    }
+    if (verdict.kind === "not_proven") return null;
+    return value;
   }
 
   /**
-   * An `id` on a container names a region; an `id` on a leaf that renders its
-   * own text only tells that leaf apart from its siblings. Promoting every
-   * `id` to a region would split a section per paragraph.
+   * Whether this attribute's value may become anchor material, and when it may
+   * not, which reason applies. A value is durable exactly when this tool will
+   * refuse to offer it as the customer's copy.
+   *
+   * A region's name is the first segment of every anchor beneath it, so a name
+   * this tool ALSO proposes as a field makes the region's identity depend on its
+   * own contents: `<Promo id="Editable headline">` produced
+   * `region:Editable headline/role:Promo#id`, a field sitting inside the region
+   * it named. `anchors.ts` allows only names the developer owns.
+   *
+   * The attribute's NAME does not decide who owns it. On a component, `id` and
+   * `aria-label` are ordinary props, and what the component does with one is
+   * read from that component. A receiver this cannot read, or a prop its source
+   * does not settle, refuses: an unread answer is not a proof that a value is
+   * code.
    */
+  #nameVerdictOf(tag: string, name: string, node: ts.JsxAttribute): NameVerdict {
+    // A host attribute deliberately does NOT defer to `prop-roles.ts`'s host
+    // tail, which answers a different question. That reader classifies a role,
+    // and calls `alt` an accessibility interface; this one asks whether the
+    // value can ever be offered as the customer's, and `#collectImage` offers
+    // `alt` with `image.alt.edit`. Only these two facts prove a host value is
+    // never offered: a structural attribute is dropped, and an `aria-*` one is
+    // proposed as the developer's interface. Every name-bearing attribute is one
+    // of the two today, so this is not yet a narrowing; it is written as the
+    // derivation so a NEW one has to be routed deliberately rather than
+    // inheriting a host's trust. `region-names.test.ts` holds the two together.
+    if (isProvablyHostTag(tag)) {
+      return STRUCTURAL_ATTRIBUTES.has(name) || isAriaAttribute(name)
+        ? { kind: "durable" }
+        : { kind: "not_proven" };
+    }
+    // A dotted tag reaches here rather than the host branch, because
+    // `isProvablyHostTag` will not call a member expression a host element.
+    // `#collectAttributes` disagrees: it routes by `isComponentName`, which a
+    // dotted tag also fails, so the FIELD side reads a dotted tag's attributes
+    // by host names.
+    //
+    // That disagreement is NOT harmless in both directions, and this reader is
+    // what makes it visible. Given `<ui.Card aria-label="Editable headline">`
+    // whose resolvable `Card` renders the label as a heading, naming reads the
+    // receiver, refuses, and reports that the value is customer copy, while the
+    // field side calls the same value a code-owned accessibility interface, so
+    // the customer cannot edit their own heading. The misclassification predates
+    // this reader. Routing both sides through `isProvablyHostTag` fixes it and
+    // was measured: it costs no fields, but it turns every `className` on a
+    // `motion.*` tag into a finding, 4 of them on All Points Media, because a
+    // structural attribute stops being inert once the receiver decides. So the
+    // repair needs a rule for structural attributes on an unreadable receiver,
+    // which is a decision about fields rather than about names.
+    const reading = this.#componentPropReading(tag, name, node);
+    // A tag naming nothing this repository declares is a component this reader
+    // never looked at, so it proposes NO field for the value and no edit can
+    // reach it. Refusing here would cost real identity for no safety: `Link`,
+    // `Image` and `Script` all live in `node_modules`, and `#collectImage` and
+    // `#collectLink` fall back from a refused `id` to `src` and `href`, which
+    // ARE the customer's. So the strict reading traded a name nothing can edit
+    // for one the customer owns.
+    if (reading.kind === "unresolved_tag") return { kind: "durable" };
+    // A component that WAS read and whose uses disagree is different: one of
+    // those uses may be rendering the value as copy.
+    if (reading.kind === "undecided") return { kind: "not_proven" };
+    // `null` from `ownershipOfPropRole` means the value is offered to nobody,
+    // which is the strongest proof of durability there is, so an absence there
+    // reads as a positive answer here. `=== CODE_OWNED` would refuse every prop
+    // forwarded to a host `id`, which is most of them.
+    return ownershipOfPropRole(reading.role) === CUSTOMER_EDITABLE
+      ? { kind: "the_customer's" }
+      : { kind: "durable" };
+  }
+
+  /**
+   * What the receiving component makes of this prop.
+   *
+   * Both readings of a component prop come through here — the naming one above
+   * and the field one in `#collectComponentProp` — so neither can resolve the
+   * tag or read the role differently from the other. The two refusals stay
+   * separate because the callers answer them differently: a field reports WHICH
+   * half was missing, while naming treats an unread component as durable and an
+   * unsettled prop as unproven.
+   */
+  #componentPropReading(tag: string, name: string, node: ts.Node): ComponentPropReading {
+    const cached = this.#propReadings.get(node);
+    if (cached !== undefined) return cached;
+    const reading = this.#readComponentProp(tag, name, node);
+    this.#propReadings.set(node, reading);
+    return reading;
+  }
+
+  #readComponentProp(tag: string, name: string, node: ts.Node): ComponentPropReading {
+    const target = resolveTagAt(this.#tags, tag, node, this.#declaration);
+    if (target === null) return { kind: "unresolved_tag" };
+    const role = propRoleOf(target, name, this.#propRoles);
+    return role === null ? { kind: "undecided" } : { kind: "role", role };
+  }
+
   /**
    * The name a landmark is given for assistive technology, when it is written
    * as a literal.
@@ -334,19 +524,26 @@ class ComponentWalker {
    * way. Reading only `id` left sections that carry one of these unnamed, and
    * everything inside them could then be told apart only by position.
    */
-  #accessibleNameOf(element: JsxElementNode): string | null {
+  #accessibleNameOf(element: JsxElementNode, tag: string): string | null {
     for (const attributeName of ACCESSIBLE_NAME_ATTRIBUTES) {
-      const value = this.#durableAttributeOf(element, attributeName);
+      const value = this.#durableAttributeOf(element, tag, attributeName);
       if (value !== null) return value;
     }
     return null;
   }
 
+  /**
+   * What names this element, and what merely tells it apart from its siblings.
+   *
+   * An `id` on a container names a region; an `id` on a leaf that renders its
+   * own text only tells that leaf apart from its siblings. Promoting every `id`
+   * to a region would split a section per paragraph.
+   */
   #namingOf(
     element: JsxElementNode,
     tag: string,
   ): { readonly region: AnchorSegment | null; readonly discriminator: string | null } {
-    const literalId = this.#literalIdOf(element);
+    const literalId = this.#durableAttributeOf(element, tag, ID_ATTRIBUTE);
     const isContainer =
       SECTIONING_TAGS.has(tag) ||
       LANDMARK_TAGS.has(tag) ||
@@ -356,16 +553,11 @@ class ComponentWalker {
     }
     if (literalId !== null) return { region: null, discriminator: literalId };
     // An `id` is the strongest name, so it is tried first; an accessible name
-    // is the next-strongest and names the same kind of thing.
-    //
-    // Host elements only. `aria-label` means something fixed on a host element
-    // and nothing in particular on a component, which is free to render it as
-    // copy -- `#collectAttributes` states that same rule for the same reason,
-    // and asks the component rather than assuming a host meaning. A name taken
-    // from a prop the customer can then edit would move the anchors of every
-    // descendant, which is the one thing an anchor must never do.
-    const accessibleName =
-      isContainer && isProvablyHostTag(tag) ? this.#accessibleNameOf(element) : null;
+    // is the next-strongest and names the same kind of thing. Which tags may be
+    // named by either is not decided here: `#durableAttributeOf` refuses any
+    // value the customer could edit, whatever the tag and whatever the
+    // attribute's spelling.
+    const accessibleName = isContainer ? this.#accessibleNameOf(element, tag) : null;
     if (accessibleName !== null) {
       return { region: { kind: "region", name: accessibleName }, discriminator: null };
     }
@@ -425,7 +617,18 @@ class ComponentWalker {
     scopeAnchor: AnchorPath,
     discriminator: string | null,
   ): void {
-    const isComponent = isComponentName(tag);
+    // Which reading this tag gets. A PascalCase tag is a component beyond
+    // doubt, so an unreadable one is reported rather than guessed. A DOTTED tag
+    // is a component too, but only a resolvable one can be READ: `ui.Card` in
+    // this repository is asked what it does with a prop, while `motion.div`
+    // keeps the host reading, `ref` included, because a package wrapper
+    // forwarding to the DOM element it names is exactly what those rules
+    // describe. Asking a package this reader cannot open would turn every
+    // `className` on a `motion.*` tag into a finding a human must dismiss.
+    const readsAsComponent =
+      isComponentName(tag) ||
+      (!isProvablyHostTag(tag) &&
+        resolveTagAt(this.#tags, tag, element, this.#declaration) !== null);
     for (const attribute of namedAttributes(element)) {
       if (this.#isHandledElsewhere(tag, attribute.name)) continue;
       // React consumes `key` before the component ever sees it, so nothing
@@ -436,7 +639,7 @@ class ComponentWalker {
       // read, so it is read from there and fails closed when it cannot be.
       if (
         attribute.name === "ref" &&
-        (!isComponent || !refReachesComponents(reactMajorOf(this.#resolution.repositoryRoot)))
+        (!readsAsComponent || !this.#propRoles.refReachesComponents)
       ) {
         continue;
       }
@@ -446,7 +649,7 @@ class ComponentWalker {
       // the same reason `prop-roles.ts` does it in that order: `className` and
       // `aria-label` mean something fixed on a host element and nothing in
       // particular on a component, which is free to render either as copy.
-      if (isComponent) {
+      if (readsAsComponent) {
         if (overriddenByLaterSpread(attribute.node)) {
           this.#report(
             "UNKNOWN_ATTRIBUTE_ROLE",
@@ -505,8 +708,8 @@ class ComponentWalker {
     discriminator: string | null,
     node: ts.Node,
   ): void {
-    const target = resolveTagAt(this.#tags, tag, node, this.#declaration);
-    if (target === null) {
+    const reading = this.#componentPropReading(tag, attributeName, node);
+    if (reading.kind === "unresolved_tag") {
       this.#report(
         "UNKNOWN_ATTRIBUTE_ROLE",
         node,
@@ -516,8 +719,7 @@ class ComponentWalker {
       );
       return;
     }
-    const role: PropRole | null = propRoleOf(target, attributeName, this.#propRoleContext());
-    if (role === null) {
+    if (reading.kind === "undecided") {
       this.#report(
         "UNKNOWN_ATTRIBUTE_ROLE",
         node,
@@ -527,15 +729,10 @@ class ComponentWalker {
       );
       return;
     }
-    if (role === "code") return;
+    const ownership = ownershipOfPropRole(reading.role);
+    if (ownership === null) return;
     this.#pushAttributeText(
-      attributeName,
-      tag,
-      value,
-      scopeAnchor,
-      discriminator,
-      node,
-      role === "content" ? CUSTOMER_EDITABLE : CODE_OWNED,
+      attributeName, tag, value, scopeAnchor, discriminator, node, ownership,
     );
   }
 

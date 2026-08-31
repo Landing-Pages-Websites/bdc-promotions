@@ -194,11 +194,25 @@ component:Method     / region:steps   / each:STEPS / prop:title
 A segment may only be:
 
 - `component:<Name>` — a uniquely named component declaration
-- `region:<id>` — a container's literal `id` attribute (also a URL fragment target), or a unique landmark element
+- `region:<name>` — a container's literal `id` attribute (also a URL fragment target), the accessible name a literal `aria-labelledby` or `aria-label` gives it, or a unique landmark element
 - `role:<tag>[#<attribute>]` — the element, or the attribute a value flows into
 - `at:<discriminator>` — a durable way to tell siblings apart: a link fragment, a module constant name, a declared `id`, an image path
 - `each:<BINDING>` / `prop:<name>` — a module-level array and an object-literal property name
 - `text` — the direct text run of an element
+
+A name written on a COMPONENT is not a host fact. It is an ordinary prop, and a
+component may render a prop as visible copy. So a `region:` name, and the `at:`
+discriminator a literal `id` gives a leaf, are taken from a component's prop
+only when that component's own source proves the value is not the customer's to
+edit. A name the customer owns makes a region's identity depend on its own
+contents. What the prop is comes from the same reading that decides whether it
+is a field, *A component's props are read from the component* above, and a prop
+that cannot be read names nothing.
+
+Two `at:` discriminators are known exceptions and do not yet go through that
+reading: an image's `src` and a link's `href` fragment. Both are offered to the
+customer as editable, so both identify a field by a value the customer owns.
+Closing that moves existing anchors, so it is tracked as its own change.
 
 Deliberately excluded, because none of it survives normal work: **visible text**
 (changes on every copy edit), **DOM or sibling order** (changes when a section
