@@ -11,6 +11,7 @@ export const MANAGED_SITE_SEMANTIC_IDS = Object.freeze([
   "bounded-json-depth-8",
   "collection-descriptor",
   "content-value",
+  "external-destination-url",
   "field-descriptor",
   "generated-route",
   ...Object.values(MANAGED_SITE_ROOT_SEMANTICS),

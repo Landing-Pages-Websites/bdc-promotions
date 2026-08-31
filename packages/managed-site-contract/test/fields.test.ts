@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  parseManagedAbsoluteHttpsUrl,
   parseManagedFieldDescriptor,
   parseManagedRichTextDocument,
   validateManagedFieldValue,
@@ -26,6 +27,29 @@ import {
 } from "./schema-fixtures.js";
 
 describe("managed field schemas", () => {
+  /**
+   * A fragment is part of a URL, and an external link is where it belongs: the
+   * browser reads it and the server never sees it. A CANONICAL must not carry
+   * one, because it names the page rather than a place inside it. One schema was
+   * answering both questions with the canonical's answer, so a real site's
+   * `https://host/kit.html#page/1` could not be represented at all.
+   */
+  it("accepts a fragment on an external destination and still refuses one on a canonical", () => {
+    assert.doesNotThrow(() =>
+      validateManagedFieldValue(
+        linkField(),
+        linkContentValue({
+          label: "Media kit",
+          destination: { kind: "external", url: "https://example.com/kit.html#page/1" },
+          target: "new_window",
+        }),
+      ),
+    );
+    // The canonical bound is unchanged: a fragment there is still refused.
+    assert.throws(() => parseManagedAbsoluteHttpsUrl("https://example.com/page#section"));
+    assert.doesNotThrow(() => parseManagedAbsoluteHttpsUrl("https://example.com/page"));
+  });
+
   it("rejects unknown keys, coercion, invalid classifications, and capabilities", () => {
     for (const invalid of [
       { ...plainTextField(), ignored: true },

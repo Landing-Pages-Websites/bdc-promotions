@@ -113,27 +113,63 @@ export const managedFieldUsageSchema = z.strictObject({
 
 export const managedLinkTargetSchema = z.enum(["same_window", "new_window"]);
 
-function validateExternalUrl(value: string): boolean {
+/**
+ * What every URL this contract carries must satisfy, whatever it names.
+ *
+ * A control character, a non-HTTPS scheme, or embedded credentials are wrong in
+ * a canonical and in a link alike.
+ */
+function isSafeHttpsUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return (
       !CONTROL_CHARACTERS.test(value) &&
-      !value.includes("#") &&
       url.protocol === "https:" &&
       url.username === "" &&
-      url.password === "" &&
-      url.hash === ""
+      url.password === ""
     );
   } catch {
     return false;
   }
 }
 
+/**
+ * A canonical names a PAGE, so it must not carry a fragment: two canonicals
+ * differing only after the `#` are the same page claiming to be two.
+ */
+function validateCanonicalUrl(value: string): boolean {
+  if (!isSafeHttpsUrl(value)) return false;
+  return !value.includes("#") && new URL(value).hash === "";
+}
+
+/**
+ * A destination names a PLACE, which a fragment is part of.
+ *
+ * The browser reads it and the server never sees it, so `.../kit.html#page/1`
+ * is an ordinary link that a real site writes. This used to share the
+ * canonical's rule and answer with the canonical's answer, which made such a
+ * link impossible to represent at all rather than merely unusual.
+ */
+function validateDestinationUrl(value: string): boolean {
+  return isSafeHttpsUrl(value);
+}
+
 export const absoluteHttpsUrlSchema = withManagedSiteJsonSchemaSemantic(
   "absolute-https-url",
   z
     .url()
-    .refine(validateExternalUrl, "URL must be absolute HTTPS without credentials or hash"),
+    .refine(validateCanonicalUrl, "URL must be absolute HTTPS without credentials or hash"),
+);
+
+/**
+ * The bound a LINK destination is held to. Separate from the canonical bound
+ * above because the two ask different questions of the same string.
+ */
+export const externalDestinationUrlSchema = withManagedSiteJsonSchemaSemantic(
+  "external-destination-url",
+  z
+    .url()
+    .refine(validateDestinationUrl, "URL must be absolute HTTPS without credentials"),
 );
 
 /**
@@ -201,7 +237,7 @@ export const managedLinkDestinationSchema = z.discriminatedUnion("kind", [
     pageId: stableIdSchema("page"),
     fragment: managedFragmentSchema.nullable(),
   }),
-  z.strictObject({ kind: z.literal("external"), url: absoluteHttpsUrlSchema }),
+  z.strictObject({ kind: z.literal("external"), url: externalDestinationUrlSchema }),
   z.strictObject({ kind: z.literal("email"), address: z.email() }),
   z.strictObject({ kind: z.literal("phone"), number: z.string().regex(/^\+[1-9]\d{7,14}$/) }),
 ]);

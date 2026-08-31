@@ -10,6 +10,7 @@ import { managedInternalValueTypeSchema } from "./internal-value-types.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
   absoluteHttpsUrlSchema,
+  externalDestinationUrlSchema,
   jsonPointerSourceResolverSchema,
   managedFieldUsageSchema,
   managedPresentationSchema,
@@ -173,7 +174,7 @@ export const managedGeneratedPageSeoSchema = z.strictObject({
 
 const managedRedirectDestinationSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("page"), pageId: stableIdSchema("page") }),
-  z.strictObject({ kind: z.literal("external"), url: absoluteHttpsUrlSchema }),
+  z.strictObject({ kind: z.literal("external"), url: externalDestinationUrlSchema }),
 ]);
 
 const managedRedirectSchema = z.strictObject({
