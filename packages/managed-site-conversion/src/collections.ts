@@ -11,12 +11,12 @@ import {
   unwrapTransparent,
   type JsxElementNode,
 } from "./jsx-facts.js";
+import { itemPropertyRead } from "./literals.js";
 import {
-  itemPropertyRead,
-  objectArrayOf,
-  type ModuleConstants,
-  type ObjectLiteralRecord,
-} from "./literals.js";
+  resolveArrayOfObjects,
+  type ArrayResolution,
+  type ResolutionContext,
+} from "./evaluate.js";
 import type { Finding } from "./report.js";
 
 export interface TagRoles {
@@ -25,10 +25,12 @@ export interface TagRoles {
 }
 
 export interface MapCall {
-  readonly bindingName: string;
+  /** The chain of names the array is read from, for the anchor. */
+  readonly source: ArrayResolution;
   readonly parameterName: string;
   readonly template: ts.Expression;
-  readonly items: readonly ObjectLiteralRecord[];
+  /** The item objects, unread: only the template knows which keys are fields. */
+  readonly items: readonly ts.ObjectLiteralExpression[];
 }
 
 function arrowBodyExpression(callback: ts.Expression): ts.Expression | null {
@@ -40,26 +42,32 @@ function arrowBodyExpression(callback: ts.Expression): ts.Expression | null {
 }
 
 /** `BINDING.map((item) => <jsx/>)` over a module-level array of flat objects. */
+/**
+ * `SOURCE.map((item) => <jsx/>)` where SOURCE is an array of object literals.
+ *
+ * SOURCE is resolved by the same rules as any other value, so an array kept in
+ * a data module — which is where a real site keeps one — reads exactly as a
+ * local one does, and a path like `company.offices` reads too.
+ */
 export function readMapCall(
   expression: ts.Expression,
-  constants: ModuleConstants,
+  context: ResolutionContext,
 ): MapCall | null {
   if (!ts.isCallExpression(expression)) return null;
   const callee = expression.expression;
   if (!ts.isPropertyAccessExpression(callee) || callee.name.text !== "map") return null;
-  if (!ts.isIdentifier(callee.expression)) return null;
   const callback = expression.arguments[0];
   if (callback === undefined || !ts.isArrowFunction(callback)) return null;
   const parameter = callback.parameters[0]?.name;
   if (parameter === undefined || !ts.isIdentifier(parameter)) return null;
   const template = arrowBodyExpression(callback);
-  const items = objectArrayOf(callee.expression, constants);
-  if (template === null || items === null) return null;
+  const source = resolveArrayOfObjects(callee.expression, context);
+  if (template === null || source === null) return null;
   return {
-    bindingName: callee.expression.text,
+    source,
     parameterName: parameter.text,
     template,
-    items,
+    items: source.objects,
   };
 }
 

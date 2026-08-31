@@ -8,9 +8,18 @@ import {
   type Ownership,
   type RawDestination,
 } from "./candidates.js";
-import { resolveStaticValue, type ResolutionContext } from "./evaluate.js";
+import {
+  resolveStaticValue,
+  textPropertyOf,
+  type ResolutionContext,
+} from "./evaluate.js";
 import { propRoleOf, type PropRole, type PropRoleContext } from "./prop-roles.js";
-import { analyseItemTemplate, readMapCall, type TagRoles } from "./collections.js";
+import {
+  analyseItemTemplate,
+  readMapCall,
+  type MapCall,
+  type TagRoles,
+} from "./collections.js";
 import {
   attributeExpression,
   bindingPropertyName,
@@ -246,7 +255,7 @@ class ComponentWalker {
     if (this.#declaration.childrenSlots.has(expression.getText(this.#declaration.module.source))) {
       return;
     }
-    const mapCall = readMapCall(expression, this.#constants);
+    const mapCall = readMapCall(expression, this.#resolution);
     if (mapCall !== null) {
       this.#collectCollection(child, mapCall, anchor);
       return;
@@ -752,7 +761,7 @@ class ComponentWalker {
       this.#report(
         "NON_LITERAL_VALUE",
         child,
-        `Iterated binding '${mapCall.bindingName}' exposes no readable item properties; declare this collection by hand.`,
+        `Iterated binding '${sourceName(mapCall)}' exposes no readable item properties; declare this collection by hand.`,
       );
       return;
     }
@@ -761,7 +770,7 @@ class ComponentWalker {
       this.#report(
         "COLLECTION_ITEM_IMAGE_UNSUPPORTED",
         child,
-        `Items of '${mapCall.bindingName}' each carry their own image ('${imageField.property}'), ` +
+        `Items of '${sourceName(mapCall)}' each carry their own image ('${imageField.property}'), ` +
           "but the standard binds one asset slot to exactly one file, so a collection " +
           "cannot vary an image per item. Decide whether to declare these as individual " +
           "fields with their own asset slots, or to drop the images. Nothing was proposed " +
@@ -769,10 +778,30 @@ class ComponentWalker {
       );
       return;
     }
-    const collectionAnchor = extendAnchor(anchor, {
-      kind: "binding",
-      name: mapCall.bindingName,
-    });
+    // A collection is anchored on the chain of names its array is read from,
+    // the same way a value is — so an array in a data module and one declared
+    // beside the markup are named the same way, and moving it does not move
+    // the collection. A module-private array is qualified by the component
+    // that reads it, for the reason `#collectDeclaredValue` gives.
+    const collectionAnchor = mapCall.source.shared
+      ? extendAnchor(anchor.filter((segment) => segment.kind === "component"), ...mapCall.source.path)
+      : extendAnchor(anchor, ...mapCall.source.path);
+    const items: (readonly CollectionItemValue[])[] = [];
+    for (const item of mapCall.items) {
+      const read = readItemValues(item, analysis, mapCall, this.#resolution);
+      if (read === null) {
+        this.#report(
+          "NON_LITERAL_VALUE",
+          child,
+          `An item of '${sourceName(mapCall)}' does not hold every property the template ` +
+            "renders as text, so the collection cannot be read without inventing a value " +
+            "for it. Give every item the same text properties, or declare this collection " +
+            "by hand.",
+        );
+        return;
+      }
+      items.push(read);
+    }
     this.#candidates.push({
       kind: "collection",
       anchor: collectionAnchor,
@@ -781,24 +810,50 @@ class ComponentWalker {
       location: this.#locationOf(child),
       evidence: this.#evidenceOf(child),
       ownership: CUSTOMER_EDITABLE,
-      bindingName: mapCall.bindingName,
+      bindingName: sourceName(mapCall),
       itemFields: analysis.itemFields,
-      items: mapCall.items.map((item) => readItemValues(item, analysis, mapCall.parameterName)),
+      items,
     });
   }
 }
 
+function sourceName(mapCall: MapCall): string {
+  return mapCall.source.path
+    .map((segment) => (segment.kind === "binding" || segment.kind === "property" ? segment.name : ""))
+    .filter((name) => name.length > 0)
+    .join(".");
+}
+
+/**
+ * The values one item holds for the properties the template renders.
+ *
+ * A property the template renders but the item does not hold as text refuses
+ * the whole collection. Defaulting it to `""` — which is what this did — puts a
+ * blank into the customer's content where the page shows words, and nothing
+ * downstream can tell that apart from a value the site really is missing.
+ */
 function readItemValues(
-  item: ReadonlyMap<string, string>,
+  item: ts.ObjectLiteralExpression,
   analysis: ReturnType<typeof analyseItemTemplate>,
-  parameterName: string,
-): readonly CollectionItemValue[] {
-  return [...analysis.itemFields].map((spec) => {
+  mapCall: MapCall,
+  context: ResolutionContext,
+): readonly CollectionItemValue[] | null {
+  const values: CollectionItemValue[] = [];
+  const asRecord = new Map<string, string>();
+  for (const spec of analysis.itemFields) {
+    const value = textPropertyOf(item, spec.property, mapCall.source.declaredIn, context);
+    if (value === null) return null;
+    asRecord.set(spec.property, value);
+  }
+  for (const spec of analysis.itemFields) {
     const altExpression = analysis.altExpressions.get(spec.property);
     const altText =
-      altExpression === undefined ? null : templateOverItem(altExpression, parameterName, item);
-    return { property: spec.property, value: item.get(spec.property) ?? "", altText };
-  });
+      altExpression === undefined
+        ? null
+        : templateOverItem(altExpression, mapCall.parameterName, asRecord);
+    values.push({ property: spec.property, value: asRecord.get(spec.property)!, altText });
+  }
+  return values;
 }
 
 /**
