@@ -89,7 +89,11 @@ function scanRoute(
       componentNames: new Set(tree.components.map((declaration) => declaration.name)),
     },
     components: tree.components,
-    metadata: readNextMetadata(chain.map((file) => cache.read(file))),
+    metadata: readNextMetadata(
+      chain.map((file) => cache.read(file)),
+      cache,
+      repositoryRoot,
+    ),
     findings: tree.findings,
   };
 }

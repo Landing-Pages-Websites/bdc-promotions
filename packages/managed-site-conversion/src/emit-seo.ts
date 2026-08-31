@@ -244,8 +244,9 @@ class SeoBuilder {
       "indexing_directives",
       "Indexing directives",
       "/seo/indexing",
-      { ...metadata.indexing },
-      "",
+      metadata.indexing === null ? null : { ...metadata.indexing },
+      "This route declares `robots` directives this reader cannot resolve to literals. " +
+        "Write them as `true`/`false` at the route, or supply them in the conversion config.",
     );
     const purpose = seoInput?.purpose ?? null;
     if (purpose === null) {
