@@ -1,6 +1,7 @@
 import ts from "typescript";
 
 import type {
+  ManagedRichTextBlock,
   ManagedRichTextDocument,
   ManagedRichTextInline,
   ManagedRichTextMarkKind,
@@ -91,7 +92,10 @@ function inlinesFor(
   if (!isElementChild(child)) return null;
   const mark = MARK_BY_TAG.get(tagNameOf(child));
   if (mark === undefined) return null;
-  const nested = [...markKinds, mark];
+  // `<strong><strong>x</strong></strong>` nests the same kind twice, and the
+  // schema rejects a text node carrying one kind twice. Nesting a mark inside
+  // itself adds no formatting, so the kind is recorded once.
+  const nested = markKinds.includes(mark) ? markKinds : [...markKinds, mark];
   const collected: TextInline[] = [];
   for (const grandchild of childrenOf(child)) {
     const inlines = inlinesFor(grandchild, nested);
@@ -99,6 +103,49 @@ function inlinesFor(
     collected.push(...inlines);
   }
   return collected;
+}
+
+/**
+ * Builds one rich-text document from a `<ul>` or `<ol>` of static items.
+ *
+ * Items written out as siblings have nothing to tell them apart — no id, no
+ * name, only their order, which `anchors.ts` refuses as identity. As separate
+ * values they are unnameable; as ONE list they need no item identity at all,
+ * and the contract already models `bullet_list` and `ordered_list`.
+ *
+ * Returns null whenever an item is not a plain `<li>` of inline text: a
+ * computed child, a nested list, or a link, each of which this reading models
+ * elsewhere and must not flatten into prose.
+ */
+export function buildRichTextListDocument(
+  element: JsxElementNode,
+  ordered: boolean,
+): ManagedRichTextDocument | null {
+  type ListItem = Extract<ManagedRichTextBlock, { type: "bullet_list" }>["content"][number];
+  const items: ListItem[] = [];
+  for (const child of childrenOf(element)) {
+    if (ts.isJsxText(child)) {
+      // The indentation between `<li>` siblings. `normaliseJsxText` collapses it
+      // to a single space, which is not empty, so every conventionally
+      // formatted list refused and fell back to per-item candidates -- the
+      // exact shape this exists to handle. Real text between items still
+      // refuses, because it would be dropped from the document.
+      if (child.text.trim() !== "") return null;
+      continue;
+    }
+    if (!ts.isJsxElement(child)) return null;
+    if (child.openingElement.tagName.getText() !== "li") return null;
+    const inlines = buildRichTextDocument(childrenOf(child));
+    if (inlines === null) return null;
+    const [paragraph] = inlines.content;
+    if (paragraph === undefined || paragraph.type !== "paragraph") return null;
+    items.push({ type: "list_item", content: [paragraph] });
+  }
+  if (items.length === 0) return null;
+  return {
+    type: "doc",
+    content: [{ type: ordered ? "ordered_list" : "bullet_list", content: items }],
+  };
 }
 
 /** Builds a single-paragraph rich-text document, or null if anything is computed. */

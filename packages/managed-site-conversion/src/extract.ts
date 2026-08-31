@@ -55,7 +55,11 @@ import {
   templateOverItem,
   type ModuleConstants,
 } from "./literals.js";
-import { buildRichTextDocument, partitionChildren } from "./jsx-text.js";
+import {
+  buildRichTextDocument,
+  buildRichTextListDocument,
+  partitionChildren,
+} from "./jsx-text.js";
 import {
   readDestination,
   destinationDiscriminator,
@@ -218,6 +222,46 @@ export const NAME_BEARING_ATTRIBUTES: readonly string[] = [
   ID_ATTRIBUTE,
   ...ACCESSIBLE_NAME_ATTRIBUTES,
 ];
+
+/**
+ * The only attributes a list or an item may carry.
+ *
+ * Written as what IS inert rather than what is handled elsewhere. The first
+ * version reused `STRUCTURAL_ATTRIBUTES`, which answers a different question --
+ * it holds `id`, `role` and `type`, every one of which changes what this
+ * reading would have to reproduce. A set that says what is safe fails closed on
+ * the attribute nobody has thought of yet; a set that says what is ignorable
+ * elsewhere does not.
+ */
+const LIST_INERT_ATTRIBUTES: ReadonlySet<string> = new Set([
+  // React consumes it; nothing rendered depends on it.
+  "key",
+  // Presentation. The contract never owned it and the document never held it.
+  "className",
+  "class",
+  "style",
+]);
+
+/** Whether every attribute on this element is inert for the list reading. */
+function attributesAreInert(element: JsxElementNode): boolean {
+  const opening = ts.isJsxElement(element) ? element.openingElement : element;
+  // A spread supplies attributes this reader cannot see, `aria-hidden` among
+  // them, so an element carrying one can never be shown inert.
+  if (opening.attributes.properties.some((property) => ts.isJsxSpreadAttribute(property))) {
+    return false;
+  }
+  return namedAttributes(element).every((attribute) =>
+    LIST_INERT_ATTRIBUTES.has(attribute.name),
+  );
+}
+
+/** Whether this element sits inside a list item, at any depth. */
+function isInsideListItem(element: ts.Node): boolean {
+  for (let node = element.parent; node !== undefined; node = node.parent) {
+    if (ts.isJsxElement(node) && tagNameOf(node) === "li") return true;
+  }
+  return false;
+}
 
 class ComponentWalker {
   readonly #candidates: Candidate[] = [];
@@ -606,7 +650,82 @@ class ComponentWalker {
       return;
     }
     this.#collectAttributes(element, tag, scopeAnchor, discriminator);
+    if (this.#collectStaticList(element, tag, scopeAnchor, discriminator)) return;
     this.#collectHostContent(element, tag, scopeAnchor, discriminator);
+  }
+
+  /**
+   * A list written out item by item is ONE value.
+   *
+   * Its items have nothing to tell them apart — no id, no name, only their
+   * order, which `anchors.ts` refuses as identity — so as separate fields they
+   * are unnameable and every one of them was reported. The list element itself
+   * has a durable anchor, and the contract already models a bullet or ordered
+   * list, so the customer edits the list and no item needs an identity.
+   *
+   * A list built by `.map()` is a COLLECTION and is left alone: its items come
+   * from data that can carry real identity.
+   */
+  #collectStaticList(
+    element: JsxElementNode,
+    tag: string,
+    scopeAnchor: AnchorPath,
+    discriminator: AnchorName | null,
+  ): boolean {
+    if (tag !== "ul" && tag !== "ol") return false;
+    // The document this produces represents exactly three things: ordered
+    // versus unordered, one paragraph per item, and text marks. Anything about
+    // the list, an item, or its position that carries meaning beyond those is
+    // meaning the document cannot hold, so the list falls back to the ordinary
+    // walk rather than losing it.
+    if (!this.#listIsPlain(element)) return false;
+    if (!childrenOf(element).every((child) => this.#itemIsPlain(child))) return false;
+    const document = buildRichTextListDocument(element, tag === "ol");
+    if (document === null) return false;
+    this.#candidates.push({
+      kind: "rich_text",
+      anchor: this.#elementAnchor(scopeAnchor, tag, discriminator),
+      componentNames: [this.#declaration.name],
+      identity: POSITION_IDENTITY,
+      location: this.#locationOf(element),
+      evidence: this.#evidenceOf(element),
+      ownership: CUSTOMER_EDITABLE,
+      document,
+      headingLevel: null,
+    });
+    return true;
+  }
+
+  /**
+   * Whether the list ELEMENT itself carries only meaning the document holds.
+   *
+   * `<ol start="3">` and `<ol reversed>` change what the page numbers; the
+   * schema has no property for either, so converting them silently renumbers
+   * the list. A nested list is refused from the other side: the outer list
+   * falls back, and the ordinary walk then reaches the inner one and would
+   * extract it on its own, keeping half of a structure the document cannot
+   * represent.
+   */
+  #listIsPlain(element: JsxElementNode): boolean {
+    if (isInsideListItem(element)) return false;
+    return attributesAreInert(element);
+  }
+
+  /**
+   * Whether one child of a `<ul>`/`<ol>` is an item the list reading covers.
+   *
+   * An `aria-hidden` item is not walked at all and would appear in the document
+   * as editable copy. An item with an `aria-label` has a code-owned field of
+   * its own that the list candidate does not carry. An item with an `id` has a
+   * DURABLE identity the ordinary walk uses as its discriminator, and folding
+   * it into the list throws that identity away.
+   */
+  #itemIsPlain(child: ts.JsxChild): boolean {
+    if (ts.isJsxText(child)) return child.text.trim() === "";
+    if (!ts.isJsxElement(child)) return false;
+    if (tagNameOf(child) !== "li") return false;
+    if (!isWalkedElement(child)) return false;
+    return attributesAreInert(child);
   }
 
   #elementAnchor(

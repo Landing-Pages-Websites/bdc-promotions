@@ -4,6 +4,7 @@ import type {
   ManagedCollectionItemField,
   ManagedFieldCapability,
   ManagedFieldDescriptor,
+  ManagedRichTextBlock,
   ManagedRichTextMarkKind,
   StableId,
 } from "@landing-pages-websites/managed-site-contract";
@@ -90,13 +91,51 @@ function textConstraints(maxLength: number): {
 function markKindsOf(candidate: Candidate): readonly ManagedRichTextMarkKind[] {
   if (candidate.kind !== "rich_text") return [];
   const kinds = new Set<ManagedRichTextMarkKind>();
-  for (const block of candidate.document.content) {
-    if (block.type !== "paragraph") continue;
-    for (const node of block.content) {
+  // Every paragraph, including the ones inside a list item. Reading only the
+  // top level meant a bold word in a list produced a document its own contract
+  // rejected -- the writer and the reader of the same field disagreeing.
+  for (const paragraph of paragraphsIn(candidate.document.content)) {
+    for (const node of paragraph.content) {
       for (const mark of node.marks ?? []) {
         if (mark.type !== "link") kinds.add(mark.type);
       }
     }
+  }
+  return [...kinds];
+}
+
+type RichTextParagraph = Extract<ManagedRichTextBlock, { type: "paragraph" }>;
+/** Every block type the contract's own document schema admits. */
+type ManagedRichTextBlockKind = ManagedRichTextBlock["type"];
+
+/** Every paragraph in a document, at whatever depth a block nests one. */
+function paragraphsIn(blocks: readonly ManagedRichTextBlock[]): readonly RichTextParagraph[] {
+  const found: RichTextParagraph[] = [];
+  for (const block of blocks) {
+    if (block.type === "paragraph") {
+      found.push(block);
+      continue;
+    }
+    if (block.type === "bullet_list" || block.type === "ordered_list") {
+      for (const item of block.content) found.push(...paragraphsIn(item.content));
+    }
+  }
+  return found;
+}
+
+/**
+ * The block types this document actually uses.
+ *
+ * Asserting `["paragraph"]` while the extractor emits a list means every list
+ * it succeeds at extracting is rejected by the contract emitted beside it. The
+ * policy is derived from the document so anything the extractor can produce is
+ * permitted by construction, and the two cannot drift apart again.
+ */
+function blockKindsOf(candidate: Candidate): readonly ManagedRichTextBlockKind[] {
+  if (candidate.kind !== "rich_text") return ["paragraph"];
+  const kinds = new Set<ManagedRichTextBlockKind>(["paragraph"]);
+  for (const block of candidate.document.content) {
+    if (block.type === "bullet_list" || block.type === "ordered_list") kinds.add(block.type);
   }
   return [...kinds];
 }
@@ -345,7 +384,7 @@ export class ContractEmitter {
       constraints: {
         maxCharacters: this.#context.config.text.richTextMaxCharacters,
         maxNodes: this.#context.config.text.richTextMaxNodes,
-        allowedBlocks: ["paragraph"],
+        allowedBlocks: blockKindsOf(binding.candidate),
         allowedMarks: markKinds,
         allowLinks: false,
         allowedExternalHosts: [],
