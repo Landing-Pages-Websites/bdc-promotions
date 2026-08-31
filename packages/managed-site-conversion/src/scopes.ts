@@ -13,6 +13,25 @@ import { isComponentName } from "./jsx-facts.js";
  * agree right up until one of them is extended.
  */
 
+/**
+ * What introduces a scope, and what belongs to which — the table this file
+ * implements, so the next reader can check it rather than infer it:
+ *
+ * | binding                        | belongs to                          |
+ * | ------------------------------ | ----------------------------------- |
+ * | `var`                          | the nearest function, else the module |
+ * | function declaration           | the nearest block (a module is strict) |
+ * | `let`, `const`, `class`        | the nearest block                   |
+ * | a parameter                    | its function                        |
+ * | a `catch` parameter            | its catch clause                    |
+ * | a `for`/`for-of`/`for-in` head | the loop, condition and body        |
+ * | a named function/class expression | itself                           |
+ *
+ * And the scopes themselves: the source file, a module block, any function-like
+ * body, a block, a `catch` clause, a loop, and a `switch`'s CASE BLOCK — one
+ * scope shared by every unbraced clause, not one per clause.
+ */
+
 /** Every name a binding introduces, including destructured and renamed ones. */
 export function bindingNames(name: ts.BindingName, into: Set<string>): void {
   if (ts.isIdentifier(name)) {
@@ -26,41 +45,8 @@ export function bindingNames(name: ts.BindingName, into: Set<string>): void {
   }
 }
 
-/** Every name a declaration list binds, destructuring included. */
-function declarationNames(list: ts.VariableDeclarationList, into: Set<string>): void {
-  for (const declaration of list.declarations) {
-    bindingNames(declaration.name, into);
-  }
-}
 
-function parameterNames(
-  parameters: readonly ts.ParameterDeclaration[],
-  into: Set<string>,
-): void {
-  for (const parameter of parameters) bindingNames(parameter.name, into);
-}
 
-/** Every `var` in a function body, which binds the FUNCTION however deeply nested. */
-function hoistedVarNames(body: ts.Node, into: Set<string>): void {
-  const visit = (node: ts.Node): void => {
-    // A nested function has its own `var` scope; its declarations are not ours.
-    if (
-      ts.isFunctionDeclaration(node) ||
-      ts.isFunctionExpression(node) ||
-      ts.isArrowFunction(node) ||
-      ts.isMethodDeclaration(node)
-    ) {
-      return;
-    }
-    if (ts.isVariableStatement(node) && (node.declarationList.flags & ts.NodeFlags.Let) === 0) {
-      const isVar =
-        (node.declarationList.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0;
-      if (isVar) declarationNames(node.declarationList, into);
-    }
-    ts.forEachChild(node, visit);
-  };
-  ts.forEachChild(body, visit);
-}
 
 /**
  * The syntax that binds `name` in this scope, or null.
@@ -77,24 +63,85 @@ function hoistedVarNames(body: ts.Node, into: Set<string>): void {
  * enumerated "block, module block, case clause" separately left out loop
  * initializers, and a component declared in one passed as module scoped.
  */
+function isLoopStatement(node: ts.Node): node is ts.ForStatement | ts.ForOfStatement | ts.ForInStatement {
+  return ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node);
+}
+
 export function isScopeNode(node: ts.Node): boolean {
   return (
-    ts.isFunctionDeclaration(node) ||
-    ts.isFunctionExpression(node) ||
-    ts.isArrowFunction(node) ||
-    ts.isMethodDeclaration(node) ||
-    ts.isConstructorDeclaration(node) ||
-    ts.isGetAccessorDeclaration(node) ||
-    ts.isSetAccessorDeclaration(node) ||
+    isFunctionLike(node) ||
     ts.isCatchClause(node) ||
     ts.isBlock(node) ||
     ts.isModuleBlock(node) ||
-    ts.isCaseClause(node) ||
-    ts.isDefaultClause(node) ||
-    ts.isForStatement(node) ||
-    ts.isForOfStatement(node) ||
-    ts.isForInStatement(node)
+    ts.isCaseBlock(node) ||
+    isLoopStatement(node)
   );
+}
+
+/** The `var` declaration of this name in a function body, however deeply nested. */
+function hoistedVarDeclaration(body: ts.Node, name: string): ts.VariableDeclaration | null {
+  let found: ts.VariableDeclaration | null = null;
+  const visit = (node: ts.Node): void => {
+    if (found !== null) return;
+    // A nested function has its own `var` scope; its declarations are not ours.
+    if (isFunctionLike(node)) return;
+    // Every declaration LIST, so a `for (var …)` initializer counts as readily
+    // as a statement — a `var` is function-scoped wherever it is written, and
+    // looking only at statements left the loop spelling unresolved.
+    if (ts.isVariableDeclarationList(node) && isVarStatement(node)) {
+      for (const declaration of node.declarations) {
+        const names = new Set<string>();
+        bindingNames(declaration.name, names);
+        if (names.has(name)) {
+          found = declaration;
+          return;
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  ts.forEachChild(body, visit);
+  return found;
+}
+
+function isVarStatement(list: ts.VariableDeclarationList): boolean {
+  return (list.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0;
+}
+
+/**
+ * Whether this declaration's binding belongs to the nearest FUNCTION rather
+ * than to the nearest block.
+ *
+ * Only `var` does. Treating every declaration alike put a `var` written in a
+ * block out of scope after that block, which the language does not do — but a
+ * FUNCTION declaration is not the same case, however much it looks like one:
+ * an ES module is strict, and a function declared inside a block is scoped to
+ * that block exactly as a `let` is. Hoisting it made a declaration in a
+ * top-level `if` answer for a tag outside it, and the walk then extracted
+ * markup nothing renders.
+ *
+ * A function written directly in a function body or at module top level still
+ * reaches that whole scope, because the block it belongs to IS that scope.
+ */
+export function isFunctionScoped(declaration: ts.Node): boolean {
+  if (!ts.isVariableDeclaration(declaration)) return false;
+  const list = declaration.parent;
+  return ts.isVariableDeclarationList(list) && isVarStatement(list);
+}
+
+/**
+ * The scope a declaration's binding lives in: the source file, a function, or
+ * a block. `isFunctionScoped` decides which kind of ancestor to stop at.
+ */
+export function scopeOfDeclaration(declaration: ts.Node): ts.Node | null {
+  const stopsAtFunction = isFunctionScoped(declaration);
+  let current: ts.Node | undefined = declaration.parent;
+  while (current !== undefined) {
+    if (ts.isSourceFile(current)) return current;
+    if (stopsAtFunction ? isFunctionLike(current) : isScopeNode(current)) return current;
+    current = current.parent;
+  }
+  return null;
 }
 
 export function declarationOfName(node: ts.Node, name: string): ts.Node | null {
@@ -104,10 +151,12 @@ export function declarationOfName(node: ts.Node, name: string): ts.Node | null {
       bindingNames(parameter.name, names);
       if (names.has(name)) return parameter;
     }
+    // A hoisted `var` belongs to this function, but the DECLARATION is where
+    // it was written. Returning the function said "something here binds it"
+    // and lost the only thing a caller can read.
     if (node.body !== undefined) {
-      const hoisted = new Set<string>();
-      hoistedVarNames(node.body, hoisted);
-      if (hoisted.has(name)) return node;
+      const hoisted = hoistedVarDeclaration(node.body, name);
+      if (hoisted !== null) return hoisted;
     }
   }
   if (ts.isMethodDeclaration(node) || ts.isConstructorDeclaration(node)) {
@@ -139,10 +188,22 @@ export function declarationOfName(node: ts.Node, name: string): ts.Node | null {
   ) {
     return node;
   }
-  if (ts.isBlock(node) || ts.isCaseClause(node) || ts.isDefaultClause(node)) {
+  if (ts.isBlock(node)) {
     for (const statement of node.statements) {
       const found = declaredByStatement(statement, name);
       if (found !== null) return found;
+    }
+  }
+  // A `switch` has ONE scope shared by every unbraced clause, so the whole
+  // case block is searched. Reading a single clause lost a binding that falls
+  // through to the clause using it; a BRACED clause is a Block of its own and
+  // is found by the branch above.
+  if (ts.isCaseBlock(node)) {
+    for (const clause of node.clauses) {
+      for (const statement of clause.statements) {
+        const found = declaredByStatement(statement, name);
+        if (found !== null) return found;
+      }
     }
   }
   if (ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node)) {
@@ -177,20 +238,26 @@ function declaredByList(list: ts.VariableDeclarationList, name: string): ts.Node
   return null;
 }
 
-function isFunctionLike(
-  node: ts.Node,
-): node is ts.FunctionDeclaration | ts.FunctionExpression | ts.ArrowFunction | ts.MethodDeclaration {
-  return (
-    ts.isFunctionDeclaration(node) ||
-    ts.isFunctionExpression(node) ||
-    ts.isArrowFunction(node) ||
-    ts.isMethodDeclaration(node)
-  );
-}
+/**
+ * Every construct with parameters and a body of its own.
+ *
+ * A constructor, a getter and a setter are function bodies as surely as a
+ * method is, and each list that left them out disagreed with a list that did
+ * not — a `var` inside a constructor hoisted past it, and a component declared
+ * there read as module scoped. There is one of this list now, and every reader
+ * asks it.
+ */
+export type FunctionLike =
+  | ts.FunctionDeclaration
+  | ts.FunctionExpression
+  | ts.ArrowFunction
+  | ts.MethodDeclaration
+  | ts.ConstructorDeclaration
+  | ts.GetAccessorDeclaration
+  | ts.SetAccessorDeclaration;
 
-export function declaresName(node: ts.Node, name: string): boolean {
-  const names = new Set<string>();
-  if (
+export function isFunctionLike(node: ts.Node): node is FunctionLike {
+  return (
     ts.isFunctionDeclaration(node) ||
     ts.isFunctionExpression(node) ||
     ts.isArrowFunction(node) ||
@@ -198,57 +265,20 @@ export function declaresName(node: ts.Node, name: string): boolean {
     ts.isConstructorDeclaration(node) ||
     ts.isGetAccessorDeclaration(node) ||
     ts.isSetAccessorDeclaration(node)
-  ) {
-    parameterNames(node.parameters, names);
-  }
-  if (
-    (ts.isFunctionDeclaration(node) ||
-      ts.isFunctionExpression(node) ||
-      ts.isArrowFunction(node) ||
-      ts.isMethodDeclaration(node)) &&
-    node.body !== undefined
-  ) {
-    hoistedVarNames(node.body, names);
-  }
-  if (ts.isCatchClause(node) && node.variableDeclaration !== undefined) {
-    bindingNames(node.variableDeclaration.name, names);
-  }
-  // A named function or class EXPRESSION binds its own name inside itself, so
-  // `const P = function copy() { … copy … }` refers to the function.
-  if (
-    (ts.isFunctionExpression(node) ||
-      ts.isClassExpression(node) ||
-      ts.isFunctionDeclaration(node) ||
-      ts.isClassDeclaration(node)) &&
-    node.name !== undefined
-  ) {
-    names.add(node.name.text);
-  }
-  if (ts.isBlock(node) || ts.isCaseClause(node) || ts.isDefaultClause(node)) {
-    for (const statement of node.statements) {
-      if (ts.isVariableStatement(statement)) {
-        declarationNames(statement.declarationList, names);
-        continue;
-      }
-      // A nested `function copy() {}` or `class copy {}` shadows an outer
-      // `copy` just as firmly as a `const` does.
-      if (
-        (ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) &&
-        statement.name !== undefined
-      ) {
-        names.add(statement.name.text);
-      }
-    }
-  }
-  // A loop declares its own binding OUTSIDE its body block, so reading only
-  // block statements would miss `for (const copy of rows)` entirely.
-  if (ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node)) {
-    const initializer = node.initializer;
-    if (initializer !== undefined && ts.isVariableDeclarationList(initializer)) {
-      declarationNames(initializer, names);
-    }
-  }
-  return names.has(name);
+  );
+}
+
+/**
+ * Whether this syntax binds `name`.
+ *
+ * The same walk as `declarationOfName` with the answer thrown away, so it IS
+ * that walk. Two implementations of one scoping rule agree right up until one
+ * is extended: this one still read a single `switch` clause after the other
+ * learned that a case block is one scope, and it collected hoisted `var`s for
+ * four kinds of function body where the other knew seven.
+ */
+export function declaresName(node: ts.Node, name: string): boolean {
+  return declarationOfName(node, name) !== null;
 }
 
 /**

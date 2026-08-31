@@ -1500,3 +1500,41 @@ test("a component tag sharing a binding's name does hand it out", () => {
     null,
   );
 });
+
+/**
+ * A `switch` shares one scope across its unbraced clauses, and shadowing has
+ * to see that. `case "shown": const copy = …` falling through to a clause that
+ * renders `{copy.title}` shadows the module's `copy` — reading only the
+ * clause the reference sits in missed it and resolved the module value, which
+ * publishes text the page never shows.
+ */
+test("a binding in an earlier switch clause shadows the module's", () => {
+  assert.equal(
+    resolve({
+      files: {
+        "probe.tsx":
+          `const copy = { title: "Module" };\ndeclare const which: string;\n` +
+          `export function Probe() {\n  switch (which) {\n` +
+          `    case "shown":\n      const copy = { title: "Local" };\n` +
+          `    default:\n      return <p>{copy.title}</p>;\n  }\n}\n`,
+      },
+      expression: "copy.title",
+    }),
+    null,
+  );
+});
+
+/** A BRACED clause does not shadow the clause after it. */
+test("a binding braced inside a switch clause does not shadow a later one", () => {
+  const resolved = resolve({
+    files: {
+      "probe.tsx":
+        `const copy = { title: "Module" };\ndeclare const which: string;\n` +
+        `export function Probe() {\n  switch (which) {\n` +
+        `    case "shown": {\n      const copy = { title: "Local" };\n      void copy;\n      break;\n    }\n` +
+        `    default:\n      break;\n  }\n  return <p>{copy.title}</p>;\n}\n`,
+    },
+    expression: "copy.title",
+  });
+  assert.equal(resolved?.value, "Module");
+});

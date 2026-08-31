@@ -1,9 +1,10 @@
 import ts from "typescript";
 
 import { findComponentDeclarations, type ComponentDeclaration } from "./extract.js";
-import { isComponentName } from "./jsx-facts.js";
+import { isComponentName, isTransparentWrapper, unwrapTransparent } from "./jsx-facts.js";
 import { walkRenderOutput, EVERY_TRIGGER, type UnreadableRender } from "./render-output.js";
 import type { Finding } from "./report.js";
+import { declarationOfName, scopeOfDeclaration } from "./scopes.js";
 import {
   evidenceOf,
   importedBindingsOf,
@@ -141,15 +142,20 @@ const UNREADABLE_DECISION: Readonly<Record<UnreadableRender["kind"], string>> = 
 function renderedOutputOf(declaration: ComponentDeclaration): RenderedOutput {
   const cached = RENDERED_OUTPUT.get(declaration.jsxRoot);
   if (cached !== undefined) return cached;
-  const tags = new Map<string, RenderedTag>();
+  // EVERY occurrence, not one per name. Which declaration a tag names depends
+  // on where it is written, so two `<Item />` in different scopes are two
+  // render targets — and keeping only the first let whichever was seen first
+  // answer for both, leaving the other component unwalked. Resolution
+  // deduplicates by declaration afterwards, which is the identity that matters.
+  const tags: RenderedTag[] = [];
   const walk = walkRenderOutput(declaration.jsxRoot, EVERY_TRIGGER, (node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const name = node.tagName.getText(declaration.module.source);
-      if (isComponentName(name) && !tags.has(name)) tags.set(name, { name, node });
+      if (isComponentName(name)) tags.push({ name, node });
     }
     return false;
   });
-  const found: RenderedOutput = { tags: [...tags.values()], unreadable: walk.unreadable };
+  const found: RenderedOutput = { tags, unreadable: walk.unreadable };
   RENDERED_OUTPUT.set(declaration.jsxRoot, found);
   return found;
 }
@@ -218,12 +224,49 @@ class RenderWalker {
     });
   }
 
+  /**
+   * The declaration a JSX tag names, or null when it is not ours to read. This
+   * is the SAME resolution the render walk follows — exposed rather than
+   * reimplemented, so a second reader cannot come to disagree with it about
+   * what `<Hero />` refers to.
+   */
+  resolveTag(tagName: string, from: ComponentDeclaration): ComponentDeclaration | null {
+    const resolution = this.#resolutionOf(tagName, from);
+    return resolution.kind === "declaration" ? resolution.declaration : null;
+  }
+
+  /**
+   * `at` is the JSX the tag is written in, when the caller has it.
+   *
+   * Component ancestry alone is not lexical scope: a declaration in one block
+   * and a tag in a SIBLING block share an enclosing component, and answering
+   * by ancestry made the walk extract markup the page cannot reach and
+   * classify props from a receiver it never renders. With the use site in
+   * hand the question is asked the way the language answers it — the nearest
+   * binding, and only what the module itself binds when there is none.
+   */
+  #resolutionOf(
+    tagName: string,
+    from: ComponentDeclaration,
+    at?: ts.Node,
+  ): Resolution {
+    const [root = tagName, ...members] = tagName.split(MEMBER_SEPARATOR);
+    // The ROOT of a dotted tag is a name like any other, so it is checked for a
+    // nearer binding BEFORE the namespace is resolved. Resolving the member
+    // first skipped shadowing entirely: a parameter called `UI` renders, while
+    // the analyzer read `UI.Card` from the import.
+    if (at !== undefined && nearestBinding(at, root) !== null) {
+      return members.length === 0
+        ? declarationResolution(componentDeclaredBy(nearestBinding(at, root)!, from.module))
+        : UNRESOLVED;
+    }
+    if (members.length > 0) return this.#resolveMember(from.module, root, members);
+    if (at !== undefined) return this.#resolveName(from.module, root, new Set(), null);
+    return this.#resolveName(from.module, root, new Set(), from);
+  }
+
   #follow(tag: RenderedTag, from: ComponentDeclaration): void {
-    const [root = tag.name, ...members] = tag.name.split(MEMBER_SEPARATOR);
-    const resolution =
-      members.length === 0
-        ? this.#resolveName(from.module, root, new Set(), from)
-        : this.#resolveMember(from.module, root, members);
+    const resolution = this.#resolutionOf(tag.name, from, tag.node);
     if (resolution.kind === "external") return;
     if (resolution.kind === "declaration") {
       this.#visit(resolution.declaration);
@@ -335,9 +378,16 @@ class RenderWalker {
       .sort((left, right) => right.jsxRoot.pos - left.jsxRoot.pos);
   }
 
-  /** A component declared inside another is not what a second module imported. */
+  /**
+   * Whether the name is bound at MODULE level.
+   *
+   * "No enclosing component declaration" is not the same fact: a component
+   * declared inside an `if` block has none, and is still invisible to code
+   * written outside that block. Asking the syntax directly is what a second
+   * module importing this one, and a tag with no nearer binding, both need.
+   */
   #isModuleLevel(declaration: ComponentDeclaration): boolean {
-    return this.#enclosingDeclarations(declaration).length === 0;
+    return isModuleLevelDeclaration(declaration);
   }
 
   /**
@@ -395,4 +445,90 @@ export function resolveRenderTree(
   cache: ModuleCache,
 ): RenderTree {
   return new RenderWalker(cache, repositoryRoot).walk(entryFiles);
+}
+
+/** Resolves a JSX tag to the component it renders, by the render walk's rules. */
+export interface TagResolver {
+  resolve(tagName: string, from: ComponentDeclaration): ComponentDeclaration | null;
+}
+
+export function tagResolver(repositoryRoot: string, cache: ModuleCache): TagResolver {
+  const walker = new RenderWalker(cache, repositoryRoot);
+  return {
+    resolve: (tagName, from) => walker.resolveTag(tagName, from),
+  };
+}
+
+
+/** The nearest syntax binding this name between the node and the module. */
+function nearestBinding(node: ts.Node, name: string): ts.Node | null {
+  let current: ts.Node | undefined = node.parent;
+  while (current !== undefined && !ts.isSourceFile(current)) {
+    const declaration = declarationOfName(current, name);
+    if (declaration !== null) return declaration;
+    current = current.parent;
+  }
+  return null;
+}
+
+/**
+ * The component a binding declares, when it declares one this reader can read.
+ *
+ * A parameter, or a local bound to anything but a function with JSX in it,
+ * yields null: the tag renders something whose props this reader cannot
+ * describe.
+ */
+function componentDeclaredBy(
+  binding: ts.Node,
+  module: ParsedModule,
+): ComponentDeclaration | null {
+  // `namedFunctionsOf` finds the function behind `as`, `satisfies` and
+  // parentheses, so the match has to look through them too — comparing against
+  // the original initializer made the two disagree and reported a local
+  // component unresolved.
+  const initializer = ts.isVariableDeclaration(binding) ? binding.initializer : binding;
+  if (initializer === undefined) return null;
+  const owner = ts.isExpression(initializer) ? unwrapTransparent(initializer) : initializer;
+  return (
+    findComponentDeclarations(module).find(
+      (candidate) => candidate.jsxRoot.parent === owner,
+    ) ?? null
+  );
+}
+
+/**
+ * Whether a component's binding lives at the top level of its module.
+ *
+ * Not "is it outside every block": a `var` written inside a top-level `if` is
+ * module scoped in JavaScript, and a `let` beside it is not. Which ancestor
+ * the binding belongs to depends on how it was declared, so `scopeOfDeclaration`
+ * decides and this only asks whether the answer is the file.
+ */
+function isModuleLevelDeclaration(declaration: ComponentDeclaration): boolean {
+  const site = bindingSiteOf(declaration);
+  if (site === null) return false;
+  return scopeOfDeclaration(site) === declaration.module.source;
+}
+
+/**
+ * The syntax that binds a component's name: its declaration or its variable.
+ *
+ * Transparent wrappers nest, so this climbs through however many there are.
+ * Reading one level agreed with `componentDeclaredBy` — which unwraps
+ * recursively — only for singly-wrapped components, and a module-level
+ * `const Local = (((() => …))) as T` became unreachable.
+ */
+function bindingSiteOf(declaration: ComponentDeclaration): ts.Node | null {
+  const owner = declaration.jsxRoot.parent;
+  if (owner === undefined) return null;
+  if (ts.isFunctionDeclaration(owner)) return owner;
+  let current: ts.Node | undefined = owner.parent;
+  while (current !== undefined && ts.isExpression(current) && isTransparentWrapper(current)) {
+    current = current.parent;
+  }
+  return current !== undefined && ts.isVariableDeclaration(current) ? current : null;
+}
+
+function declarationResolution(declaration: ComponentDeclaration | null): Resolution {
+  return declaration === null ? UNRESOLVED : { kind: "declaration", declaration };
 }
