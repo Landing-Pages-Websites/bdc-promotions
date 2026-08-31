@@ -1,14 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
 import test from "node:test";
 
 import { renderAnchor } from "../src/anchors.js";
-import type { Candidate, CollectionCandidate } from "../src/candidates.js";
-import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
-import type { Finding } from "../src/report.js";
-import { ModuleCache } from "../src/scan.js";
+import type { CollectionCandidate } from "../src/candidates.js";
+import { type ComponentExtraction, extractFiles } from "./support/proposals.js";
 
 /**
  * Where a repeated region's ITEMS come from.
@@ -26,31 +21,11 @@ import { ModuleCache } from "../src/scan.js";
  * to empty, which silently publishes a blank where the page shows text.
  */
 
-interface Extracted {
-  readonly candidates: readonly Candidate[];
-  readonly findings: readonly Finding[];
+function extract(files: Readonly<Record<string, string>>): ComponentExtraction {
+  return extractFiles(files, "List.tsx");
 }
 
-function extract(files: Readonly<Record<string, string>>): Extracted {
-  const root = mkdtempSync(join(tmpdir(), "managed-site-collections-"));
-  for (const [relative, text] of Object.entries(files)) {
-    const file = join(root, relative);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, text, "utf8");
-  }
-  const cache = new ModuleCache();
-  const parsed = cache.read(join(root, "List.tsx"));
-  const roles = resolveTagRoles(parsed);
-  const results = findComponentDeclarations(parsed).map((declaration) =>
-    extractComponent(declaration, roles, root, cache),
-  );
-  return {
-    candidates: results.flatMap((r) => r.candidates),
-    findings: results.flatMap((r) => r.findings),
-  };
-}
-
-function collectionOf(extracted: Extracted): CollectionCandidate {
+function collectionOf(extracted: ComponentExtraction): CollectionCandidate {
   const found = extracted.candidates.find(
     (candidate): candidate is CollectionCandidate => candidate.kind === "collection",
   );

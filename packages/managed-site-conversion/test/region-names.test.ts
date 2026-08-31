@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
 import test from "node:test";
 
 import { renderAnchor } from "../src/anchors.js";
 import { applyConfidenceGate } from "../src/gate.js";
-import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
-import { ModuleCache } from "../src/scan.js";
+import { extractFiles } from "./support/proposals.js";
 
 /**
  * What NAMES a region.
@@ -22,36 +18,13 @@ import { ModuleCache } from "../src/scan.js";
  */
 
 function anchorsOf(files: Readonly<Record<string, string>>): readonly string[] {
-  const root = mkdtempSync(join(tmpdir(), "managed-site-regions-"));
-  for (const [relative, text] of Object.entries(files)) {
-    const file = join(root, relative);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, text, "utf8");
-  }
-  const cache = new ModuleCache();
-  const parsed = cache.read(join(root, "Page.tsx"));
-  const roles = resolveTagRoles(parsed);
-  const candidates = findComponentDeclarations(parsed).flatMap(
-    (declaration) => extractComponent(declaration, roles, root, cache).candidates,
-  );
-  return applyConfidenceGate(candidates)
+  return applyConfidenceGate(extractFiles(files, "Page.tsx").candidates)
     .accepted.map((candidate) => renderAnchor(candidate.anchor))
     .sort();
 }
 
 function findingsOf(files: Readonly<Record<string, string>>): readonly string[] {
-  const root = mkdtempSync(join(tmpdir(), "managed-site-regions-"));
-  for (const [relative, text] of Object.entries(files)) {
-    const file = join(root, relative);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, text, "utf8");
-  }
-  const cache = new ModuleCache();
-  const parsed = cache.read(join(root, "Page.tsx"));
-  const roles = resolveTagRoles(parsed);
-  return findComponentDeclarations(parsed)
-    .flatMap((declaration) => extractComponent(declaration, roles, root, cache).findings)
-    .map((finding) => finding.code);
+  return extractFiles(files, "Page.tsx").findings.map((finding) => finding.code);
 }
 
 /**

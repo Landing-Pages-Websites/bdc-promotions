@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cpSync, mkdtempSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +13,7 @@ import {
 import { isJsonObject, type JsonObject } from "../../src/json-write.js";
 import { propose, type Proposal } from "../../src/propose.js";
 import type { Finding, FindingCode } from "../../src/report.js";
-import { ModuleCache, parseModule } from "../../src/scan.js";
+import { ModuleCache } from "../../src/scan.js";
 
 /** Shared plumbing for the fixture-driven proposal tests. */
 
@@ -51,21 +51,56 @@ export interface ComponentExtraction {
   readonly findings: readonly Finding[];
 }
 
+/**
+ * Extracts every component the named entry modules declare, exactly as the
+ * proposer does, with the whole file set on disk beside them so imports
+ * resolve.
+ *
+ * This is the ONLY statement of that prelude. Seven copies of it were spread
+ * over six files, which pinned `extractComponent`'s signature in as many places
+ * as there were copies and let the copies drift apart.
+ *
+ * Every entry shares one scratch root and one `ModuleCache`, and that sharing
+ * is load-bearing rather than a saving: a candidate's identity carries the
+ * absolute path of the module it was DECLARED in, so writing the fixture out
+ * once per entry would give one declaration two identities and the gate would
+ * refuse the pair it is supposed to merge.
+ */
+export function extractEntries(
+  files: Readonly<Record<string, string>>,
+  entries: readonly string[],
+): ComponentExtraction {
+  const directory = mkdtempSync(join(tmpdir(), "managed-site-extract-"));
+  for (const [relative, text] of Object.entries(files)) {
+    const file = join(directory, relative);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, text, "utf8");
+  }
+  const cache = new ModuleCache();
+  const extractions = entries.flatMap((entry) => {
+    const sourceModule = cache.read(join(directory, entry));
+    const roles = resolveTagRoles(sourceModule);
+    return findComponentDeclarations(sourceModule).map((declaration) =>
+      extractComponent(declaration, roles, directory, cache),
+    );
+  });
+  return {
+    candidates: extractions.flatMap((one) => one.candidates),
+    findings: extractions.flatMap((one) => one.findings),
+  };
+}
+
+/** Extracts every component one entry module declares, the file set beside it. */
+export function extractFiles(
+  files: Readonly<Record<string, string>>,
+  entry: string,
+): ComponentExtraction {
+  return extractEntries(files, [entry]);
+}
+
 /** Extracts every component one module declares, exactly as the proposer does. */
 export function extractModule(source: string): ComponentExtraction {
-  const directory = mkdtempSync(join(tmpdir(), "managed-site-extract-"));
-  const file = join(directory, "Component.tsx");
-  writeFileSync(file, source, "utf8");
-  const sourceModule = parseModule(file);
-  const roles = resolveTagRoles(sourceModule);
-  const cache = new ModuleCache();
-  const extracted = findComponentDeclarations(sourceModule).map((declaration) =>
-    extractComponent(declaration, roles, directory, cache),
-  );
-  return {
-    candidates: extracted.flatMap((entry) => entry.candidates),
-    findings: extracted.flatMap((entry) => entry.findings),
-  };
+  return extractFiles({ "Component.tsx": source }, "Component.tsx");
 }
 
 export function findingsOf(proposal: Proposal, code: FindingCode): readonly Finding[] {

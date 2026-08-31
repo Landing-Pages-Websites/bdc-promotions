@@ -1,7 +1,4 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
 import test from "node:test";
 
 import { renderAnchor } from "../src/anchors.js";
@@ -9,8 +6,7 @@ import type { Candidate } from "../src/candidates.js";
 import { bindCandidates, type PageBinding } from "../src/bindings.js";
 import { applyConfidenceGate } from "../src/gate.js";
 import { IdLedger } from "../src/id-ledger.js";
-import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
-import { ModuleCache } from "../src/scan.js";
+import { extractEntries } from "./support/proposals.js";
 
 /**
  * What a COLLISION means depends on what decided the identity.
@@ -27,24 +23,21 @@ interface Extracted {
   readonly refused: readonly string[];
 }
 
+/**
+ * Every module in the set is an entry, because these rows are about values
+ * SHARED across modules and no single module renders them all.
+ *
+ * The entries share one scratch root, which is the whole point of passing them
+ * together: a candidate declared in `lib/content.ts` is identified by that
+ * file's absolute path, so extracting each entry into a root of its own would
+ * give one declaration two identities and the gate would refuse the readings
+ * it is supposed to merge.
+ */
 function extractRepository(files: Readonly<Record<string, string>>): Extracted {
-  const root = mkdtempSync(join(tmpdir(), "managed-site-declared-"));
-  for (const [relative, text] of Object.entries(files)) {
-    const file = join(root, relative);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, text, "utf8");
-  }
-  const cache = new ModuleCache();
-  const candidates: Candidate[] = [];
-  for (const relative of Object.keys(files)) {
-    if (!relative.endsWith(".tsx") && !relative.endsWith(".ts")) continue;
-    const parsed = cache.read(join(root, relative));
-    const roles = resolveTagRoles(parsed);
-    for (const declaration of findComponentDeclarations(parsed)) {
-      candidates.push(...extractComponent(declaration, roles, root, cache).candidates);
-    }
-  }
-  const gated = applyConfidenceGate(candidates);
+  const modules = Object.keys(files).filter(
+    (relative) => relative.endsWith(".tsx") || relative.endsWith(".ts"),
+  );
+  const gated = applyConfidenceGate(extractEntries(files, modules).candidates);
   return {
     accepted: gated.accepted,
     refused: gated.findings.map((finding) => finding.code),

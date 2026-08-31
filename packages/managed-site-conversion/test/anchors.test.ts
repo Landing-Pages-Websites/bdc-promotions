@@ -5,19 +5,11 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { renderAnchor } from "../src/anchors.js";
-import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
-import { ModuleCache, parseModule } from "../src/scan.js";
+import { extractModule } from "./support/proposals.js";
 
 function anchorsOf(source: string): readonly string[] {
-  const directory = mkdtempSync(join(tmpdir(), "managed-site-anchors-"));
-  const file = join(directory, "Component.tsx");
-  writeFileSync(file, source, "utf8");
-  const sourceModule = parseModule(file);
-  const roles = resolveTagRoles(sourceModule);
-  const cache = new ModuleCache();
-  return findComponentDeclarations(sourceModule)
-    .flatMap((declaration) => extractComponent(declaration, roles, directory, cache).candidates)
-    .map((candidate) => renderAnchor(candidate.anchor))
+  return extractModule(source)
+    .candidates.map((candidate) => renderAnchor(candidate.anchor))
     .sort();
 }
 

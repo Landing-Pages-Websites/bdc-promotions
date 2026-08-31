@@ -1,13 +1,7 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
 import test from "node:test";
 
-import type { Candidate } from "../src/candidates.js";
-import { extractComponent, findComponentDeclarations, resolveTagRoles } from "../src/extract.js";
-import type { Finding } from "../src/report.js";
-import { ModuleCache } from "../src/scan.js";
+import { type ComponentExtraction, extractFiles } from "./support/proposals.js";
 
 /**
  * What the CALLER writes, read against what the receiver does with it.
@@ -19,31 +13,11 @@ import { ModuleCache } from "../src/scan.js";
  * actually renders.
  */
 
-interface Extracted {
-  readonly candidates: readonly Candidate[];
-  readonly findings: readonly Finding[];
+function extractCaller(files: Readonly<Record<string, string>>): ComponentExtraction {
+  return extractFiles(files, "Caller.tsx");
 }
 
-function extractCaller(files: Readonly<Record<string, string>>): Extracted {
-  const root = mkdtempSync(join(tmpdir(), "managed-site-caller-"));
-  for (const [relative, text] of Object.entries(files)) {
-    const file = join(root, relative);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, text, "utf8");
-  }
-  const cache = new ModuleCache();
-  const parsed = cache.read(join(root, "Caller.tsx"));
-  const roles = resolveTagRoles(parsed);
-  const results = findComponentDeclarations(parsed).map((declaration) =>
-    extractComponent(declaration, roles, root, cache),
-  );
-  return {
-    candidates: results.flatMap((result) => result.candidates),
-    findings: results.flatMap((result) => result.findings),
-  };
-}
-
-function editableValues(extracted: Extracted): readonly string[] {
+function editableValues(extracted: ComponentExtraction): readonly string[] {
   return extracted.candidates
     .filter((candidate) => candidate.ownership === "customer_editable")
     .map((candidate) => (candidate.kind === "plain_text" ? candidate.value : ""))
