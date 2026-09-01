@@ -225,22 +225,18 @@ test("the renderer supports the block set the MEGA migrator emits", () => {
     "code",
     "image",
   ];
-  const markdown = read("src/lib/markdown.ts");
-  for (const kind of documented) {
-    assert.match(
-      markdown,
-      new RegExp(`kind:\\s*"${kind}"`),
-      `src/lib/markdown.ts no longer emits the "${kind}" block`,
-    );
-  }
   // The block set and the inline set are separate contracts that happen to
   // share two names ("code", "image"), so each is derived from its own type
-  // declaration rather than from one union of string literals.
+  // declaration rather than from one union of string literals. `Block` is
+  // declared beside BLOCK_KINDS; `InlineNode` is declared in the leaf module
+  // both grammars build nodes with.
+  const DECLARED_IN = { Block: "src/lib/markdown.ts", InlineNode: "src/lib/inline.ts" };
+  const markdown = read("src/lib/markdown.ts");
   const union = (name) => {
-    const declaration = markdown.match(
+    const declaration = read(DECLARED_IN[name]).match(
       new RegExp(`export type ${name} =([\\s\\S]*?);\\n`),
     );
-    assert.ok(declaration, `cannot read the ${name} declaration`);
+    assert.ok(declaration, `cannot read the ${name} declaration in ${DECLARED_IN[name]}`);
     const kinds = [...declaration[1].matchAll(/kind:\s*"([a-z]+)"/g)].map((m) => m[1]);
     assert.ok(kinds.length > 0, `${name} declares no kinds`);
     return kinds;
@@ -251,20 +247,41 @@ test("the renderer supports the block set the MEGA migrator emits", () => {
     "the Block type and the documented set disagree",
   );
 
-  // The HTML body parser emits the same two types, so it is a second place the
-  // sets could be widened without markdown.ts changing. A kind it names that is
-  // in neither declaration means the migrator in mega-clawhub
-  // (SUPPORTED_BLOCKS) and the CMS rich-text grammar are now out of sync.
+  // BLOCK_KINDS is the value the migrator's SUPPORTED_BLOCKS mirrors, and it is
+  // written out by hand, so it is checked against the type rather than trusted.
+  const listed = [...markdown.matchAll(/^ {2}"([a-z]+)",$/gm)].map((m) => m[1]);
+  assert.deepEqual(
+    [...listed].sort(),
+    [...documented].sort(),
+    "BLOCK_KINDS and the documented set disagree",
+  );
+
   const known = new Set([...union("Block"), ...union("InlineNode")]);
-  const html = read("src/lib/html-blocks.ts");
+  // Every module that builds nodes is a place the sets could be widened without
+  // the declarations changing, so the list of modules to check is READ from the
+  // directory rather than named here — a new module is covered the day it lands.
+  // A kind any of them names that is in neither declaration means the migrator
+  // in mega-clawhub (SUPPORTED_BLOCKS) and the CMS rich-text grammar are now out
+  // of sync.
+  const modules = readdirSync(join(root, "src/lib"))
+    .filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts"))
+    .map((name) => [name, read(`src/lib/${name}`)])
+    // A module that names neither type builds neither, so its own `kind` fields
+    // are its own business: the scanner's `kind: "comment"` is a construct, not
+    // a node.
+    .filter(([, source]) => /\b(Block|InlineNode)\b/.test(source));
+  assert.ok(modules.length >= 4, `expected the parser modules, found ${modules.length}`);
+  for (const [name, source] of modules) {
+    for (const [, kind] of source.matchAll(/kind:\s*"([a-z]+)"/g)) {
+      assert.ok(known.has(kind), `src/lib/${name} emits the unknown kind "${kind}"`);
+    }
+  }
+  // And the Block type still comes from the module that documents the contract.
   assert.match(
-    html,
+    read("src/lib/html-blocks.ts"),
     /import type \{[^}]*\bBlock\b[^}]*\} from "\.\/markdown"/,
     "src/lib/html-blocks.ts no longer takes its Block type from markdown.ts",
   );
-  for (const [, kind] of html.matchAll(/kind:\s*"([a-z]+)"/g)) {
-    assert.ok(known.has(kind), `src/lib/html-blocks.ts emits the unknown kind "${kind}"`);
-  }
   // The renderer must handle every kind the parser can emit. Asserting on
   // branches rather than on literal tags: the list tag is chosen dynamically,
   // so matching "<ol" would fail on a correct renderer.

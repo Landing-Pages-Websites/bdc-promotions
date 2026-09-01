@@ -1,13 +1,46 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  looksLikeHtmlBody,
-  parseBlocks,
-  parseInline,
-  type Block,
-  type InlineNode,
-} from "./markdown.ts";
+import { parseBlocks, parseInline, type Block, type InlineNode } from "./markdown.ts";
+
+/** Every string a reader can end up seeing, from every block kind. */
+function visibleTextOf(blocks: Block[]): string[] {
+  const fromInline = (nodes: InlineNode[]): string[] => [visibleText(nodes)];
+  return blocks.flatMap((block) => {
+    switch (block.kind) {
+      case "paragraph":
+      case "heading":
+        return fromInline(block.inline);
+      case "list": {
+        const items = (list: typeof block.items): string[] =>
+          list.flatMap((item) => [
+            ...fromInline(item.inline),
+            ...item.children.flatMap((group) => items(group.items)),
+          ]);
+        return items(block.items);
+      }
+      case "blockquote":
+        return block.lines.flatMap(fromInline);
+      case "table":
+        return [block.header, ...block.rows].flatMap((row) => row.flatMap(fromInline));
+      case "code":
+        return [block.text];
+      default:
+        return [block.alt, block.src];
+    }
+  });
+}
+
+/** Every string a reader can end up seeing in a run of inline nodes. */
+function visibleText(nodes: InlineNode[]): string {
+  return nodes
+    .map((node) => {
+      if (node.kind === "link") return `${node.text} ${node.href}`;
+      if (node.kind === "image") return `${node.alt} ${node.src}`;
+      return node.value;
+    })
+    .join(" ");
+}
 
 function kinds(source: string): string[] {
   return parseBlocks(source).map((block) => block.kind);
@@ -103,17 +136,15 @@ test("inline HTML inside a markdown body becomes nodes, never source", () => {
     ['<a href="/x">**Buy**</a>', [{ kind: "link", text: "Buy", href: "/x" }]],
     ["<b>**bold**</b>", [{ kind: "strong", value: "bold" }]],
     ["a &amp; b <b>c</b>", [{ kind: "text", value: "a & b " }, { kind: "strong", value: "c" }]],
-    // No tag in the fragment: the HTML pass never runs, so prose about an
-    // entity still reads as the prose it is.
-    ["AT&amp;T sells them", [{ kind: "text", value: "AT&amp;T sells them" }]],
-    ["A comment <!-- hidden --> gone", [{ kind: "text", value: "A comment  gone" }]],
-    // Prose that merely looks like a tag. Unwrapping an unrecognised name here
-    // would delete the words, so a fragment carrying one is left as written.
-    [
-      "Mail <sales@example.com> today.",
-      [{ kind: "text", value: "Mail <sales@example.com> today." }],
-    ],
-    ["use List<string> here", [{ kind: "text", value: "use List<string> here" }]],
+    // One grammar for every body, so an entity decodes wherever it was written
+    // rather than only in the bodies that happened to carry a tag as well.
+    ["AT&amp;T sells them", [{ kind: "text", value: "AT&T sells them" }]],
+    ["A comment <!-- hidden --> gone", [{ kind: "text", value: "A comment gone" }]],
+    // Prose that looks like a tag IS a tag now, and is unwrapped by rule 2 —
+    // which is what a browser does with the same bytes. The bracketed text goes;
+    // it is never printed at the reader as source, which is the invariant.
+    ["Mail <sales@example.com> today.", [{ kind: "text", value: "Mail today." }]],
+    ["use List<string> here", [{ kind: "text", value: "use List here" }]],
     // A code span is verbatim, so the HTML pass never sees inside one.
     [
       "Use `<div>` to wrap it.",
@@ -132,15 +163,11 @@ test("inline HTML inside a markdown body becomes nodes, never source", () => {
         { kind: "strong", value: "bold" },
       ],
     ],
-    // Every placeholder-bearing slot is expanded, href included, or the cursor
-    // slides and every later node takes the wrong one.
+    // A destination interrupted by markup is not a destination, so no link is
+    // built from it — and the nodes that follow still land in source order.
     [
       "[click](https://x.com/<b>W</b>) then <i>later</i>",
-      [
-        { kind: "link", text: "click", href: "https://x.com/W" },
-        { kind: "text", value: " then " },
-        { kind: "em", value: "later" },
-      ],
+      [{ kind: "text", value: "click then " }, { kind: "em", value: "later" }],
     ],
   ];
   for (const [source, expected] of table) {
@@ -224,44 +251,61 @@ test("inert markup is dropped on the markdown path too, and never escaped", () =
   }
 });
 
-test("a body cannot forge the placeholders that hold a node's place", () => {
-  // `&#xFFFC;` decodes to the sentinel this module uses while it re-tokenizes.
-  // If a body could produce one, it would consume a node's slot and slide every
-  // later node onto the wrong one — reordering the paragraph, silently.
+test("a body cannot displace a node by spelling a character", () => {
+  // #58 finding 1. A node's place used to be held by a sentinel CHARACTER, so
+  // `&#xFFFC;` in a body consumed a node's slot and slid every later node onto
+  // the wrong one, reordering the paragraph silently. A place is a list entry
+  // now, so there is no character left to spell: these decode like any other,
+  // and every node stays where the body put it.
   const table: [string, InlineNode[]][] = [
     [
       "<b>x</b>&#xFFFC;<i>y</i>",
       [
         { kind: "strong", value: "x" },
-        { kind: "text", value: "&#xFFFC;" },
+        { kind: "text", value: "\ufffc" },
         { kind: "em", value: "y" },
       ],
     ],
     [
       "&#xFFF9;<b>x</b> and `c`",
       [
-        { kind: "text", value: "&#xFFF9;" },
+        { kind: "text", value: "\ufff9" },
         { kind: "strong", value: "x" },
         { kind: "text", value: " and " },
         { kind: "code", value: "c" },
       ],
     ],
-    // A literal one typed into the body is stripped at entry rather than
-    // decoded, so neither route can smuggle one in.
-    // Stripped, then the HTML path collapses the whitespace it left behind.
-    ["a \ufffc b <b>c</b>", [{ kind: "text", value: "a b " }, { kind: "strong", value: "c" }]],
+    // Written literally rather than as an entity: the same, because neither
+    // spelling means anything to the parser.
+    [
+      "a \ufffc b <b>c</b>",
+      [{ kind: "text", value: "a \ufffc b " }, { kind: "strong", value: "c" }],
+    ],
+    [
+      "one `c` two <b>three</b> four [five](/5) six",
+      [
+        { kind: "text", value: "one " },
+        { kind: "code", value: "c" },
+        { kind: "text", value: " two " },
+        { kind: "strong", value: "three" },
+        { kind: "text", value: " four " },
+        { kind: "link", text: "five", href: "/5" },
+        { kind: "text", value: " six" },
+      ],
+    ],
   ];
   for (const [source, expected] of table) {
     assert.deepEqual(parseInline(source), expected, JSON.stringify(source));
   }
 });
 
-test("a tag-shaped string in an attribute does not defeat the detector", () => {
-  // The balance test is counted from the tokenizer's tag boundaries, not from a
-  // regex: `<a>` inside `title="<a>"` is a string, and counting it as an
-  // unclosed anchor shipped the whole paragraph as escaped source.
+test("quoted attribute content does not stop inline HTML from parsing", () => {
+  // #58 finding 6. Tag-shaped text inside an attribute value used to make the
+  // whole paragraph fail to parse as HTML, and it then shipped to the reader as
+  // escaped source. The scanner is the only thing that decides where a tag is,
+  // so a quoted value is a string to every layer above it.
   const table: [string, InlineNode[]][] = [
-    ['Intro <p title="<a>">visible</p>', [{ kind: "text", value: "Intro  visible" }]],
+    ['Intro <p title="<a>">visible</p>', [{ kind: "text", value: "Intro visible" }]],
     [
       'Read <a href="/x" title="<b>quoted</b>">now</a> please',
       [
@@ -281,46 +325,165 @@ test("a tag-shaped string in an attribute does not defeat the detector", () => {
     // A single-quoted value, an unquoted value carrying `>`, a bare `<` that is
     // not tag-shaped, an apparent close tag, and a comment holding tag-shaped
     // text: every one of these used to skew the count.
-    ["Intro <p title='<a>'>visible</p>", [{ kind: "text", value: "Intro  visible" }]],
-    ["Intro <p data-x=a>b>visible</p>", [{ kind: "text", value: "Intro  b>visible" }]],
-    ['Intro <p title="a < b">visible</p>', [{ kind: "text", value: "Intro  visible" }]],
-    ['Intro <p title="</p>">visible</p>', [{ kind: "text", value: "Intro  visible" }]],
+    ["Intro <p title='<a>'>visible</p>", [{ kind: "text", value: "Intro visible" }]],
+    ["Intro <p data-x=a>b>visible</p>", [{ kind: "text", value: "Intro b>visible" }]],
+    ['Intro <p title="a < b">visible</p>', [{ kind: "text", value: "Intro visible" }]],
+    ['Intro <p title="</p>">visible</p>', [{ kind: "text", value: "Intro visible" }]],
     ["<!-- <a> --><b>x</b>", [{ kind: "strong", value: "x" }]],
     // A dropped-tag spelling inside an attribute is a string, not an element.
     // Believing it deleted the rest of the document and then escaped what was
     // left onto the page.
-    ['Intro <p title="<script>">visible</p>', [{ kind: "text", value: "Intro  visible" }]],
-    ["Intro <p title='<style>'>visible</p>", [{ kind: "text", value: "Intro  visible" }]],
-    // Still prose, because the name is unknown or the element never closes.
-    ["The <section> tag groups content.", [{ kind: "text", value: "The <section> tag groups content." }]],
-    ["use List<string> here", [{ kind: "text", value: "use List<string> here" }]],
+    ['Intro <p title="<script>">visible</p>', [{ kind: "text", value: "Intro visible" }]],
+    ["Intro <p title='<style>'>visible</p>", [{ kind: "text", value: "Intro visible" }]],
+    // Prose naming a tag is unwrapped like any other tag, as a browser does.
+    // The words survive; the brackets are never printed at the reader.
+    ["The <section> tag groups content.", [{ kind: "text", value: "The tag groups content." }]],
+    ["use List<string> here", [{ kind: "text", value: "use List here" }]],
   ];
   for (const [source, expected] of table) {
     assert.deepEqual(parseInline(source), expected, source);
+    assert.ok(!visibleText(parseInline(source)).includes("<"), source);
   }
 });
 
-test("the routing decision uses real tag positions, not line shapes", () => {
-  // The same class one level up: a line that only LOOKS like it opens a tag,
-  // because it sits inside a quoted value, a comment or a code fence, must not
-  // send a markdown body to the HTML parser and lose its structure.
-  const table: [string, boolean][] = [
-    ['Intro.\n\nSee <a href="/x"\ntitle="\n<p>not a tag">here</a>.\n\n## Head', false],
-    ["Intro.\n\n<!--\n<p>commented</p>\n-->\n\n## Head", false],
-    ["Intro.\n\n```\n<p>example</p>\n```\n\n## Head", false],
-    // A real block tag opening a real line still routes to HTML.
-    ["<p>Real.</p>\n<h2>Head</h2>", true],
-    ['<script type="application/ld+json">{}</script>Lead prose.\n<p>x</p>', true],
+test("a body carrying both grammars keeps the structure of each", () => {
+  // There is no routing decision left to get wrong. The tags give the blocks
+  // and the text between them gives the rest, so a body that is markdown with a
+  // stray wrapper in it, or HTML with markdown between its tags, keeps both.
+  const table: [string, string[]][] = [
+    ['Intro.\n\nSee <a href="/x"\ntitle="\n<p>not a tag">here</a>.\n\n## Head', [
+      "paragraph",
+      "paragraph",
+      "heading:2",
+    ]],
+    ["Intro.\n\n<!--\n<p>commented</p>\n-->\n\n## Head\n\n- one", [
+      "paragraph",
+      "heading:2",
+      "list",
+    ]],
+    // A fence is verbatim wherever it sits, so the tag inside it is content and
+    // the heading after it is still a heading.
+    ["Intro.\n\n```\n<p>example</p>\n```\n\n## Head", ["paragraph", "code", "heading:2"]],
+    ['Intro.\n\n<div class="cta">Call now</div>\n\n## Heading\n\n- one', [
+      "paragraph",
+      "paragraph",
+      "heading:2",
+      "list",
+    ]],
+    ["<p>Real.</p>\n<h2>Head</h2>", ["paragraph", "heading:2"]],
+    ['<script type="application/ld+json">{}</script>Lead prose.\n<p>x</p>', [
+      "paragraph",
+      "paragraph",
+    ]],
+    // Markdown between two top-level tags is read as markdown, which is what
+    // the old per-body veto existed to protect and now needs no veto.
+    ["<p>Lead.</p>\n\n## Head\n\n- one\n- two\n\n<p>Tail.</p>", [
+      "paragraph",
+      "heading:2",
+      "list",
+      "paragraph",
+    ]],
   ];
   for (const [source, expected] of table) {
-    assert.equal(looksLikeHtmlBody(source), expected, JSON.stringify(source));
+    const blocks = parseBlocks(source);
+    assert.deepEqual(
+      blocks.map((block) => (block.kind === "heading" ? `heading:${block.level}` : block.kind)),
+      expected,
+      JSON.stringify(source),
+    );
   }
-  // And the markdown bodies keep their structure rather than collapsing.
-  const blocks = parseBlocks("Intro.\n\n<!--\n<p>commented</p>\n-->\n\n## Head\n\n- one");
+});
+
+test("a body parses the same whatever its line endings are", () => {
+  // Review round 2. The block-local code-span bound recognised a blank line
+  // only as `\n` + spaces + `\n`, so in CRLF text — where a blank line starts
+  // with `\r` — the bound was never found, and a code span reached past a
+  // heading and swallowed it.
+  //
+  // Asserted as the property rather than that one shape: nine places in this
+  // parser look for a newline, so the fix is to normalise once at the scanner
+  // (as the HTML spec's input preprocessing does) and this test is what says
+  // no tenth place has to be taught.
+  const bodies: [string, string][] = [
+    // The reported case: a code span opening before a CRLF blank line, with an
+    // HTML block after it that must survive as a block.
+    ["a span across a blank line", "Intro `x\n\n<h2>Section</h2>\n\n` tail"],
+    ["paragraphs", "One.\n\nTwo.\n\nThree."],
+    ["a wrapped paragraph", "One line\nsecond line"],
+    ["a heading and a list", "## Head\n\n- a\n- b\n\n1. c"],
+    ["a fence", "```\nnpm run build\n```"],
+    ["a fence holding a blank line", "```\nfirst\n\nsecond\n```"],
+    ["an indented closing fence", "  ```\nindented\n  ```"],
+    ["a table", "| A | B |\n| --- | --- |\n| 1 | 2 |"],
+    ["a blockquote", "> One.\n> Two."],
+    ["html blocks", "<p>a</p>\n\n<h2>b</h2>\n\n<ul><li>c</li></ul>"],
+    ["html holding a pre", "<pre>one\ntwo</pre>\n\n<p>after</p>"],
+    ["a mark and a link", "A **bold** word and a [link](/x)."],
+  ];
+  for (const [name, body] of bodies) {
+    const lf = parseBlocks(body);
+    // Every block kind still present, so a swallowed heading cannot pass.
+    assert.ok(lf.length > 0, name);
+    assert.deepEqual(parseBlocks(body.replace(/\n/g, "\r\n")), lf, `${name}: CRLF`);
+    assert.deepEqual(parseBlocks(body.replace(/\n/g, "\r")), lf, `${name}: CR`);
+  }
+
+  // And the reported case specifically keeps its heading as a heading.
   assert.deepEqual(
-    blocks.map((block) => (block.kind === "heading" ? `heading:${block.level}` : block.kind)),
-    ["paragraph", "heading:2", "list"],
+    parseBlocks("Intro `x\r\n\r\n<h2>Section</h2>\r\n\r\n` tail").map((block) =>
+      block.kind === "heading" ? `heading:${block.level}` : block.kind,
+    ),
+    ["paragraph", "heading:2", "paragraph"],
   );
+});
+
+test("a code span cannot smuggle dropped content past rule 1", () => {
+  // Review round 1 on this PR. The verbatim lexer picked its OPENER in text
+  // position but found its CLOSER with an unrestricted search, so a backtick in
+  // prose could pair with one inside a later tag, swallow that tag's opener, and
+  // leave the element's payload on the page as ordinary paragraph words.
+  //
+  // Asserted as the outcome across the whole class, not the one shape cited:
+  // the closer inside an attribute of each dropped tag, inside a dropped
+  // element's body, inside a comment, inside a non-dropped element's attribute,
+  // and a code span that would wrap a whole terminated dropped element.
+  const table: [string, string][] = [
+    ['<p>before `x <script title="x`">alert(1)</script>after</p>', "alert(1)"],
+    ['<p>before `x <style title="x`">body{}</style>after</p>', "body{}"],
+    ['<p>before `x <template title="x`">hidden</template>after</p>', "hidden"],
+    ['<p>before `x <noscript title="x`">hidden</noscript>after</p>', "hidden"],
+    ['<p>before `x <script>var s = "`";alert(1)</script>after</p>', "alert(1)"],
+    ['<p>a `b <noscript title="c`">SECRET</noscript> d`</p>', "SECRET"],
+    ["<p>a `b <script>alert(1)</script> c`</p>", "alert(1)"],
+    ["`<script>alert(1)</script>`", "alert(1)"],
+  ];
+  for (const [source, payload] of table) {
+    for (const text of visibleTextOf(parseBlocks(source))) {
+      assert.ok(!text.includes(payload), `${source} => ${text}`);
+    }
+  }
+
+  // And the prose the feature exists for still works: an unterminated dropped
+  // tag has no content to reveal, so naming one in a code span is still prose
+  // about a tag.
+  assert.deepEqual(parseInline("Use `<script>` carefully"), [
+    { kind: "text", value: "Use " },
+    { kind: "code", value: "<script>" },
+    { kind: "text", value: " carefully" },
+  ]);
+  assert.deepEqual(parseInline("Use `<div>` to wrap it."), [
+    { kind: "text", value: "Use " },
+    { kind: "code", value: "<div>" },
+    { kind: "text", value: " to wrap it." },
+  ]);
+});
+
+test("a fence keeps its tags and a heading beside it stays a heading", () => {
+  // #58 finding 4, from the other side: rule 1 removes inert markup wherever it
+  // is written, and a fence is not inert markup, it is displayed content.
+  const fenced = parseBlocks("## Head\n\n```\n<script>alert(1)</script>\n```");
+  assert.deepEqual(fenced.map((block) => block.kind), ["heading", "code"]);
+  assert.equal(fenced[1].kind === "code" && fenced[1].text, "<script>alert(1)</script>");
 });
 
 test("an unknown wrapper is markup, not text", () => {
@@ -363,27 +526,34 @@ test("a code span and a fence keep the tags they are about", () => {
   assert.equal(fence.kind === "code" && fence.text, "<script>alert(1)</script>");
 });
 
-test("a URL is checked after it is reassembled, not before", () => {
-  // Inline HTML inside a destination hides the scheme from the check:
-  // `java<b>script</b>:alert(1)` reaches the tokenizer as `java\uFFFCscript:…`,
-  // which reads as a relative path. Expanding it rebuilds `javascript:alert(1)`,
-  // so the string the page would carry has to be the string that is judged.
+test("a destination interrupted by markup never becomes a URL", () => {
+  // #58 finding 3. A destination used to be reassembled out of pieces after the
+  // scheme check had already passed over it: `java<b>script</b>:alert` reached
+  // the old tokenizer with the tag masked out, read as a relative path, and was
+  // rebuilt into `javascript:alert(1)` afterwards. A destination is now one
+  // contiguous run of source text or it is not a destination, so there is no
+  // transformation left to run the check on the wrong side of.
   const table: [string, InlineNode[]][] = [
-    [
-      "[Click](java<b>script</b>:alert)",
-      [{ kind: "text", value: "Click" }],
-    ],
+    ["[Click](java<b>script</b>:alert)", [{ kind: "text", value: "Click" }]],
     ["[Click](java<b></b>script:alert)", [{ kind: "text", value: "Click" }]],
     ["![Alt](java<b>script</b>:alert)", [{ kind: "text", value: "Alt" }]],
     ["[Click](<b>vb</b>script:x)", [{ kind: "text", value: "Click" }]],
-    // A safe destination carrying inline HTML still resolves to a link.
+    ["[Click](java<!-- c -->script:alert)", [{ kind: "text", value: "Click" }]],
+    ["[Click](java<img src=x>script:alert)", [{ kind: "text", value: "Click" }]],
+    // Even a destination that WOULD have been safe is refused, because the rule
+    // is about where a URL may be read from and not about what it says.
+    ["[Click](/pric<b>ing</b>)", [{ kind: "text", value: "Click" }]],
+    // A destination that really is one run of text still resolves to a link.
+    ["[Click](/pricing)", [{ kind: "link", text: "Click", href: "/pricing" }]],
     [
-      "[Click](/pric<b>ing</b>)",
-      [{ kind: "link", text: "Click", href: "/pricing" }],
+      '<a href="java&#115;cript:alert(1)">Click</a>',
+      [{ kind: "text", value: "Click" }],
     ],
   ];
   for (const [source, expected] of table) {
-    assert.deepEqual(parseInline(source), expected, source);
+    const nodes = parseInline(source);
+    assert.deepEqual(nodes, expected, source);
+    assert.ok(!/javascript:|vbscript:/i.test(visibleText(nodes)), source);
   }
 });
 
@@ -687,6 +857,130 @@ test("the full converter output shape parses to the documented block set", () =>
     "image",
     "paragraph",
   ]);
+});
+
+test("a markdown construct interrupted by a tag is not that construct", () => {
+  // The grammar runs on the text between tags, so a tag ends whatever markdown
+  // run it lands in. Every row asserts the same two things: the words survive,
+  // and nothing that was markup in the source is printed as text.
+  const table: [string, InlineNode[]][] = [
+    // A mark may still BRACKET a tag, because the run either side of it is one
+    // run: the `**` opens in one text node and closes in another. `strong`
+    // holds a plain string, so the mark yields to what it wrapped rather than
+    // printing its own asterisks.
+    [
+      "**a <b>bold</b> c** after",
+      [
+        { kind: "text", value: "a " },
+        { kind: "strong", value: "bold" },
+        { kind: "text", value: " c after" },
+      ],
+    ],
+    // A label may hold a tag; a destination may not.
+    ["[a <b>b</b> c](/x)", [{ kind: "link", text: "a b c", href: "/x" }]],
+    ["![a <b>b</b> c](/i.jpg)", [{ kind: "image", alt: "a b c", src: "/i.jpg" }]],
+    // An unterminated mark is punctuation and prints as written, which is what
+    // it was in the source and what every markdown renderer does with it.
+    ["**a <b>b</b>", [{ kind: "text", value: "**a " }, { kind: "strong", value: "b" }]],
+  ];
+  for (const [source, expected] of table) {
+    assert.deepEqual(parseInline(source), expected, source);
+    assert.ok(!visibleText(parseInline(source)).includes("<"), source);
+  }
+});
+
+test("text is decoded exactly once, wherever it came from", () => {
+  // An attribute is decoded by the scanner and body text by the grammar, so an
+  // attribute value that re-enters the text stream is decoded twice and loses a
+  // level: `A &amp;amp; B` became `A & B` instead of `A &amp; B`.
+  const table: [string, InlineNode[]][] = [
+    [
+      '<img src="/i.jpg" alt="A &amp;amp; B">',
+      [{ kind: "image", src: "/i.jpg", alt: "A &amp; B" }],
+    ],
+    // The same alt, reached through the refused-src fallback, where it becomes
+    // the only text the image carried.
+    [
+      '<img src="tel:x" alt="A &amp;amp; B">',
+      [{ kind: "text", value: "A &amp; B" }],
+    ],
+    ['<p>a &amp;amp; b</p>', [{ kind: "text", value: "a &amp; b" }]],
+    ['<a href="/x">A &amp;amp; B</a>', [{ kind: "link", text: "A &amp; B", href: "/x" }]],
+    ["A &amp;amp; B", [{ kind: "text", value: "A &amp; B" }]],
+    // An alt is an attribute, not body text, so markdown never runs on one —
+    // the same reason the grammar never runs on an href.
+    [
+      '<img src="/i.jpg" alt="**Alt**">',
+      [{ kind: "image", src: "/i.jpg", alt: "**Alt**" }],
+    ],
+    // The markdown spelling puts the alt in body text, where marks DO resolve.
+    ["![**Alt**](/i.jpg)", [{ kind: "image", alt: "Alt", src: "/i.jpg" }]],
+  ];
+  for (const [source, expected] of table) {
+    assert.deepEqual(parseInline(source), expected, source);
+  }
+});
+
+test("a paragraph element is a paragraph, and its text is read for marks only", () => {
+  // Block-level markdown is read where a block could begin, which is between
+  // tags. Inside a `<p>` the block is already decided, so a line that opens with
+  // a marker is that paragraph's own content — which is what prettier-formatted
+  // and CMS-exported bodies are full of.
+  const inside = parseBlocks("<p>## Not a heading</p><p>- not a list</p>");
+  assert.deepEqual(inside.map((block) => block.kind), ["paragraph", "paragraph"]);
+  const between = parseBlocks("<p>Lead.</p>\n\n## A heading\n\n- a list");
+  assert.deepEqual(
+    between.map((block) => (block.kind === "heading" ? `heading:${block.level}` : block.kind)),
+    ["paragraph", "heading:2", "list"],
+  );
+});
+
+test("a body stays linear, however it is malformed", () => {
+  // Every delimiter the grammar scans for is a construct a body can repeat for
+  // free, so each has to cost its own scan and not the whole tail. Asserted as
+  // a growth ratio, not a stopwatch: a wall-clock bound passes a quadratic on a
+  // fast machine, and both shapes below WERE quadratic (a 128KB run of `[`
+  // took 3.1s, a 246KB `<pre>` holding markup took 0.9s).
+  const shapes: [string, (size: number) => string][] = [
+    // A closer exists, so the bound cannot short-circuit; only not rescanning can.
+    ["unclosed brackets", (size) => "[".repeat(size) + "a] )"],
+    ["unclosed images", (size) => "![".repeat(size / 2) + "a] )"],
+    ["unclosed destinations", (size) => "[a](".repeat(size / 4)],
+    // `textOf` used to join its accumulator once per node of the subtree.
+    ["markup inside a pre", (size) => `<pre>${"<p>x</p>\n".repeat(size / 9)}</pre>`],
+    ["marks", (size) => "*".repeat(size)],
+    ["backticks", (size) => "`".repeat(size)],
+    // The verbatim closer walks constructs to stay in text position, so each of
+    // these makes it walk: a span that never closes, one that closes past many
+    // tags, and delimiters it must refuse.
+    ["a span that never closes", (size) => `\`x ${"a".repeat(size)}`],
+    ["a span closing past tags", (size) => `\`x ${"<b>y</b>".repeat(size / 8)}\``],
+    ["backticks in attributes", (size) => '<p title="`">t</p>'.repeat(size / 18)],
+    ["backticks beside dropped tags", (size) => "`x <script>a</script> ".repeat(size / 21)],
+    ["table rows", (size) => "| a |\n".repeat(size / 6)],
+  ];
+  const once = (source: string): number => {
+    const started = process.hrtime.bigint();
+    assert.ok(Array.isArray(parseBlocks(source)));
+    return Number(process.hrtime.bigint() - started) / 1e6;
+  };
+  // Best of three. The test files run concurrently, so a single sample measures
+  // the scheduler as much as the parser; the minimum is the run that was least
+  // interrupted, which is the one that reflects the algorithm.
+  const elapsed = (source: string): number =>
+    Math.min(once(source), once(source), once(source));
+  for (const [name, build] of shapes) {
+    // Warm the JIT on this shape so the ratio measures the algorithm.
+    once(build(16_000));
+    const small = Math.max(elapsed(build(32_000)), 0.5);
+    const large = elapsed(build(128_000));
+    // Four times the input. Linear measures 2-6x here; the two shapes that were
+    // quadratic measured ~15x for the same step. 10 separates them with room
+    // for a loaded CI machine, and the absolute bound catches a regression that
+    // is merely slow rather than superlinear.
+    assert.ok(large / small < 10, `${name}: 4x the input cost ${(large / small).toFixed(1)}x`);
+    assert.ok(large < 1_000, `${name}: 128k took ${large.toFixed(0)}ms`);
+  }
 });
 
 test("empty and whitespace-only sources yield no blocks", () => {

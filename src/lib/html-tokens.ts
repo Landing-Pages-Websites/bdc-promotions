@@ -1,7 +1,11 @@
 /**
- * HTML source to a tree of elements and text. The byte-level layer, and nothing
- * above it: it knows tag syntax, entities and which tags nest, and it knows
- * nothing about Blocks.
+ * A post body to a tree of elements, text and verbatim regions. The byte-level
+ * layer, and nothing above it: it knows tag syntax, entities, which tags nest,
+ * and where content stops being markup, and it knows nothing about Blocks.
+ *
+ * It runs over every body unconditionally. Deciding first whether a body "is
+ * HTML" would mean answering, from line shapes, a question this layer answers
+ * from the bytes; a body with no tags in it simply scans to one text node.
  *
  * Bounded on purpose. The input is our own content pipeline's output over the
  * ~30 tags in `html-tags.ts`, not arbitrary web HTML, and `src/` here
@@ -15,6 +19,10 @@
  *    `buildTree` refuses to attach one even if the scanner ever emitted it.
  *    Raw-text content (JSON-LD, CSS, minified JS) is therefore never tokenized
  *    as markup at all.
+ *  - **Verbatim beats markup.** A fenced block or a code span is lexed before
+ *    any tag inside it can be, because inside one nothing is a tag. The
+ *    ordering is stated once, here, so no layer above has to hold a construct
+ *    out of this one's way and put it back afterwards.
  *  - **Malformed input is bounded, never unbounded.** An unterminated quote, an
  *    unclosed tag and a stray close tag each cost their own construct and
  *    nothing after it. The one deliberate exception is an unterminated dropped
@@ -81,13 +89,11 @@ export function decodeEntities(text: string): string {
           ? Number.parseInt(body.slice(2), 16)
           : Number.parseInt(body.slice(1), 10);
       if (!Number.isFinite(code) || code <= 0 || code > 0x10ffff) return match;
-      // Refused, left as the literal entity text: lone surrogates are not
-      // characters, and U+FFF9..U+FFFD are annotation and replacement marks
-      // that no prose encodes on purpose. Decoding them would let a body forge
-      // the sentinel characters `markdown.ts` uses to hold a node's place while
-      // it re-tokenizes, which would silently reorder that paragraph.
+      // A lone surrogate is not a character, so it is left as the literal
+      // entity text. Nothing else is refused: no character is special to the
+      // parser any more, because a node's place is held by a list entry rather
+      // than by a character a body could spell.
       if (code >= 0xd800 && code <= 0xdfff) return match;
-      if (code >= 0xfff9 && code <= 0xfffd) return match;
       try {
         return String.fromCodePoint(code);
       } catch {
@@ -98,23 +104,43 @@ export function decodeEntities(text: string): string {
   });
 }
 
+const WHITESPACE_RUN = /\s+/g;
+
+/**
+ * A run of source text as the characters a reader sees.
+ *
+ * Whitespace collapses the way HTML collapses it, and entities decode after,
+ * so a decoded `&nbsp;` survives the collapse rather than being folded into the
+ * space beside it. Stated here, once, because both the tag walker and the
+ * markdown grammar turn source into text and neither may do it differently.
+ */
+export function collapseAndDecode(value: string): string {
+  return decodeEntities(value.replace(WHITESPACE_RUN, " "));
+}
+
 /* -------------------------------------------------------------------------- */
 /* Tokenizer                                                                   */
 /* -------------------------------------------------------------------------- */
 
 export type Token =
   | { type: "text"; value: string }
-  /** `start` is the offset of the `<`, so callers can ask WHERE a real tag is
-   * instead of scanning for one themselves. */
-  | { type: "open"; tag: string; attrs: Record<string, string>; selfClosing: boolean; start: number }
-  | { type: "close"; tag: string; start: number };
+  /**
+   * A region whose content is not markup, because inside one nothing is: a
+   * fenced block or a code span. Lexed here, ahead of every tag, which is the
+   * one place the ordering can be stated once — a `<div>` inside a code span is
+   * displayed content, and a backtick inside an attribute value or a `<script>`
+   * is not a delimiter.
+   */
+  | { type: "verbatim"; block: boolean; text: string; source: string }
+  | { type: "open"; tag: string; attrs: Record<string, string>; selfClosing: boolean }
+  | { type: "close"; tag: string };
 
 const NAME_START = /[a-zA-Z]/;
 const NAME_CHAR = /[a-zA-Z0-9:_.-]/;
-export const SPACE = /\s/;
+const SPACE = /\s/;
 const SPACE_OR_GT = /[\s>]/;
 
-export function readName(html: string, at: number): { name: string; end: number } | null {
+function readName(html: string, at: number): { name: string; end: number } | null {
   if (!NAME_START.test(html[at] ?? "")) return null;
   let end = at + 1;
   while (end < html.length && NAME_CHAR.test(html[end])) end += 1;
@@ -260,21 +286,49 @@ function readConstruct(html: string, at: number): Construct | null {
  * direction for rule 1: leaking raw JavaScript at the reader is worse than
  * losing the tail.
  */
-function skipRawText(html: string, from: number, tag: string): number {
+/** The first blank line at or after `from`, or the end of the document. A blank
+ * line is where one block stops and the next begins. */
+function blankLineAfter(html: string, from: number): number {
+  let newline = html.indexOf("\n", from);
+  while (newline !== -1) {
+    let index = newline + 1;
+    while (html[index] === " " || html[index] === "\t") index += 1;
+    if (html[index] === "\n") return newline;
+    newline = html.indexOf("\n", index);
+  }
+  return html.length;
+}
+
+interface Skipped {
+  end: number;
+  /** Whether a real close tag was found. An unterminated element has no
+   * established content: everything after its opener was never inside it. */
+  terminated: boolean;
+}
+
+function skipRawText(html: string, from: number, tag: string, limit: number): Skipped {
   const scanner = new RegExp(`</${tag}(?![a-zA-Z0-9:_.-])`, "gi");
   scanner.lastIndex = from;
   const match = scanner.exec(html);
-  if (match === null) return html.length;
+  if (match === null || match.index >= limit) return { end: limit, terminated: false };
   const gt = html.indexOf(">", match.index);
-  return gt === -1 ? html.length : gt + 1;
+  return gt === -1 ? { end: limit, terminated: false } : { end: gt + 1, terminated: true };
 }
 
-function skipDroppedContent(html: string, from: number, tag: string): number {
-  if (RAW_TEXT_TAGS.has(tag)) return skipRawText(html, from, tag);
+/**
+ * Where a dropped element's content ends, looking no further than `limit`.
+ *
+ * The limit is the whole document for the tokenizer, because rule 1 is a
+ * document-wide rule. It is one block for the code-span probe, because whether
+ * `` `<script>` `` is prose about a tag must not depend on a `</script>` in
+ * some other paragraph — an inline construct is decided inside its own block.
+ */
+function skipDropped(html: string, from: number, tag: string, limit: number): Skipped {
+  if (RAW_TEXT_TAGS.has(tag)) return skipRawText(html, from, tag, limit);
 
   let index = from;
   let depth = 1;
-  while (index < html.length) {
+  while (index < limit) {
     const lt = html.indexOf("<", index);
     if (lt === -1) break;
     const construct = readConstruct(html, lt);
@@ -284,80 +338,263 @@ function skipDroppedContent(html: string, from: number, tag: string): number {
     }
     if (construct.kind === "close" && construct.name === tag) {
       depth -= 1;
-      if (depth === 0) return construct.end;
+      if (depth === 0) return { end: construct.end, terminated: true };
     } else if (construct.kind === "open") {
       if (construct.name === tag) {
         if (!construct.selfClosing) depth += 1;
       } else if (DROPPED_TAGS.has(construct.name)) {
         // Skipped whole, so its raw text cannot be mistaken for this one's
         // close tag.
-        index = skipDroppedContent(html, construct.end, construct.name);
+        index = skipDropped(html, construct.end, construct.name, limit).end;
         continue;
       }
     }
     index = construct.end;
   }
-  return html.length;
+  return { end: limit, terminated: false };
+}
+
+function skipDroppedContent(html: string, from: number, tag: string): number {
+  return skipDropped(html, from, tag, html.length).end;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Verbatim regions                                                            */
+/* -------------------------------------------------------------------------- */
+
+const FENCE = "```";
+
+/** Whether only spaces and tabs separate `at` from the start of its line. */
+function opensALine(html: string, at: number): boolean {
+  let index = at - 1;
+  while (index >= 0 && (html[index] === " " || html[index] === "\t")) index -= 1;
+  return index < 0 || html[index] === "\n";
+}
+
+interface Verbatim {
+  block: boolean;
+  /** The region's content, without its delimiters. */
+  text: string;
+  /** Exactly the characters the region was lexed from, delimiters included.
+   * Kept rather than rebuilt: a fence's opening line carries an info string and
+   * may be indented, and anything reconstructed from `text` alone has to guess
+   * both. Nothing guesses, so nothing can guess wrong. */
+  source: string;
+  end: number;
 }
 
 /**
- * The source with every comment and every dropped element removed, and nothing
- * else touched.
+ * The first `character` at or after `from` that is in TEXT position: outside
+ * every markup construct, and outside every dropped element's content.
  *
- * The markdown path needs this: rule 1 is not conditional on a body being
- * routed to the HTML parser, so `## Head` followed by an unterminated
- * `<script>alert(1)` must still drop the script rather than escape it onto the
- * page as visible source.
+ * A verbatim region opens in text, because the scanner only offers a delimiter
+ * as an opener when it precedes the next `<`. Its CLOSER has to be held to the
+ * same standard or the region can end somewhere that was never text and swallow
+ * whatever stood between: a backtick inside `title="x`">` would otherwise close
+ * a span that began in prose, eating the `<script>` opener it sat in and leaving
+ * that element's payload on the page as ordinary words.
+ *
+ * A region may still CONTAIN a construct — `` `<div>` `` is a code span whose
+ * content is a tag, which is the whole point — so constructs are stepped over
+ * rather than treated as boundaries. Stepping is done with `readConstruct` and
+ * `skipDropped`, the same two functions the tokenizer itself walks with, so
+ * there is one answer to "where is a tag" and not a second approximate one.
+ *
+ * `mayHoldDropped` is what separates the two callers. A fence is an author
+ * instruction, written on its own line, to display the lines that follow as
+ * source: a `<script>` sample inside one is the feature. A code span is an
+ * inline literal, and a whole terminated `<script>…</script>` inside one is
+ * never prose — it is two backticks that happened to pair across markup — so
+ * there the region is refused and rule 1 removes the element as usual.
  */
-export function stripInertMarkup(html: string): string {
-  if (!html.includes("<")) return html;
-  const kept: string[] = [];
-  let index = 0;
-  let textStart = 0;
-  while (index < html.length) {
-    const lt = html.indexOf("<", index);
-    if (lt === -1) break;
+function indexOfInText(
+  html: string,
+  character: string,
+  from: number,
+  mayHoldDropped: boolean,
+  limit: number,
+): number {
+  let index = from;
+  // Both cached, for the same reason `tokenize` caches them: `index` only moves
+  // forward, so a remembered position at or after it is still the next one.
+  // Searching afresh each pass would rescan the tail once per construct, which
+  // is quadratic on a span that closes past many tags.
+  let next = html.indexOf(character, from);
+  let lt = html.indexOf("<", from);
+  while (index < limit) {
+    if (next !== -1 && next < index) next = html.indexOf(character, index);
+    if (next === -1 || next >= limit) return -1;
+    if (lt !== -1 && lt < index) lt = html.indexOf("<", index);
+    if (lt === -1 || next < lt) return next;
     const construct = readConstruct(html, lt);
     if (construct === null) {
+      // A `<` that opens no tag is literal text ("5 < 6").
       index = lt + 1;
       continue;
     }
-    // An ordinary tag is stepped over WHOLE. Stepping one character at a time
-    // would meet the `<script>` inside `title="<script>"` and, finding no close
-    // tag for it, delete the rest of the document.
-    if (construct.kind === "declaration") {
+    if (
+      construct.kind !== "open" ||
+      !DROPPED_TAGS.has(construct.name) ||
+      VOID_TAGS.has(construct.name)
+    ) {
       index = construct.end;
       continue;
     }
-    if (construct.kind !== "comment" && !DROPPED_TAGS.has(construct.name)) {
+    const skipped = skipDropped(html, construct.end, construct.name, limit);
+    // An UNTERMINATED dropped element has no established content — nothing
+    // after its opener was ever inside it — so only the opener's own inert
+    // source is stepped over, which is what keeps `` `<script>` `` in prose
+    // reading as prose about a tag.
+    if (!skipped.terminated) {
       index = construct.end;
       continue;
     }
-    kept.push(html.slice(textStart, lt));
-    if (construct.kind === "open" && !construct.selfClosing && !VOID_TAGS.has(construct.name)) {
-      index = skipDroppedContent(html, construct.end, construct.name);
-    } else {
-      index = construct.end;
-    }
-    textStart = index;
+    // A TERMINATED one has content, and a delimiter inside it was never text:
+    // rule 1 would have removed it.
+    if (!mayHoldDropped) return -1;
+    index = skipped.end;
   }
-  kept.push(html.slice(textStart));
-  return kept.join("");
+  return -1;
 }
 
-export function tokenize(html: string): Token[] {
+/**
+ * The verbatim region starting at a backtick, or null if that backtick is
+ * ordinary text. A fence must open a line, which is what keeps it from being
+ * confused with prose.
+ */
+/** A fenced block. The rest of the opening line is the language tag, which is
+ * accepted and ignored, and an unterminated fence runs to the end of the body
+ * rather than silently swallowing nothing. */
+function readFence(html: string, at: number): Verbatim {
+  const opened = html.indexOf("\n", at);
+  if (opened === -1) {
+    return { block: true, text: "", source: html.slice(at), end: html.length };
+  }
+  const from = opened + 1;
+  let index = from;
+  // The closing fence has to open a line AND be in text position, for the same
+  // reason a code span's closing backtick does: a `` ``` `` sitting inside an
+  // attribute value never was a line of this document.
+  while (index < html.length) {
+    const tick = indexOfInText(html, "`", index, true, html.length);
+    if (tick === -1) break;
+    if (html.startsWith(FENCE, tick) && opensALine(html, tick)) {
+      const newline = html.indexOf("\n", tick);
+      const end = newline === -1 ? html.length : newline + 1;
+      return {
+        block: true,
+        // Cut at the closing fence LINE, indentation included.
+        text: html.slice(from, tick).replace(/\n[ \t]*$/, ""),
+        source: html.slice(at, end),
+        end,
+      };
+    }
+    index = tick + 1;
+  }
+  return { block: true, text: html.slice(from), source: html.slice(at), end: html.length };
+}
+
+/**
+ * A code span, resolved entirely inside its own block.
+ *
+ * It needs a closing backtick with at least one character between — a lone
+ * backtick is punctuation — and `blockEnd` is where its block stops. A code span
+ * is INLINE: it cannot leave the block it opened in, exactly as it cannot in
+ * CommonMark. Without that bound one unpaired backtick in a paragraph reaches
+ * forward to the next backtick anywhere in the document and swallows every tag
+ * in between, so a stray character costs the structure of everything after it —
+ * and whether `` `<script>` `` reads as prose would depend on a `</script>` in
+ * some unrelated paragraph.
+ *
+ * A fence has no such bound, because a fence IS a block and blank lines are its
+ * content.
+ */
+function readCodeSpan(html: string, at: number, blockEnd: number): Verbatim | null {
+  const close = indexOfInText(html, "`", at + 1, false, blockEnd);
+  if (close === -1 || close === at + 1) return null;
+  return {
+    block: false,
+    text: html.slice(at + 1, close),
+    source: html.slice(at, close + 1),
+    end: close + 1,
+  };
+}
+
+function readVerbatim(html: string, at: number, blockEnd: number): Verbatim | null {
+  return html.startsWith(FENCE, at) && opensALine(html, at)
+    ? readFence(html, at)
+    : readCodeSpan(html, at, blockEnd);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scanning                                                                    */
+/* -------------------------------------------------------------------------- */
+
+const LINE_ENDINGS = /\r\n?/g;
+
+/**
+ * CRLF and lone CR become LF, once, before anything reads a line.
+ *
+ * This is the HTML spec's own input preprocessing, and it is why nothing below
+ * has to spell `\r`. A blank line, a fence's own line, the indentation before a
+ * closing fence and a paragraph break are each decided against ONE line ending
+ * rather than each site being taught the other two — nine places in this parser
+ * look for a newline, and a body pasted out of Windows-authored HTML would
+ * otherwise have to be right in all nine.
+ */
+function normalizeLines(source: string): string {
+  return source.includes("\r") ? source.replace(LINE_ENDINGS, "\n") : source;
+}
+
+export function tokenize(source: string): Token[] {
+  const html = normalizeLines(source);
   const tokens: Token[] = [];
   // Named `textStart` rather than `textFrom`, which is the module function that
   // turns a text run into inline nodes.
   let textStart = 0;
   let index = 0;
+  // Both cached rather than searched afresh each pass. `index` only ever moves
+  // forward, so a remembered position at or after it is still the next one, and
+  // a body with no backticks would otherwise rescan its whole tail once per tag.
+  let tick = html.indexOf("`");
+  let lt = html.indexOf("<");
+  // `<pre>` content is already verbatim, so lexing verbatim regions inside it
+  // buys nothing and costs something: an unterminated fence there runs to the
+  // end of the body and takes the `</pre>` with it, which loses the element and
+  // everything after it. Tracked as a depth rather than a flag, because a `pre`
+  // inside a `pre` is malformed but must still close exactly once.
+  let preDepth = 0;
+  // Where the current block ends, for the inline constructs that may not leave
+  // it. Monotone like the other two, so the document is scanned for blank lines
+  // once rather than once per backtick.
+  let blank = blankLineAfter(html, 0);
 
   const flushText = (until: number): void => {
     if (until > textStart) tokens.push({ type: "text", value: html.slice(textStart, until) });
   };
 
   while (index < html.length) {
-    const lt = html.indexOf("<", index);
+    if (lt !== -1 && lt < index) lt = html.indexOf("<", index);
+    if (tick !== -1 && tick < index) tick = html.indexOf("`", index);
+    if (tick !== -1 && (lt === -1 || tick < lt)) {
+      if (blank !== html.length && blank < tick) blank = blankLineAfter(html, tick);
+      const verbatim = preDepth > 0 ? null : readVerbatim(html, tick, blank);
+      if (verbatim === null) {
+        // A lone backtick is punctuation, and stays in the text run it is in.
+        tick = html.indexOf("`", tick + 1);
+        continue;
+      }
+      flushText(tick);
+      tokens.push({
+        type: "verbatim",
+        block: verbatim.block,
+        text: verbatim.text,
+        source: verbatim.source,
+      });
+      index = verbatim.end;
+      textStart = index;
+      continue;
+    }
     if (lt === -1) break;
     const construct = readConstruct(html, lt);
     if (construct === null) {
@@ -373,38 +610,32 @@ export function tokenize(html: string): Token[] {
         index = construct.end;
         break;
       case "close":
-        tokens.push({ type: "close", tag: construct.name, start: lt });
+        if (construct.name === "pre" && preDepth > 0) preDepth -= 1;
+        tokens.push({ type: "close", tag: construct.name });
         index = construct.end;
         break;
-      default:
-        if (DROPPED_TAGS.has(construct.name)) {
-          // The token is emitted, its content is not. Callers that ask WHERE a
-          // tag is (routing) need to see that a body opens with a JSON-LD
-          // script; `buildTree` still refuses to attach it, so no walker can
-          // reach it. `selfClosing` is ignored: `<script/>alert(1)</script>` is
-          // not a self-closing script to any HTML parser, and honouring the
-          // slash would spill its content into the page as text.
-          tokens.push({
-            type: "open",
-            tag: construct.name,
-            attrs: construct.attrs,
-            selfClosing: true,
-            start: lt,
-          });
-          index = VOID_TAGS.has(construct.name)
-            ? construct.end
-            : skipDroppedContent(html, construct.end, construct.name);
-          break;
-        }
+      default: {
+        const dropped = DROPPED_TAGS.has(construct.name);
+        if (construct.name === "pre" && !dropped && !construct.selfClosing) preDepth += 1;
         tokens.push({
           type: "open",
           tag: construct.name,
           attrs: construct.attrs,
-          selfClosing: construct.selfClosing,
-          start: lt,
+          // A dropped element's `selfClosing` is forced:
+          // `<script/>alert(1)</script>` is not a self-closing script to any
+          // HTML parser, and honouring the slash would spill its content into
+          // the page as text.
+          selfClosing: dropped || construct.selfClosing,
         });
-        index = construct.end;
+        // The token is emitted; for a dropped element its content is not. The
+        // token marks where the element was and `buildTree` refuses to attach
+        // it, so no walker above can reach either.
+        index =
+          dropped && !VOID_TAGS.has(construct.name)
+            ? skipDroppedContent(html, construct.end, construct.name)
+            : construct.end;
         break;
+      }
     }
     textStart = index;
   }
@@ -429,7 +660,29 @@ export interface TextNode {
   value: string;
 }
 
-export type HtmlNode = ElementNode | TextNode;
+/** A fenced block or a code span. Its text is content, never markup. */
+export interface VerbatimNode {
+  type: "verbatim";
+  block: boolean;
+  text: string;
+  /** Exactly what was lexed, delimiters included. See `verbatimSource`. */
+  source: string;
+}
+
+export type HtmlNode = ElementNode | TextNode | VerbatimNode;
+
+/**
+ * The source a verbatim region was written as.
+ *
+ * Its delimiters are markup to the markdown grammar and ordinary characters to
+ * anything reading raw text — inside a `<pre>`, a backtick is a backtick, and a
+ * fence line keeps its info string and its indentation. Carried from the scan
+ * rather than rebuilt from the content, because a rebuild has to re-invent
+ * everything the delimiters said and silently loses whatever it does not model.
+ */
+export function verbatimSource(node: VerbatimNode): string {
+  return node.source;
+}
 
 export function buildTree(tokens: Token[]): ElementNode {
   const root: ElementNode = { type: "element", tag: "#root", attrs: {}, children: [] };
@@ -439,6 +692,15 @@ export function buildTree(tokens: Token[]): ElementNode {
     const parent = stack[stack.length - 1];
     if (token.type === "text") {
       parent.children.push({ type: "text", value: token.value });
+      continue;
+    }
+    if (token.type === "verbatim") {
+      parent.children.push({
+        type: "verbatim",
+        block: token.block,
+        text: token.text,
+        source: token.source,
+      });
       continue;
     }
     if (token.type === "close") {

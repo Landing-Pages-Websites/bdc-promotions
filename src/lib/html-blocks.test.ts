@@ -5,14 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { parseFrontmatter } from "./blog.ts";
-import { parseHtmlBlocks } from "./html-blocks.ts";
-import {
-  looksLikeHtmlBody,
-  parseBlocks,
-  type Block,
-  type InlineNode,
-  type ListItem,
-} from "./markdown.ts";
+import { parseBlocks, type Block, type InlineNode, type ListItem } from "./markdown.ts";
 
 const FIXTURE_DIR = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__/blog-bodies");
 
@@ -73,34 +66,53 @@ function paragraphText(block: Block): string {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Detection                                                                   */
+/* One path                                                                    */
 /* -------------------------------------------------------------------------- */
 
-test("detection is per body, over block-level openers", () => {
-  const table: [string, boolean][] = [
-    ["<p>x</p>", true],
-    ["  <div>x</div>", true],
-    ["prose\n<h2>Later</h2>", true],
-    ['<script type="application/ld+json">{}</script><p>x</p>', true],
-    ["<table><tr><td>a</td></tr></table>", true],
-    ["Plain markdown.", false],
-    ["Prose with an <a href=\"/x\">inline link</a> in it.", false],
-    ["Costs 5 < 6 and 7 > 3.", false],
-    ["", false],
-    // An unknown tag opening a line is still markup; only a known INLINE tag
-    // is what a markdown paragraph legitimately opens with.
-    ["<marquee>x</marquee>", true],
-    ["<article-body><p>x</p></article-body>", true],
-    ['<a href="/x">A link opening a markdown paragraph.</a>', false],
-    ["<strong>Bold lead-in</strong> then prose.", false],
-    // A body whose two grammars disagree goes to markdown: a stray block tag
-    // there flattens into its paragraph, where `## Heading` on the HTML path
-    // would print itself at the reader.
-    ['Intro.\n\n<div class="cta">Call now</div>\n\n## Heading\n\n- one', false],
-    ["<p>Real HTML.</p>\n\n<p>Still HTML.</p>", true],
+test("every body shape keeps its own structure, with nothing to route", () => {
+  // These are the bodies the deleted per-body detector had to classify, and the
+  // classification is what it kept getting wrong. Nothing classifies them now:
+  // the tags give the blocks and the text between them gives the rest, so the
+  // assertion is the structure itself rather than which parser ran.
+  // A third column is the text the reader is expected to see, for the rows
+  // where that is the whole point.
+  const table: [string, string[], string?][] = [
+    ["<p>x</p>", ["paragraph"]],
+    ["  <div>x</div>", ["paragraph"]],
+    ["prose\n<h2>Later</h2>", ["paragraph", "heading"]],
+    ['<script type="application/ld+json">{}</script><p>x</p>', ["paragraph"]],
+    ["<table><tr><td>a</td></tr></table>", ["table"]],
+    ["Plain markdown.", ["paragraph"]],
+    ['Prose with an <a href="/x">inline link</a> in it.', ["paragraph"]],
+    // A `<` that opens no tag is arithmetic, and stays exactly as written.
+    ["Costs 5 < 6 and 7 > 3.", ["paragraph"], "Costs 5 < 6 and 7 > 3."],
+    ["", []],
+    // An unknown wrapper is markup whatever it is called: #58 finding 5, where
+    // refusing to route it left the whole body rendering as escaped source.
+    ["<marquee>x</marquee>", ["paragraph"]],
+    ["<article-body><p>x</p></article-body>", ["paragraph"]],
+    ['<a href="/x">A link opening a markdown paragraph.</a>', ["paragraph"]],
+    ["<strong>Bold lead-in</strong> then prose.", ["paragraph"]],
+    // The body whose two grammars disagreed, which the detector had to send
+    // wholesale to one of them. Both are read now, each where it applies.
+    ['Intro.\n\n<div class="cta">Call now</div>\n\n## Heading\n\n- one', [
+      "paragraph",
+      "paragraph",
+      "heading",
+      "list",
+    ]],
+    ["<p>Real HTML.</p>\n\n<p>Still HTML.</p>", ["paragraph", "paragraph"]],
   ];
-  for (const [source, expected] of table) {
-    assert.equal(looksLikeHtmlBody(source), expected, source);
+  for (const [source, expected, visible] of table) {
+    const blocks = parseBlocks(source);
+    assert.deepEqual(kinds(blocks), expected, JSON.stringify(source));
+    for (const text of renderedText(blocks)) {
+      if (visible === undefined) {
+        assert.ok(!text.includes("<"), `${source}: "<" reached the reader: ${text}`);
+      }
+      assert.ok(!text.startsWith("#"), `${source}: a marker reached the reader: ${text}`);
+    }
+    if (visible !== undefined) assert.equal(renderedText(blocks).join(""), visible, source);
   }
 });
 
@@ -253,14 +265,43 @@ test("adversarial HTML bodies", () => {
       },
     },
     {
-      name: "this module is the raw HTML layer and leaves markdown marks alone",
+      name: "a mark inside a tag resolves, because the text between tags is markdown",
       source: "<p>markdown **bold** inside html</p>",
       check: (blocks) => {
-        // `parseHtmlBlocks` is the HTML layer only. `parseBlocks` is the
-        // contract a reader sees, and it resolves the marks — asserted just
-        // below, because the pipeline emits `**[text](href)**` in mixed bodies
-        // and shipping the asterisks was the bug.
-        assert.equal(paragraphText(blocks[0]), "markdown **bold** inside html");
+        // The pipeline emits `**[text](href)**` in mixed bodies and shipping
+        // the asterisks at the reader was the bug.
+        assert.deepEqual(blocks[0].kind === "paragraph" && blocks[0].inline, [
+          { kind: "text", value: "markdown " },
+          { kind: "strong", value: "bold" },
+          { kind: "text", value: " inside html" },
+        ]);
+      },
+    },
+    {
+      name: "a fence inside raw text keeps its info string",
+      source: "<pre>\n```bash\nls -la\n```\n</pre>",
+      check: (blocks) => {
+        // Review round 3. `verbatimSource` used to REBUILD a fence as three
+        // backticks plus the content, which silently dropped whatever the
+        // opening line said — here the `bash`. The source is carried now, so
+        // there is nothing to rebuild and nothing to drop.
+        assert.equal(blocks[0].kind === "code" && blocks[0].text, "```bash\nls -la\n```");
+      },
+    },
+    {
+      name: "a backtick inside raw text is a character, not a delimiter",
+      source: "<pre>a `b` c</pre><p>Use <code>x `y` z</code> here</p>",
+      check: (blocks) => {
+        // Verbatim regions are lexed before tags, so one can land inside a
+        // `<pre>`. There it is raw text, and dropping its delimiters would
+        // silently edit a code sample.
+        assert.deepEqual(kinds(blocks), ["code", "paragraph"]);
+        assert.equal(blocks[0].kind === "code" && blocks[0].text, "a `b` c");
+        assert.deepEqual(blocks[1].kind === "paragraph" && blocks[1].inline, [
+          { kind: "text", value: "Use " },
+          { kind: "code", value: "x `y` z" },
+          { kind: "text", value: " here" },
+        ]);
       },
     },
     {
@@ -561,7 +602,7 @@ test("adversarial HTML bodies", () => {
   ];
 
   for (const row of rows) {
-    const blocks = parseHtmlBlocks(row.source);
+    const blocks = parseBlocks(row.source);
     if (row.decodesAngleBrackets !== true) {
       for (const text of renderedText(blocks)) {
         assert.ok(!text.includes("<"), `${row.name}: "<" reached the reader: ${text}`);
@@ -579,7 +620,7 @@ test("a large body completes without catastrophic backtracking", () => {
   const source = paragraph.repeat(Math.ceil(200_000 / paragraph.length));
   assert.ok(source.length >= 200_000);
   const started = Date.now();
-  const blocks = parseHtmlBlocks(source);
+  const blocks = parseBlocks(source);
   assert.ok(blocks.length > 500);
   assert.ok(Date.now() - started < 5_000, "parse took too long");
 });
@@ -624,10 +665,9 @@ test("published bodies render as blocks, never as markup", () => {
   }
 });
 
-test("the HTML fixtures take the HTML path and produce the expected block set", () => {
+test("the HTML fixtures produce the expected block set", () => {
   for (const name of HTML_FIXTURES) {
     const body = fixtureBody(name);
-    assert.equal(looksLikeHtmlBody(body), true, name);
     const seen = new Set(kinds(parseBlocks(body)));
     assert.ok(seen.has("paragraph"), name);
     assert.ok(seen.has("heading"), name);
@@ -639,10 +679,9 @@ test("the HTML fixtures take the HTML path and produce the expected block set", 
   assert.ok(kinds(electrician).includes("image"));
 });
 
-test("the markdown fixtures stay on the markdown path", () => {
+test("the markdown fixtures keep their markdown structure", () => {
   for (const name of MARKDOWN_FIXTURES) {
     const body = fixtureBody(name);
-    assert.equal(looksLikeHtmlBody(body), false, name);
     const seen = new Set(kinds(parseBlocks(body)));
     assert.ok(seen.has("paragraph"), name);
     assert.ok(seen.has("heading"), name);

@@ -11,8 +11,9 @@
  */
 
 /**
- * `#### Deep` and `<h4>` must land on the same level, so both parsers read the
- * depth-to-level mapping from here rather than each stating it.
+ * `#### Deep` and `<h4>` must land on the same level, so the markdown grammar
+ * and the tag table read the depth-to-level mapping from here rather than each
+ * stating it.
  */
 /**
  * A lookup table with no prototype.
@@ -44,8 +45,12 @@ export type TagRole =
    */
   | { flow: "structure"; part?: "item" | "row" | "cell" | "section" | "head" }
   | { flow: "inline"; inline: "strong" | "em" | "code" | "link" | "image" | "space" }
-  /** Rule 1: dropped whole, content included. */
-  | { flow: "drop" };
+  /**
+   * Rule 1: dropped whole, content included. `raw` marks the ones whose content
+   * is raw TEXT rather than markup, which decides how the scanner finds the end
+   * of one. Unmarked is the fail-closed reading: depth-counted.
+   */
+  | { flow: "drop"; raw?: true };
 
 export const TAG_ROLES: Readonly<Record<string, TagRole>> = lookup<TagRole>({
   p: { flow: "block", block: "paragraph" },
@@ -95,8 +100,10 @@ export const TAG_ROLES: Readonly<Record<string, TagRole>> = lookup<TagRole>({
   a: { flow: "inline", inline: "link" },
   img: { flow: "inline", inline: "image" },
   br: { flow: "inline", inline: "space" },
-  script: { flow: "drop" },
-  style: { flow: "drop" },
+  // `script` and `style` hold raw text, so `</script` inside a JS string really
+  // does end the element. `template` and `noscript` hold real markup and nest.
+  script: { flow: "drop", raw: true },
+  style: { flow: "drop", raw: true },
   template: { flow: "drop" },
   noscript: { flow: "drop" },
 });
@@ -106,12 +113,19 @@ const UNWRAP: TagRole = { flow: "structure" };
 
 /** `Object.hasOwn`, not `in`: `<constructor>` and `<toString>` are prose, and
  * an inherited prototype member is not a tag role. */
-export function isKnownTag(tag: string): boolean {
+function isKnownTag(tag: string): boolean {
   return Object.hasOwn(TAG_ROLES, tag);
 }
 
 export function roleFor(tag: string): TagRole {
   return isKnownTag(tag) ? TAG_ROLES[tag] : UNWRAP;
+}
+
+/** Whether a list tag numbers its items, read from the table rather than from
+ * the tag name, so `ol` is spelled in exactly one place. */
+export function isOrderedList(tag: string): boolean {
+  const role = roleFor(tag);
+  return role.flow === "block" && role.block === "list" && role.ordered;
 }
 
 function tagsWhere(match: (role: TagRole) => boolean): ReadonlySet<string> {
@@ -125,7 +139,7 @@ function tagsWhere(match: (role: TagRole) => boolean): ReadonlySet<string> {
 export const DROPPED_TAGS = tagsWhere((role) => role.flow === "drop");
 
 /** Every set below is a view of `TAG_ROLES`, so a new container tag is one edit. */
-export const BLOCK_TAGS = tagsWhere((role) => role.flow === "block");
+const BLOCK_TAGS = tagsWhere((role) => role.flow === "block");
 export const LIST_TAGS = tagsWhere((role) => role.flow === "block" && role.block === "list");
 export const TABLE_TAGS = tagsWhere((role) => role.flow === "block" && role.block === "table");
 const part = (name: string) => (role: TagRole): boolean =>
@@ -139,11 +153,12 @@ export const ITEM_AND_LIST_TAGS: ReadonlySet<string> = new Set([...ITEM_TAGS, ..
 export const TABLE_SECTIONS: ReadonlySet<string> = new Set([...SECTION_TAGS, ...ROW_TAGS]);
 
 /**
- * Dropped elements whose content is raw text, so a `<script>` inside a JS
- * string is not a real open tag. The others (`template`, `noscript`) hold real
- * markup and do nest, which is why the skip counts depth for them.
+ * Dropped elements whose content is raw text, so a `<script>` inside a JS string
+ * is not a real open tag. A view of the table like every other set here: a drop
+ * tag added without the `raw` flag gets depth counting, which is the reading
+ * that cannot end an element early.
  */
-export const RAW_TEXT_TAGS: ReadonlySet<string> = new Set(["script", "style"]);
+export const RAW_TEXT_TAGS = tagsWhere((role) => role.flow === "drop" && role.raw === true);
 
 export const VOID_TAGS: ReadonlySet<string> = new Set([
   "area",

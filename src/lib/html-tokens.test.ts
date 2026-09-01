@@ -7,8 +7,8 @@ import { fileURLToPath } from "node:url";
 import {
   buildTree,
   decodeEntities,
-  stripInertMarkup,
   tokenize,
+  verbatimSource,
   type HtmlNode,
 } from "./html-tokens.ts";
 
@@ -27,7 +27,9 @@ const FIXTURE_DIR = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__/
 
 /** Flattened text of a tree, which is everything a reader could end up seeing. */
 function textOf(node: HtmlNode): string {
-  return node.type === "text" ? node.value : node.children.map(textOf).join("");
+  if (node.type === "text") return node.value;
+  if (node.type === "verbatim") return node.text;
+  return node.children.map(textOf).join("");
 }
 
 function treeText(html: string): string {
@@ -208,13 +210,15 @@ test("entities decode in one pass, and an unknown one is left alone", () => {
     ["&#;", "&#;"],
     ["&#0;", "&#0;"],
     ["&#x110000;", "&#x110000;"],
-    // Refused so a body cannot forge the sentinels markdown.ts holds places
-    // with, which would silently reorder the paragraph they appear in.
-    ["&#xFFFC;", "&#xFFFC;"],
-    ["&#xFFF9;", "&#xFFF9;"],
-    ["&#65532;", "&#65532;"],
+    // A lone surrogate is not a character, so it stays as its own source text.
     ["&#xD800;", "&#xD800;"],
-    // The neighbours still decode, so the refusal is a window and not a wall.
+    ["&#xDFFF;", "&#xDFFF;"],
+    // Nothing else is refused. These used to be, because a body that could
+    // spell one could displace a node from the sentinel string that held its
+    // place; a place is a list entry now, so no character is special.
+    ["&#xFFFC;", "\ufffc"],
+    ["&#xFFF9;", "\ufff9"],
+    ["&#65532;", "\ufffc"],
     ["&#xFFF8;", "\ufff8"],
     ["&#xFFFE;", "\ufffe"],
     ["Q&A and R&D", "Q&A and R&D"],
@@ -227,23 +231,188 @@ test("entities decode in one pass, and an unknown one is left alone", () => {
 /* Bounded: nothing malformed may cost more than its own construct             */
 /* -------------------------------------------------------------------------- */
 
-test("stripInertMarkup steps over an ordinary tag whole", () => {
-  // Same class as the tokenizer's: a walker that advances one character past a
-  // start tag meets the tag-shaped text inside its attributes and believes it.
-  const table: [string, string][] = [
-    ['Intro <p title="<script>">visible</p>', 'Intro <p title="<script>">visible</p>'],
-    ['Intro <p title="<!-- c -->">visible</p>', 'Intro <p title="<!-- c -->">visible</p>'],
-    ["Intro <p>visible</p>", "Intro <p>visible</p>"],
-    ["a <script>x</script> b", "a  b"],
-    ["a <!-- c --> b", "a  b"],
-    ["a <script>never closed", "a "],
-    ["a <template><p>x</p></template> b", "a  b"],
-    ["no markup here", "no markup here"],
-    ["5 < 6", "5 < 6"],
+/* -------------------------------------------------------------------------- */
+/* Verbatim regions: lexed ahead of every tag, because inside one nothing is    */
+/* -------------------------------------------------------------------------- */
+
+/** Every verbatim region the scanner found, in document order. */
+function verbatim(html: string): string[] {
+  return tokenize(html).flatMap((token) =>
+    token.type === "verbatim" ? [`${token.block ? "block" : "span"}:${token.text}`] : [],
+  );
+}
+
+test("a code span and a fence are content, and hold their tags", () => {
+  const table: [string, string[]][] = [
+    ["Use `<div>` to wrap it.", ["span:<div>"]],
+    // A code span may name a dropped tag, because an unterminated one has no
+    // content to reveal — this is prose about a tag.
+    ["Use `<script>` carefully", ["span:<script>"]],
+    ["Use `<style>` and `<template>` too", ["span:<style>", "span:<template>"]],
+    // But it may not hold a TERMINATED one. Two backticks that pair across a
+    // real element are an accident, not an author asking to display source, and
+    // honouring them would re-present content rule 1 exists to remove.
+    ["`<script>alert(1)</script>`", []],
+    ["`a <noscript>SECRET</noscript> b`", []],
+    // A fence may, because it IS an author asking to display source.
+    ["```\n<script>alert(1)</script>\n```", ["block:<script>alert(1)</script>"]],
+    ["```\n<p>x</p>\n```", ["block:<p>x</p>"]],
+    ["```bash\nls\n```", ["block:ls"]],
+    ["```\nfirst\n\nsecond\n```", ["block:first\n\nsecond"]],
+    // An unterminated fence runs to the end rather than swallowing nothing.
+    ["```\ndangling", ["block:dangling"]],
+    ["```", ["block:"]],
+    ["  ```\nindented\n  ```", ["block:indented"]],
+    // Not a fence: it does not open a line. The empty pairs are punctuation and
+    // what is left is one span, so no line of the body is lost either way.
+    ["text ```\nx\n```", ["span:\nx\n"]],
+    // A code span is inline: it cannot leave the block it opened in, so an
+    // unpaired backtick costs its own paragraph and not the structure of every
+    // paragraph after it.
+    ["a `b\nc` d", ["span:b\nc"]],
+    ["one `unpaired\n\ntwo `also unpaired", []],
+    ["<p>a `x</p>\n\n<p>b `y</p>", []],
+    // CRLF and lone CR are normalised at the scanner, so a blank line bounds a
+    // span whatever wrote it.
+    ["one `unpaired\r\n\r\ntwo `also unpaired", []],
+    ["Intro `x\r\n\r\n<h2>S</h2>\r\n\r\n` tail", []],
+    ["a `b` c\r\nd `e` f", ["span:b", "span:e"]],
+    ["```\r\nfirst\r\n\r\nsecond\r\n```", ["block:first\n\nsecond"]],
+    // A fence IS a block, so blank lines are its content, not its end.
+    ["```\nfirst\n\nsecond\n```", ["block:first\n\nsecond"]],
+    // And the block bound is what keeps the decision LOCAL: whether
+    // `` `<script>` `` is prose about a tag must not turn on a `</script>`
+    // belonging to some other paragraph.
+    ["Use `<script>` here\n\n```\n<script>alert(1)</script>\n```", [
+      "span:<script>",
+      "block:<script>alert(1)</script>",
+    ]],
+    ["Use `<script>` here\n\n<p>later <script>alert(1)</script> tail</p>", ["span:<script>"]],
+    // Not a span: a lone backtick is punctuation, and an empty pair is text.
+    ["a ` b", []],
+    ["a `` b", []],
+    ["it's 90` today", []],
   ];
-  for (const [raw, expected] of table) {
-    assert.equal(stripInertMarkup(raw), expected, raw);
+  for (const [html, expected] of table) assert.deepEqual(verbatim(html), expected, html);
+  assert.equal(textOf(buildTree(tokenize("Use `<div>` to wrap it."))), "Use <div> to wrap it.");
+});
+
+test("a verbatim region reproduces its own source exactly", () => {
+  // Inside a `<pre>` the delimiters are ordinary characters of the body, so a
+  // region has to be able to hand back what it was written as. Asserted as a
+  // round trip over every shape rather than as the one field that was lost:
+  // anything a rebuild would have to re-invent — an info string, indentation,
+  // the delimiter count, a missing closer — is covered by construction.
+  // Tag-free, because `<pre>` has never been a raw-text element here: a tag
+  // inside one is still tokenized as a tag. What is asserted is that the
+  // DELIMITERS survive, which is what the rebuild used to lose.
+  const inners = [
+    "```bash\nls -la\n```",
+    "```\nplain\n```",
+    "```js\nconst a = 1;\n```",
+    "  ```bash\nindented open and close\n  ```",
+    "```bash\nfirst\n\nsecond\n```",
+    "```unterminated\nno closing fence",
+    "a `code span` b",
+    "a ``double`` b",
+    "``",
+  ];
+  /** A subtree read as RAW text, the way the `<pre>` path reads it: a verbatim
+   * region contributes the source it was written as, delimiters included. */
+  const rawText = (node: HtmlNode): string => {
+    if (node.type === "text") return node.value;
+    if (node.type === "verbatim") return verbatimSource(node);
+    return node.children.map(rawText).join("");
+  };
+  for (const inner of inners) {
+    const tree = buildTree(tokenize(`<pre>${inner}</pre>`));
+    assert.equal(rawText(tree), inner, JSON.stringify(inner));
   }
+
+  // A fence inside a `<pre>` must not eat the `</pre>`: an unterminated one runs
+  // to the end of the body, and taking the close tag with it would swallow the
+  // element and everything after it.
+  for (const inner of ["```bash\nls", "```\na\n```", "text\n```\ntail"]) {
+    const tags = tokenize(`<pre>\n${inner}\n</pre><p>after</p>`).flatMap((token) =>
+      token.type === "open" ? [token.tag] : token.type === "close" ? [`/${token.tag}`] : [],
+    );
+    assert.deepEqual(tags, ["pre", "/pre", "p", "/p"], JSON.stringify(inner));
+  }
+
+  // And a region outside a `<pre>` still exposes its CONTENT, without
+  // delimiters, to everything that reads it as code.
+  const regions = tokenize("```bash\nls\n```").filter((token) => token.type === "verbatim");
+  assert.equal(regions.length, 1);
+  assert.ok(regions[0].type === "verbatim" && regions[0].text === "ls");
+  assert.ok(regions[0].type === "verbatim" && regions[0].source === "```bash\nls\n```");
+});
+
+test("a verbatim region cannot close outside text position", () => {
+  // A region opens in text, because the scanner only offers a delimiter as an
+  // opener when it precedes the next `<`. Its closer has to be held to the same
+  // standard: a backtick inside `title="x`">` closing a span that began in prose
+  // ate the `<script>` opener it sat in, and left that element's payload on the
+  // page as ordinary words.
+  const table: [string, string[]][] = [
+    // The reviewer's case, and the same shape for every dropped tag.
+    ['<p>before `x <script title="x`">alert(1)</script>after</p>', []],
+    ['<p>before `x <style title="x`">body{}</style>after</p>', []],
+    ['<p>before `x <template title="x`">hidden</template>after</p>', []],
+    ['<p>before `x <noscript title="x`">hidden</noscript>after</p>', []],
+    // Adjacent variants: the closer inside a dropped element's BODY rather than
+    // its attributes, inside a comment, and inside a NON-dropped element's
+    // attribute. None of those positions is text either.
+    ['<p>before `x <script>var s = "`";alert(1)</script>after</p>', []],
+    ["<p>before `x <!-- ` --> after</p>", []],
+    ['<p>before `x <a title="x`" href="/y">link</a>after</p>', []],
+    // An unterminated attribute value is still not text.
+    ['<p>before `x <a title="x` href=/y>after</p>', []],
+    // A fence whose closing line sits inside an attribute value never was a
+    // line of this document, so it does not close the fence.
+    ['```\n<p title="\n```\n">x</p>\n', ["block:<p title=\"\n```\n\">x</p>\n"]],
+  ];
+  for (const [html, expected] of table) assert.deepEqual(verbatim(html), expected, html);
+
+  // The outcome that matters: no dropped element's content reaches the tree,
+  // as text OR as a verbatim region.
+  for (const [html] of table) {
+    const text = textOf(buildTree(tokenize(html)));
+    assert.ok(!/alert\(1\)|body\{\}|hidden|SECRET/.test(text), `${html} => ${text}`);
+  }
+});
+
+test("a backtick that is not in text position is not a delimiter", () => {
+  // The one authority for where a tag is decides where the text is, so a
+  // backtick inside an attribute value or inside dropped content is neither the
+  // start nor the end of a verbatim region.
+  const table: [string, string[]][] = [
+    ['<p title="a `b` c">visible</p>', []],
+    ["<p title='`'>a</p><p title='`'>b</p>", []],
+    ["<script>const a = `x`;</script>keep", []],
+    ["<style>p::after{content:'`'}</style>keep", []],
+    ['<a href="/x?q=`">visible</a>', []],
+    // The comment's backtick is not a delimiter, so the pair after it is the
+    // span — rather than the comment's backtick pairing with the first real one
+    // and shifting every region in the body by one.
+    ["<!-- ` --> keep ` and `", ["span: and "]],
+  ];
+  for (const [html, expected] of table) assert.deepEqual(verbatim(html), expected, html);
+  assert.equal(textOf(buildTree(tokenize('<p title="a `b` c">visible</p>'))), "visible");
+  assert.equal(textOf(buildTree(tokenize("<script>const a = `x`;</script>keep"))), "keep");
+});
+
+test("a verbatim region can span a tag boundary without breaking either", () => {
+  // The region is a token, not a slice of the source, so an element around one
+  // still nests: `<b>a `c` b</b>` is one bold run holding a code span.
+  const tree = buildTree(tokenize("<b>a `c` b</b>"));
+  assert.equal(tree.children.length, 1);
+  const bold = tree.children[0];
+  assert.ok(bold.type === "element" && bold.tag === "b");
+  if (bold.type !== "element") return;
+  assert.deepEqual(
+    bold.children.map((child) => child.type),
+    ["text", "verbatim", "text"],
+  );
 });
 
 test("a large and a pathological body both complete", () => {
@@ -255,6 +424,10 @@ test("a large and a pathological body both complete", () => {
   // A long run of `<` that opens nothing, and a long unterminated value.
   assert.deepEqual(tags("<".repeat(50_000)), []);
   assert.deepEqual(tags(`<p title="${"a".repeat(50_000)}`), ["p"]);
+  // A body with no backticks must not rescan its tail once per tag, and one
+  // that is nothing but backticks must not rescan once per backtick.
+  assert.ok(tokenize("a ` b ".repeat(30_000)).length >= 0);
+  assert.equal(verbatim("x `c` ".repeat(20_000)).length, 20_000);
   assert.ok(Date.now() - started < 5_000, "scanning took too long");
 });
 
