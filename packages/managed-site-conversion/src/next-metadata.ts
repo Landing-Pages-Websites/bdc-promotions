@@ -76,12 +76,29 @@ interface MetadataObject {
   readonly body: ts.Block | null;
   /** The object the helper RETURNS, which is the one place a parameter may appear. */
   readonly returned: ts.ObjectLiteralExpression;
+  /**
+   * What the module ASSIGNED to the exported object after building it, keyed by
+   * property, in the order the assignments run -- so the last one to a key is
+   * the one held here, and it stands in for whatever the initializer wrote.
+   */
+  readonly overrides: ReadonlyMap<string, Located>;
 }
 
-/** An expression, and the module whose imports and constants it can see. */
+/**
+ * An expression, and the environment its names resolve in: the module whose
+ * imports and constants it can see, and what a helper's parameter names stand
+ * for inside it.
+ *
+ * The substitution belongs HERE rather than on the object the value was read
+ * from, because the two can differ. `metadata.robots = { index }` is written in
+ * the route, where a helper parameter called `index` means nothing; the same
+ * object written in the helper resolves it. Keeping them together is what stops
+ * a second reader having to re-derive which of the two it is holding.
+ */
 interface Located {
   readonly expression: ts.Expression;
   readonly module: ParsedModule;
+  readonly substitution: ReadonlyMap<string, Located>;
 }
 
 /**
@@ -107,10 +124,11 @@ function findMetadataObject(
   const declaration = metadataDeclarationIn(module.source);
   if (declaration === null || declaration === "unreadable") return declaration;
   // What Next serves is the module object AFTER the module finishes running,
-  // so a value read at the declaration is only the value Next sees if nothing
-  // writes to it afterwards -- in THIS module, and in any other that can reach
-  // the binding.
-  if (!isNeverWrittenAfter(module.source, declaration)) return "unreadable";
+  // so a value read at the declaration is only the value Next sees once every
+  // write the module makes has been applied to it -- and only if no OTHER
+  // module can reach the binding to write one this reader never sees.
+  const overrides = finalValueOverrides(module, declaration);
+  if (overrides === null) return "unreadable";
   if (isReachableFromAnotherModule(module, cache, repositoryRoot)) return "unreadable";
   const initializer = declaration.initializer;
   if (initializer === undefined) return "unreadable";
@@ -124,14 +142,15 @@ function findMetadataObject(
     return {
       object: initializer,
       objectModule: module,
-      substitution: new Map(),
+      substitution: NO_SUBSTITUTION,
       callModule: module,
       body: null,
       returned: initializer,
+      overrides,
     };
   }
   if (ts.isCallExpression(initializer)) {
-    return throughHelper(initializer, module, cache, repositoryRoot) ?? "unreadable";
+    return throughHelper(initializer, module, cache, repositoryRoot, overrides) ?? "unreadable";
   }
   // Declared as something else entirely -- a name, a conditional, a spread
   // of two objects. Declared, and not read.
@@ -314,40 +333,165 @@ function bindsMetadata(pattern: ts.BindingName): boolean {
 }
 
 /**
- * Whether the exported object can still be written after it is built.
+ * What the module ASSIGNS to the exported object after building it, or null
+ * where the value Next serves cannot be resolved at all.
  *
  * The value this reader takes is the initializer; the value Next serves is the
  * module object once the module has finished running. `Object.assign(metadata,
  * { robots: { index: false } })` after the declaration makes those two
  * different, and the difference is published as an indexing instruction.
  *
- * Enumerating the ways to write -- assignment, `Object.assign`, `Reflect.set`,
+ * Enumerating the ways to WRITE -- assignment, `Object.assign`, `Reflect.set`,
  * a setter reached through an alias -- does not terminate; there is always
- * another spelling. So the question is inverted, as it was for the helper's own
- * scope: the binding must be MENTIONED nowhere but its declaration and the
- * export that publishes it. A read this refuses is reported, never inherited.
+ * another spelling. So the question is inverted, as it is for the helper's own
+ * scope: the binding must be MENTIONED nowhere but its declaration, the export
+ * that publishes it, and the one write shape below. Everything else, a READ
+ * included, refuses -- a read is how the object reaches a mutator this reader
+ * would then have to follow, which is the non-terminating question again.
+ *
+ * The one shape read here is `metadata.<key> = <plain data>` in statement
+ * position at the top level of the module. It is a real site's way of hiding
+ * one route out of a shared helper's shape, and it is resolvable rather than
+ * merely recognisable: the module runs top to bottom with nothing in between
+ * to observe, so the value Next serves for that key is simply the last such
+ * assignment. A refusal here is reported, never inherited.
  */
-function isNeverWrittenAfter(source: ts.SourceFile, declaration: ts.VariableDeclaration): boolean {
+function finalValueOverrides(
+  module: ParsedModule,
+  declaration: ts.VariableDeclaration,
+): ReadonlyMap<string, Located> | null {
   // `eval("metadata.robots = ...")` writes to the object while holding no AST
-  // reference to it, so the reference walk below cannot see it. `with` is the
-  // other scope escape and is a syntax error in an ES module, so it is not
-  // checked here -- a route module that contains one never runs at all.
-  if (SCOPE_ESCAPES.some((name) => mentions(source, name))) return false;
+  // reference to it, so the walk below cannot see it -- nor can it see which
+  // key the write lands on, which is what makes it unresolvable rather than
+  // merely unseen. `with` is the other scope escape and is a syntax error in an
+  // ES module, so it is not checked here -- a route module that contains one
+  // never runs at all.
+  if (SCOPE_ESCAPES.some((name) => mentions(module.source, name))) return null;
   const name = ts.isIdentifier(declaration.name) ? declaration.name.text : null;
-  if (name === null) return false;
-  let onlyDeclaredAndExported = true;
+  if (name === null) return null;
+  // Insertion order IS source order, because `forEachChild` walks the module in
+  // it -- so a second assignment to a key replaces the first, which is what the
+  // runtime does.
+  const overrides = new Map<string, Located>();
+  let resolvable = true;
   const visit = (node: ts.Node): void => {
-    if (!onlyDeclaredAndExported) return;
+    if (!resolvable) return;
     if (ts.isIdentifier(node) && node.text === name && node !== declaration.name) {
-      const parent = node.parent as ts.Node | undefined;
-      if (parent === undefined || !ts.isExportSpecifier(parent)) onlyDeclaredAndExported = false;
+      const written = assignedAt(node, declaration, module);
+      if (written === null) {
+        resolvable = false;
+        return;
+      }
+      if (written !== EXPORTS_THE_BINDING) overrides.set(written.key, written.value);
       return;
     }
     ts.forEachChild(node, visit);
   };
-  ts.forEachChild(source, visit);
-  return onlyDeclaredAndExported;
+  ts.forEachChild(module.source, visit);
+  return resolvable ? overrides : null;
 }
+
+/** An occurrence that publishes the binding rather than writing to it. */
+const EXPORTS_THE_BINDING = "exported";
+
+/** One resolved write: the key it lands on, and the value it puts there. */
+interface AssignedProperty {
+  readonly key: string;
+  readonly value: Located;
+}
+
+/**
+ * What this occurrence of the binding does, or null where this reader cannot
+ * say -- which is every occurrence but the two it models.
+ *
+ * The write it models is deliberately ONE shape rather than a list of them,
+ * because a list is the thing that never terminates. Each condition below
+ * removes a way the assignment could fail to be the whole story:
+ *
+ * - a plain `=` only, since `??=` and its siblings read the existing value;
+ * - a DIRECT property of the binding, named the one way this reader reads a key,
+ *   since `metadata.robots.index = false` writes INTO an object read from
+ *   somewhere else and `metadata[key] = v` names a key it does not evaluate;
+ * - a statement the MODULE ITSELF runs, since an assignment inside a branch, a
+ *   loop or a function may not run, or may run more than once;
+ * - AFTER the declaration, since a `const` written above it is in its temporal
+ *   dead zone and the module throws rather than serving anything;
+ * - a plain data value, since anything else is decided somewhere this reader is
+ *   not looking.
+ */
+function assignedAt(
+  node: ts.Identifier,
+  declaration: ts.VariableDeclaration,
+  module: ParsedModule,
+): AssignedProperty | typeof EXPORTS_THE_BINDING | null {
+  const parent = node.parent as ts.Node | undefined;
+  if (parent === undefined) return null;
+  if (ts.isExportSpecifier(parent)) return EXPORTS_THE_BINDING;
+  if (!ts.isPropertyAccessExpression(parent) || parent.expression !== node) return null;
+  const assignment = parent.parent as ts.Node | undefined;
+  if (assignment === undefined || !ts.isBinaryExpression(assignment)) return null;
+  if (assignment.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return null;
+  if (assignment.left !== parent) return null;
+  const statement = topLevelStatementOf(assignment, module.source);
+  if (statement === null) return null;
+  if (statement.pos < declaration.end) return null;
+  // Not every member name is a key: `metadata.__proto__ = { robots: ... }`
+  // replaces the PROTOTYPE, so the value would be INHERITED and a map keyed by
+  // property could not answer for `robots` at all.
+  const key = dataPropertyKey(parent.name);
+  if (key === null) return null;
+  if (!isPlainDataValue(assignment.right)) return null;
+  return {
+    key,
+    // The assignment is written in the route's own module, so that is where its
+    // value resolves -- never the helper's, whose parameter names mean nothing
+    // here.
+    value: { expression: assignment.right, module, substitution: NO_SUBSTITUTION },
+  };
+}
+
+/**
+ * The statement this expression IS, when the module runs it directly.
+ *
+ * An expression statement whose parent is the module is a step that runs
+ * exactly once, in written order, with nothing between it and the next one.
+ * Anything else -- a branch, a loop, a function body, or an assignment nested
+ * inside a larger expression -- runs on terms this reader does not evaluate.
+ */
+function topLevelStatementOf(
+  expression: ts.Expression,
+  source: ts.SourceFile,
+): ts.ExpressionStatement | null {
+  const statement = expression.parent as ts.Node | undefined;
+  if (statement === undefined || !ts.isExpressionStatement(statement)) return null;
+  return statement.parent === source ? statement : null;
+}
+
+/**
+ * A value written out in full at the point it is assigned: a literal, or an
+ * object literal that is plain data all the way down.
+ *
+ * The same standard `isPlainDataObject` sets for an object's own members, asked
+ * one level up. Anything else -- a call, a name, a spread, a template -- is
+ * decided somewhere this reader is not looking, so the write is one it cannot
+ * resolve and the whole export refuses.
+ */
+function isPlainDataValue(expression: ts.Expression): boolean {
+  if (ts.isObjectLiteralExpression(expression)) return isPlainDataObject(expression);
+  return (
+    ts.isStringLiteral(expression) ||
+    ts.isNumericLiteral(expression) ||
+    expression.kind === ts.SyntaxKind.TrueKeyword ||
+    expression.kind === ts.SyntaxKind.FalseKeyword ||
+    expression.kind === ts.SyntaxKind.NullKeyword
+  );
+}
+
+/** A substitution with nothing in it, shared rather than rebuilt per read. */
+const NO_SUBSTITUTION: ReadonlyMap<string, Located> = new Map();
+
+/** The same empty map, under the name that reads where writes are meant. */
+const NO_OVERRIDES = NO_SUBSTITUTION;
 
 
 function throughHelper(
@@ -355,6 +499,7 @@ function throughHelper(
   module: ParsedModule,
   cache: ModuleCache,
   repositoryRoot: string,
+  overrides: ReadonlyMap<string, Located>,
 ): MetadataObject | null {
   if (!ts.isIdentifier(call.expression)) return null;
   const helper = helperDeclaration(call.expression.text, module, cache, repositoryRoot);
@@ -371,6 +516,7 @@ function throughHelper(
     callModule: module,
     body: helper.body ?? null,
     returned: returned,
+    overrides,
   };
 }
 
@@ -514,15 +660,11 @@ function isPlainDataObject(object: ts.ObjectLiteralExpression): boolean {
     if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) {
       return false;
     }
-    const name = property.name;
-    if (ts.isComputedPropertyName(name)) return false;
-    const key = ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : null;
-    if (key === null || seen.has(key)) return false;
-    // `__proto__` written as a plain key sets the object's PROTOTYPE, so the
-    // object INHERITS members no AST scan of its own properties will find --
     // `{ robots: { __proto__: { index: false } } }` reads as absent and takes
-    // the default, publishing an indexable route that declared otherwise.
-    if (key === PROTOTYPE_KEY) return false;
+    // the default, publishing an indexable route that declared otherwise, so
+    // that name yields no key at all.
+    const key = dataPropertyKey(property.name);
+    if (key === null || seen.has(key)) return false;
     seen.add(key);
     if (ts.isPropertyAssignment(property)) {
       const value = property.initializer;
@@ -563,13 +705,32 @@ function writesAnything(body: ts.Block): boolean {
 }
 
 /**
- * The key that replaces an object literal's PROTOTYPE.
+ * The key that replaces an object's PROTOTYPE.
  *
- * Only the plain `__proto__: value` form does it -- `{ ["__proto__"]: v }` and
- * the shorthand do not -- but every spelling refuses here, because which one it
- * is decides what destructuring reads.
+ * Only some spellings do it -- `{ __proto__: v }` and `object.__proto__ = v`,
+ * but not `{ ["__proto__"]: v }` or the shorthand -- and every spelling is
+ * refused anyway, because which one it is decides what the object holds.
  */
 const PROTOTYPE_KEY = "__proto__";
+
+/**
+ * The key a source property name stands for, or null where it stands for no key
+ * this reader may record.
+ *
+ * `__proto__` is the reason this is one function rather than a check repeated at
+ * each site. Written as a member name it replaces the object's PROTOTYPE, so
+ * what it puts there is INHERITED -- and every structure here, an object's own
+ * members, a call's arguments and the writes an override map holds, is a scan of
+ * OWN members that cannot see it. A route whose final `robots` arrives that way
+ * would be published with the value it overrode.
+ *
+ * A computed, numeric or private name yields no key either: which one it is
+ * decides what the object holds, and this reader does not evaluate it.
+ */
+function dataPropertyKey(name: ts.PropertyName | ts.MemberName): string | null {
+  if (!ts.isIdentifier(name) && !ts.isStringLiteral(name)) return null;
+  return name.text === PROTOTYPE_KEY ? null : name.text;
+}
 
 /**
  * Names that reach this function's own scope without naming anything in it.
@@ -784,13 +945,11 @@ function substitutionFor(
   const supplied = new Map<string, ts.Expression>();
   for (const property of argument.properties) {
     if (!ts.isPropertyAssignment(property)) return null;
-    const key = property.name;
-    const text = ts.isIdentifier(key) || ts.isStringLiteral(key) ? key.text : null;
-    if (text === null) return null;
-    // `__proto__` written this way sets the object's PROTOTYPE, so destructuring
+    // A `__proto__` key here sets the argument's PROTOTYPE, so destructuring
     // reads inherited values this map never saw -- and the parameter default
     // would be substituted for a key the call did supply, inherited.
-    if (text === PROTOTYPE_KEY) return null;
+    const text = dataPropertyKey(property.name);
+    if (text === null) return null;
     supplied.set(text, property.initializer);
   }
   const substitution = new Map<string, Located>();
@@ -798,16 +957,17 @@ function substitutionFor(
     if (element.dotDotDotToken !== undefined) return null;
     if (!ts.isIdentifier(element.name)) return null;
     const key = element.propertyName;
-    const keyText =
-      key === undefined
-        ? element.name.text
-        : ts.isIdentifier(key) || ts.isStringLiteral(key)
-          ? key.text
-          : null;
+    const keyText = key === undefined ? dataPropertyKey(element.name) : dataPropertyKey(key);
     if (keyText === null) return null;
     const given = supplied.get(keyText);
     if (given !== undefined) {
-      substitution.set(element.name.text, { expression: given, module: callOwner });
+      substitution.set(element.name.text, {
+        expression: given,
+        module: callOwner,
+        // An argument is written at the CALL, outside the parameter list it
+        // feeds, so no parameter name stands for anything inside it.
+        substitution: NO_SUBSTITUTION,
+      });
       continue;
     }
     // A DEFAULT is written in the helper, so the names it uses are the helper's
@@ -817,6 +977,7 @@ function substitutionFor(
       substitution.set(element.name.text, {
         expression: element.initializer,
         module: helperOwner,
+        substitution: NO_SUBSTITUTION,
       });
     }
   }
@@ -830,6 +991,10 @@ function substitutionFor(
  * default -- publishing `index: true` for a route that declared otherwise.
  */
 function propertyOf(metadata: MetadataObject, name: string): Located | "unreadable" | null {
+  // A top-level assignment runs AFTER the object is built, so it is the value
+  // Next serves for that key whatever the object literal wrote.
+  const assigned = metadata.overrides.get(name);
+  if (assigned !== undefined) return assigned;
   for (const property of metadata.object.properties) {
     // `{ title, description }` is how a helper hands its parameters straight
     // through, and it is the commonest shape there is. The shorthand's name IS
@@ -842,12 +1007,14 @@ function propertyOf(metadata: MetadataObject, name: string): Located | "unreadab
       // `{ description }` outside a helper names a local in the object's own
       // module, which is a declared value this reader may fail to resolve --
       // never an absent one.
-      return { expression: property.name, module: metadata.objectModule };
+      return {
+        expression: property.name,
+        module: metadata.objectModule,
+        substitution: metadata.substitution,
+      };
     }
     if (!ts.isPropertyAssignment(property)) continue;
-    const key = property.name;
-    const text = ts.isIdentifier(key) || ts.isStringLiteral(key) ? key.text : null;
-    if (text !== name) continue;
+    if (dataPropertyKey(property.name) !== name) continue;
     const initializer = property.initializer;
     // `description: description` inside the helper is the helper's own
     // parameter, so what it stands for is whatever the call supplied.
@@ -859,7 +1026,11 @@ function propertyOf(metadata: MetadataObject, name: string): Located | "unreadab
     if (ts.isIdentifier(initializer) && metadata.substitution.has(initializer.text)) {
       return substituted(metadata, initializer.text) ?? "unreadable";
     }
-    return { expression: initializer, module: metadata.objectModule };
+    return {
+      expression: initializer,
+      module: metadata.objectModule,
+      substitution: metadata.substitution,
+    };
   }
   return null;
 }
@@ -987,10 +1158,16 @@ function declaredRobots(object: MetadataObject): Declared<IndexingDirectives> {
   const nested: MetadataObject = {
     object: robots.expression,
     objectModule: robots.module,
-    substitution: object.substitution,
+    // The environment comes with the value: an ASSIGNED object is the route's
+    // own, where a helper parameter of the same name means nothing, while one
+    // written in the helper resolves against the call's arguments.
+    substitution: robots.substitution,
     callModule: object.callModule,
     body: object.body,
     returned: object.returned,
+    // An assignment to `robots` is not an assignment to anything INSIDE it, and
+    // a nested path is refused outright, so this object has no writes of its own.
+    overrides: NO_OVERRIDES,
   };
   // Every key this reader does not model is a directive the route declared and
   // the descriptor would contradict: `{ index: true, noarchive: true }` emitted
@@ -998,10 +1175,7 @@ function declaredRobots(object: MetadataObject): Declared<IndexingDirectives> {
   // unmodelled key makes the block unreadable rather than partly read.
   for (const property of nested.object.properties) {
     const name = property.name;
-    const key =
-      name !== undefined && (ts.isIdentifier(name) || ts.isStringLiteral(name))
-        ? name.text
-        : null;
+    const key = name === undefined ? null : dataPropertyKey(name);
     if (key === null || !MODELLED_ROBOTS_KEYS.has(key)) return { kind: "unreadable" };
   }
   const indexRead = propertyOf(nested, "index");

@@ -208,6 +208,15 @@ route declares but the tool cannot read as a literal does **not** fall back to a
 layout — it is reported, so an ancestor's value is never attributed to a route
 that overrode it.
 
+What Next.js serves is the module object once the module has finished running,
+so a route's own top-level writes are part of the answer: `metadata.robots = {
+index: false }` beside a shared `seo(...)` call — the usual way one route is
+hidden out of a site-wide metadata shape — resolves to `index: false`, and a
+second write to the same key wins over the first. That is the only write shape
+read. The binding may otherwise be **mentioned** nowhere but its declaration and
+its export: a read is enough to refuse, because a read is how the object reaches
+a mutator, and no list of ways to write one ever terminates.
+
 ## The ID scheme
 
 Stable IDs are random, exactly as the platform mints them. What has to be

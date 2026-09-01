@@ -35,6 +35,8 @@ interface ResolutionCase {
   readonly description: string | null;
   /** `null` where the route declared robots this reader cannot read, so none is emitted. */
   readonly index: boolean | null;
+  /** Asserted only where `follow` is what separates one write order from another. */
+  readonly follow?: boolean;
 }
 
 /**
@@ -79,7 +81,146 @@ const RESOLUTION_CASES: readonly ResolutionCase[] = [
   },
   {
     slug: "mutatedirect",
-    why: "the same write to a plain object literal, which had the same hole",
+    why: "a top-level assignment to one key is the value Next serves, over the initializer's",
+    title: "Mutatedirect title",
+    description: "Layout description.",
+    index: false,
+    follow: false,
+  },
+  {
+    slug: "helperassign",
+    why: "the same assignment over a helper result, which is how a real site hides one route",
+    title: "Helperassign title",
+    description: "Helperassign description.",
+    index: false,
+    follow: false,
+  },
+  {
+    slug: "assigntitle",
+    why: "a literal is a plain data value, so a title assignment is read the same way",
+    title: "Assigntitle title",
+    description: "Assigntitle description.",
+    index: true,
+  },
+  {
+    slug: "writetwice",
+    why: "two assignments to one key: the LAST is the value, and it beats the initializer",
+    title: "Writetwice title",
+    description: "Writetwice description.",
+    index: true,
+    follow: false,
+  },
+  {
+    slug: "readafterwrite",
+    why: "a READ hands the object somewhere this reader cannot follow, so it refuses",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assigncall",
+    why: "a call decides the assigned value, so the value is not written at the assignment",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assignspread",
+    why: "a spread in the assigned object may supply or overwrite any key",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assignnested",
+    why: "a nested path writes INTO a value read from elsewhere, which is not one value",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assignbefore",
+    why: "a write above the declaration never runs, because the module throws",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "protoassign",
+    why: "`__proto__` as a target replaces the PROTOTYPE, so what it writes is inherited",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "protoassignvalue",
+    why: "`__proto__` inside the assigned value is the same hazard as `__proto__` as its target",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "protoassignnull",
+    why: "the same target with a plain data value, so only the key can refuse it",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assignelement",
+    why: "an element access names its key with an expression this reader does not evaluate",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "protoassignelement",
+    // An outcome row: the element access refuses before the key is ever read,
+    // so both guards catch this and neither is isolated by it.
+    why: "the same `__proto__` write spelled as an element access",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assignoutside",
+    why: "an outer key sharing a nested one's name is not a write to the nested object",
+    title: "Assignoutside title",
+    description: "Assignoutside description.",
+    index: false,
+    follow: false,
+  },
+  {
+    slug: "assigncompound",
+    why: "a compound assignment reads the existing value to decide what it writes",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "assignbranch",
+    why: "a write inside a branch may not run, so the served value is a condition away",
+    title: null,
+    description: null,
+    index: null,
+  },
+  {
+    slug: "suppliedrobots",
+    why: "a nested object the CALL supplied is the route's too, for the same reason",
+    title: null,
+    description: "Supplied-robots description.",
+    index: null,
+  },
+  {
+    slug: "assignsubstituted",
+    why: "an assigned object is the ROUTE's, so a helper parameter of the same name may not answer",
+    title: null,
+    description: "Assigned-robots description.",
+    index: null,
+  },
+  {
+    slug: "evalassign",
+    why: "eval runs source no AST walk reads, whatever else the module writes plainly",
     title: null,
     description: null,
     index: null,
@@ -497,6 +638,9 @@ test("every route resolves the metadata of its own chain", () => {
     } else {
       assert.ok(isJsonObject(indexing), `indexing missing for ${expected.slug}`);
       assert.equal(indexing["index"], expected.index, `indexing: ${expected.why}`);
+      if (expected.follow !== undefined) {
+        assert.equal(indexing["follow"], expected.follow, `follow: ${expected.why}`);
+      }
     }
   }
 });
@@ -539,6 +683,13 @@ test("a route that resolves nothing is refused against that route, not another",
     [
       "seo:/accessor:seo.description",
       "seo:/argumentsobj:seo.description",
+      "seo:/assignbefore:seo.description",
+      "seo:/assignbranch:seo.description",
+      "seo:/assigncall:seo.description",
+      "seo:/assigncompound:seo.description",
+      "seo:/assignelement:seo.description",
+      "seo:/assignnested:seo.description",
+      "seo:/assignspread:seo.description",
       "seo:/barreled:seo.description",
       "seo:/blockvar:seo.description",
       "seo:/branching:seo.description",
@@ -549,19 +700,24 @@ test("a route that resolves nothing is refused against that route, not another",
       "seo:/directspread:seo.description",
       "seo:/duplicate:seo.description",
       "seo:/dynamic:seo.description",
+      "seo:/evalassign:seo.description",
       "seo:/evalhelper:seo.description",
       "seo:/inherited:seo.description",
       "seo:/mutatealias:seo.description",
       "seo:/mutateassign:seo.description",
       "seo:/mutated:seo.description",
-      "seo:/mutatedirect:seo.description",
       "seo:/mutateeval:seo.description",
       "seo:/namespaced:seo.description",
       "seo:/nested:seo.description",
       "seo:/nestedaccessor:seo.description",
+      "seo:/protoassign:seo.description",
+      "seo:/protoassignelement:seo.description",
+      "seo:/protoassignnull:seo.description",
+      "seo:/protoassignvalue:seo.description",
       "seo:/protodirect:seo.description",
       "seo:/protorobots:seo.description",
       "seo:/reachable:seo.description",
+      "seo:/readafterwrite:seo.description",
       "seo:/reassigned:seo.description",
       "seo:/reexported:seo.description",
       "seo:/required:seo.description",

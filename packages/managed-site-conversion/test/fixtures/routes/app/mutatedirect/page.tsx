@@ -5,7 +5,9 @@ export const metadata: Metadata = {
   robots: { index: true },
 };
 
-metadata.robots = { index: false };
+// What Next serves is the module object once the module has run, so this is
+// the value of `robots` -- not the one the initializer wrote.
+metadata.robots = { index: false, follow: false };
 
 export default function PageMutatedirect() {
   return (

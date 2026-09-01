@@ -317,3 +317,24 @@ export function seoEval({ robots }: { readonly robots: { index: boolean } }): Me
 export function seoPair(): { metadata: Metadata } {
   return { metadata: { title: "Destructured2 title", robots: { index: false } } };
 }
+
+// A helper whose parameter is named for the robots flag itself. A route that
+// ASSIGNS its own `{ index }` must not be answered with the call's, because the
+// assigned object is written in the route, where the parameter means nothing.
+export function seoAssignedRobots({ index }: { readonly index: boolean }): Metadata {
+  return { description: "Assigned-robots description.", robots: { index } };
+}
+
+// The CALL supplies the whole robots object, and the helper also has a
+// parameter named for the flag inside it. That object is written at the call,
+// where the parameter means nothing -- the same rule an assigned object needs,
+// reached by the other route into a nested object.
+export function seoSuppliedRobots({
+  index,
+  robots,
+}: {
+  readonly index: boolean;
+  readonly robots: { index: boolean };
+}): Metadata {
+  return { description: "Supplied-robots description.", robots, twitter: { index } };
+}
