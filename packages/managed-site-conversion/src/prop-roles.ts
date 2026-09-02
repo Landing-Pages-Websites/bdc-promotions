@@ -54,7 +54,36 @@ export type PropRole = "content" | "accessibility" | "code";
  * as an enum the component switches on, which is exactly what code looks like.
  */
 const INERT = "inert";
-type Reading = PropRole | typeof INERT | null;
+/**
+ * A settled reading, and — when the value is content — the host tags it
+ * renders inside.
+ *
+ * The tag is what decides whether the text is a paragraph of prose or a short
+ * label, and only the RECEIVER knows it. Reporting the role without it left
+ * `extract.ts` hardcoding `semantic: "label"` for every component prop, which
+ * capped body copy at the label length.
+ */
+interface RoleReading {
+  readonly role: PropRole;
+  /** Empty unless the role is `content`; a `null` entry is a site whose tag could not be read. */
+  readonly renderTags: readonly (string | null)[];
+}
+
+type Reading = RoleReading | typeof INERT | null;
+
+const CODE: RoleReading = { role: "code", renderTags: [] };
+const ACCESSIBILITY: RoleReading = { role: "accessibility", renderTags: [] };
+
+/** Content rendered inside one host element, or inside something unreadable. */
+function contentIn(tag: string | null): RoleReading {
+  return { role: "content", renderTags: [tag] };
+}
+
+/** What a component does with one prop, and where it shows it. */
+export interface PropReading {
+  readonly role: PropRole;
+  readonly renderTags: readonly (string | null)[];
+}
 
 const MAX_COMPONENT_DEPTH = 6;
 
@@ -291,14 +320,20 @@ function referencesTo(root: ts.Node, binding: PropBinding): readonly ts.Node[] {
  * The single role every informative reading agrees on. Inert readings are
  * skipped; a value read only inertly is never rendered, so it is code.
  */
-function agreedRole(readings: readonly Reading[]): PropRole | null {
+function agreedReading(readings: readonly Reading[]): PropReading | null {
   if (readings.some((reading) => reading === null)) return null;
   const informative = readings.filter(
-    (reading): reading is PropRole => reading !== null && reading !== INERT,
+    (reading): reading is RoleReading => reading !== null && reading !== INERT,
   );
   const first = informative[0];
-  if (first === undefined) return readings.length === 0 ? null : "code";
-  return informative.every((reading) => reading === first) ? first : null;
+  if (first === undefined) return readings.length === 0 ? null : CODE;
+  if (!informative.every((reading) => reading.role === first.role)) return null;
+  // Every site that renders it, so the caller can require them to agree before
+  // it calls the text a paragraph.
+  return {
+    role: first.role,
+    renderTags: informative.flatMap((reading) => reading.renderTags),
+  };
 }
 
 function attributeOwnerTag(attribute: ts.JsxAttribute): string | null {
@@ -336,11 +371,11 @@ function roleOfAttribute(
     if (name === "ref" && !context.refReachesComponents) return INERT;
     const target = resolveTagAt(context.resolver, tag, attribute, from);
     if (target === null) return null;
-    return propRoleOf(target, name, context, depth + 1);
+    return propReadingOf(target, name, context, depth + 1);
   }
 
-  if (isAriaAttribute(name) || name === "alt") return "accessibility";
-  if (STRUCTURAL_ATTRIBUTES.has(name)) return "code";
+  if (isAriaAttribute(name) || name === "alt") return ACCESSIBILITY;
+  if (STRUCTURAL_ATTRIBUTES.has(name)) return CODE;
   // A host attribute this far is neither structural nor accessible —
   // `jsx-facts` does not classify it, and neither can this.
   return null;
@@ -367,10 +402,10 @@ function roleOfChild(
 ): Reading {
   const tag = tagNameOf(host);
   if (OPAQUE_TAGS.has(tag)) return INERT;
-  if (!isComponentName(tag)) return "content";
+  if (!isComponentName(tag)) return contentIn(tag);
   const target = resolveTagAt(context.resolver, tag, host, from);
   if (target === null) return null;
-  return propRoleOf(target, CHILDREN_PROP, context, depth + 1);
+  return propReadingOf(target, CHILDREN_PROP, context, depth + 1);
 }
 
 /**
@@ -397,7 +432,8 @@ function roleOfReference(
 
     if (ts.isJsxExpression(parent)) {
       const host = parent.parent;
-      if (ts.isJsxFragment(host)) return "content";
+      // A fragment shows the value with no element of its own to read.
+      if (ts.isJsxFragment(host)) return contentIn(null);
       if (ts.isJsxElement(host)) return roleOfChild(host, context, from, depth);
       if (ts.isJsxAttribute(host)) return roleOfAttribute(host, context, from, depth);
       return null;
@@ -412,12 +448,12 @@ function roleOfReference(
     ) {
       // The value names the element being rendered, not anything shown in it.
       // The closing tag repeats the same name, so it is read the same way.
-      return parent.tagName === current ? "code" : null;
+      return parent.tagName === current ? CODE : null;
     }
 
     if (ts.isBinaryExpression(parent)) {
       const operator = parent.operatorToken.kind;
-      if (COMPARISONS.has(operator)) return "code";
+      if (COMPARISONS.has(operator)) return CODE;
       // `a && b` shows b, so its left side is only ever a predicate. `a || b`
       // and `a ?? b` show A whenever it is present, so their left side is the
       // value and must be followed like any other.
@@ -437,9 +473,9 @@ function roleOfReference(
     // exactly as `variant === "primary"` does; what gets rendered is the
     // table's entry, never the key.
     if (ts.isElementAccessExpression(parent) && parent.argumentExpression === current) {
-      return "code";
+      return CODE;
     }
-    if (ts.isComputedPropertyName(parent) && parent.expression === current) return "code";
+    if (ts.isComputedPropertyName(parent) && parent.expression === current) return CODE;
 
     if (ts.isPrefixUnaryExpression(parent)) {
       return parent.operator === ts.SyntaxKind.ExclamationToken ? INERT : null;
@@ -466,7 +502,8 @@ function roleOfReference(
       // customer a key to edit as if it were their copy is the failure this
       // whole reading exists to avoid.
       const beyond = roleOfReference(parent, context, from, depth);
-      return beyond === "code" || beyond === INERT ? beyond : null;
+      if (beyond === INERT) return beyond;
+      return beyond !== null && beyond.role === "code" ? beyond : null;
     }
     if (
       ts.isPropertyAccessExpression(parent) &&
@@ -524,7 +561,7 @@ function roleOfMapCallback(
     kind: "names",
     names: [item.name.text],
   });
-  return agreedRole(
+  return agreedReading(
     references.map((reference) => roleOfReference(reference, context, from, depth)),
   );
 }
@@ -556,7 +593,7 @@ function roleOfAlias(
   const references = referencesTo(scope, { kind: "names", names: [name] }).filter(
     (reference) => !ts.isVariableDeclaration(reference.parent),
   );
-  return agreedRole(
+  return agreedReading(
     references.map((reference) => roleOfReference(reference, context, from, depth)),
   );
 }
@@ -700,12 +737,12 @@ function aliasesOf(root: ts.Node, object: string): readonly AliasBinding[] {
  * The role a component gives one of its props, read from that component's own
  * body. Returns null whenever the answer is not decided by the source.
  */
-export function propRoleOf(
+export function propReadingOf(
   declaration: ComponentDeclaration,
   propName: string,
   context: PropRoleContext,
   depth = 0,
-): PropRole | null {
+): PropReading | null {
   if (depth > MAX_COMPONENT_DEPTH) return null;
   const binding = bindingFor(declaration, propName);
   if (binding === null) return null;
@@ -720,9 +757,9 @@ export function propRoleOf(
   const references = referencesTo(declaration.jsxRoot, binding);
   // A prop the component never reads renders nothing. It is part of the
   // component's interface, not of the page's copy.
-  if (references.length === 0) return "code";
+  if (references.length === 0) return CODE;
 
-  return agreedRole(
+  return agreedReading(
     references.map((reference) => roleOfReference(reference, context, declaration, depth)),
   );
 }

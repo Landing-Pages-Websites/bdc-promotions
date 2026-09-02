@@ -17,7 +17,12 @@ import {
   textPropertyOf,
   type ResolutionContext,
 } from "./evaluate.js";
-import { propRoleOf, type PropRole, type PropRoleContext } from "./prop-roles.js";
+import {
+  propReadingOf,
+  type PropReading,
+  type PropRole,
+  type PropRoleContext,
+} from "./prop-roles.js";
 import {
   analyseItemTemplate,
   readMapCall,
@@ -112,7 +117,7 @@ type NameVerdict =
 
 /** What reading a component's own source yielded about one of its props. */
 type ComponentPropReading =
-  | { readonly kind: "role"; readonly role: PropRole }
+  | { readonly kind: "role"; readonly reading: PropReading }
   /** The tag names nothing this repository declares, so nothing can be read. */
   | { readonly kind: "unresolved_tag" }
   /** The component was read, and its source does not decide what the prop is. */
@@ -261,6 +266,34 @@ function isInsideListItem(element: ts.Node): boolean {
     if (ts.isJsxElement(node) && tagNameOf(node) === "li") return true;
   }
   return false;
+}
+
+/**
+ * Whether text shown by this element is a paragraph of prose or a short label.
+ *
+ * One statement, two readers: the host walk asks it of the element it is
+ * standing on, and the component-prop reader asks it of the element the
+ * RECEIVER renders the prop inside. They disagreed before — the prop reader
+ * did not ask at all — and the cap that follows from the answer is what a real
+ * site had to loosen by hand.
+ */
+function semanticOfHostTag(tag: string): "body" | "label" {
+  return tag === "p" || tag === "blockquote" ? "body" : "label";
+}
+
+/**
+ * The semantic of a prop rendered at these sites.
+ *
+ * Body only when EVERY site agrees on it. A site whose tag could not be read,
+ * a fragment, no site at all, or two sites that disagree all fall back to
+ * `label` -- the stricter cap, and the behaviour before this reading existed,
+ * so an unknown never loosens a bound.
+ */
+function semanticOfRenderSites(tags: readonly (string | null)[]): "body" | "label" {
+  if (tags.length === 0) return "label";
+  return tags.every((tag) => tag !== null && semanticOfHostTag(tag) === "body")
+    ? "body"
+    : "label";
 }
 
 class ComponentWalker {
@@ -536,7 +569,7 @@ class ComponentWalker {
     // which is the strongest proof of durability there is, so an absence there
     // reads as a positive answer here. `=== CODE_OWNED` would refuse every prop
     // forwarded to a host `id`, which is most of them.
-    return ownershipOfPropRole(reading.role) === CUSTOMER_EDITABLE
+    return ownershipOfPropRole(reading.reading.role) === CUSTOMER_EDITABLE
       ? { kind: "the_customer's" }
       : { kind: "durable" };
   }
@@ -562,8 +595,8 @@ class ComponentWalker {
   #readComponentProp(tag: string, name: string, node: ts.Node): ComponentPropReading {
     const target = resolveTagAt(this.#tags, tag, node, this.#declaration);
     if (target === null) return { kind: "unresolved_tag" };
-    const role = propRoleOf(target, name, this.#propRoles);
-    return role === null ? { kind: "undecided" } : { kind: "role", role };
+    const reading = propReadingOf(target, name, this.#propRoles);
+    return reading === null ? { kind: "undecided" } : { kind: "role", reading };
   }
 
   /**
@@ -801,8 +834,16 @@ class ComponentWalker {
       }
       if (STRUCTURAL_ATTRIBUTES.has(attribute.name)) continue;
       if (isAriaAttribute(attribute.name)) {
+        // An accessibility string is a name, never a paragraph.
         this.#pushAttributeText(
-          attribute.name, tag, value, scopeAnchor, discriminator, attribute.node, CODE_OWNED,
+          attribute.name,
+          tag,
+          value,
+          scopeAnchor,
+          discriminator,
+          attribute.node,
+          CODE_OWNED,
+          "label",
         );
         continue;
       }
@@ -857,10 +898,21 @@ class ComponentWalker {
       );
       return;
     }
-    const ownership = ownershipOfPropRole(reading.role);
+    const ownership = ownershipOfPropRole(reading.reading.role);
     if (ownership === null) return;
+    // What KIND of text this is comes from where the receiver shows it, which
+    // only the receiver knows. Hardcoding `label` here capped a paragraph the
+    // component renders in a `<p>` at the label length, and a real site then
+    // needed its config loosened to emit its own copy.
     this.#pushAttributeText(
-      attributeName, tag, value, scopeAnchor, discriminator, node, ownership,
+      attributeName,
+      tag,
+      value,
+      scopeAnchor,
+      discriminator,
+      node,
+      ownership,
+      semanticOfRenderSites(reading.reading.renderTags),
     );
   }
 
@@ -872,6 +924,7 @@ class ComponentWalker {
     discriminator: AnchorName | null,
     node: ts.Node,
     ownership: Ownership,
+    semantic: "body" | "label",
   ): void {
     const role: AnchorSegment = { kind: "role", tag, attribute: attributeName };
     const anchor =
@@ -886,7 +939,7 @@ class ComponentWalker {
       location: this.#locationOf(node),
       evidence: this.#evidenceOf(node),
       ownership,
-      semantic: "label",
+      semantic,
       value,
     });
   }
@@ -1119,7 +1172,7 @@ class ComponentWalker {
     this.#candidates.push({
       ...shared,
       kind: "plain_text",
-      semantic: tag === "p" || tag === "blockquote" ? "body" : "label",
+      semantic: semanticOfHostTag(tag),
       value,
     });
   }

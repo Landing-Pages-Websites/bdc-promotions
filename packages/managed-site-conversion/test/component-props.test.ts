@@ -411,3 +411,56 @@ test("an unreadable dotted tag's ref stays a host handle", () => {
   assert.deepEqual(editableValues(extracted), []);
   assert.deepEqual(extracted.findings.map((finding) => finding.code), []);
 });
+
+/**
+ * WHAT KIND of text a prop holds is decided where the receiver shows it.
+ *
+ * `#pushAttributeText` hardcoded `semantic: "label"`, so a paragraph a
+ * component renders in a `<p>` was capped at the label length. On a real site
+ * that was 42 fields of body copy, and the only way to emit them was to raise
+ * the cap in that site's config by hand.
+ *
+ * The rule is the one the host walk already used, asked of the receiver's
+ * element instead of the caller's.
+ */
+const SEMANTIC_CASES: readonly (readonly [string, string, "body" | "label"])[] = [
+  ["rendered in a paragraph", `<p>{copy}</p>`, "body"],
+  ["rendered in a blockquote", `<blockquote>{copy}</blockquote>`, "body"],
+  ["rendered in a span", `<span>{copy}</span>`, "label"],
+  ["rendered in a button", `<button type="button">{copy}</button>`, "label"],
+  ["rendered in a div", `<div>{copy}</div>`, "label"],
+  // No element of its own to read, so the stricter cap stands.
+  ["rendered in a fragment", `<>{copy}</>`, "label"],
+  // Two sites that disagree cannot both be right; body needs unanimity.
+  ["rendered in a paragraph AND a span", `<div><p>{copy}</p><span>{copy}</span></div>`, "label"],
+  ["rendered in two paragraphs", `<div><p>{copy}</p><p>{copy}</p></div>`, "body"],
+];
+
+for (const [why, body, expected] of SEMANTIC_CASES) {
+  test(`a prop ${why} is ${expected}`, () => {
+    const extracted = extractCaller({
+      "Inner.tsx": `export function Inner({ copy }: { copy?: string }) {\n  return ${body};\n}\n`,
+      "Caller.tsx":
+        `import { Inner } from "./Inner";\n` +
+        `export function Caller() {\n  return <Inner copy="Some words" />;\n}\n`,
+    });
+    const found = extracted.candidates.find(
+      (candidate) => candidate.kind === "plain_text" && candidate.value === "Some words",
+    );
+    assert.ok(found !== undefined, JSON.stringify(extracted.candidates.map((c) => c.kind)));
+    assert.equal(found.kind === "plain_text" ? found.semantic : null, expected, why);
+  });
+}
+
+/** An accessibility string is a name, never a paragraph, whatever it sits in. */
+test("an aria attribute on a host element stays a label", () => {
+  const extracted = extractCaller({
+    "Caller.tsx":
+      `export function Caller() {\n  return <p aria-label="A described region">Text</p>;\n}\n`,
+  });
+  const found = extracted.candidates.find(
+    (candidate) => candidate.kind === "plain_text" && candidate.value === "A described region",
+  );
+  assert.ok(found !== undefined);
+  assert.equal(found.kind === "plain_text" ? found.semantic : null, "label");
+});

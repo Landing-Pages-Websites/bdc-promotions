@@ -6,7 +6,7 @@ import test from "node:test";
 import ts from "typescript";
 
 import { findComponentDeclarations } from "../src/extract.js";
-import { propRoleOf, type PropRole } from "../src/prop-roles.js";
+import { propReadingOf, type PropRole } from "../src/prop-roles.js";
 import { resolveTagAt, tagResolver } from "../src/reachability.js";
 import { ModuleCache } from "../src/scan.js";
 
@@ -39,7 +39,12 @@ function roleOf(
     if (!relative.endsWith(".tsx")) continue;
     for (const declaration of findComponentDeclarations(cache.read(join(root, relative)))) {
       if (declaration.name !== component) continue;
-      return propRoleOf(declaration, prop, { resolver, refReachesComponents: reactMajor >= 19 });
+      return (
+        propReadingOf(declaration, prop, {
+          resolver,
+          refReachesComponents: reactMajor >= 19,
+        })?.role ?? null
+      );
     }
   }
   assert.fail(`component ${component} was not found`);
