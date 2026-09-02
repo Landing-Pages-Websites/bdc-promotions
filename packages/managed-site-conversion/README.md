@@ -31,6 +31,20 @@ Output:
 The process exits non-zero while anything is unresolved, so it can gate a
 conversion pull request.
 
+An output directory is reused across runs, so a conditional artifact could
+otherwise stand beside a later run that did not produce it. The content pair
+and the anchor-naming pair are both kept honest: a run writes each or removes
+it. That removal is bounded to names this tool already overwrites without
+asking, so it reaches nothing a normal run does not claim anyway.
+
+`sources/` is the exception, and deliberately. A rerun without
+`--write-sources` leaves the previous run's subtree in place, and a rerun whose
+route set shrank leaves the pages it no longer proposes. Sweeping it means
+removing a tree at a caller-supplied path, which is a much sharper capability
+than dropping a fixed file name — so it is left, and named here instead.
+**Treat `sources/` as belonging to the run that last passed `--write-sources`,
+and delete the output directory rather than reusing it if that matters.**
+
 `managed-site.content.json` is not a second statement of the values: it is
 `projectManagedSiteContentDocumentV1(contract, sources)`, the same derivation
 the platform runs when it records a site's first revision and on every later

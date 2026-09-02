@@ -93,6 +93,24 @@ function writeExclusive(
   writeJson(join(directory, CONTENT_ARTIFACTS[outcome]), document);
 }
 
+/** The anchor-naming artifacts; a run writes both of them or neither. */
+const ANCHOR_NAME_ARTIFACTS = ["anchor-names.json", "anchor-names.txt"] as const;
+
+/**
+ * Removes the anchor-naming artifacts, for a run that proposes no names.
+ *
+ * The same bound `writeExclusive` relies on: only these two names are ever
+ * removed, and a `--name-anchors` run already overwrites both without asking,
+ * so the removal claims nothing new. Without it, names proposed by an earlier
+ * run stood beside a later run that proposed none, and a reader following
+ * `anchor-names.txt` would write ids this conversion no longer offers.
+ */
+function removeAnchorNames(directory: string): void {
+  for (const name of ANCHOR_NAME_ARTIFACTS) {
+    rmSync(join(directory, name), { force: true });
+  }
+}
+
 function writeJson(path: string, value: unknown): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
@@ -141,6 +159,7 @@ export function run(argv: readonly string[]): number {
       writeJson(join(options.outputDirectory, "sources", path), document);
     }
   }
+  if (!options.nameAnchors) removeAnchorNames(options.outputDirectory);
   if (options.nameAnchors) {
     const naming = nameAmbiguousAnchors(
       proposal.ambiguous,

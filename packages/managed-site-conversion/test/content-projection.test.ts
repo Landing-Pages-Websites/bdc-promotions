@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 
@@ -337,5 +338,78 @@ describe("an output directory is the projection of its own sources", () => {
       readonly values: readonly unknown[];
     };
     assert.ok(rejected.values.length > 0, "the values read were not kept for inspection");
+  });
+});
+
+/**
+ * The output directory is reused across runs, and three of its artifacts are
+ * conditional. `writeExclusive` already keeps the content pair honest. The
+ * anchor-naming pair had the same problem: names proposed by a `--name-anchors`
+ * run stood beside a later run that proposed none, so a reader following
+ * `anchor-names.txt` would write ids this conversion no longer offers.
+ *
+ * Both directions are covered, because a rerun that DOES name anchors must
+ * still leave them behind.
+ */
+describe("a rerun leaves only the anchor names it proposed", () => {
+  const ANCHOR_NAMES = ["anchor-names.json", "anchor-names.txt"] as const;
+
+  function proposeInto(directory: string, flags: readonly string[]): number {
+    const space = workspace(SITE.fixture, SITE.config);
+    assert.ok(space.configPath !== null, "the CLI needs a config file to read");
+    return runCli([
+      "--repo",
+      space.repositoryRoot,
+      "--out",
+      directory,
+      "--config",
+      space.configPath,
+      "--ledger",
+      join(directory, "managed-site.idmap.json"),
+      ...flags,
+    ]);
+  }
+
+  it("drops names a later run without --name-anchors did not propose", () => {
+    const directory = mkdtempSync(join(tmpdir(), "managed-site-anchors-"));
+    proposeInto(directory, ["--name-anchors"]);
+    for (const name of ANCHOR_NAMES) {
+      assert.ok(existsSync(join(directory, name)), `${name} was never written`);
+    }
+
+    proposeInto(directory, []);
+
+    for (const name of ANCHOR_NAMES) {
+      assert.equal(
+        existsSync(join(directory, name)),
+        false,
+        `${name} survived a run that proposed no names`,
+      );
+    }
+  });
+
+  it("keeps the names a later run does propose", () => {
+    const directory = mkdtempSync(join(tmpdir(), "managed-site-anchors-kept-"));
+    proposeInto(directory, ["--name-anchors"]);
+
+    proposeInto(directory, ["--name-anchors"]);
+
+    for (const name of ANCHOR_NAMES) {
+      assert.ok(existsSync(join(directory, name)), `${name} was removed by a naming run`);
+    }
+  });
+
+  it("removes nothing else from the output directory", () => {
+    const directory = mkdtempSync(join(tmpdir(), "managed-site-anchors-only-"));
+    proposeInto(directory, ["--name-anchors"]);
+    writeFileSync(join(directory, "notes.txt"), "mine", "utf8");
+
+    proposeInto(directory, []);
+
+    assert.equal(
+      readFileSync(join(directory, "notes.txt"), "utf8"),
+      "mine",
+      "the removal reached a name this tool does not write",
+    );
   });
 });
