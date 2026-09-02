@@ -24,10 +24,7 @@ import {
 
 import { defaultConfig, loadConfig } from "../src/config.js";
 import { FINDING_CODES } from "../src/report.js";
-import { run, workspace, type Workspace } from "./support/proposals.js";
-
-const VALID_SRI =
-  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
+import { VALID_BRIDGE, run, workspace, type Workspace } from "./support/proposals.js";
 
 function configWith(bridge: unknown): string {
   const directory = mkdtempSync(join(tmpdir(), "conversion-config-"));
@@ -35,14 +32,6 @@ function configWith(bridge: unknown): string {
   writeFileSync(path, JSON.stringify({ bridge }));
   return path;
 }
-
-const VALID_BRIDGE = {
-  version: SUPPORTED_BRIDGE_VERSION,
-  src: SUPPORTED_BRIDGE_SRC,
-  integrity: VALID_SRI,
-  crossOrigin: "anonymous",
-  load: "head_defer",
-};
 
 /**
  * Both roots prefix every source path the proposer emits, so an unrepresentable
@@ -654,7 +643,7 @@ describe("a route that folds into a file name the standard cannot carry", () => 
     assert.ok(
       proposal.report.findings.some((entry) => entry.code === "ROUTE_PATH_UNREPRESENTABLE"),
     );
-    assert.ok(proposal.content.values.length > 0, "the rest of the site stopped being proposed");
+    assert.ok(proposal.contentDraft.values.length > 0, "the rest of the site stopped being proposed");
   });
 
   it("says nothing about a route whose file name fits", () => {

@@ -2,12 +2,12 @@ import type {
   JsonValue,
   ManagedSiteContentDocument,
   ManagedSiteContractV1,
+  ManagedSiteSourceDocumentV1,
   StableId,
 } from "@landing-pages-websites/managed-site-contract";
 import {
-  parseManagedSiteContentDocument,
   parseManagedSiteContractV1,
-  validateManagedSiteContractV1ContentSemantics,
+  projectManagedSiteContentDocumentV1,
 } from "@landing-pages-websites/managed-site-contract";
 
 import { bindCandidates, routeSlug, type FieldBinding, type PageBinding } from "./bindings.js";
@@ -41,7 +41,20 @@ export interface ProposeOptions {
 export interface Proposal {
   readonly contract: ManagedSiteContractV1 | null;
   readonly contractDraft: JsonValue;
-  readonly content: ManagedSiteContentDocument;
+  /**
+   * The content the platform derives by projecting the contract over
+   * `sourceDocuments`, which is the only content document anything downstream
+   * ever compares. Withheld with the contract, because there is nothing to
+   * project through without one.
+   */
+  readonly content: ManagedSiteContentDocument | null;
+  /**
+   * The values the walker read, stated as a content document. Parallel to
+   * `contractDraft`, and never the content: it is what a refused proposal
+   * offers for inspection, and the independent witness that the sources carry
+   * every value the walk found.
+   */
+  readonly contentDraft: ManagedSiteContentDocument;
   readonly sourceDocuments: ReadonlyMap<string, JsonValue>;
   readonly report: ProposalReport;
   readonly ledger: IdLedger;
@@ -350,13 +363,14 @@ export function propose(options: ProposeOptions): Proposal {
     ledger.retiredIds(),
   );
 
-  const contentDocument = buildContentDocument(content, seo);
-  const validation = validateProposal(draft, contentDocument);
+  const sourceDocuments = mergeSourceDocuments(content, seo, config);
+  const validation = validateProposal(draft, sourceDocuments);
   return {
     contract: validation.contract,
     contractDraft: draft,
-    content: contentDocument,
-    sourceDocuments: mergeSourceDocuments(content, seo, config),
+    content: validation.content,
+    contentDraft: buildContentDocument(content, seo),
+    sourceDocuments,
     report: {
       confidenceRule: CONFIDENCE_RULE,
       repository: options.repositoryRoot,
@@ -373,24 +387,53 @@ export function propose(options: ProposeOptions): Proposal {
 
 /**
  * The proposal is only claimed valid when the platform's own parsers and
- * semantic checks accept it — schema, identity, resolvers, routes, SEO and the
- * content that fills it. A proposal that does not survive them is emitted for
- * inspection but never reported as ready.
+ * semantic checks accept it — schema, identity, resolvers, routes, SEO — and
+ * when the platform can project a content document from the sources this run
+ * wrote. A proposal that does not survive that is emitted for inspection but
+ * never reported as ready.
+ *
+ * Projecting rather than validating an emitted document is what makes
+ * "contract validates: yes" mean what the platform needs it to: every resolver
+ * reaches a value, every source document is referenced, and no value in them is
+ * left unclassified.
  */
 function validateProposal(
   draft: JsonValue,
-  content: ManagedSiteContentDocument,
-): { readonly contract: ManagedSiteContractV1 | null; readonly error: string | null } {
+  sourceDocuments: ReadonlyMap<string, JsonValue>,
+): {
+  readonly contract: ManagedSiteContractV1 | null;
+  readonly content: ManagedSiteContentDocument | null;
+  readonly error: string | null;
+} {
   try {
     const contract = parseManagedSiteContractV1(draft);
-    validateManagedSiteContractV1ContentSemantics(
+    const content = projectManagedSiteContentDocumentV1(
       contract,
-      parseManagedSiteContentDocument(content),
+      sourceDocumentsFor(sourceDocuments),
     );
-    return { contract, error: null };
+    return { contract, content, error: null };
   } catch (error) {
-    return { contract: null, error: error instanceof Error ? error.message : String(error) };
+    return {
+      contract: null,
+      content: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
+}
+
+/**
+ * The source documents as the platform reads them: a path and a value each, in
+ * path order. That order is the default string sort `deriveManagedSiteGuardContractFactsV1`
+ * uses for `sourcePaths`, so the sequence a proposal writes and the sequence a
+ * check reads are one — asserted against `sourcePaths` in content-projection.test.ts
+ * rather than left to agree by coincidence.
+ */
+export function sourceDocumentsFor(
+  documents: ReadonlyMap<string, JsonValue>,
+): readonly ManagedSiteSourceDocumentV1[] {
+  return [...documents]
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .map(([path, value]) => ({ path, value }));
 }
 
 function buildContentDocument(

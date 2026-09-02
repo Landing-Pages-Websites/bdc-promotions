@@ -44,7 +44,7 @@ function proposedText(files: Readonly<Record<string, string>>): readonly string[
     }
     for (const entry of Object.values(record)) visit(entry);
   };
-  visit(proposal.content);
+  visit(proposal.contentDraft);
   return values;
 }
 

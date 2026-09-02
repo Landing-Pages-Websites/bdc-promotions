@@ -4,6 +4,11 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  SUPPORTED_BRIDGE_SRC,
+  SUPPORTED_BRIDGE_VERSION,
+} from "@landing-pages-websites/managed-site-contract";
+
 import type { Candidate } from "../../src/candidates.js";
 import {
   extractComponent,
@@ -18,6 +23,60 @@ import { ModuleCache } from "../../src/scan.js";
 /** Shared plumbing for the fixture-driven proposal tests. */
 
 const FIXTURE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
+
+/**
+ * The bridge delivery block the loader accepts, taken from the contract
+ * package's own constants rather than restated. Promoting the next bridge
+ * version must not need an edit in this repository's tests.
+ */
+export const VALID_BRIDGE = {
+  version: SUPPORTED_BRIDGE_VERSION,
+  src: SUPPORTED_BRIDGE_SRC,
+  integrity: "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ",
+  crossOrigin: "anonymous",
+  load: "head_defer",
+};
+
+const PERFORMANCE_BUDGET = {
+  maxLcpMilliseconds: 2500,
+  maxCls: 0.1,
+  maxInpMilliseconds: 200,
+  maxPageBytes: 2097152,
+};
+
+const BUSINESS_IDENTITY = {
+  legalName: "Fixture Ltd",
+  displayName: "Fixture",
+  telephone: "+15555550100",
+  email: "hello@example.com",
+  description: "A fixture business.",
+  sameAs: ["https://example.com/"],
+};
+
+/**
+ * Everything the proposer refuses to invent, declared for exactly the routes
+ * named here. A route a fixture renders but this omits leaves internal SEO
+ * incomplete, which is how a fixture is made to produce a refused contract.
+ */
+export function configFor(routePaths: readonly string[]): unknown {
+  return {
+    contentRoot: "src/content",
+    assetRoot: "public",
+    bridge: VALID_BRIDGE,
+    businessIdentity: BUSINESS_IDENTITY,
+    pages: Object.fromEntries(
+      routePaths.map((routePath) => [
+        routePath,
+        {
+          purpose: "landing",
+          canonical: `https://example.com${routePath}`,
+          sitemap: { included: true, changeFrequency: "monthly", priority: 0.5 },
+          performanceBudget: PERFORMANCE_BUDGET,
+        },
+      ]),
+    ),
+  };
+}
 
 export interface Workspace {
   readonly repositoryRoot: string;

@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 
@@ -9,7 +9,7 @@ import {
   revertAnchorNames,
   verifyAnchorNames,
 } from "./name-anchors.js";
-import { propose } from "./propose.js";
+import { propose, sourceDocumentsFor } from "./propose.js";
 import { renderReportText } from "./report.js";
 
 interface CliOptions {
@@ -69,6 +69,30 @@ function readOptions(argv: readonly string[]): CliOptions | null {
   };
 }
 
+/** The two names for the content document; exactly one exists after a run. */
+const CONTENT_ARTIFACTS = {
+  accepted: "managed-site.content.json",
+  rejected: "managed-site.content.rejected.json",
+} as const;
+
+/**
+ * Writes the content document under the name this outcome calls for, and
+ * removes the other.
+ *
+ * Only these two names are ever removed, and this tool already overwrites both
+ * without asking, so the removal claims nothing new. Anything else in the
+ * output directory is left alone.
+ */
+function writeExclusive(
+  directory: string,
+  outcome: keyof typeof CONTENT_ARTIFACTS,
+  document: unknown,
+): void {
+  const other = outcome === "accepted" ? "rejected" : "accepted";
+  rmSync(join(directory, CONTENT_ARTIFACTS[other]), { force: true });
+  writeJson(join(directory, CONTENT_ARTIFACTS[outcome]), document);
+}
+
 function writeJson(path: string, value: unknown): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
@@ -88,7 +112,24 @@ export function run(argv: readonly string[]): number {
 
   mkdirSync(options.outputDirectory, { recursive: true });
   writeJson(join(options.outputDirectory, "managed-site.contract.json"), proposal.contractDraft);
-  writeJson(join(options.outputDirectory, "managed-site.content.json"), proposal.content);
+  // Writing the sources is what makes this directory checkable on its own.
+  writeJson(
+    join(options.outputDirectory, "managed-site.sources.json"),
+    sourceDocumentsFor(proposal.sourceDocuments),
+  );
+  // `managed-site.content.json` only ever holds a projection, and the two names
+  // are mutually exclusive: the README says the rejection is written INSTEAD of
+  // the content. The output directory is reused across runs, so writing one
+  // without removing the other left a refused run standing beside the previous
+  // run's content, and a consumer following the documented path would package
+  // content this conversion refused. Removing the alternate is bounded to these
+  // two names, both of which this tool already overwrites unconditionally, so
+  // it reaches nothing a normal run does not already claim.
+  writeExclusive(
+    options.outputDirectory,
+    proposal.content === null ? "rejected" : "accepted",
+    proposal.content ?? proposal.contentDraft,
+  );
   writeJson(join(options.outputDirectory, "needs-human.json"), proposal.report);
   writeFileSync(
     join(options.outputDirectory, "needs-human.txt"),
@@ -152,7 +193,11 @@ export function run(argv: readonly string[]): number {
       `written to ${options.outputDirectory}\n`,
   );
   if (proposal.validationError !== null) {
-    process.stdout.write(`validation: ${proposal.validationError}\n`);
+    process.stdout.write(
+      `validation: ${proposal.validationError}\n` +
+        "content: withheld, nothing can project it. The values read are in " +
+        "managed-site.content.rejected.json\n",
+    );
   }
   return proposal.contract === null || report.findings.length > 0 ? 1 : 0;
 }

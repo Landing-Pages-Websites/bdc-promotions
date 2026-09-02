@@ -264,7 +264,7 @@ for (const [description, body] of CONVENTIONAL_LISTS) {
       .flatMap((each) => each.fields)
       .find((each) => each.type === "rich_text");
     assert.ok(field !== undefined, `no rich-text field in ${JSON.stringify(draft.pages)}`);
-    const value = proposal.content.values.find((each) => each.fieldId === field.id);
+    const value = proposal.contentDraft.values.find((each) => each.fieldId === field.id);
     assert.ok(value !== undefined, `no value for ${field.id}`);
     // The platform's own validator, not a restatement of it here.
     validateManagedFieldValue(field, value);
@@ -351,7 +351,7 @@ for (const [why, item] of [
       .flatMap((each) => each.fields)
       .find((each) => each.type === "rich_text");
     assert.ok(field !== undefined, `no rich-text field for ${why}`);
-    const value = proposal.content.values.find((each) => each.fieldId === field.id);
+    const value = proposal.contentDraft.values.find((each) => each.fieldId === field.id);
     assert.ok(value !== undefined, `no value for ${field.id}`);
     validateManagedFieldValue(field, value);
   });

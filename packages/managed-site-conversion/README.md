@@ -21,13 +21,23 @@ Output:
 | file | what it is |
 | --- | --- |
 | `managed-site.contract.json` | the proposed contract, in the canonical v1 shape |
-| `managed-site.content.json` | the values the site renders today, as a content document |
-| `sources/src/content/**.json` | the proposed structured sources the resolvers point at |
+| `managed-site.sources.json` | the proposed sources as the platform reads them, one `{ path, value }` each |
+| `managed-site.content.json` | the content the platform projects from that contract and those sources |
+| `managed-site.content.rejected.json` | written **instead** of the content whenever the contract was refused, holding the values the walker read |
+| `sources/src/content/**.json` | the same sources, laid out to be copied into the repository (`--write-sources`) |
 | `needs-human.txt` / `.json` | every decision the tool refused to make, with the evidence |
 | `managed-site.idmap.json` | the anchor-to-ID ledger (commit this) |
 
 The process exits non-zero while anything is unresolved, so it can gate a
 conversion pull request.
+
+`managed-site.content.json` is not a second statement of the values: it is
+`projectManagedSiteContentDocumentV1(contract, sources)`, the same derivation
+the platform runs when it records a site's first revision and on every later
+Site Guard check. So an output directory can be checked on its own — project
+its contract over its sources and the result must digest identically to the
+content beside it — and a content document nothing can project is never
+written as content at all.
 
 ## Writing the names it is missing
 
@@ -337,9 +347,14 @@ digests read from the committed files.
 ## Verification
 
 The proposal is only reported as valid when the platform's own parsers accept
-it: `parseManagedSiteContractV1`, `parseManagedSiteContentDocument` and
-`validateManagedSiteContractV1ContentSemantics`. There is no second
-implementation of the schema in this package — resolvers and pointers are built
+it: `parseManagedSiteContractV1`, and then
+`projectManagedSiteContentDocumentV1`, which resolves every resolver against
+the sources this run wrote and runs
+`validateManagedSiteContractV1ContentSemantics` over what it derives. A
+resolver that reaches nothing, a source document nothing references, or a value
+in one left unclassified is therefore a refused contract rather than a proposal
+that only fails once the platform reads it. There is no second implementation
+of the schema in this package — resolvers and pointers are built
 through `parseRepositoryPath` and `parseJsonPointer` so a malformed address fails
 at construction rather than at review time.
 

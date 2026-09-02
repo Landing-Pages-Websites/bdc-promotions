@@ -91,7 +91,7 @@ describe("an asset path the standard cannot carry", () => {
     const proposal = proposalWith(LONGEST_ASSET_ROOT, nested);
 
     assert.ok(proposal.report.findings.length > 1, "other decisions are still reported");
-    assert.ok(proposal.content.values.length > 0, "content is still proposed");
+    assert.ok(proposal.contentDraft.values.length > 0, "content is still proposed");
   });
 
   it("reads an ordinary asset path unchanged", () => {
