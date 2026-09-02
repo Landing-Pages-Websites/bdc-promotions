@@ -5,7 +5,9 @@ import {
   MAX_UPLOAD_FILES,
   MAX_UPLOAD_TOTAL_BYTES,
   parseSignedUploads,
+  declaredContentType,
   selectUploadableFiles,
+  UPLOAD_ACCEPT_ATTRIBUTE,
   uploadSignedFiles,
 } from "./leadUploads.ts";
 
@@ -71,12 +73,14 @@ test("selectUploadableFiles refuses an empty file", () => {
 });
 
 test("selectUploadableFiles enforces the total even when each file fits", () => {
-  // Three 9MB files each pass the per-file ceiling; together they do not.
-  const nine = 9 * 1024 * 1024;
+  // Derived, never restated: a test that hardcodes a ceiling breaks whenever it
+  // moves and, worse, can pass against the wrong one. Each file is exactly half
+  // the total, so two fit and the third cannot.
+  const half = Math.floor(MAX_UPLOAD_TOTAL_BYTES / 2);
   const { accepted, rejected } = selectUploadableFiles([
-    file("a.pdf", "application/pdf", nine),
-    file("b.pdf", "application/pdf", nine),
-    file("c.pdf", "application/pdf", nine),
+    file("a.pdf", "application/pdf", half),
+    file("b.pdf", "application/pdf", half),
+    file("c.pdf", "application/pdf", half),
   ]);
   const total = accepted.reduce((sum, f) => sum + f.size, 0);
   assert.ok(total <= MAX_UPLOAD_TOTAL_BYTES);
@@ -201,4 +205,46 @@ test("uploadSignedFiles omits a key whose PUT was refused", async () => {
   } finally {
     globalThis.fetch = original;
   }
+});
+
+test("declaredContentType resolves a .dwg the browser could not type", () => {
+  // Browsers report an empty type for CAD files. Without this a contractor's
+  // plan drawing is refused before the server is ever asked.
+  assert.equal(
+    declaredContentType(file("plan.dwg", "", 1024)),
+    "image/vnd.dwg",
+  );
+  assert.equal(
+    declaredContentType(file("PLAN.DWG", "", 1024)),
+    "image/vnd.dwg",
+  );
+});
+
+test("declaredContentType never overrides a type the browser supplied", () => {
+  assert.equal(
+    declaredContentType(file("plan.dwg", "application/acad", 1024)),
+    "application/acad",
+  );
+  assert.equal(declaredContentType(pdf()), "application/pdf");
+});
+
+test("declaredContentType leaves an unidentified binary unidentified", () => {
+  // Inferring only .dwg is the point: an unnamed binary must stay refused.
+  assert.equal(declaredContentType(file("mystery.bin", "", 1024)), "");
+  assert.equal(declaredContentType(file("archive.zip", "", 1024)), "");
+});
+
+test("selectUploadableFiles accepts an untyped .dwg and still refuses other untyped files", () => {
+  const dwg = selectUploadableFiles([file("plan.dwg", "", 2048)]);
+  assert.equal(dwg.accepted.length, 1, "an untyped .dwg must be accepted");
+
+  const binary = selectUploadableFiles([file("mystery.bin", "", 2048)]);
+  assert.equal(binary.accepted.length, 0);
+  assert.match(binary.rejected[0].reason, /file type/);
+});
+
+test("the accept attribute offers .dwg by extension", () => {
+  // A MIME-only accept list does not offer CAD files in the picker at all.
+  assert.ok(UPLOAD_ACCEPT_ATTRIBUTE.includes(".dwg"));
+  assert.ok(UPLOAD_ACCEPT_ATTRIBUTE.includes("application/pdf"));
 });

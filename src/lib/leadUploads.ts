@@ -7,8 +7,8 @@
  * past this is refused there.
  */
 export const MAX_UPLOAD_FILES = 5;
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-export const MAX_UPLOAD_TOTAL_BYTES = 20 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+export const MAX_UPLOAD_TOTAL_BYTES = 50 * 1024 * 1024;
 
 /**
  * The field a submission uses to name what it uploaded.
@@ -30,10 +30,43 @@ export const ACCEPTED_UPLOAD_TYPES = [
   "image/png",
   "image/jpeg",
   "image/heic",
+  // CAD drawings, under the spellings browsers actually send. Must match MEGA's
+  // allowlist exactly: a type this list accepts but the server does not is
+  // refused at signing, and a type the server accepts but this list does not is
+  // never offered to the visitor at all.
+  "image/vnd.dwg",
+  "application/acad",
+  "image/x-dwg",
 ] as const;
 
-/** For the file input's `accept` attribute. */
-export const UPLOAD_ACCEPT_ATTRIBUTE = ACCEPTED_UPLOAD_TYPES.join(",");
+/**
+ * For the file input's `accept` attribute.
+ *
+ * Includes the `.dwg` EXTENSION as well as its MIME spellings. Browsers have no
+ * registered type for CAD files, so a MIME-only accept list does not offer them
+ * in the picker at all.
+ */
+export const UPLOAD_ACCEPT_ATTRIBUTE = [...ACCEPTED_UPLOAD_TYPES, ".dwg"].join(
+  ",",
+);
+
+/**
+ * The content type to declare for a chosen file.
+ *
+ * Browsers report an empty `type` for a `.dwg` because there is no registered
+ * mapping, so trusting `file.type` alone would refuse every CAD drawing before
+ * the server was ever asked. The extension resolves it to a spelling MEGA's
+ * allowlist accepts, and the same value is sent as the Content-Type header on
+ * the PUT, so what S3 stores is what the claim later reads back and re-checks.
+ *
+ * Only extensions whose type browsers fail to supply are inferred. Anything else
+ * keeps whatever the browser said, including nothing — an unidentified binary
+ * must stay refused.
+ */
+export function declaredContentType(file: File): string {
+  if (file.type !== "") return file.type;
+  return file.name.toLowerCase().endsWith(".dwg") ? "image/vnd.dwg" : "";
+}
 
 export interface UploadRejection {
   fileName: string;
@@ -71,7 +104,7 @@ export function selectUploadableFiles(files: readonly File[]): UploadSelection {
     }
     if (
       !ACCEPTED_UPLOAD_TYPES.includes(
-        file.type as (typeof ACCEPTED_UPLOAD_TYPES)[number],
+        declaredContentType(file) as (typeof ACCEPTED_UPLOAD_TYPES)[number],
       )
     ) {
       rejected.push({

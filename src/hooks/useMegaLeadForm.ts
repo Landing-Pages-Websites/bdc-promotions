@@ -12,7 +12,11 @@ import {
   isValidPhone,
   phoneDigits,
 } from "@/lib/leadValidation";
-import { parseSignedUploads, uploadSignedFiles } from "@/lib/leadUploads";
+import {
+  declaredContentType,
+  parseSignedUploads,
+  uploadSignedFiles,
+} from "@/lib/leadUploads";
 
 export {
   EMAIL_PATTERN,
@@ -100,7 +104,7 @@ async function uploadAttachments(
         submissionBinding: binding,
         files: files.map((file) => ({
           fileName: file.name,
-          contentType: file.type,
+          contentType: declaredContentType(file),
           sizeBytes: file.size,
         })),
       }),
