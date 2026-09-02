@@ -19,6 +19,7 @@ import {
 } from "./evaluate.js";
 import {
   propReadingOf,
+  provenHostTagsOf,
   type PropReading,
   type PropRole,
   type PropRoleContext,
@@ -81,7 +82,14 @@ import {
   reactMajorOf,
   type ParsedModule,
 } from "./scan.js";
-import { resolveTagAt, tagResolver, type TagResolver } from "./reachability.js";
+import {
+  declarationKey,
+  readTagAs,
+  resolveTagAt,
+  tagResolver,
+  type CallSiteIndex,
+  type TagResolver,
+} from "./reachability.js";
 
 export interface ComponentDeclaration {
   readonly name: string;
@@ -326,6 +334,7 @@ class ComponentWalker {
     roles: TagRoles,
     resolution: ResolutionContext,
     tags: TagResolver,
+    callSites: CallSiteIndex,
   ) {
     this.#declaration = declaration;
     this.#constants = constants;
@@ -336,6 +345,15 @@ class ComponentWalker {
       resolver: tags,
       // One reading of the repository's React version, shared by both sides.
       refReachesComponents: refReachesComponents(reactMajorOf(resolution.repositoryRoot)),
+      // Where each component is rendered, so a reading can ask what a prop can
+      // BE. An empty index means no site was observed, and a dynamic tag then
+      // stays unread rather than being guessed at.
+      callSitesOf: (target) => callSites.sites.get(declarationKey(target)) ?? [],
+      // Sites this reader could not attribute to any declaration. A proof about
+      // "every call of this component" has to account for them, because one of
+      // them may be a call of it under another name.
+      opaqueCallSites: () => callSites.opaque,
+      unknownRenders: () => callSites.unknownRenders,
     };
   }
 
@@ -653,6 +671,18 @@ class ComponentWalker {
     return { region: null, discriminator: null };
   }
 
+  /**
+   * Whether this capitalised tag is proven to render an OPAQUE host element.
+   *
+   * One question, asked by the element walk and by the attribute reader, so
+   * the subtree boundary and the attribute boundary cannot disagree.
+   */
+  #provenOpaque(element: JsxElementNode, tag: string): boolean {
+    return (
+      provenHostTagsOf(tag, element, this.#declaration, this.#propRoles)?.kind === "opaque"
+    );
+  }
+
   #walkElement(element: JsxElementNode, anchor: AnchorPath): void {
     if (!isWalkedElement(element)) return;
     const tag = tagNameOf(element);
@@ -678,6 +708,14 @@ class ComponentWalker {
       return;
     }
     if (isComponentName(tag)) {
+      // A dynamic alias proven to render `script`, `style`, `svg` or
+      // `template` excludes its WHOLE subtree, exactly as the static tag does.
+      // `isWalkedElement` asks `OPAQUE_TAGS` about the syntactic name, and
+      // `Tag` is in no such set, so `<Tag><p>Invisible</p></Tag>` had the
+      // nested paragraph walked and its text offered as customer copy from
+      // inside excluded markup. Skipping only the attributes was half the
+      // boundary.
+      if (this.#provenOpaque(element, tag)) return;
       this.#collectAttributes(element, tag, scopeAnchor, discriminator);
       this.#walkChildren(childrenOf(element), scopeAnchor);
       return;
@@ -786,11 +824,33 @@ class ComponentWalker {
     // forwarding to the DOM element it names is exactly what those rules
     // describe. Asking a package this reader cannot open would turn every
     // `className` on a `motion.*` tag into a finding a human must dismiss.
+    // A dynamic tag PROVEN to be a host element at every call site is a host
+    // element here too. Without this an attribute written directly on `<Tag>`
+    // reported UNKNOWN_ATTRIBUTE_ROLE: `readsAsComponent` was true, resolution
+    // failed, and a human had to dismiss a finding about a tag the reader had
+    // already settled. The proof is `prop-roles.ts`'s, and asking it here is
+    // what stops this reader and the prop reading from disagreeing.
+    //
+    // `readTagAs` is reachability.ts's, and the call-site index asks the same
+    // function, so a tag cannot read as a component here and be skipped there.
+    const provenHost = provenHostTagsOf(tag, element, this.#declaration, this.#propRoles);
+    // A tag proven to be `script`, `style`, `svg` or `template` renders
+    // nothing, so it has no attributes worth a field OR a finding. Testing the
+    // proof for `null` alone sent the opaque answer down the HOST branch, and
+    // every attribute on such a tag came back as `UNKNOWN_ATTRIBUTE_ROLE` --
+    // a human asked to classify markup the reader had already decided shows
+    // nothing. `prop-roles.ts` treats the same answer as inert; these two
+    // readers agree or neither is trustworthy.
+    if (provenHost?.kind === "opaque") return;
     const readsAsComponent =
-      isComponentName(tag) ||
-      (!isProvablyHostTag(tag) &&
-        resolveTagAt(this.#tags, tag, element, this.#declaration) !== null);
+      provenHost === null &&
+      readTagAs(this.#tags, tag, element, this.#declaration).kind === "component";
     for (const attribute of namedAttributes(element)) {
+      // JSX applies attributes left to right, so a duplicated name means only
+      // the LAST one is received. `findAttribute` was taught that; this loop
+      // was not, so both literals of `<Inner label="stale" label="shown" />`
+      // reached extraction and the stale one could become the field.
+      if (findAttribute(element, attribute.name) !== attribute.node) continue;
       if (this.#isHandledElsewhere(tag, attribute.name)) continue;
       // React consumes `key` before the component ever sees it, so nothing
       // written there renders — on a host element or a component alike.
@@ -1297,6 +1357,7 @@ export function extractComponent(
   repositoryRoot: string,
   cache: ModuleCache,
   tags: TagResolver = tagResolver(repositoryRoot, cache),
+  callSites: CallSiteIndex = { sites: new Map(), opaque: [], unknownRenders: 0 },
 ): ExtractionResult {
   const constants = collectModuleConstants(declaration.module.source);
   const resolution: ResolutionContext = {
@@ -1304,7 +1365,14 @@ export function extractComponent(
     repositoryRoot,
     cache,
   };
-  return new ComponentWalker(declaration, constants, roles, resolution, tags).run();
+  return new ComponentWalker(
+    declaration,
+    constants,
+    roles,
+    resolution,
+    tags,
+    callSites,
+  ).run();
 }
 
 export { itemPropertyRead, resolvedStringValueOf };

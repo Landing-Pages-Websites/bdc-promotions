@@ -10,6 +10,7 @@ import {
 } from "@landing-pages-websites/managed-site-contract";
 
 import type { Candidate } from "../../src/candidates.js";
+import { callSiteIndex, tagResolver } from "../../src/reachability.js";
 import {
   extractComponent,
   findComponentDeclarations,
@@ -136,11 +137,20 @@ export function extractEntries(
     writeFileSync(file, text, "utf8");
   }
   const cache = new ModuleCache();
+  const tags = tagResolver(directory, cache);
+  const declared = entries.flatMap((entry) =>
+    findComponentDeclarations(cache.read(join(directory, entry))),
+  );
+  // The proposer builds this once over every declaration a route reaches, and
+  // a reading that asks what a prop can BE needs it. Without it here, a
+  // dynamic tag stays unread and any test of that reading passes vacuously.
+  // These fixtures have no routes, so the entries' own declarations stand in.
+  const callSites = callSiteIndex(declared, tags);
   const extractions = entries.flatMap((entry) => {
     const sourceModule = cache.read(join(directory, entry));
     const roles = resolveTagRoles(sourceModule);
     return findComponentDeclarations(sourceModule).map((declaration) =>
-      extractComponent(declaration, roles, directory, cache),
+      extractComponent(declaration, roles, directory, cache, tags, callSites),
     );
   });
   return {

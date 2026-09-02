@@ -23,7 +23,12 @@ import { IdLedger } from "./id-ledger.js";
 import { isJsonObject, writeAtPointer, type JsonObject } from "./json-write.js";
 import { readNextMetadata, type NextMetadata } from "./next-metadata.js";
 import { isRepositoryPath } from "./paths.js";
-import { declarationKey, resolveRenderTree, tagResolver } from "./reachability.js";
+import {
+  callSiteIndex,
+  declarationKey,
+  resolveRenderTree,
+  tagResolver,
+} from "./reachability.js";
 import {
   CONFIDENCE_RULE,
   FindingCollector,
@@ -126,6 +131,14 @@ function extractRendered(
   const walked = new Set<string>();
   const rolesByFile = new Map<string, TagRoles>();
   const tags = tagResolver(repositoryRoot, cache);
+  // Every place each reachable component is rendered, built once. A reading
+  // that asks what a prop can BE needs the sites that supply it, and building
+  // it from the declarations reachability already resolved keeps dead code from
+  // counting as evidence.
+  const callSites = callSiteIndex(
+    [...new Map(routes.flatMap((route) => route.components.map((d) => [declarationKey(d), d]))).values()],
+    tags,
+  );
   for (const route of routes) {
     for (const declaration of route.components) {
       const file = declaration.module.file;
@@ -134,7 +147,14 @@ function extractRendered(
       walked.add(key);
       const roles = rolesByFile.get(file) ?? resolveTagRoles(declaration.module);
       rolesByFile.set(file, roles);
-      const extracted = extractComponent(declaration, roles, repositoryRoot, cache, tags);
+      const extracted = extractComponent(
+        declaration,
+        roles,
+        repositoryRoot,
+        cache,
+        tags,
+        callSites,
+      );
       candidates.push(...extracted.candidates);
       findings.push(...extracted.findings);
     }

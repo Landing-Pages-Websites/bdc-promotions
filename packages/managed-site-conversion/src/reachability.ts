@@ -1,8 +1,19 @@
 import ts from "typescript";
 
 import { findComponentDeclarations, type ComponentDeclaration } from "./extract.js";
-import { isComponentName, isTransparentWrapper, unwrapTransparent } from "./jsx-facts.js";
-import { walkRenderOutput, EVERY_TRIGGER, type UnreadableRender } from "./render-output.js";
+import {
+  isComponentName,
+  isProvablyHostTag,
+  isTransparentWrapper,
+  unwrapTransparent,
+  type JsxElementNode,
+} from "./jsx-facts.js";
+import {
+  walkRenderOutput,
+  EVERY_TRIGGER,
+  isUnfollowableRenderedCallee,
+  type UnreadableRender,
+} from "./render-output.js";
 import type { Finding } from "./report.js";
 import { declarationOfName, scopeOfDeclaration } from "./scopes.js";
 import {
@@ -44,6 +55,33 @@ type Resolution =
   | { readonly kind: "external" }
   | { readonly kind: "missing_module"; readonly reference: ModuleReference }
   | { readonly kind: "unresolved" };
+
+/**
+ * What a component-shaped tag names, as much as this reader can tell.
+ *
+ * The distinction the resolver already draws and `resolveTagAt` throws away:
+ * `external` is a component from OUTSIDE this repository, so it is certainly
+ * not one of our declarations, while `opaque` is a binding in our own code that
+ * could not be identified — `const Alias = Heading` among them. Collapsing both
+ * to `null` is what let a reachable `<Alias as={Card} />` vanish from the
+ * call-site index and a host-alias proof read the gap as agreement.
+ */
+export type TagTarget =
+  | { readonly kind: "declaration"; readonly declaration: ComponentDeclaration }
+  | { readonly kind: "external" }
+  | { readonly kind: "opaque" };
+
+const OPAQUE_TARGET: TagTarget = { kind: "opaque" };
+const EXTERNAL_TARGET: TagTarget = { kind: "external" };
+
+function tagTargetOf(resolution: Resolution): TagTarget {
+  if (resolution.kind === "declaration") {
+    return { kind: "declaration", declaration: resolution.declaration };
+  }
+  // A module of OURS that could not be read could hold any of our components,
+  // so it is opaque rather than external. Fail closed.
+  return resolution.kind === "external" ? EXTERNAL_TARGET : OPAQUE_TARGET;
+}
 
 const EXTERNAL: Resolution = { kind: "external" };
 const UNRESOLVED: Resolution = { kind: "unresolved" };
@@ -245,6 +283,10 @@ class RenderWalker {
   ): ComponentDeclaration | null {
     const resolution = this.#resolutionOf(tagName, from, at);
     return resolution.kind === "declaration" ? resolution.declaration : null;
+  }
+
+  targetAtSite(tagName: string, from: ComponentDeclaration, at: ts.Node): TagTarget {
+    return tagTargetOf(this.#resolutionOf(tagName, from, at));
   }
 
   /**
@@ -460,8 +502,96 @@ export function resolveRenderTree(
 }
 
 /** Resolves a JSX tag to the component it renders, by the render walk's rules. */
+/**
+ * One place a component is rendered, and the component that renders it.
+ *
+ * A reading that asks what a prop can BE needs the sites that supply it, and
+ * the element rather than just the file, because two sites in one component
+ * can pass different values.
+ */
+export interface CallSite {
+  readonly element: JsxElementNode;
+  readonly from: ComponentDeclaration;
+}
+
+/**
+ * Every place each declaration is rendered, keyed by `declarationKey`.
+ *
+ * Built from the declarations reachability already resolved, so it covers
+ * exactly the components a route reaches — a site in dead code supplies no
+ * value at runtime and must not count as evidence.
+ *
+ * Resolved with `resolveAt`, not `resolve`: which declaration a tag names is a
+ * question about the scope it is written in, and a reading that classifies a
+ * value cannot afford the breadth answer.
+ */
+export interface CallSiteIndex {
+  /** Sites keyed by the declaration they provably call. */
+  readonly sites: ReadonlyMap<string, readonly CallSite[]>;
+  /**
+   * Reachable component-shaped sites whose target could not be identified.
+   *
+   * These are not attributable to any declaration, and each one might be a
+   * call of ANY of ours -- `const Alias = Heading` is the reviewed case. A
+   * proof that depends on having seen every call of a declaration has to
+   * account for them; dropping them makes the index quietly wrong rather than
+   * visibly incomplete.
+   */
+  readonly opaque: readonly CallSite[];
+  /**
+   * Rendered calls whose body this reader could not follow.
+   *
+   * Unlike an opaque JSX site there is no element to interrogate: the call
+   * renders something unknown, so a proof that depends on having seen every
+   * call of a declaration cannot hold. Counted rather than listed because the
+   * only question asked of them is whether any exist.
+   */
+  readonly unknownRenders: number;
+}
+
+export function callSiteIndex(
+  declarations: readonly ComponentDeclaration[],
+  resolver: TagResolver,
+): CallSiteIndex {
+  const sites = new Map<string, CallSite[]>();
+  const opaque: CallSite[] = [];
+  let unknownRenders = 0;
+  for (const from of declarations) {
+    walkRenderOutput(from.jsxRoot, EVERY_TRIGGER, (node) => {
+      if (isUnfollowableRenderedCallee(node, from.module.source)) unknownRenders += 1;
+      if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) return false;
+      const name = node.tagName.getText(from.module.source);
+      // Every reachable site that renders a component is evidence, dotted ones
+      // included -- see `readTagAs`. A component from a PACKAGE is not one of
+      // ours and is skipped; one of ours that could not be identified is kept,
+      // because a proof cannot tell it apart from the declaration it is about.
+      const reading = readTagAs(resolver, name, node, from);
+      if (reading.kind !== "component") return false;
+      const element = ts.isJsxOpeningElement(node) ? node.parent : node;
+      if (reading.target.kind === "opaque") {
+        opaque.push({ element, from });
+        return false;
+      }
+      if (reading.target.kind === "external") return false;
+      const key = declarationKey(reading.target.declaration);
+      const recorded = sites.get(key) ?? [];
+      recorded.push({ element, from });
+      sites.set(key, recorded);
+      return false;
+    });
+  }
+  return { sites, opaque, unknownRenders };
+}
+
 export interface TagResolver {
   resolve(tagName: string, from: ComponentDeclaration): ComponentDeclaration | null;
+  /**
+   * `resolveAt` with the REASON kept: a tag that is not one of our
+   * declarations is either a package's component or a binding of ours this
+   * reader could not identify, and only the second can secretly be the
+   * declaration a proof is about.
+   */
+  targetAt(tagName: string, from: ComponentDeclaration, at: ts.Node): TagTarget;
   /**
    * The same question asked from MODULE scope only, for a use site that has no
    * nearer binding. The render walk wants breadth and a wrong answer only adds
@@ -486,6 +616,7 @@ export function tagResolver(repositoryRoot: string, cache: ModuleCache): TagReso
   return {
     resolve: (tagName, from) => walker.resolveTag(tagName, from),
     resolveAt: (tagName, from, at) => walker.resolveTagAtSite(tagName, from, at),
+    targetAt: (tagName, from, at) => walker.targetAtSite(tagName, from, at),
   };
 }
 
@@ -521,6 +652,58 @@ export function resolveTagAt(
   from: ComponentDeclaration,
 ): ComponentDeclaration | null {
   return resolver.resolveAt(tagName, from, node);
+}
+
+/**
+ * What a JSX tag renders, as ONE decision both readers use.
+ *
+ * `Heading` is a component beyond doubt, so an unreadable one is still a
+ * component (`target: null`) rather than a host element. A DOTTED tag is a
+ * component too, but only a resolvable one can be read: `ui.Card` is in this
+ * repository, while `motion.div` keeps the host reading because a package
+ * wrapper forwarding to the DOM element it names is exactly what the host
+ * rules describe. Lowercase and undotted is a host element.
+ *
+ * This lived in two places and they diverged: the call-site index took
+ * PascalCase only, so a reachable `<ui.Heading as={Card} />` never became
+ * evidence and could not veto a host-tag proof that other call sites
+ * supported. An index that silently omits a site is worse than one that is
+ * absent, because the proof reads the gap as agreement.
+ */
+export type TagReading =
+  | { readonly kind: "host" }
+  | { readonly kind: "component"; readonly target: TagTarget };
+
+export function readTagAs(
+  resolver: TagResolver,
+  tagName: string,
+  node: ts.Node,
+  from: ComponentDeclaration,
+): TagReading {
+  if (isComponentName(tagName)) {
+    return { kind: "component", target: resolver.targetAt(tagName, from, node) };
+  }
+  if (isProvablyHostTag(tagName)) return { kind: "host" };
+
+  // A DOTTED tag asks where the RECEIVER comes from, and nothing else.
+  //
+  // External is the host case, and the only one: `motion.div` and `pkg.Card`
+  // both forward to something this reader cannot open, and asking a package
+  // about a prop would turn every `className` on a `motion.*` tag into a
+  // finding a human must dismiss. Anything else -- a declaration, or a binding
+  // of ours that could not be identified -- is a component, so it is indexed
+  // or it vetoes.
+  //
+  // I had a member-case rule here for one round: lowercase member means a DOM
+  // element. It is wrong, because `const ui = { heading: Heading }` makes
+  // `<ui.heading>` render a component with a lowercase member, and the rule
+  // skipped it. The reason I reached for it is worth recording: the round
+  // before, this simpler rule turned three `motion.div` tests red, and I read
+  // that as evidence about the RULE when it was evidence about the FIXTURES --
+  // they wrote `declare const motion`, a local binding, where they meant an
+  // import from a package.
+  const target = resolver.targetAt(tagName, from, node);
+  return target.kind === "external" ? { kind: "host" } : { kind: "component", target };
 }
 
 /** The nearest syntax binding this name between the node and the module. */

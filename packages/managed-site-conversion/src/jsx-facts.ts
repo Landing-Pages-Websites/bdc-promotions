@@ -214,8 +214,26 @@ export function namedAttributes(node: JsxElementNode): readonly NamedAttribute[]
     .map((attribute) => ({ name: attribute.name.getText(), node: attribute }));
 }
 
+/**
+ * The attribute this element EFFECTIVELY receives under that name.
+ *
+ * JSX applies attributes left to right, so `<img src="a" src="b" />` receives
+ * `"b"`. This took the FIRST match, and every one of its nine callers asks the
+ * same question -- what value does the element receive -- so the first match was
+ * wrong for all of them. It mattered most on the host-alias proof, where
+ * `<Heading as="h1" as={Card} />` read `"h1"`, proved the tag a host element,
+ * and let a component render while `className` was classified as structural
+ * code.
+ *
+ * TypeScript rejects a duplicate JSX attribute, but the parser accepts it and
+ * this reader runs over whatever is on disk, including a half-edited file.
+ */
 export function findAttribute(node: JsxElementNode, name: string): ts.JsxAttribute | null {
-  return namedAttributes(node).find((attribute) => attribute.name === name)?.node ?? null;
+  let effective: ts.JsxAttribute | null = null;
+  for (const attribute of namedAttributes(node)) {
+    if (attribute.name === name) effective = attribute.node;
+  }
+  return effective;
 }
 
 /** The string a JSX attribute holds, when it is a plain literal and only then. */

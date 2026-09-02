@@ -1,24 +1,36 @@
 import ts from "typescript";
 
+import { isWriteTarget } from "./evaluate.js";
+
 import type { ComponentDeclaration } from "./extract.js";
 import {
-  bindingPropertyName,
   CALLER_CONSUMED_ATTRIBUTES,
+  OPAQUE_TAGS,
+  STRUCTURAL_ATTRIBUTES,
+  bindingPropertyName,
+  findAttribute,
   isAriaAttribute,
   isComponentName,
   isWalkedElement,
-  OPAQUE_TAGS,
+  literalAttributeValue,
   overriddenByLaterSpread,
-  STRUCTURAL_ATTRIBUTES,
   tagNameOf,
+  type JsxElementNode,
 } from "./jsx-facts.js";
-import { resolveTagAt, type TagResolver } from "./reachability.js";
+import {
+  declarationKey,
+  resolveTagAt,
+  type CallSite,
+  type TagResolver,
+} from "./reachability.js";
 import { renderVerdictOf } from "./render-output.js";
 import {
+  declarationOfName,
   isBoundBetween,
   isFunctionLike,
   isScopeNode,
   isValueReference,
+  type FunctionLike,
 } from "./scopes.js";
 
 /**
@@ -98,6 +110,27 @@ export interface PropRoleContext {
    * repository and handed to both rather than asked twice.
    */
   readonly refReachesComponents: boolean;
+  /**
+   * Where each component is rendered, so a reading can ask what a prop can BE.
+   * Absent when the caller has no index, and then a dynamic tag stays unread —
+   * the whole point is that observed sites are the evidence.
+   */
+  readonly callSitesOf?: (declaration: ComponentDeclaration) => readonly CallSite[];
+  /**
+   * Reachable component-shaped sites the reader could not attribute.
+   *
+   * `callSitesOf` answers "every call of this component I could identify". Any
+   * proof that needs "every call, full stop" must also refuse when an
+   * unattributable site could be one of them.
+   */
+  readonly opaqueCallSites?: () => readonly CallSite[];
+  /**
+   * How many rendered calls this reader could not follow.
+   *
+   * Any at all means the set of call sites is incomplete in a way no element
+   * can be interrogated about, so a proof about "every call" refuses.
+   */
+  readonly unknownRenders?: () => number;
 }
 
 /** How a component names the prop inside its own body. */
@@ -365,6 +398,22 @@ function roleOfAttribute(
   // `alt` and `aria-*` mean something fixed on a HOST element. On a component
   // they are ordinary prop names, and a component is free to render `alt` as
   // visible copy — so the receiver is asked before the name is trusted.
+  // A capitalised tag that is provably a host element at every site takes host
+  // semantics, which is the whole reason to establish it: `className` on it is
+  // code, not a prop some component might render as copy. Asked before the
+  // component branch, because that branch would try to resolve a tag that
+  // names no component and give up.
+  const provenAttributeHost = isComponentName(tag)
+    ? provenHostTagsOf(tag, attribute, from, context)
+    : null;
+  if (provenAttributeHost !== null) {
+    // Nothing on a `<script>` or `<style>` renders, its `aria-label` included,
+    // so the accessibility and structural readings below do not apply.
+    if (provenAttributeHost.kind === "opaque") return INERT;
+    if (isAriaAttribute(name) || name === "alt") return ACCESSIBILITY;
+    if (STRUCTURAL_ATTRIBUTES.has(name)) return CODE;
+    return null;
+  }
   if (isComponentName(tag)) {
     // A `ref` React consumes never reaches the component, so what that
     // component does with a prop of that name says nothing about this value.
@@ -394,6 +443,280 @@ function roleOfAttribute(
  * nothing when `Sink` drops its children, so the question is answered where the
  * answer lives.
  */
+/** A lowercase name is an HTML element; React reserves capitals for components. */
+function isHostTagName(value: string): boolean {
+  return /^[a-z][a-z0-9-]*$/u.test(value);
+}
+
+/**
+ * Whether a capitalised tag is really a HOST element every time it renders.
+ *
+ * `const Tag = as; <Tag className={…}>` reads as a component, resolves to
+ * nothing, and every prop landing on it became undecided — 26 of the 49
+ * `UNKNOWN_ATTRIBUTE_ROLE` findings on a real site, 22 of them one component.
+ *
+ * WHICH element it is need not be known to know WHAT it is. The values the prop
+ * can take are the ones the observed call sites supply, plus the declared
+ * default wherever a site omits it. When all of those are lowercase host-tag
+ * literals, `<Tag>` is a host element at every site, and host semantics —
+ * `className` is code, a child is content — are exactly the ones that apply.
+ *
+ * It refuses on anything it has not seen: a capitalised value, a value that is
+ * not a literal, a site that omits the prop with no default, or no observed
+ * site at all. A default alone is not evidence about what callers pass.
+ */
+/**
+ * The host tag names a dynamic tag was proven to take, or null if unproven.
+ *
+ * Returning the NAMES rather than a boolean is what lets child position use
+ * this: `renderTags` decides `body` against `label`, and the honest answer
+ * there is the set of host tags callers actually pass -- never the alias's own
+ * name, which is no host tag at all.
+ *
+ * Exported because three readers decide a role from a tag and only one was
+ * asking. `roleOfAttribute` had it, `roleOfChild` silently dropped a
+ * forwarded `children`, and `extract.ts#collectAttributes` reported an
+ * attribute written directly on the alias as unclassifiable. Each was a
+ * separate review round of one omission.
+ *
+ * `opaque` is its own answer rather than a host tag like any other. A proven
+ * `<Tag>` where every caller passes `script`, `style`, `svg` or `template`
+ * renders no prose at all, and `OPAQUE_TAGS` was only ever consulted against
+ * the SYNTACTIC name -- `Tag` is in no such set -- so `<Heading as="script">`
+ * had its prop proposed as page copy. A MIXED set refuses outright: nothing
+ * true of both a `<p>` and a `<script>` is worth saying.
+ */
+export type ProvenHost =
+  | { readonly kind: "prose"; readonly tags: readonly string[] }
+  | { readonly kind: "opaque" };
+
+export function provenHostTagsOf(
+  tagName: string,
+  at: ts.Node,
+  from: ComponentDeclaration,
+  context: PropRoleContext,
+): ProvenHost | null {
+  const aliased = aliasedPropOf(tagName, at, from);
+  if (aliased === null) return null;
+  const fallback = propDefaultOf(from, aliased);
+  // A render nobody could follow may be a call of this component supplying
+  // anything. There is no element to ask, so the only sound answer is to
+  // refuse. Measured on All Points Media: zero, because a callee this module
+  // does not declare is not counted -- an import or a hook cannot render one
+  // of our components except through a tag the walk already sees.
+  if ((context.unknownRenders?.() ?? 0) > 0) return null;
+  // Opaque sites are folded into the SAME loop rather than checked after it.
+  // Two loops disagreed about the omitting case: this one pushes the default
+  // into `values`, the separate opaque one only checked that a default existed,
+  // so a default of `"Card"` left `values` all-host and proved a tag that
+  // renders a component. A site cannot be treated as a call of this component
+  // for one purpose and not the other.
+  const sites = [
+    ...(context.callSitesOf?.(from) ?? []).map((site) => ({ site, opaque: false })),
+    ...(context.opaqueCallSites?.() ?? []).map((site) => ({ site, opaque: true })),
+  ];
+  const values: string[] = [];
+  for (const { site, opaque } of sites) {
+    // A site the resolver could not identify may be a call of THIS component
+    // under another name -- `const Alias = Heading` resolves to no
+    // declaration, so it was silently absent from the index and the gap read
+    // as agreement. A value it SUPPLIES is one no reading observed, so it
+    // refuses; carrying nothing makes it an omitting call like any other.
+    if (opaque && findAttribute(site.element, aliased) !== null) return null;
+    // A component's OWN unresolved render is not a call of it. It is in the
+    // opaque list because the resolver could not identify `<Tag>`, and letting
+    // it contribute the declared default meant a component with NO observed
+    // caller proved itself: `values` came out as `["h2"]` from its own markup,
+    // which is exactly the "no site observed is not proof" contract this file
+    // states two comments below. It keeps its VETO -- a recursive render is
+    // possible, and refusing costs nothing -- but gives no positive evidence.
+    // 92 of the 552 opaque checks on All Points Media are these.
+    if (opaque && declarationKey(site.from) === declarationKey(from)) continue;
+    const attribute = opaque ? null : findAttribute(site.element, aliased);
+    if (attribute === null) {
+      // With no explicit attribute the default renders -- but only if nothing
+      // ELSE could supply the prop. A spread anywhere on the element may carry
+      // it, and its value is not written here to read.
+      if (fallback === null || hasSpread(site.element)) return null;
+      values.push(fallback);
+      continue;
+    }
+    // JSX applies props left to right, so a spread after the literal replaces
+    // it and what the element receives is not decided at this site.
+    if (overriddenByLaterSpread(attribute)) return null;
+    const supplied = literalAttributeValue(attribute);
+    if (supplied === null) return null;
+    values.push(supplied);
+  }
+  // No site observed is NOT the same as having seen that every site is a host
+  // tag. The default alone says nothing about what callers pass.
+  if (values.length === 0 || !values.every(isHostTagName)) return null;
+  const opaque = values.filter((value) => OPAQUE_TAGS.has(value));
+  if (opaque.length === values.length) return { kind: "opaque" };
+  if (opaque.length > 0) return null;
+  return { kind: "prose", tags: values };
+}
+
+/** Whether this element carries a spread, which may supply or replace anything. */
+function hasSpread(element: JsxElementNode): boolean {
+  const opening = ts.isJsxElement(element) ? element.openingElement : element;
+  return opening.attributes.properties.some((property: ts.JsxAttributeLike) =>
+    ts.isJsxSpreadAttribute(property),
+  );
+}
+
+/**
+ * The PROPERTY a dynamic tag's value comes from, if it provably comes from one.
+ *
+ * Scope is `scopes.ts`'s job, not this file's. Three rounds of review here were
+ * each a scope case a hand-written walk missed -- a callback parameter, a
+ * renamed destructuring, a nested binding -- so the walk is gone and
+ * `declarationOfName` answers instead: it already knows parameters,
+ * destructured names, hoisted `var`s, catch clauses and switch scopes.
+ *
+ * The rule, stated once: walking outward from the JSX site, the FIRST thing
+ * that binds the tag name must be either the component's own parameter (a tag
+ * destructured straight from a prop) or a `const` in the component whose
+ * initializer is a name the component's own parameter binds. Anything else --
+ * a callback's parameter, an enclosing block's variable, a `let`, a name
+ * written to -- is a value the call sites say nothing about.
+ *
+ * What is returned is the DECLARED PROPERTY name, never the local one:
+ * `{ kind: as }` binds the local `as` to the property `kind`, and reading
+ * callers' `as` attribute would be reading an unrelated prop.
+ *
+ * A parameter is as writable as a `let`. `{ as: Tag }` followed by `Tag = Card`
+ * renders `Card` however uniform the call sites are, so the write check is not
+ * per-branch: `aliasChainOf` reports EVERY name its conclusion depends on and
+ * one check here covers the chain, so a new alias form cannot be added without
+ * one.
+ */
+function aliasedPropOf(
+  tagName: string,
+  at: ts.Node,
+  from: ComponentDeclaration,
+): string | null {
+  const component = from.jsxRoot.parent;
+  if (component === undefined || !isFunctionLike(component)) return null;
+  const chain = aliasChainOf(tagName, at, component);
+  if (chain === null) return null;
+  // A name written anywhere in the component holds a value no call site
+  // supplied, whether it is a parameter, a `const` the parser let through, or
+  // a link added later.
+  if (chain.reliesOn.some((name) => isWrittenWithin(component, name))) return null;
+  return chain.property;
+}
+
+/**
+ * The property a dynamic tag reads, and every local name that answer rests on.
+ *
+ * Reporting the names rather than vetting them here is what keeps the write
+ * rule in one place: this function decides WHERE the value comes from, and
+ * `aliasedPropOf` decides whether the value can still be trusted at render.
+ */
+function aliasChainOf(
+  tagName: string,
+  at: ts.Node,
+  component: FunctionLike,
+): { readonly reliesOn: readonly string[]; readonly property: string } | null {
+  const bound = firstBindingOf(at, tagName, component);
+  if (bound === null || bound.owner !== "the component") return null;
+
+  // `function Heading({ as: Tag })` — the tag IS the parameter binding.
+  if (ts.isParameter(bound.declaration)) {
+    const property = declaredPropertyFor(component, tagName);
+    return property === null ? null : { reliesOn: [tagName], property };
+  }
+
+  if (!ts.isVariableDeclaration(bound.declaration)) return null;
+  const list = bound.declaration.parent;
+  if (!ts.isVariableDeclarationList(list)) return null;
+  if ((list.flags & ts.NodeFlags.Const) === 0) return null;
+  const initializer = bound.declaration.initializer;
+  if (initializer === undefined || !ts.isIdentifier(initializer)) return null;
+
+  // The initializer must itself resolve to the component's own parameter.
+  const source = firstBindingOf(at, initializer.text, component);
+  if (source === null || source.owner !== "the component") return null;
+  if (!ts.isParameter(source.declaration)) return null;
+  const property = declaredPropertyFor(component, initializer.text);
+  return property === null ? null : { reliesOn: [tagName, initializer.text], property };
+}
+
+/**
+ * The first declaration of this name walking out from a node, and whether it
+ * belongs to the component itself or to something nearer.
+ */
+function firstBindingOf(
+  at: ts.Node,
+  name: string,
+  component: FunctionLike,
+): { readonly declaration: ts.Node; readonly owner: "the component" | "nearer" } | null {
+  let current: ts.Node | undefined = at.parent;
+  while (current !== undefined && !ts.isSourceFile(current)) {
+    const declaration = declarationOfName(current, name);
+    if (declaration !== null) {
+      // The component's own scope is the function-like AND its body block: a
+      // `const` written at the top of the component is found on the block, not
+      // on the function. Any OTHER block on the way out is a nested scope, and
+      // a binding there is not the component's.
+      const own = current === component || current === component.body;
+      return { declaration, owner: own ? "the component" : "nearer" };
+    }
+    current = current.parent;
+  }
+  return null;
+}
+
+/** The property name the component's parameter binds to this local name. */
+function declaredPropertyFor(component: FunctionLike, local: string): string | null {
+  const parameter = component.parameters[0];
+  if (parameter === undefined || !ts.isObjectBindingPattern(parameter.name)) return null;
+  for (const element of parameter.name.elements) {
+    if (!ts.isIdentifier(element.name) || element.name.text !== local) continue;
+    // `{ kind: as }` binds the local `as` to the property `kind`; reading
+    // callers' `as` would be an unrelated prop.
+    return bindingPropertyName(element);
+  }
+  return null;
+}
+
+/**
+ * Whether anything writes to this name inside the component.
+ *
+ * `isWriteTarget` is `evaluate.ts`'s, so `for (as of …)` and `as++` count too.
+ */
+function isWrittenWithin(component: FunctionLike, name: string): boolean {
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (ts.isIdentifier(node) && node.text === name && isWriteTarget(node)) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  ts.forEachChild(component, visit);
+  return found;
+}
+
+/** A prop's declared default, when the destructuring states one as a literal. */
+function propDefaultOf(from: ComponentDeclaration, propName: string): string | null {
+  const owner = from.jsxRoot.parent;
+  if (owner === undefined || !isFunctionLike(owner)) return null;
+  const parameter = owner.parameters[0];
+  if (parameter === undefined || !ts.isObjectBindingPattern(parameter.name)) return null;
+  for (const element of parameter.name.elements) {
+    if (bindingPropertyName(element) !== propName) continue;
+    const initializer = element.initializer;
+    if (initializer === undefined) return null;
+    return ts.isStringLiteral(initializer) || ts.isNoSubstitutionTemplateLiteral(initializer)
+      ? initializer.text
+      : null;
+  }
+  return null;
+}
+
 function roleOfChild(
   host: ts.JsxElement,
   context: PropRoleContext,
@@ -403,6 +726,22 @@ function roleOfChild(
   const tag = tagNameOf(host);
   if (OPAQUE_TAGS.has(tag)) return INERT;
   if (!isComponentName(tag)) return contentIn(tag);
+  // A dynamic tag proven to be a host element is one in child position too, and
+  // the children it wraps are content. The comment that used to sit here said
+  // this branch "changed nothing on a real site and no test could reach it" --
+  // that was my claim, and it was wrong: `<Tag>{children}</Tag>` dropped the
+  // caller's text with NO finding, which is the worst direction available.
+  //
+  // The render sites are the host names callers were observed to pass, so the
+  // body-or-label reading is decided by real tags rather than by the alias.
+  const provenHosts = provenHostTagsOf(tag, host, from, context);
+  if (provenHosts !== null) {
+    // `OPAQUE_TAGS.has(tag)` above tested the SYNTACTIC name, and `Tag` is in no
+    // such set. A tag proven to be `script` every time it renders holds
+    // executable text, not prose.
+    if (provenHosts.kind === "opaque") return INERT;
+    return { role: "content", renderTags: provenHosts.tags };
+  }
   const target = resolveTagAt(context.resolver, tag, host, from);
   if (target === null) return null;
   return propReadingOf(target, CHILDREN_PROP, context, depth + 1);
@@ -708,7 +1047,12 @@ function encloses(outer: ts.Node, inner: ts.Node): boolean {
 /** Every binding that stands for the same object, followed through `const b = a`. */
 function aliasesOf(root: ts.Node, object: string): readonly AliasBinding[] {
   const bindings: AliasBinding[] = [{ name: object, scope: root }];
-  for (let pass = 0; pass <= MAX_COMPONENT_DEPTH; pass += 1) {
+  // Unbounded, and it terminates: the set only GROWS and is bounded by the
+  // variable declarations in the subtree, so the saturation break below is the
+  // real end. A pass budget here truncated a long `const b = a` chain and
+  // returned an incomplete alias set, which is a write through the missed name
+  // that nothing sees -- the same fail-open shape as a capped parent walk.
+  for (;;) {
     const before = bindings.length;
     const visit = (node: ts.Node): void => {
       if (

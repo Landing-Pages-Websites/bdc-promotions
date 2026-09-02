@@ -8,6 +8,7 @@ import {
   unwrapTransparent,
 } from "./jsx-facts.js";
 import { namedFunctionsOf } from "./scan.js";
+import { declarationOfName } from "./scopes.js";
 
 /**
  * Which JSX belongs to a component's own render output. This module is the one
@@ -283,12 +284,100 @@ function soleFunctionBodies(source: ts.SourceFile): ReadonlyMap<string, ts.Node 
 function namedCallbackBodies(call: ts.CallExpression, source: ts.SourceFile): readonly ts.Node[] {
   const declared = soleFunctionBodies(source);
   const bodies: ts.Node[] = [];
+  // The CALLEE, not only the arguments. `{renderHeading()}` puts whatever
+  // `renderHeading` writes into rendered output, and following arguments alone
+  // meant that JSX was never walked -- so `<Heading as={Card} />` written
+  // inside it was invisible to the call-site index and an all-host proof was
+  // built from the sites that WERE seen. A component-shaped callee is left
+  // alone for the same reason a component-shaped argument is: a component is
+  // reached through the tag that names it, and following the reference too
+  // would read its markup twice.
+  const callee = call.expression;
+  if (ts.isIdentifier(callee) && !isComponentName(callee.text)) {
+    const body = declared.get(callee.text);
+    // By BINDING, not by spelling. `soleFunctionBodies` is a module-wide map
+    // keyed on the name, so a parameter or import called `renderHeading` would
+    // have handed us an unrelated module function's body -- and its JSX would
+    // have entered the call-site index as evidence about a call that never
+    // happens. `scopes.ts` answers which declaration a name means where it is
+    // written; that lesson cost three rounds in `prop-roles.ts` and I wrote the
+    // same defect here an hour later.
+    if (body !== undefined && body !== null && bindsAt(call, callee.text, body)) {
+      bodies.push(body);
+    }
+  }
   for (const argument of call.arguments) {
     if (!ts.isIdentifier(argument) || isComponentName(argument.text)) continue;
     const body = declared.get(argument.text);
-    if (body !== undefined && body !== null) bodies.push(body);
+    if (body === undefined || body === null) continue;
+    if (!bindsAt(call, argument.text, body)) continue;
+    bodies.push(body);
   }
   return bodies;
+}
+
+
+/**
+ * Whether the name, read at this call, is the function whose body this is.
+ *
+ * Walks out from the call the way the language reads a name and stops at the
+ * FIRST binding. A nearer one -- a parameter, an import, a local -- means the
+ * module function of the same spelling is not what runs, so its markup is not
+ * evidence about this call.
+ */
+function bindsAt(call: ts.CallExpression, name: string, body: ts.Node): boolean {
+  let current: ts.Node | undefined = call.parent;
+  while (current !== undefined && !ts.isSourceFile(current)) {
+    const declaration = declarationOfName(current, name);
+    // A binding NEARER than the module shadows it: a parameter, an import
+    // bound in a block, a local. The module function of this spelling is then
+    // not what runs, unless this is the very declaration reported -- the
+    // binding site differs by shape (a variable declaration for
+    // `const f = () => …`, the function itself for `function f() {}`), so the
+    // question asked is containment.
+    if (declaration !== null) return contains(declaration, body);
+    current = current.parent;
+  }
+  // No nearer binding, so the name means what the MODULE declares -- which is
+  // the map `soleFunctionBodies` was built from. `declarationOfName` stops at
+  // the source file on purpose; module scope is answered separately.
+  return true;
+}
+
+/** Whether `outer` encloses `inner`, or is it. */
+function contains(outer: ts.Node, inner: ts.Node): boolean {
+  let current: ts.Node | undefined = inner;
+  while (current !== undefined) {
+    if (current === outer) return true;
+    current = current.parent;
+  }
+  return false;
+}
+
+
+/**
+ * A rendered call this module CANNOT follow, though it declares the name.
+ *
+ * `{renderHeading()}` where a parameter shadows a module `renderHeading` runs a
+ * body nobody here can read, and whatever JSX it writes is a render this walk
+ * never sees. Following the module function of that spelling would be worse
+ * than missing it -- that is evidence about a call which never happens -- so
+ * the call is reported instead and any proof that needs a complete picture
+ * refuses.
+ *
+ * A callee this module does NOT declare is not reported: an import or a hook
+ * (`cn`, `useMemo`, `usePathname`) cannot render one of our components except
+ * through a tag, which the walk sees anyway. On All Points Media that is the
+ * difference between 218 calls and none.
+ */
+export function isUnfollowableRenderedCallee(node: ts.Node, source: ts.SourceFile): boolean {
+  if (!ts.isCallExpression(node)) return false;
+  if (callResultOf(node) !== "call") return false;
+  const callee = node.expression;
+  if (!ts.isIdentifier(callee) || isComponentName(callee.text)) return false;
+  const body = soleFunctionBodies(source).get(callee.text);
+  if (body === undefined || body === null) return false;
+  return !bindsAt(node, callee.text, body);
 }
 
 /** Is this call handed a function that writes JSX, so refusing it costs a human something? */

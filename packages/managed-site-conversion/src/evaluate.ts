@@ -1357,7 +1357,10 @@ function mentionsImplicitBinding(root: ts.Node): boolean {
  */
 function withAliases(root: ts.Node, seeds: ReadonlySet<string>): ReadonlySet<string> {
   const names = new Set(seeds);
-  for (let pass = 0; pass <= MAX_RESOLUTION_DEPTH; pass += 1) {
+  // Unbounded, and it terminates: the set only GROWS and is bounded by the
+  // variable declarations in the subtree, so the saturation break below is the
+  // real end. A truncated alias set is a name this proof cannot see written.
+  for (;;) {
     const before = names.size;
     const visit = (node: ts.Node): void => {
       if (
@@ -1570,9 +1573,22 @@ function chainFrom(reference: ts.Node): {
  * `for...of` or `for...in` head is a target too, so the position is found by
  * climbing out of those wrappers rather than by listing assignment shapes.
  */
-function isWriteTarget(outer: ts.Expression): boolean {
+/**
+ * Whether this expression is the target of a write, by any spelling.
+ *
+ * Exported because `prop-roles.ts` asks it of a prop it is about to trust, and
+ * a second implementation there missed `for (as of …)` and `as++`.
+ */
+export function isWriteTarget(outer: ts.Expression): boolean {
   let current: ts.Node = outer;
-  for (let step = 0; step <= MAX_PROPERTY_DEPTH; step += 1) {
+  // Unbounded on purpose. This walks the PARENT chain, which is acyclic and
+  // ends at the source file, so `parent === undefined` is the natural
+  // termination -- no step budget is needed and one failed OPEN: capped at
+  // eight levels, `[[[[[[[[[Tag]]]]]]]]] = x` exhausted the budget and returned
+  // "not written", so a reassigned alias was trusted. A limit on a walk that
+  // cannot loop buys nothing and has to be right about a number nobody can
+  // justify.
+  for (;;) {
     const parent: ts.Node | undefined = current.parent;
     if (parent === undefined) return false;
     if (ts.isBinaryExpression(parent) && ASSIGNMENTS.has(parent.operatorToken.kind)) {
@@ -1588,20 +1604,49 @@ function isWriteTarget(outer: ts.Expression): boolean {
     if (ts.isDeleteExpression(parent)) return parent.expression === current;
     // A destructuring target is written as an array or object LITERAL, so the
     // literal is climbed rather than treated as the end of the chain.
+    //
+    // Two ways to get this wrong, and this file has had both. Listing element
+    // KINDS missed `({ Tag } = replacement)`, because
+    // `ShorthandPropertyAssignment` was not among them. Climbing every
+    // identifier inside an element over-reports `({ Tag: a } = x)`, where
+    // `Tag` is the property NAME and `a` is the target. So the climb asks
+    // which POSITION the node occupies: only a target position continues.
     if (
       ts.isArrayLiteralExpression(parent) ||
       ts.isObjectLiteralExpression(parent) ||
-      ts.isPropertyAssignment(parent) ||
-      ts.isSpreadElement(parent) ||
-      ts.isSpreadAssignment(parent) ||
       ts.isParenthesizedExpression(parent)
     ) {
       current = parent;
       continue;
     }
+    const target = targetPositionOf(parent);
+    if (target !== undefined && target === current) {
+      current = parent;
+      continue;
+    }
     return false;
   }
-  return false;
+}
+
+/**
+ * The child of `node` that a destructuring assignment writes, if any.
+ *
+ * `{ a: Tag }` writes the initializer and only reads the name; `{ Tag }` and
+ * `{ Tag = d }` write the name, and the shorthand's default sits in
+ * `objectAssignmentInitializer`, which is read; a spread and a `!` write what
+ * they are written around. Returning `undefined` means this node is not a
+ * wrapper a write can pass through at all.
+ *
+ * `test/write-target.test.ts` holds this against `ts.isAssignmentTarget` over
+ * every form the grammar admits, so a position missed here is a failing test
+ * rather than a value the reader wrongly trusts.
+ */
+function targetPositionOf(node: ts.Node): ts.Node | undefined {
+  if (ts.isPropertyAssignment(node)) return node.initializer;
+  if (ts.isShorthandPropertyAssignment(node)) return node.name;
+  if (ts.isSpreadAssignment(node) || ts.isSpreadElement(node)) return node.expression;
+  if (ts.isNonNullExpression(node)) return node.expression;
+  return undefined;
 }
 
 const INCREMENTS: ReadonlySet<ts.SyntaxKind> = new Set([
