@@ -137,10 +137,10 @@ export function parseSignedUploads(value: unknown): SignedUpload[] | null {
  * failing the whole send: losing an attachment is bad, losing the enquiry is
  * worse, and the person filling in the form cannot fix an S3 error.
  *
- * The PUT must send exactly the content type and byte count the signature was
- * issued for. The browser sets Content-Length itself; sending a different type
- * makes S3 reject the request, which is the intended behaviour rather than
- * something to work around.
+ * The PUT must send exactly the signed headers: content type, byte count, and
+ * `If-None-Match: *`. Any omission fails as SignatureDoesNotMatch, which names
+ * nothing useful, so they are set together here and commented at the call site.
+ * The browser supplies Content-Length from the body itself.
  */
 export async function uploadSignedFiles(
   files: readonly File[],
@@ -155,7 +155,19 @@ export async function uploadSignedFiles(
       try {
         const response = await fetch(upload.uploadUrl, {
           method: "PUT",
-          headers: { "Content-Type": upload.contentType },
+          headers: {
+            "Content-Type": upload.contentType,
+            // Both of these are SIGNED headers, so omitting either makes S3
+            // reject the PUT with SignatureDoesNotMatch rather than with
+            // anything that names the real cause.
+            //
+            // `If-None-Match: *` is what makes the upload write-once: the key
+            // cannot be overwritten once written, so a leaked URL cannot
+            // replace a file the customer already received. Content-Length is
+            // signed too, but the browser sets it from the body and forbids
+            // setting it by hand, so it is correct by construction.
+            "If-None-Match": "*",
+          },
           body: file,
         });
         if (response.ok) return upload.s3Key;

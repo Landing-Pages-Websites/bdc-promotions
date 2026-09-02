@@ -6,6 +6,7 @@ import {
   MAX_UPLOAD_TOTAL_BYTES,
   parseSignedUploads,
   selectUploadableFiles,
+  uploadSignedFiles,
 } from "./leadUploads.ts";
 
 function file(name: string, type: string, size: number): File {
@@ -141,5 +142,63 @@ test("parseSignedUploads refuses a URL that is not https", () => {
       null,
       uploadUrl,
     );
+  }
+});
+
+test("uploadSignedFiles sends every signed header on the PUT", async () => {
+  // The presign signs content-type, content-length and if-none-match. Omitting
+  // any of them fails as SignatureDoesNotMatch, which names nothing useful, so
+  // this is pinned rather than left to be discovered on a real upload.
+  const seen: Array<Record<string, string>> = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    seen.push(init.headers as Record<string, string>);
+    return { ok: true } as Response;
+  }) as typeof fetch;
+  try {
+    const keys = await uploadSignedFiles(
+      [pdf()],
+      [
+        {
+          s3Key: "lead-uploads/pending/c/u/quote.pdf",
+          uploadUrl: "https://signed.example/put",
+          contentType: "application/pdf",
+          sizeBytes: 1024,
+        },
+      ],
+    );
+    assert.deepEqual(keys, ["lead-uploads/pending/c/u/quote.pdf"]);
+    assert.equal(seen[0]["Content-Type"], "application/pdf");
+    assert.equal(
+      seen[0]["If-None-Match"],
+      "*",
+      "write-once is a signed header; without it the PUT is refused",
+    );
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("uploadSignedFiles omits a key whose PUT was refused", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    ({ ok: false, status: 403 }) as Response) as typeof fetch;
+  try {
+    const keys = await uploadSignedFiles(
+      [pdf()],
+      [
+        {
+          s3Key: "lead-uploads/pending/c/u/quote.pdf",
+          uploadUrl: "https://signed.example/put",
+          contentType: "application/pdf",
+          sizeBytes: 1024,
+        },
+      ],
+    );
+    // A refused upload must not be declared: the submission would name a file
+    // that does not exist.
+    assert.deepEqual(keys, []);
+  } finally {
+    globalThis.fetch = original;
   }
 });
