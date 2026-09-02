@@ -19,7 +19,16 @@ import { HONEYPOT_FIELD_NAME } from "@/lib/leadValidation";
 import { getPostHogClient } from "@/lib/posthog-client";
 import { siteConfig } from "@/site.config";
 import HoneypotField from "@/components/HoneypotField";
-import TurnstileWidget, { type TurnstileHandle } from "@/components/TurnstileWidget";
+import TurnstileWidget, {
+  type TurnstileHandle,
+} from "@/components/TurnstileWidget";
+import {
+  selectUploadableFiles,
+  UPLOAD_ACCEPT_ATTRIBUTE,
+  type UploadRejection,
+} from "@/lib/leadUploads";
+
+const SIGNING_TOKEN_TIMEOUT_MS = 6000;
 
 const inputClasses =
   "w-full rounded-md border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
@@ -85,6 +94,10 @@ export function LeadForm(): ReactElement {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [budget, setBudget] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentErrors, setAttachmentErrors] = useState<UploadRejection[]>(
+    [],
+  );
 
   const { budgetQualifier } = siteConfig;
   const budgetAnswered = budgetQualifier === null || budget !== "";
@@ -108,10 +121,43 @@ export function LeadForm(): ReactElement {
       return;
     }
     if (!turnstileToken) {
-      setSubmitError("Please wait a moment for the security check, then try again.");
+      setSubmitError(
+        "Please wait a moment for the security check, then try again.",
+      );
       return;
     }
     formRef.current?.requestSubmit();
+  }
+
+  // The submission's own token is never spent on an upload. Signing gets a
+  // second one, captured here so the widget's callback does not overwrite the
+  // first. If it does not arrive, attachments are skipped and the enquiry goes
+  // exactly as it would without them.
+  const signingTokenResolve = useRef<((token: string | null) => void) | null>(
+    null,
+  );
+
+  function handleTurnstileToken(token: string | null): void {
+    const waiting = signingTokenResolve.current;
+    if (waiting !== null && token !== null) {
+      signingTokenResolve.current = null;
+      waiting(token);
+      return;
+    }
+    setTurnstileToken(token);
+  }
+
+  function requestSigningToken(): Promise<string | null> {
+    return new Promise((resolve) => {
+      signingTokenResolve.current = resolve;
+      turnstileRef.current?.reset();
+      window.setTimeout(() => {
+        if (signingTokenResolve.current === resolve) {
+          signingTokenResolve.current = null;
+          resolve(null);
+        }
+      }, SIGNING_TOKEN_TIMEOUT_MS);
+    });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
@@ -125,9 +171,8 @@ export function LeadForm(): ReactElement {
     inFlightRef.current = true; // flips IMMEDIATELY, not next render
     setSubmitting(true);
     setSubmitError(null);
-    const honeypotInput = formRef.current?.elements.namedItem(
-      HONEYPOT_FIELD_NAME,
-    );
+    const honeypotInput =
+      formRef.current?.elements.namedItem(HONEYPOT_FIELD_NAME);
     const honeypotValue =
       honeypotInput instanceof HTMLInputElement ? honeypotInput.value : "";
     const formData = {
@@ -140,7 +185,9 @@ export function LeadForm(): ReactElement {
       ...(budgetQualifier === null ? {} : { budget }),
     };
     try {
-      const res = await submit(formData);
+      const signingToken =
+        attachments.length > 0 ? await requestSigningToken() : null;
+      const res = await submit(formData, attachments, signingToken);
       // A 2xx with a body that isn't {ok:true} is still a dropped lead. Only a
       // confirmed success fires analytics and advances to the thank-you page.
       if (res?.ok !== true) {
@@ -176,7 +223,10 @@ export function LeadForm(): ReactElement {
       className="flex w-full max-w-md flex-col gap-4"
     >
       <div className="flex flex-col gap-1">
-        <label htmlFor={`${idPrefix}-first-name`} className="text-sm font-medium">
+        <label
+          htmlFor={`${idPrefix}-first-name`}
+          className="text-sm font-medium"
+        >
           First Name
         </label>
         <input
@@ -191,7 +241,10 @@ export function LeadForm(): ReactElement {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`${idPrefix}-last-name`} className="text-sm font-medium">
+        <label
+          htmlFor={`${idPrefix}-last-name`}
+          className="text-sm font-medium"
+        >
           Last Name
         </label>
         <input
@@ -267,7 +320,49 @@ export function LeadForm(): ReactElement {
         </fieldset>
       )}
       <HoneypotField />
-      <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
+      {siteConfig.uploadsEnabled === true && (
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor={`${idPrefix}-attachments`}
+            className="text-sm font-medium"
+          >
+            Attachments <span className="font-normal">(optional)</span>
+          </label>
+          <input
+            id={`${idPrefix}-attachments`}
+            name="attachments"
+            type="file"
+            multiple
+            accept={UPLOAD_ACCEPT_ATTRIBUTE}
+            disabled={submitting || submitted}
+            onChange={(event) => {
+              const chosen = Array.from(event.target.files ?? []);
+              const { accepted, rejected } = selectUploadableFiles(chosen);
+              setAttachments(accepted);
+              setAttachmentErrors(rejected);
+            }}
+            className={inputClasses}
+          />
+          {attachments.length > 0 && (
+            <ul className="text-xs">
+              {attachments.map((file) => (
+                <li key={`${file.name}-${file.size}`}>{file.name}</li>
+              ))}
+            </ul>
+          )}
+          {attachmentErrors.map((rejection) => (
+            <p
+              key={`${rejection.fileName}-${rejection.reason}`}
+              className="text-xs text-red-600"
+              role="alert"
+            >
+              {rejection.fileName}: {rejection.reason}
+            </p>
+          ))}
+        </div>
+      )}
+
+      <TurnstileWidget ref={turnstileRef} onToken={handleTurnstileToken} />
       {submitError ? (
         <p
           role="alert"

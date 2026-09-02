@@ -70,6 +70,15 @@ export interface SiteConfig {
    */
   sourceProvider: string;
   /**
+   * Whether the lead form offers file attachments.
+   *
+   * Off unless a site deliberately turns it on. Attachments depend on MEGA's
+   * scanned upload storage, and a visitor who attaches a document expects it to
+   * reach someone — better to not offer the field than to offer one that
+   * silently drops files.
+   */
+  uploadsEnabled?: boolean;
+  /**
    * Budget qualifying question rendered as yes/no toggles in the lead form.
    * Set to null to hide the budget toggles for sites where it doesn't fit.
    */
@@ -117,6 +126,7 @@ export const siteConfig: SiteConfig = {
   megaSiteId: "TODO_MEGA_SITE_ID",
   megaSiteKey: "TODO_MEGA_SITE_KEY",
   sourceProvider: "website-TODO_SOURCE_SLUG",
+  uploadsEnabled: false,
   budgetQualifier: {
     priceAnchor: "TODO_PRICE_ANCHOR — e.g. 'Our projects start at $X,XXX.'",
     question: "Is this within your budget?",

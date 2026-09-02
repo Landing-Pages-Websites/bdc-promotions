@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_FILES, UPLOAD_KEYS_FIELD } from "./leadUploads";
 /**
  * Website lead-field contract — same email/phone rules as landing-page-forms
  * Hard Rules #4 and #4b. Shared by the form UI, the submit hook, and `/api/lead`.
@@ -34,16 +35,47 @@ export interface ValidatedLeadFields {
   email: string;
   phone: string;
   extra: Record<string, string>;
+  /** Storage keys for files already uploaded, in the order they were chosen. */
+  uploadKeys: string[];
 }
 
 const MAX_NAME = 200;
 
-export function parseLeadFields(input: Record<string, unknown>): {
-  ok: true;
-  fields: ValidatedLeadFields;
-} | { ok: false; error: string } {
-  const firstName = typeof input.firstName === "string" ? input.firstName.trim() : "";
-  const lastName = typeof input.lastName === "string" ? input.lastName.trim() : "";
+/**
+ * Storage keys the browser reports having uploaded.
+ *
+ * Only shape is checked. Whether a key really belongs to this site is not
+ * knowable here and is not guessed at: MEGA attaches a file to a lead only when
+ * the key's own customer segment matches the lead's customer, so a key from
+ * anywhere else is discarded there rather than trusted here.
+ *
+ * Anything unexpected yields no keys, which costs the attachments and never the
+ * enquiry.
+ */
+function parseUploadKeys(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const keys: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "string") continue;
+    if (entry.length === 0 || entry.length > 512) continue;
+    if (!entry.startsWith("lead-uploads/")) continue;
+    if (entry.includes("..")) continue;
+    keys.push(entry);
+    if (keys.length >= MAX_UPLOAD_FILES) break;
+  }
+  return keys;
+}
+
+export function parseLeadFields(input: Record<string, unknown>):
+  | {
+      ok: true;
+      fields: ValidatedLeadFields;
+    }
+  | { ok: false; error: string } {
+  const firstName =
+    typeof input.firstName === "string" ? input.firstName.trim() : "";
+  const lastName =
+    typeof input.lastName === "string" ? input.lastName.trim() : "";
   const email = typeof input.email === "string" ? input.email.trim() : "";
   const phoneRaw = typeof input.phone === "string" ? input.phone : "";
 
@@ -54,7 +86,10 @@ export function parseLeadFields(input: Record<string, unknown>): {
     return { ok: false, error: "Please enter your last name." };
   }
   if (!isValidEmail(email)) {
-    return { ok: false, error: "Enter a valid email address (e.g. you@company.com)." };
+    return {
+      ok: false,
+      error: "Enter a valid email address (e.g. you@company.com).",
+    };
   }
   if (!isValidPhone(phoneRaw)) {
     return { ok: false, error: "Please enter a valid 10-digit phone number." };
@@ -67,6 +102,13 @@ export function parseLeadFields(input: Record<string, unknown>): {
     "phone",
     "turnstileToken",
     "context",
+    "uploadKeys",
+    "uploadCapability",
+    "uploadSignedKeys",
+    // Reserved so it can never arrive as an ordinary extra field. Upload keys
+    // are forwarded under this name, and a client that could set it directly
+    // would be naming stored objects rather than describing its own files.
+    UPLOAD_KEYS_FIELD,
     HONEYPOT_FIELD_NAME,
   ]);
   const extra: Record<string, string> = {};
@@ -83,6 +125,7 @@ export function parseLeadFields(input: Record<string, unknown>): {
       email,
       phone: phoneDigits(phoneRaw),
       extra,
+      uploadKeys: parseUploadKeys(input.uploadKeys),
     },
   };
 }

@@ -1,4 +1,5 @@
 import { siteConfig } from "@/site.config";
+import { UPLOAD_KEYS_FIELD } from "@/lib/leadUploads";
 import type { LeadContext } from "@/lib/megaLeadContext";
 import type { ValidatedLeadFields } from "@/lib/leadValidation";
 
@@ -24,6 +25,12 @@ export async function forwardLeadToKeystone(
       email: fields.email,
       phone: fields.phone,
       ...fields.extra,
+      // Spread last and only when present, so the reserved field cannot be
+      // shadowed by an extra and an ordinary submission carries no empty array
+      // for MEGA's notification email to render as a field.
+      ...(fields.uploadKeys.length > 0
+        ? { [UPLOAD_KEYS_FIELD]: fields.uploadKeys }
+        : {}),
     },
   };
 

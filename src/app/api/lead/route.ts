@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { HONEYPOT_FIELD_NAME, parseLeadFields } from "@/lib/leadValidation";
 import { forwardLeadToKeystone } from "@/lib/forwardLead";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { uploadCapabilityAuthorizes } from "@/lib/uploadCapability";
 import type { LeadContext } from "@/lib/megaLeadContext";
 
 export const runtime = "nodejs";
@@ -15,7 +16,9 @@ function clientIp(request: NextRequest): string | null {
     const first = forwarded.split(",")[0]?.trim();
     if (first) return first;
   }
-  return request.headers.get("cf-connecting-ip") ?? request.headers.get("x-real-ip");
+  return (
+    request.headers.get("cf-connecting-ip") ?? request.headers.get("x-real-ip")
+  );
 }
 
 function asLeadContext(value: unknown): LeadContext | null {
@@ -56,6 +59,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return jsonError(parsed.error, 400);
   }
 
+  // Every submission presents its own solved challenge, exactly as before
+  // attachments existed. Uploads are signed with a SECOND token obtained for
+  // that purpose, so nothing here had to be relaxed to make them work.
   const challenge = await verifyTurnstileToken(
     payload.turnstileToken,
     clientIp(request),
@@ -64,13 +70,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return jsonError(challenge.error, 403);
   }
 
+  // Declared keys are honoured only with a capability bound to THIS submission's
+  // challenge. Without one the keys are dropped and the enquiry still sends: a
+  // failed binding must cost the attachments, never the lead.
+  const signedKeys = Array.isArray(payload.uploadSignedKeys)
+    ? payload.uploadSignedKeys.filter(
+        (key): key is string => typeof key === "string",
+      )
+    : [];
+  const uploadKeys = uploadCapabilityAuthorizes(
+    payload.uploadCapability,
+    signedKeys,
+    parsed.fields.uploadKeys,
+    payload.turnstileToken,
+  )
+    ? parsed.fields.uploadKeys
+    : [];
+  if (parsed.fields.uploadKeys.length > 0 && uploadKeys.length === 0) {
+    console.warn("Dropped upload keys this submission cannot claim");
+  }
+
   const context = asLeadContext(payload.context);
   if (!context) {
     return jsonError("Invalid request.", 400);
   }
 
   try {
-    const result = await forwardLeadToKeystone(parsed.fields, context);
+    const result = await forwardLeadToKeystone(
+      { ...parsed.fields, uploadKeys },
+      context,
+    );
     return NextResponse.json(result);
   } catch (error) {
     console.error("Keystone lead submit failed", error);
