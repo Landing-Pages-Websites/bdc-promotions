@@ -1,30 +1,24 @@
 import type { ReactElement } from "react";
-
 import { formatSequenceNumber } from "@/lib/formatSequenceNumber";
 
 import type { ContentCard } from "./LandingPage";
+import { ManagedCardCopy } from "./ManagedCardCopy";
 
 interface ServiceCardProps {
   index: number;
   item: ContentCard;
-  label: string;
 }
 
-export function ServiceCard({
-  index,
-  item,
-  label,
-}: ServiceCardProps): ReactElement {
+export function ServiceCard({ index, item }: ServiceCardProps): ReactElement {
   return (
     <article className="service-card">
       <div className="service-card__topline">
         <span className="service-card__index">
           {formatSequenceNumber(index)}
         </span>
-        <span>{label}</span>
+        <span aria-hidden="true">Service</span>
       </div>
-      <h3>{item.title}</h3>
-      <p>{item.description}</p>
+      <ManagedCardCopy item={item} />
       <div className="service-card__meter" aria-hidden="true">
         <span />
       </div>

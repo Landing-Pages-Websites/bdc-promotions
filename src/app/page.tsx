@@ -4,7 +4,6 @@ import { managedSitePageAttributesV1 } from "@landing-pages-websites/managed-sit
 
 import {
   LandingPage,
-  type ContentCard,
   type LandingPageContent,
 } from "@/components/home/LandingPage";
 import { JsonLd } from "@/components/schema/JsonLd";
@@ -44,61 +43,29 @@ const faqSchema = buildFaqSchema(
   })),
 );
 
-function cards(
-  items: readonly {
-    readonly title: { readonly value: string };
-    readonly description: { readonly value: string };
-  }[],
-): readonly ContentCard[] {
-  return items.map((item) => ({
-    title: item.title.value,
-    description: item.description.value,
-  }));
-}
-
 const landingContent: LandingPageContent = {
-  hero: {
-    eyebrow: managedHome.hero.eyebrow.value,
-    title: managedHome.hero.title.value,
-    description: managedHome.hero.description.value,
-    image: {
-      src: managedHome.hero.image.src,
-      alt: managedHome.hero.image.alt,
-    },
-  },
-  values: {
-    heading: managedHome.values.heading.value,
-    description: managedHome.values.description.value,
-    items: cards(managedHome.values.items),
-  },
-  services: {
-    heading: managedHome.services.heading.value,
-    description: managedHome.services.description.value,
-    items: cards(managedHome.services.items),
-  },
-  focus: {
-    eyebrow: managedHome.focus.eyebrow.value,
-    heading: managedHome.focus.heading.value,
-    description: managedHome.focus.description.value,
-    items: cards(managedHome.focus.items),
-  },
-  process: {
-    heading: managedHome.process.heading.value,
-    description: managedHome.process.description.value,
-    items: cards(managedHome.process.items),
-  },
+  hero: managedHome.hero,
+  values: managedHome.values,
+  services: managedHome.services,
+  focus: managedHome.focus,
+  process: managedHome.process,
   insights: {
-    heading: managedHome.insights.heading.value,
+    eyebrow: managedHome.insights.eyebrow,
+    heading: managedHome.insights.heading,
+    fieldId: managedHome.insights.fieldId,
     items: managedHome.insights.items.map((item) => ({
-      title: item.question.value,
-      description: item.answer.value,
+      itemId: item.itemId,
+      title: item.question,
+      description: item.answer,
     })),
   },
-  contact: {
-    eyebrow: managedHome.contact.eyebrow.value,
-    heading: managedHome.contact.heading.value,
-    description: managedHome.contact.description.value,
-  },
+  contact: managedHome.contact,
+};
+
+const brandIdentity = {
+  displayName: managedHome.seo.identity.displayName,
+  description: managedHome.seo.identity.description,
+  telephone: managedHome.seo.identity.telephone,
 };
 
 export default function HomePage(): ReactElement {
@@ -109,10 +76,7 @@ export default function HomePage(): ReactElement {
     >
       <JsonLd data={businessSchema} />
       <JsonLd data={faqSchema} />
-      <LandingPage
-        content={landingContent}
-        phone={managedHome.seo.identity.telephone}
-      />
+      <LandingPage content={landingContent} identity={brandIdentity} />
     </div>
   );
 }

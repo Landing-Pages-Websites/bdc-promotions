@@ -1,8 +1,10 @@
 import type { ReactElement } from "react";
+import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
 import { formatSequenceNumber } from "@/lib/formatSequenceNumber";
 
 import type { ContentSection } from "./LandingPage";
+import { ManagedCardCopy } from "./ManagedCardCopy";
 
 interface ValueGridProps {
   content: ContentSection;
@@ -16,20 +18,34 @@ export function ValueGrid({ content }: ValueGridProps): ReactElement {
     >
       <div className="section-intro section-intro--split">
         <div>
-          <p className="eyebrow">Why Dealers Choose Us</p>
-          <h2 id="value-heading">{content.heading}</h2>
+          <p
+            className="eyebrow"
+            {...managedSiteFieldAttributesV1(content.eyebrow.fieldId)}
+          >
+            {content.eyebrow.value}
+          </p>
+          <h2
+            id="value-heading"
+            {...managedSiteFieldAttributesV1(content.heading.fieldId)}
+          >
+            {content.heading.value}
+          </h2>
         </div>
-        <p>{content.description}</p>
+        <p {...managedSiteFieldAttributesV1(content.description.fieldId)}>
+          {content.description.value}
+        </p>
       </div>
-      <div className="value-grid">
+      <div
+        className="value-grid"
+        {...managedSiteFieldAttributesV1(content.fieldId)}
+      >
         {content.items.map((item, index) => (
-          <article className="value-card" key={item.title}>
+          <article className="value-card" key={item.itemId}>
             <span className="value-card__number">
               {formatSequenceNumber(index)}
             </span>
             <div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
+              <ManagedCardCopy item={item} />
             </div>
           </article>
         ))}

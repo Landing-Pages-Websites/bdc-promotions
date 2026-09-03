@@ -2,23 +2,24 @@ import type { ReactElement } from "react";
 
 import { phoneHref } from "@/lib/phone";
 
+import type { BrandIdentity } from "./LandingPage";
+
 interface ContactCardProps {
-  phone: string;
+  identity: BrandIdentity;
 }
 
-export function ContactCard({ phone }: ContactCardProps): ReactElement {
-  const href = phoneHref(phone);
+export function ContactCard({ identity }: ContactCardProps): ReactElement {
+  const href = phoneHref(identity.telephone);
   return (
     <div className="contact-card">
       <p>Call Today</p>
-      <a href={href} aria-label={`Call BDC Promotions at ${phone}`}>
-        {phone}
+      <a
+        href={href}
+        aria-label={`Call ${identity.displayName} at ${identity.telephone}`}
+      >
+        {identity.telephone}
       </a>
-      <span>
-        BDC Promotions
-        <br />
-        Automotive Marketing Solutions
-      </span>
+      <span>{identity.displayName}</span>
       <div className="contact-card__actions">
         <a className="button" href={href}>
           Call Now

@@ -282,12 +282,14 @@ export const managedHome = Object.freeze({
     image: image("/hero/image"),
   }),
   values: Object.freeze({
+    eyebrow: text("/values/eyebrow", "plain_text"),
     heading: text("/values/heading", "heading_text"),
     description: text("/values/description", "plain_text"),
     fieldId: values.fieldId,
     items: values.items,
   }),
   services: Object.freeze({
+    eyebrow: text("/services/eyebrow", "plain_text"),
     heading: text("/services/heading", "heading_text"),
     description: text("/services/description", "plain_text"),
     fieldId: services.fieldId,
@@ -301,17 +303,20 @@ export const managedHome = Object.freeze({
     items: focus.items,
   }),
   process: Object.freeze({
+    eyebrow: text("/process/eyebrow", "plain_text"),
     heading: text("/process/heading", "heading_text"),
     description: text("/process/description", "plain_text"),
     fieldId: process.fieldId,
     items: process.items,
   }),
   faq: Object.freeze({
+    eyebrow: text("/faq/eyebrow", "plain_text"),
     heading: text("/faq/heading", "heading_text"),
     fieldId: faq.fieldId,
     items: faq.items,
   }),
   insights: Object.freeze({
+    eyebrow: text("/faq/eyebrow", "plain_text"),
     heading: text("/faq/heading", "heading_text"),
     fieldId: faq.fieldId,
     items: faq.items,

@@ -2,29 +2,28 @@ import type { ReactElement } from "react";
 
 import { HeroCopy } from "./HeroCopy";
 import { HeroVisual } from "./HeroVisual";
+import type {
+  BrandIdentity,
+  ContentCard,
+  LandingPageContent,
+} from "./LandingPage";
 
 interface HeroSectionProps {
-  content: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    image: {
-      src: string;
-      alt: string;
-    };
-  };
-  phone: string;
+  content: LandingPageContent["hero"];
+  identity: BrandIdentity;
+  signals: readonly ContentCard[];
 }
 
 export function HeroSection({
   content,
-  phone,
+  identity,
+  signals,
 }: HeroSectionProps): ReactElement {
   return (
     <section className="hero section-shell" aria-labelledby="hero-title">
       <div className="hero__glow" aria-hidden="true" />
-      <HeroCopy content={content} phone={phone} />
-      <HeroVisual image={content.image} />
+      <HeroCopy content={content} identity={identity} signals={signals} />
+      <HeroVisual image={content.image} label={identity.displayName} />
     </section>
   );
 }

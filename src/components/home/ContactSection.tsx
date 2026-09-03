@@ -1,19 +1,17 @@
 import type { ReactElement } from "react";
+import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
 import { ContactCard } from "./ContactCard";
+import type { BrandIdentity, LandingPageContent } from "./LandingPage";
 
 interface ContactSectionProps {
-  content: {
-    eyebrow: string;
-    heading: string;
-    description: string;
-  };
-  phone: string;
+  content: LandingPageContent["contact"];
+  identity: BrandIdentity;
 }
 
 export function ContactSection({
   content,
-  phone,
+  identity,
 }: ContactSectionProps): ReactElement {
   return (
     <section
@@ -22,11 +20,23 @@ export function ContactSection({
       aria-labelledby="contact-heading"
     >
       <div className="contact-section__copy">
-        <p className="eyebrow">{content.eyebrow}</p>
-        <h2 id="contact-heading">{content.heading}</h2>
-        <p>{content.description}</p>
+        <p
+          className="eyebrow"
+          {...managedSiteFieldAttributesV1(content.eyebrow.fieldId)}
+        >
+          {content.eyebrow.value}
+        </p>
+        <h2
+          id="contact-heading"
+          {...managedSiteFieldAttributesV1(content.heading.fieldId)}
+        >
+          {content.heading.value}
+        </h2>
+        <p {...managedSiteFieldAttributesV1(content.description.fieldId)}>
+          {content.description.value}
+        </p>
       </div>
-      <ContactCard phone={phone} />
+      <ContactCard identity={identity} />
     </section>
   );
 }

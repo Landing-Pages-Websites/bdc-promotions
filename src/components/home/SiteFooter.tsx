@@ -2,22 +2,21 @@ import type { ReactElement } from "react";
 
 import { phoneHref } from "@/lib/phone";
 
+import type { BrandIdentity } from "./LandingPage";
+
 interface SiteFooterProps {
-  phone: string;
+  identity: BrandIdentity;
 }
 
-export function SiteFooter({ phone }: SiteFooterProps): ReactElement {
+export function SiteFooter({ identity }: SiteFooterProps): ReactElement {
   return (
     <footer className="site-footer section-shell">
       <div>
-        <strong>BDC Promotions</strong>
-        <p>
-          Automotive marketing services designed to help dealerships generate
-          more conversations and more appointments.
-        </p>
+        <strong>{identity.displayName}</strong>
+        <p>{identity.description}</p>
       </div>
       <div className="site-footer__links">
-        <a href={phoneHref(phone)}>{phone}</a>
+        <a href={phoneHref(identity.telephone)}>{identity.telephone}</a>
         <a href="/privacy-policy">Privacy</a>
         <a href="/terms">Terms</a>
         <a href="/cookie-policy">Cookies</a>

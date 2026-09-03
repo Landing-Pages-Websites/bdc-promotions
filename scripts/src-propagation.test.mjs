@@ -27,18 +27,32 @@ import test from "node:test";
 /**
  * Files known not to be copied into a customer site, with the reason.
  *
- * No customer site carries `src/content/managed-site.ts`, a
- * `src/components/home/` directory, or `src/app/llms.txt/` — verified against
- * `maid-ok-website` and `all-points-media-website`, both descendants of this
- * template. Anything NOT listed fails, because the safe answer for a file
- * nobody has checked is "no".
+ * BDC Promotions intentionally retains and deploys the managed contract
+ * workspace with its active home-page renderer. Those exact files are listed
+ * here; anything else still fails closed.
  */
 const EXEMPT_BECAUSE_THE_SUBSYSTEM_DOES_NOT_PROPAGATE = new Set([
   "src/app/page.tsx",
   "src/app/llms.txt/route.ts",
+  "src/components/home/ContactCard.tsx",
+  "src/components/home/ContactSection.tsx",
+  "src/components/home/FocusSection.tsx",
+  "src/components/home/HeroActions.tsx",
+  "src/components/home/HeroCopy.tsx",
+  "src/components/home/HeroSection.tsx",
+  "src/components/home/HeroVisual.tsx",
+  "src/components/home/InsightsSection.tsx",
+  "src/components/home/LandingPage.tsx",
+  "src/components/home/ManagedCardCopy.tsx",
   "src/components/home/ManagedContact.tsx",
   "src/components/home/ManagedFaq.tsx",
   "src/components/home/ManagedHero.tsx",
+  "src/components/home/ProcessSection.tsx",
+  "src/components/home/ServiceCard.tsx",
+  "src/components/home/ServicesSection.tsx",
+  "src/components/home/SiteFooter.tsx",
+  "src/components/home/SiteHeader.tsx",
+  "src/components/home/ValueGrid.tsx",
   "src/content/managed-site.ts",
 ]);
 

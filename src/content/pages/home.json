@@ -16,6 +16,7 @@
     }
   },
   "values": {
+    "eyebrow": "Why Dealers Choose Us",
     "heading": "More conversations with real shoppers. Less wasted opportunity.",
     "description": "Our approach is simple. We help your dealership respond faster, engage better, and create more opportunities for your team to get customers in the door.",
     "order": {
@@ -50,6 +51,7 @@
     ]
   },
   "services": {
+    "eyebrow": "Built To Move Shoppers",
     "heading": "What We Do",
     "description": "BDC Promotions provides automotive marketing and customer engagement services built to help dealerships create more conversations, more appointments, and more sales opportunities.",
     "order": {
@@ -113,6 +115,7 @@
     ]
   },
   "process": {
+    "eyebrow": "From Message To Showroom",
     "heading": "How It Works",
     "description": "We keep the process straightforward so your dealership can get moving quickly and start creating more opportunities.",
     "order": {
@@ -147,6 +150,7 @@
     ]
   },
   "faq": {
+    "eyebrow": "Speed Changes The Outcome",
     "heading": "Why The Right Conversation Matters",
     "order": {
       "orderedItemIds": [

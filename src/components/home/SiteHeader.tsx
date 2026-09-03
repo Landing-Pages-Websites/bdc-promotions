@@ -1,19 +1,29 @@
 import type { ReactElement } from "react";
+import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
 import { phoneHref } from "@/lib/phone";
 
+import type { BrandIdentity, ManagedTextContent } from "./LandingPage";
+
 interface SiteHeaderProps {
-  phone: string;
+  identity: BrandIdentity;
+  tagline: ManagedTextContent;
 }
 
-export function SiteHeader({ phone }: SiteHeaderProps): ReactElement {
+export function SiteHeader({
+  identity,
+  tagline,
+}: SiteHeaderProps): ReactElement {
+  const { displayName, telephone } = identity;
   return (
     <header className="site-header">
-      <a className="brand" href="#top" aria-label="BDC Promotions home">
+      <a className="brand" href="#top" aria-label={`${displayName} home`}>
         <span className="brand__mark">BDC</span>
         <span className="brand__copy">
-          <strong>BDC Promotions</strong>
-          <small>Automotive Marketing</small>
+          <strong>{displayName}</strong>
+          <small {...managedSiteFieldAttributesV1(tagline.fieldId)}>
+            {tagline.value}
+          </small>
         </span>
       </a>
       <nav className="site-nav" aria-label="Primary navigation">
@@ -22,11 +32,11 @@ export function SiteHeader({ phone }: SiteHeaderProps): ReactElement {
       </nav>
       <a
         className="button button--compact"
-        href={phoneHref(phone)}
-        aria-label={`Call BDC Promotions at ${phone}`}
+        href={phoneHref(telephone)}
+        aria-label={`Call ${displayName} at ${telephone}`}
       >
         <span className="button__signal" aria-hidden="true" />
-        {phone}
+        {telephone}
       </a>
     </header>
   );

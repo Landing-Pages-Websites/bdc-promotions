@@ -1,12 +1,11 @@
 import type { ReactElement } from "react";
+import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 import type { ContentSection } from "./LandingPage";
 import { ServiceCard } from "./ServiceCard";
 
 interface ServicesSectionProps {
   content: ContentSection;
 }
-
-const serviceLabels = ["RESPOND", "AMPLIFY", "CONVERT"] as const;
 
 export function ServicesSection({
   content,
@@ -19,18 +18,28 @@ export function ServicesSection({
     >
       <div className="section-shell">
         <div className="section-intro">
-          <p className="eyebrow">Built To Move Shoppers</p>
-          <h2 id="services-heading">{content.heading}</h2>
-          <p>{content.description}</p>
+          <p
+            className="eyebrow"
+            {...managedSiteFieldAttributesV1(content.eyebrow.fieldId)}
+          >
+            {content.eyebrow.value}
+          </p>
+          <h2
+            id="services-heading"
+            {...managedSiteFieldAttributesV1(content.heading.fieldId)}
+          >
+            {content.heading.value}
+          </h2>
+          <p {...managedSiteFieldAttributesV1(content.description.fieldId)}>
+            {content.description.value}
+          </p>
         </div>
-        <div className="services-grid">
+        <div
+          className="services-grid"
+          {...managedSiteFieldAttributesV1(content.fieldId)}
+        >
           {content.items.map((item, index) => (
-            <ServiceCard
-              index={index}
-              item={item}
-              key={item.title}
-              label={serviceLabels[index] ?? "DRIVE"}
-            />
+            <ServiceCard index={index} item={item} key={item.itemId} />
           ))}
         </div>
       </div>
