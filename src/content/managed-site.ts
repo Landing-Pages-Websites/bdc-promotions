@@ -130,14 +130,14 @@ function image(pointer: string) {
   });
 }
 
-function faqCollection(): ManagedCollectionDescriptor {
+function collectionAt(pointer: string): ManagedCollectionDescriptor {
   return only(
     managedSite.contract.collections.filter(
       (collection) =>
         collection.resolver.path === HOME_PATH &&
-        collection.resolver.pointer === "/faq/items",
+        collection.resolver.pointer === pointer,
     ),
-    "FAQ collection",
+    `collection at ${pointer}`,
   );
 }
 
@@ -187,7 +187,7 @@ function faqItem(
 }
 
 function faqItems() {
-  const collection = faqCollection();
+  const collection = collectionAt("/faq/items");
   const orderField = renderedField("/faq/order", "collection");
   const order = managedSite.readValue({
     fieldId: orderField.id,
@@ -198,6 +198,53 @@ function faqItems() {
   const answerField = itemField(collection, "/answer", "plain_text");
   const items = order.value.orderedItemIds.map((itemId) =>
     faqItem(collection, questionField, answerField, itemId),
+  );
+  return Object.freeze({ fieldId: orderField.id, items: Object.freeze(items) });
+}
+
+function cardItem(
+  collection: ManagedCollectionDescriptor,
+  titleField: ManagedCollectionItemField,
+  descriptionField: ManagedCollectionItemField,
+  itemId: StableId<"item">,
+) {
+  const owner: ManagedContentOwner = {
+    kind: "collection_item",
+    collectionId: collection.id,
+    itemId,
+  };
+  const title = managedSite.readValue({
+    fieldId: titleField.id,
+    owner,
+    type: "plain_text",
+  });
+  const description = managedSite.readValue({
+    fieldId: descriptionField.id,
+    owner,
+    type: "plain_text",
+  });
+  return Object.freeze({
+    itemId,
+    title: Object.freeze({ fieldId: titleField.id, value: title.value }),
+    description: Object.freeze({
+      fieldId: descriptionField.id,
+      value: description.value,
+    }),
+  });
+}
+
+function cardItems(pointer: string) {
+  const collection = collectionAt(`${pointer}/items`);
+  const orderField = renderedField(`${pointer}/order`, "collection");
+  const order = managedSite.readValue({
+    fieldId: orderField.id,
+    owner: pageOwner,
+    type: "collection",
+  });
+  const titleField = itemField(collection, "/title", "plain_text");
+  const descriptionField = itemField(collection, "/description", "plain_text");
+  const items = order.value.orderedItemIds.map((itemId) =>
+    cardItem(collection, titleField, descriptionField, itemId),
   );
   return Object.freeze({ fieldId: orderField.id, items: Object.freeze(items) });
 }
@@ -220,6 +267,10 @@ function internalValue<Type extends ManagedInternalValueType>(
 }
 
 const faq = faqItems();
+const values = cardItems("/values");
+const services = cardItems("/services");
+const focus = cardItems("/focus");
+const process = cardItems("/process");
 const metadataIndexing = internalValue(
   HOME_PATH,
   "/seo/indexing",
@@ -234,13 +285,45 @@ export const managedHome = Object.freeze({
     description: text("/hero/description", "plain_text"),
     image: image("/hero/image"),
   }),
+  values: Object.freeze({
+    heading: text("/values/heading", "heading_text"),
+    description: text("/values/description", "plain_text"),
+    fieldId: values.fieldId,
+    items: values.items,
+  }),
+  services: Object.freeze({
+    heading: text("/services/heading", "heading_text"),
+    description: text("/services/description", "plain_text"),
+    fieldId: services.fieldId,
+    items: services.items,
+  }),
+  focus: Object.freeze({
+    eyebrow: text("/focus/eyebrow", "plain_text"),
+    heading: text("/focus/heading", "heading_text"),
+    description: text("/focus/description", "plain_text"),
+    fieldId: focus.fieldId,
+    items: focus.items,
+  }),
+  process: Object.freeze({
+    heading: text("/process/heading", "heading_text"),
+    description: text("/process/description", "plain_text"),
+    fieldId: process.fieldId,
+    items: process.items,
+  }),
   faq: Object.freeze({
     heading: text("/faq/heading", "heading_text"),
     fieldId: faq.fieldId,
     items: faq.items,
   }),
+  insights: Object.freeze({
+    heading: text("/faq/heading", "heading_text"),
+    fieldId: faq.fieldId,
+    items: faq.items,
+  }),
   contact: Object.freeze({
+    eyebrow: text("/contact/eyebrow", "plain_text"),
     heading: text("/contact/heading", "heading_text"),
+    description: text("/contact/description", "plain_text"),
   }),
   seo: Object.freeze({
     identity: Object.freeze({

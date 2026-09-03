@@ -13,19 +13,19 @@ export const metadata: Metadata = buildMetadata({
 const sections: LegalSection[] = [
   {
     heading: "What Cookies Are",
-    body: "TODO_POLICY_CONTENT — brief plain-language explanation of cookies and similar technologies.",
+    body: "Cookies and similar technologies are small pieces of data used to remember preferences, measure website activity, and support reliable site operation.",
   },
   {
     heading: "Cookies We Use",
-    body: `TODO_POLICY_CONTENT — list the analytics cookies ${siteConfig.businessName} uses (Google Analytics, PostHog) and their purposes.`,
+    body: `${siteConfig.businessName} may use essential storage for site preferences and analytics services such as Google Analytics and PostHog to understand traffic and improve the experience.`,
   },
   {
     heading: "Managing Your Preferences",
-    body: "TODO_POLICY_CONTENT — explain the consent banner choice and how to clear it (clearing browser storage re-prompts).",
+    body: "Use the cookie notice to accept or decline analytics. Clearing this site's storage in your browser will remove the saved choice and show the notice again.",
   },
   {
     heading: "Contact",
-    body: `Questions about cookies? Contact ${siteConfig.businessName} at ${siteConfig.contact.email}.`,
+    body: `Questions about cookies? Call ${siteConfig.businessName} at ${siteConfig.contact.phone} or email ${siteConfig.contact.email}.`,
   },
 ];
 

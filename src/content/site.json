@@ -1,17 +1,17 @@
 {
   "identity": {
-    "legalName": "TODO_LEGAL_NAME",
-    "displayName": "TODO_BUSINESS_NAME",
-    "description": "TODO_BUSINESS_DESCRIPTION — one or two sentences about the business.",
-    "telephone": "TODO_PHONE",
+    "legalName": "BDC Promotions, Inc.",
+    "displayName": "BDC Promotions",
+    "description": "Automotive marketing services designed to help dealerships generate more conversations, more appointments, and more sales opportunities.",
+    "telephone": "352-207-1074",
     "postalAddress": {
-      "streetAddress": "TODO_STREET",
-      "addressLocality": "TODO_CITY",
-      "addressRegion": "TODO_REGION",
-      "postalCode": "TODO_POSTAL_CODE",
+      "streetAddress": "3200 SW 34th Ave, Suite 301",
+      "addressLocality": "Ocala",
+      "addressRegion": "FL",
+      "postalCode": "34474",
       "addressCountry": "US"
     },
-    "email": "TODO_EMAIL",
-    "sameAs": ["https://example.com/TODO_SOCIAL_PROFILE"]
+    "email": "Justin@BDC-Promotions.com",
+    "sameAs": ["https://www.linkedin.com/company/bdcpromotions"]
   }
 }

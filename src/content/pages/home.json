@@ -1,8 +1,8 @@
 {
   "hero": {
-    "eyebrow": "TODO_HERO_EYEBROW — replace with real content",
-    "title": "TODO_BUSINESS_NAME",
-    "description": "TODO_DESCRIPTION — one or two sentences about the business.",
+    "eyebrow": "Full Service Automotive Marketing",
+    "title": "We Help Dealerships Generate More Appointments And Sell More Cars.",
+    "description": "BDC Promotions helps dealers turn Facebook traffic, paid social campaigns, and online conversations into real showroom opportunities. We focus on fast lead response, stronger customer engagement, and more booked appointments for your sales team.",
     "image": {
       "path": "public/logo.png",
       "sha256": "5e58b0624d7929f62df00080310d6c929ff390d371eb20c219ba9fb52890a4a7",
@@ -10,39 +10,178 @@
       "width": 512,
       "height": 512,
       "bytes": 1881,
-      "altText": "TODO_BUSINESS_NAME logo",
+      "altText": "BDC Promotions logo",
       "crop": null,
       "focalPoint": null
     }
   },
+  "values": {
+    "heading": "More conversations with real shoppers. Less wasted opportunity.",
+    "description": "Our approach is simple. We help your dealership respond faster, engage better, and create more opportunities for your team to get customers in the door.",
+    "order": {
+      "orderedItemIds": [
+        "item_0pnxn0y38tffb1wn4pp5hzmz20",
+        "item_9jt92z85j92eh2497qcmarb0wr",
+        "item_fczckq1makm9fgsf9kgdrz3gsw",
+        "item_jxwzs33j9w3jknmtxp2k3frdxm"
+      ]
+    },
+    "items": [
+      {
+        "id": "item_0pnxn0y38tffb1wn4pp5hzmz20",
+        "title": "Fast",
+        "description": "Lead response that helps keep shoppers engaged"
+      },
+      {
+        "id": "item_9jt92z85j92eh2497qcmarb0wr",
+        "title": "Focused",
+        "description": "Automotive marketing built around appointment generation"
+      },
+      {
+        "id": "item_fczckq1makm9fgsf9kgdrz3gsw",
+        "title": "Social",
+        "description": "Facebook and Messenger campaigns designed to drive action"
+      },
+      {
+        "id": "item_jxwzs33j9w3jknmtxp2k3frdxm",
+        "title": "Results",
+        "description": "More opportunities for your store to sell more vehicles"
+      }
+    ]
+  },
+  "services": {
+    "heading": "What We Do",
+    "description": "BDC Promotions provides automotive marketing and customer engagement services built to help dealerships create more conversations, more appointments, and more sales opportunities.",
+    "order": {
+      "orderedItemIds": [
+        "item_jm8sy0qfyxwhdfy63hgpqfnxpc",
+        "item_zdm0f09rw09xj76m3yybzafq28",
+        "item_r30w8r88yj034yceyx0fjzvxrw"
+      ]
+    },
+    "items": [
+      {
+        "id": "item_jm8sy0qfyxwhdfy63hgpqfnxpc",
+        "title": "Messenger Lead Response",
+        "description": "We help dealerships connect with shoppers through fast, professional Facebook Messenger communication that keeps interest high and drives customers toward the next step."
+      },
+      {
+        "id": "item_zdm0f09rw09xj76m3yybzafq28",
+        "title": "Paid Social Campaigns",
+        "description": "We create social media campaigns and promotions designed to increase visibility, generate traffic, and produce stronger customer engagement for your dealership."
+      },
+      {
+        "id": "item_r30w8r88yj034yceyx0fjzvxrw",
+        "title": "Appointment Generation",
+        "description": "Our goal is not just leads. Our goal is helping your dealership turn online activity into real appointments and more opportunities for your team to close deals."
+      }
+    ]
+  },
+  "focus": {
+    "eyebrow": "Built For Dealerships",
+    "heading": "Automotive marketing that stays focused on what matters.",
+    "description": "Every dealership wants more quality opportunities. We help create those opportunities by combining attention-grabbing social media, better customer communication, and a process that moves shoppers toward your showroom.",
+    "order": {
+      "orderedItemIds": [
+        "item_mnb466hfgs7jnkz9kpdt2yz728",
+        "item_0bej3122nxh1xt2xjaszd4d3y4",
+        "item_wqqb1f9b8ga3tergq7at6s412c",
+        "item_agf4tn6jg9jtwbcv0q25yw9r7g"
+      ]
+    },
+    "items": [
+      {
+        "id": "item_mnb466hfgs7jnkz9kpdt2yz728",
+        "title": "More customer conversations",
+        "description": "Start more real interactions with shoppers who are already active online."
+      },
+      {
+        "id": "item_0bej3122nxh1xt2xjaszd4d3y4",
+        "title": "Stronger speed to lead",
+        "description": "Stay in front of prospects before interest fades or they move on to another store."
+      },
+      {
+        "id": "item_wqqb1f9b8ga3tergq7at6s412c",
+        "title": "More booked appointments",
+        "description": "Keep your marketing focused on getting people into the dealership."
+      },
+      {
+        "id": "item_agf4tn6jg9jtwbcv0q25yw9r7g",
+        "title": "Cleaner dealership message",
+        "description": "Present a more professional and more consistent brand experience online."
+      }
+    ]
+  },
+  "process": {
+    "heading": "How It Works",
+    "description": "We keep the process straightforward so your dealership can get moving quickly and start creating more opportunities.",
+    "order": {
+      "orderedItemIds": [
+        "item_kvtaz0jhyjtqhr7sp572ytsemr",
+        "item_zr137wbwmxnf6bmgg1hawx0y9r",
+        "item_5dkx2t613k2j49f78wqgh0rs3g",
+        "item_bs6j10q5v76gpnrx7bcfhxge5m"
+      ]
+    },
+    "items": [
+      {
+        "id": "item_kvtaz0jhyjtqhr7sp572ytsemr",
+        "title": "Learn Your Store",
+        "description": "We get familiar with your dealership, your goals, and the type of customers you want to reach."
+      },
+      {
+        "id": "item_zr137wbwmxnf6bmgg1hawx0y9r",
+        "title": "Build The Campaign",
+        "description": "We put together the social message, creative direction, and lead engagement strategy."
+      },
+      {
+        "id": "item_5dkx2t613k2j49f78wqgh0rs3g",
+        "title": "Engage Shoppers",
+        "description": "We help create real conversations with shoppers and guide them toward the next step."
+      },
+      {
+        "id": "item_bs6j10q5v76gpnrx7bcfhxge5m",
+        "title": "Drive Appointments",
+        "description": "The goal is simple: more qualified opportunities and more showroom visits for your team."
+      }
+    ]
+  },
   "faq": {
-    "heading": "TODO_FAQ_HEADING — frequently asked questions",
+    "heading": "Why The Right Conversation Matters",
     "order": {
       "orderedItemIds": [
         "item_000000000000000000000000g0",
-        "item_000000000000000000000000h0"
+        "item_000000000000000000000000h0",
+        "item_7em4r9hthawf2mr1jymass86b0"
       ]
     },
     "items": [
       {
         "id": "item_000000000000000000000000g0",
-        "question": "TODO_FAQ_QUESTION_ONE — what services do you offer?",
-        "answer": "TODO_FAQ_ANSWER — replace this answer with real customer content."
+        "question": "Customer behavior has changed. Speed matters.",
+        "answer": "Today’s car shopper expects a fast response and a clear reason to stay engaged. A missed message or slow follow-up can cost your store the opportunity."
       },
       {
         "id": "item_000000000000000000000000h0",
-        "question": "TODO_FAQ_QUESTION_TWO — what areas do you serve?",
-        "answer": "TODO_SERVICE_AREA_ANSWER — describe the real service area."
+        "question": "Marketing should move people to action.",
+        "answer": "Strong social campaigns are not just about getting attention. They should create a path that turns online interest into a live dealership conversation."
+      },
+      {
+        "id": "item_7em4r9hthawf2mr1jymass86b0",
+        "question": "Better engagement supports better results.",
+        "answer": "When communication improves, appointment flow improves. And when appointment flow improves, your sales team has more real opportunities to sell."
       }
     ]
   },
   "contact": {
-    "heading": "TODO_CONTACT_HEADING — get in touch"
+    "eyebrow": "Contact BDC Promotions",
+    "heading": "Ready to create more appointments for your dealership?",
+    "description": "Let’s talk about how BDC Promotions can help your store improve customer engagement, strengthen lead response, and generate more opportunities."
   },
   "seo": {
-    "title": "TODO_SEO_TITLE",
-    "description": "TODO_SEO_DESCRIPTION — one or two search-focused sentences.",
-    "canonical": "https://todo.example.com/TODO_CANONICAL_URL",
+    "title": "Automotive Marketing That Drives Appointments",
+    "description": "BDC Promotions helps automotive dealerships turn paid social traffic and online conversations into more appointments and showroom opportunities.",
+    "canonical": "https://bdcpromotions.com/",
     "indexing": {
       "index": true,
       "follow": true,
