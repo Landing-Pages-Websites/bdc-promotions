@@ -19,6 +19,8 @@ import { listPostFilenames, postId, servablePost } from "../src/lib/post-file.mj
 // so this gate sees exactly the values the site will render.
 import { parseFrontmatter } from "../src/lib/frontmatter.mjs";
 
+import { collectPlaceholderAssetProblems } from "./placeholder-assets.mjs";
+
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function jsonFiles(relativeDirectory) {
@@ -245,6 +247,7 @@ const todoProblems = [
     collectProblems(readConfig(relativePath), relativePath),
   ),
   ...collectPlaceholderProblems(),
+  ...collectPlaceholderAssetProblems(),
 ];
 const blogProblems = collectBlogContractProblems();
 const problems = [...todoProblems, ...blogProblems];
