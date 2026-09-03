@@ -13,27 +13,27 @@ export const metadata: Metadata = buildMetadata({
 const sections: LegalSection[] = [
   {
     heading: "Information We Collect",
-    body: `TODO_POLICY_CONTENT — describe what personal information ${siteConfig.businessName} collects (e.g. contact form submissions, analytics data).`,
+    body: `${siteConfig.businessName} may collect information you choose to provide when contacting us, along with basic website usage and device information collected through analytics tools.`,
   },
   {
     heading: "How We Use Your Information",
-    body: "TODO_POLICY_CONTENT — describe how collected information is used (responding to inquiries, improving the site, marketing).",
+    body: "We use this information to respond to inquiries, understand how visitors use the site, improve our services, and communicate about relevant automotive marketing solutions.",
   },
   {
     heading: "Cookies and Analytics",
-    body: "TODO_POLICY_CONTENT — describe analytics tools in use and link to the cookie policy.",
+    body: "The site may use Google Analytics, PostHog, and similar technologies to measure performance. You can manage analytics preferences through the cookie notice. See our Cookie Policy for details.",
   },
   {
     heading: "Data Sharing and Third Parties",
-    body: "TODO_POLICY_CONTENT — describe any third parties data is shared with and why.",
+    body: "We may share limited information with service providers that support website hosting, analytics, and business communications. We do not sell personal information.",
   },
   {
     heading: "Your Rights",
-    body: "TODO_POLICY_CONTENT — describe access/deletion rights and how to exercise them.",
+    body: "You may ask to access, correct, or delete personal information you have provided to us, subject to applicable law. Contact us using the details below to make a request.",
   },
   {
     heading: "Contact",
-    body: `Questions about this policy? Contact ${siteConfig.businessName} at ${siteConfig.contact.email}.`,
+    body: `Questions about this policy? Call ${siteConfig.businessName} at ${siteConfig.contact.phone} or email ${siteConfig.contact.email}.`,
   },
 ];
 

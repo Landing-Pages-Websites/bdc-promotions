@@ -77,7 +77,9 @@ function renderedField(
   type: ManagedFieldDescriptor["type"],
 ): ManagedFieldDescriptor {
   const field = only(
-    pageFields.filter((candidate) => hasResolver(candidate, HOME_PATH, pointer)),
+    pageFields.filter((candidate) =>
+      hasResolver(candidate, HOME_PATH, pointer),
+    ),
     `rendered field at ${pointer}`,
   );
   if (field.type !== type) return fail(`Field at ${pointer} must be ${type}`);
@@ -118,7 +120,10 @@ function image(pointer: string) {
     owner: pageOwner,
     type: "image",
   });
-  if (!content.value.path.startsWith("public/") || content.value.altText === null) {
+  if (
+    !content.value.path.startsWith("public/") ||
+    content.value.altText === null
+  ) {
     return fail("Managed hero image must be public and informative");
   }
   return Object.freeze({
@@ -130,14 +135,14 @@ function image(pointer: string) {
   });
 }
 
-function faqCollection(): ManagedCollectionDescriptor {
+function collectionAt(pointer: string): ManagedCollectionDescriptor {
   return only(
     managedSite.contract.collections.filter(
       (collection) =>
         collection.resolver.path === HOME_PATH &&
-        collection.resolver.pointer === "/faq/items",
+        collection.resolver.pointer === pointer,
     ),
-    "FAQ collection",
+    `collection at ${pointer}`,
   );
 }
 
@@ -147,11 +152,37 @@ function itemField(
   type: ManagedCollectionItemField["type"],
 ): ManagedCollectionItemField {
   const field = only(
-    collection.itemFields.filter((candidate) => candidate.itemPointer === pointer),
-    `FAQ item field at ${pointer}`,
+    collection.itemFields.filter(
+      (candidate) => candidate.itemPointer === pointer,
+    ),
+    `collection item field at ${pointer}`,
   );
-  if (field.type !== type) return fail(`FAQ item field at ${pointer} must be ${type}`);
+  if (field.type !== type)
+    return fail(`Collection item field at ${pointer} must be ${type}`);
   return field;
+}
+
+function collectionItemOwner(
+  collection: ManagedCollectionDescriptor,
+  itemId: StableId<"item">,
+): ManagedContentOwner {
+  return {
+    kind: "collection_item",
+    collectionId: collection.id,
+    itemId,
+  };
+}
+
+function collectionText(
+  field: ManagedCollectionItemField,
+  owner: ManagedContentOwner,
+) {
+  const content = managedSite.readValue({
+    fieldId: field.id,
+    owner,
+    type: "plain_text",
+  });
+  return Object.freeze({ fieldId: field.id, value: content.value });
 }
 
 function faqItem(
@@ -160,34 +191,16 @@ function faqItem(
   answerField: ManagedCollectionItemField,
   itemId: StableId<"item">,
 ) {
-  const owner: ManagedContentOwner = {
-    kind: "collection_item",
-    collectionId: collection.id,
-    itemId,
-  };
-  const question = managedSite.readValue({
-    fieldId: questionField.id,
-    owner,
-    type: "plain_text",
-  });
-  const answer = managedSite.readValue({
-    fieldId: answerField.id,
-    owner,
-    type: "plain_text",
-  });
-  // Each cell carries its field id beside its value, exactly as a page-owned
-  // value does, so the template can name the cell it renders. A cell is named by
-  // its field AND its item: the collection declares the field once and renders
-  // it once per item, so the field id alone names a column.
+  const owner = collectionItemOwner(collection, itemId);
   return Object.freeze({
     itemId,
-    question: Object.freeze({ fieldId: questionField.id, value: question.value }),
-    answer: Object.freeze({ fieldId: answerField.id, value: answer.value }),
+    question: collectionText(questionField, owner),
+    answer: collectionText(answerField, owner),
   });
 }
 
 function faqItems() {
-  const collection = faqCollection();
+  const collection = collectionAt("/faq/items");
   const orderField = renderedField("/faq/order", "collection");
   const order = managedSite.readValue({
     fieldId: orderField.id,
@@ -198,6 +211,36 @@ function faqItems() {
   const answerField = itemField(collection, "/answer", "plain_text");
   const items = order.value.orderedItemIds.map((itemId) =>
     faqItem(collection, questionField, answerField, itemId),
+  );
+  return Object.freeze({ fieldId: orderField.id, items: Object.freeze(items) });
+}
+
+function cardItem(
+  collection: ManagedCollectionDescriptor,
+  titleField: ManagedCollectionItemField,
+  descriptionField: ManagedCollectionItemField,
+  itemId: StableId<"item">,
+) {
+  const owner = collectionItemOwner(collection, itemId);
+  return Object.freeze({
+    itemId,
+    title: collectionText(titleField, owner),
+    description: collectionText(descriptionField, owner),
+  });
+}
+
+function cardItems(pointer: string) {
+  const collection = collectionAt(`${pointer}/items`);
+  const orderField = renderedField(`${pointer}/order`, "collection");
+  const order = managedSite.readValue({
+    fieldId: orderField.id,
+    owner: pageOwner,
+    type: "collection",
+  });
+  const titleField = itemField(collection, "/title", "plain_text");
+  const descriptionField = itemField(collection, "/description", "plain_text");
+  const items = order.value.orderedItemIds.map((itemId) =>
+    cardItem(collection, titleField, descriptionField, itemId),
   );
   return Object.freeze({ fieldId: orderField.id, items: Object.freeze(items) });
 }
@@ -220,6 +263,10 @@ function internalValue<Type extends ManagedInternalValueType>(
 }
 
 const faq = faqItems();
+const values = cardItems("/values");
+const services = cardItems("/services");
+const focus = cardItems("/focus");
+const process = cardItems("/process");
 const metadataIndexing = internalValue(
   HOME_PATH,
   "/seo/indexing",
@@ -234,20 +281,61 @@ export const managedHome = Object.freeze({
     description: text("/hero/description", "plain_text"),
     image: image("/hero/image"),
   }),
+  values: Object.freeze({
+    eyebrow: text("/values/eyebrow", "plain_text"),
+    heading: text("/values/heading", "heading_text"),
+    description: text("/values/description", "plain_text"),
+    fieldId: values.fieldId,
+    items: values.items,
+  }),
+  services: Object.freeze({
+    eyebrow: text("/services/eyebrow", "plain_text"),
+    heading: text("/services/heading", "heading_text"),
+    description: text("/services/description", "plain_text"),
+    fieldId: services.fieldId,
+    items: services.items,
+  }),
+  focus: Object.freeze({
+    eyebrow: text("/focus/eyebrow", "plain_text"),
+    heading: text("/focus/heading", "heading_text"),
+    description: text("/focus/description", "plain_text"),
+    fieldId: focus.fieldId,
+    items: focus.items,
+  }),
+  process: Object.freeze({
+    eyebrow: text("/process/eyebrow", "plain_text"),
+    heading: text("/process/heading", "heading_text"),
+    description: text("/process/description", "plain_text"),
+    fieldId: process.fieldId,
+    items: process.items,
+  }),
   faq: Object.freeze({
+    eyebrow: text("/faq/eyebrow", "plain_text"),
+    heading: text("/faq/heading", "heading_text"),
+    fieldId: faq.fieldId,
+    items: faq.items,
+  }),
+  insights: Object.freeze({
+    eyebrow: text("/faq/eyebrow", "plain_text"),
     heading: text("/faq/heading", "heading_text"),
     fieldId: faq.fieldId,
     items: faq.items,
   }),
   contact: Object.freeze({
+    eyebrow: text("/contact/eyebrow", "plain_text"),
     heading: text("/contact/heading", "heading_text"),
+    description: text("/contact/description", "plain_text"),
   }),
   seo: Object.freeze({
     identity: Object.freeze({
-      legalName: internalValue(SITE_PATH, "/identity/legalName", "string").value,
-      displayName: internalValue(SITE_PATH, "/identity/displayName", "string").value,
-      description: internalValue(SITE_PATH, "/identity/description", "string").value,
-      telephone: internalValue(SITE_PATH, "/identity/telephone", "string").value,
+      legalName: internalValue(SITE_PATH, "/identity/legalName", "string")
+        .value,
+      displayName: internalValue(SITE_PATH, "/identity/displayName", "string")
+        .value,
+      description: internalValue(SITE_PATH, "/identity/description", "string")
+        .value,
+      telephone: internalValue(SITE_PATH, "/identity/telephone", "string")
+        .value,
       postalAddress: internalValue(
         SITE_PATH,
         "/identity/postalAddress",

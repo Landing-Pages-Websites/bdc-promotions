@@ -496,23 +496,6 @@ test("two posts sharing a well-formed id still fail the gate", () => {
   }
 });
 
-test("the starter's own seed post id is a placeholder, not a hard failure", () => {
-  // It is a placeholder in the same sense as a TODO_ sentinel, so it travels
-  // the same path: this template stays green in its own CI, which sets
-  // ALLOW_TODO=1, while a configured site's real build fails until the id is
-  // re-minted. A second bypass flag would be a second thing to get wrong.
-  const allowed = runCheckConfig({ ALLOW_TODO: "1" });
-  assert.equal(allowed.status, 0, allowed.output);
-  assert.match(allowed.output, /seed post id/);
-  assert.match(allowed.output, /WARNING/);
-
-  const strict = runCheckConfig({ ALLOW_TODO: "" });
-  assert.equal(strict.status, 1);
-  assert.match(strict.output, /seed post id/);
-  // Actionable, because whoever reads it is a builder or a provisioning bot.
-  assert.match(strict.output, /re-mint it/);
-});
-
 test("check-config treats a missing blog contract as a hard failure", () => {
   const source = read("scripts/check-config.mjs");
   assert.match(source, /collectBlogContractProblems/);

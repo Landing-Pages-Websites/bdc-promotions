@@ -58,7 +58,10 @@ test("defines the exact structured starter contract and source documents", async
     "src/content/pages/home.json",
     "src/content/site.json",
   ]);
-  assert.equal(contract.pages.some((page) => page.route?.path === "/"), true);
+  assert.equal(
+    contract.pages.some((page) => page.route?.path === "/"),
+    true,
+  );
   assert.equal(Array.isArray(home.faq?.items), true);
   assert.equal(typeof home.hero?.image?.sha256, "string");
   assert.equal(typeof site.identity?.displayName, "string");
@@ -71,43 +74,68 @@ test("defines the exact structured starter contract and source documents", async
 test("renders the managed home without code-owned copy", async () => {
   const [page, ...components] = await Promise.all([
     readSource("src/app/page.tsx"),
-    readSource("src/components/home/ManagedHero.tsx"),
-    readSource("src/components/home/ManagedFaq.tsx"),
-    readSource("src/components/home/ManagedContact.tsx"),
+    readSource("src/components/home/LandingPage.tsx"),
+    readSource("src/components/home/HeroCopy.tsx"),
+    readSource("src/components/home/HeroVisual.tsx"),
+    readSource("src/components/home/ValueGrid.tsx"),
+    readSource("src/components/home/ServicesSection.tsx"),
+    readSource("src/components/home/ServiceCard.tsx"),
+    readSource("src/components/home/ManagedCardCopy.tsx"),
+    readSource("src/components/home/FocusSection.tsx"),
+    readSource("src/components/home/ProcessSection.tsx"),
+    readSource("src/components/home/InsightsSection.tsx"),
+    readSource("src/components/home/ContactSection.tsx"),
   ]);
   const renderedSource = [page, ...components].join("\n");
+  const home = await readJson("src/content/pages/home.json");
 
   assert.match(page, /from "@\/content\/managed-site"/u);
   assert.match(page, /managedSitePageAttributesV1/u);
+  assert.match(page, /hero: managedHome\.hero/u);
+  assert.match(page, /values: managedHome\.values/u);
   assert.match(renderedSource, /managedSiteFieldAttributesV1/u);
   // A collection renders one declared field once per item, so the field id names
   // a column. Without the item the markup cannot name the cell, and an editor
   // reading the page can say what was clicked but not which one.
   assert.match(
     renderedSource,
-    /managedSiteFieldAttributesV1\(\s*item\.question\.fieldId,\s*item\.itemId,?\s*\)/u,
+    /managedSiteFieldAttributesV1\(\s*item\.title\.fieldId,\s*item\.itemId,?\s*\)/u,
   );
   assert.match(
     renderedSource,
-    /managedSiteFieldAttributesV1\(\s*item\.answer\.fieldId,\s*item\.itemId,?\s*\)/u,
+    /managedSiteFieldAttributesV1\(\s*item\.description\.fieldId,\s*item\.itemId,?\s*\)/u,
   );
   assert.match(renderedSource, /<Image/u);
-  assert.match(renderedSource, /\bunoptimized\b/u);
+  assert.match(renderedSource, /image\.fieldId/u);
   assert.doesNotMatch(renderedSource, /const demoFaqs/u);
   assert.doesNotMatch(renderedSource, /PLACEHOLDER —/u);
-  assert.doesNotMatch(renderedSource, /siteConfig\.(businessName|description)/u);
+  assert.doesNotMatch(
+    renderedSource,
+    /siteConfig\.(businessName|description)/u,
+  );
+  for (const eyebrow of [
+    home.values.eyebrow,
+    home.services.eyebrow,
+    home.process.eyebrow,
+    home.faq.eyebrow,
+  ]) {
+    assert.equal(typeof eyebrow, "string");
+    assert.doesNotMatch(renderedSource, new RegExp(eyebrow, "u"));
+  }
 });
 
 test("binds the image manifest facts to the checked-in hero asset", async () => {
-  const [home, logo] = await Promise.all([
-    readJson("src/content/pages/home.json"),
-    readBinary("public/logo.png"),
-  ]);
+  const home = await readJson("src/content/pages/home.json");
+  assert.match(
+    home.hero.image.path,
+    /^public\/[a-zA-Z0-9/_-]+\.[a-zA-Z0-9]+$/u,
+  );
+  const heroAsset = await readBinary(home.hero.image.path);
 
-  assert.equal(home.hero.image.bytes, logo.byteLength);
+  assert.equal(home.hero.image.bytes, heroAsset.byteLength);
   assert.equal(
     home.hero.image.sha256,
-    createHash("sha256").update(logo).digest("hex"),
+    createHash("sha256").update(heroAsset).digest("hex"),
   );
 });
 
@@ -126,6 +154,9 @@ test("checks operational and structured configuration sentinels", async () => {
     packageDocument.scripts.prebuild,
     /check-config.*@landing-pages-websites\/managed-site-contract run build/u,
   );
-  assert.match(siteConfig, /import siteContent from "\.\/content\/site\.json"/u);
+  assert.match(
+    siteConfig,
+    /import siteContent from "\.\/content\/site\.json"/u,
+  );
   assert.doesNotMatch(siteConfig, /businessName:\s*"TODO_/u);
 });

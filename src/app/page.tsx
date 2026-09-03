@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { managedSitePageAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
-import { ManagedContact } from "@/components/home/ManagedContact";
-import { ManagedFaq } from "@/components/home/ManagedFaq";
-import { ManagedHero } from "@/components/home/ManagedHero";
+import {
+  LandingPage,
+  type LandingPageContent,
+} from "@/components/home/LandingPage";
 import { JsonLd } from "@/components/schema/JsonLd";
-import { buildBusinessSchema, buildFaqSchema } from "@/components/schema/builders";
+import {
+  buildBusinessSchema,
+  buildFaqSchema,
+} from "@/components/schema/builders";
 import { managedHome } from "@/content/managed-site";
 import { buildMetadata } from "@/lib/seo";
 
@@ -39,14 +43,40 @@ const faqSchema = buildFaqSchema(
   })),
 );
 
+const landingContent: LandingPageContent = {
+  hero: managedHome.hero,
+  values: managedHome.values,
+  services: managedHome.services,
+  focus: managedHome.focus,
+  process: managedHome.process,
+  insights: {
+    eyebrow: managedHome.insights.eyebrow,
+    heading: managedHome.insights.heading,
+    fieldId: managedHome.insights.fieldId,
+    items: managedHome.insights.items.map((item) => ({
+      itemId: item.itemId,
+      title: item.question,
+      description: item.answer,
+    })),
+  },
+  contact: managedHome.contact,
+};
+
+const brandIdentity = {
+  displayName: managedHome.seo.identity.displayName,
+  description: managedHome.seo.identity.description,
+  telephone: managedHome.seo.identity.telephone,
+};
+
 export default function HomePage(): ReactElement {
   return (
-    <div className="contents" {...managedSitePageAttributesV1(managedHome.pageId)}>
+    <div
+      className="contents"
+      {...managedSitePageAttributesV1(managedHome.pageId)}
+    >
       <JsonLd data={businessSchema} />
       <JsonLd data={faqSchema} />
-      <ManagedHero />
-      <ManagedFaq />
-      <ManagedContact />
+      <LandingPage content={landingContent} identity={brandIdentity} />
     </div>
   );
 }

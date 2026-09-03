@@ -87,9 +87,233 @@
           ]
         },
         {
-          "id": "section_00000000000000000000000040",
-          "presentation": { "name": "FAQ", "description": null, "group": "Home", "order": 2, "example": null },
+          "id": "section_9vss5hhz0yx4m678xwqagd8kfr",
+          "presentation": { "name": "Dealer value", "description": null, "group": "Home", "order": 2, "example": null },
           "fields": [
+            {
+              "id": "field_h6x21kch3gd2xbc20cq4xrtc58",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/values/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Value eyebrow", "description": null, "group": "Dealer value", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_zja6072maspff37jn79jscsjxm",
+              "scope": "page",
+              "type": "heading_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/values/heading" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Value heading", "description": null, "group": "Dealer value", "order": 2, "example": null },
+              "semanticLevel": 2,
+              "constraints": { "minLength": 1, "maxLength": 140, "newlines": "forbid" }
+            },
+            {
+              "id": "field_wjrf4jqb8dd6cvf7qf0hahcb8g",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/values/description" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Value description", "description": null, "group": "Dealer value", "order": 3, "example": null },
+              "semantic": "body",
+              "constraints": { "minLength": 1, "maxLength": 400, "newlines": "allow" }
+            },
+            {
+              "id": "field_8a4bxgvxmmz5dj9djshjqzagf8",
+              "scope": "page",
+              "type": "collection",
+              "classification": "customer_editable",
+              "capabilities": ["collection.reorder", "collection.add", "collection.remove"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/values/order" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Value points", "description": null, "group": "Dealer value", "order": 4, "example": null },
+              "collectionId": "collection_kzhqepyr8a83zpphdtp5pge1kr"
+            }
+          ]
+        },
+        {
+          "id": "section_n9e3649a2z53dxgpa1h7mmdxb8",
+          "presentation": { "name": "Services", "description": null, "group": "Home", "order": 3, "example": null },
+          "fields": [
+            {
+              "id": "field_eb171p9syr5sxxgma67kyjcdzm",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/services/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Services eyebrow", "description": null, "group": "Services", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_yhdjsgg2q31q743rvnja8ck34g",
+              "scope": "page",
+              "type": "heading_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/services/heading" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Services heading", "description": null, "group": "Services", "order": 2, "example": null },
+              "semanticLevel": 2,
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_6pj59wyd4tqsh0tc0btrh2w2wm",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/services/description" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Services description", "description": null, "group": "Services", "order": 3, "example": null },
+              "semantic": "body",
+              "constraints": { "minLength": 1, "maxLength": 400, "newlines": "allow" }
+            },
+            {
+              "id": "field_akzy2dffc60ef2h8jb539jkyh4",
+              "scope": "page",
+              "type": "collection",
+              "classification": "customer_editable",
+              "capabilities": ["collection.reorder", "collection.add", "collection.remove"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/services/order" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Services", "description": null, "group": "Services", "order": 4, "example": null },
+              "collectionId": "collection_7aad5598tsad9pqmv9hvpnfgy8"
+            }
+          ]
+        },
+        {
+          "id": "section_wdmp3916pgqehz87vrmbp724fw",
+          "presentation": { "name": "Dealership focus", "description": null, "group": "Home", "order": 4, "example": null },
+          "fields": [
+            {
+              "id": "field_m81t5nekwnjgdwts9xqcpt6ez8",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/focus/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Focus eyebrow", "description": null, "group": "Dealership focus", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_x3qh2dcv4cf0885cre5fe0ka30",
+              "scope": "page",
+              "type": "heading_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/focus/heading" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Focus heading", "description": null, "group": "Dealership focus", "order": 2, "example": null },
+              "semanticLevel": 2,
+              "constraints": { "minLength": 1, "maxLength": 140, "newlines": "forbid" }
+            },
+            {
+              "id": "field_ef5pxh1gd8fh8qaneg1jdj4yer",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/focus/description" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Focus description", "description": null, "group": "Dealership focus", "order": 3, "example": null },
+              "semantic": "body",
+              "constraints": { "minLength": 1, "maxLength": 500, "newlines": "allow" }
+            },
+            {
+              "id": "field_8kt3pm6ev3c3h4czvpkv0phtv4",
+              "scope": "page",
+              "type": "collection",
+              "classification": "customer_editable",
+              "capabilities": ["collection.reorder", "collection.add", "collection.remove"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/focus/order" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Focus points", "description": null, "group": "Dealership focus", "order": 4, "example": null },
+              "collectionId": "collection_n9vv7y39a3k33pk7q4rxm7qk7w"
+            }
+          ]
+        },
+        {
+          "id": "section_aanxb4xwp471rf847qwftftjs0",
+          "presentation": { "name": "Process", "description": null, "group": "Home", "order": 5, "example": null },
+          "fields": [
+            {
+              "id": "field_ckn3mpr8camacnc2ewyy8yqyr0",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/process/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Process eyebrow", "description": null, "group": "Process", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_gba3zz6cmg7d8v398eemw33nng",
+              "scope": "page",
+              "type": "heading_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/process/heading" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Process heading", "description": null, "group": "Process", "order": 2, "example": null },
+              "semanticLevel": 2,
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_8mz1f9tq90dp1f1kxnfx13a08c",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/process/description" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Process description", "description": null, "group": "Process", "order": 3, "example": null },
+              "semantic": "body",
+              "constraints": { "minLength": 1, "maxLength": 400, "newlines": "allow" }
+            },
+            {
+              "id": "field_defep0xcr1afzefyzkszpqtz3w",
+              "scope": "page",
+              "type": "collection",
+              "classification": "customer_editable",
+              "capabilities": ["collection.reorder", "collection.add", "collection.remove"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/process/order" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Process steps", "description": null, "group": "Process", "order": 4, "example": null },
+              "collectionId": "collection_4n0b0em1jt8z50wnkn5agr31mw"
+            }
+          ]
+        },
+        {
+          "id": "section_00000000000000000000000040",
+          "presentation": { "name": "Conversation insights", "description": null, "group": "Home", "order": 6, "example": null },
+          "fields": [
+            {
+              "id": "field_7sjxvspvj3d15qt99jtzcny81m",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/faq/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "FAQ eyebrow", "description": null, "group": "FAQ", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
             {
               "id": "field_000000000000000000000000b0",
               "scope": "page",
@@ -98,7 +322,7 @@
               "capabilities": ["text.edit"],
               "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/faq/heading" },
               "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
-              "presentation": { "name": "FAQ heading", "description": null, "group": "FAQ", "order": 1, "example": null },
+              "presentation": { "name": "FAQ heading", "description": null, "group": "FAQ", "order": 2, "example": null },
               "semanticLevel": 2,
               "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
             },
@@ -110,15 +334,27 @@
               "capabilities": ["collection.reorder", "collection.add", "collection.remove"],
               "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/faq/order" },
               "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
-              "presentation": { "name": "FAQ items", "description": null, "group": "FAQ", "order": 2, "example": null },
+              "presentation": { "name": "FAQ items", "description": null, "group": "FAQ", "order": 3, "example": null },
               "collectionId": "collection_000000000000000000000000d0"
             }
           ]
         },
         {
           "id": "section_00000000000000000000000050",
-          "presentation": { "name": "Contact", "description": null, "group": "Home", "order": 3, "example": null },
+          "presentation": { "name": "Contact", "description": null, "group": "Home", "order": 7, "example": null },
           "fields": [
+            {
+              "id": "field_w4gr22jkbbd5yvbqb31dyrcezr",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/contact/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Contact eyebrow", "description": null, "group": "Contact", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
             {
               "id": "field_000000000000000000000000j0",
               "scope": "page",
@@ -127,9 +363,21 @@
               "capabilities": ["text.edit"],
               "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/contact/heading" },
               "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
-              "presentation": { "name": "Contact heading", "description": null, "group": "Contact", "order": 1, "example": null },
+              "presentation": { "name": "Contact heading", "description": null, "group": "Contact", "order": 2, "example": null },
               "semanticLevel": 2,
               "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_zb1k7xhsf453hfvywkhq9qxsyc",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/contact/description" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Contact description", "description": null, "group": "Contact", "order": 3, "example": null },
+              "semantic": "body",
+              "constraints": { "minLength": 1, "maxLength": 400, "newlines": "allow" }
             }
           ]
         }
@@ -138,8 +386,140 @@
   ],
   "collections": [
     {
+      "id": "collection_kzhqepyr8a83zpphdtp5pge1kr",
+      "presentation": { "name": "Dealer value points", "description": null, "group": "Home", "order": 1, "example": null },
+      "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/values/items" },
+      "itemIdPointer": "/id",
+      "itemIdPolicy": "server_minted",
+      "minItems": 1,
+      "maxItems": 8,
+      "itemFields": [
+        {
+          "id": "field_3tmh3e0sv9bcasbfef6dcy531r",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/title",
+          "presentation": { "name": "Title", "description": null, "group": "Value point", "order": 1, "example": null },
+          "semantic": "label",
+          "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+        },
+        {
+          "id": "field_prwt3e1k0zn7ca5mpws2k6a1kg",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/description",
+          "presentation": { "name": "Description", "description": null, "group": "Value point", "order": 2, "example": null },
+          "semantic": "body",
+          "constraints": { "minLength": 1, "maxLength": 300, "newlines": "allow" }
+        }
+      ],
+      "uniqueness": [{ "fieldIds": ["field_3tmh3e0sv9bcasbfef6dcy531r"], "comparison": "case_folded" }],
+      "deletion": { "whenReferenced": "restrict", "restorable": true }
+    },
+    {
+      "id": "collection_7aad5598tsad9pqmv9hvpnfgy8",
+      "presentation": { "name": "Services", "description": null, "group": "Home", "order": 2, "example": null },
+      "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/services/items" },
+      "itemIdPointer": "/id",
+      "itemIdPolicy": "server_minted",
+      "minItems": 1,
+      "maxItems": 8,
+      "itemFields": [
+        {
+          "id": "field_rpzk8x0tdc13t1xp81vv1616rc",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/title",
+          "presentation": { "name": "Title", "description": null, "group": "Service", "order": 1, "example": null },
+          "semantic": "label",
+          "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+        },
+        {
+          "id": "field_aej6p4ed5jz669dm2dxy20hwmr",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/description",
+          "presentation": { "name": "Description", "description": null, "group": "Service", "order": 2, "example": null },
+          "semantic": "body",
+          "constraints": { "minLength": 1, "maxLength": 600, "newlines": "allow" }
+        }
+      ],
+      "uniqueness": [{ "fieldIds": ["field_rpzk8x0tdc13t1xp81vv1616rc"], "comparison": "case_folded" }],
+      "deletion": { "whenReferenced": "restrict", "restorable": true }
+    },
+    {
+      "id": "collection_n9vv7y39a3k33pk7q4rxm7qk7w",
+      "presentation": { "name": "Dealership focus points", "description": null, "group": "Home", "order": 3, "example": null },
+      "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/focus/items" },
+      "itemIdPointer": "/id",
+      "itemIdPolicy": "server_minted",
+      "minItems": 1,
+      "maxItems": 8,
+      "itemFields": [
+        {
+          "id": "field_2t39e7kfy4931yh57z0cxkmn9g",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/title",
+          "presentation": { "name": "Title", "description": null, "group": "Focus point", "order": 1, "example": null },
+          "semantic": "label",
+          "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+        },
+        {
+          "id": "field_2m5n3rfzt6mgwk8f8sz1em7mmm",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/description",
+          "presentation": { "name": "Description", "description": null, "group": "Focus point", "order": 2, "example": null },
+          "semantic": "body",
+          "constraints": { "minLength": 1, "maxLength": 300, "newlines": "allow" }
+        }
+      ],
+      "uniqueness": [{ "fieldIds": ["field_2t39e7kfy4931yh57z0cxkmn9g"], "comparison": "case_folded" }],
+      "deletion": { "whenReferenced": "restrict", "restorable": true }
+    },
+    {
+      "id": "collection_4n0b0em1jt8z50wnkn5agr31mw",
+      "presentation": { "name": "Process steps", "description": null, "group": "Home", "order": 4, "example": null },
+      "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/process/items" },
+      "itemIdPointer": "/id",
+      "itemIdPolicy": "server_minted",
+      "minItems": 1,
+      "maxItems": 8,
+      "itemFields": [
+        {
+          "id": "field_bz2zc7gt6de6thqv5tt65g04km",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/title",
+          "presentation": { "name": "Title", "description": null, "group": "Process step", "order": 1, "example": null },
+          "semantic": "label",
+          "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+        },
+        {
+          "id": "field_gj0gf58fs1bc9anjx034ntaj58",
+          "type": "plain_text",
+          "classification": "customer_editable",
+          "capabilities": ["text.edit"],
+          "itemPointer": "/description",
+          "presentation": { "name": "Description", "description": null, "group": "Process step", "order": 2, "example": null },
+          "semantic": "body",
+          "constraints": { "minLength": 1, "maxLength": 400, "newlines": "allow" }
+        }
+      ],
+      "uniqueness": [{ "fieldIds": ["field_bz2zc7gt6de6thqv5tt65g04km"], "comparison": "case_folded" }],
+      "deletion": { "whenReferenced": "restrict", "restorable": true }
+    },
+    {
       "id": "collection_000000000000000000000000d0",
-      "presentation": { "name": "Frequently asked questions", "description": null, "group": "Home", "order": 1, "example": null },
+      "presentation": { "name": "Conversation insights", "description": null, "group": "Home", "order": 5, "example": null },
       "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/faq/items" },
       "itemIdPointer": "/id",
       "itemIdPolicy": "server_minted",
@@ -174,15 +554,15 @@
   "assets": [
     {
       "id": "asset_000000000000000000000000a0",
-      "presentation": { "name": "Hero image", "description": "Square image shown above the main heading", "group": "Home", "order": 1, "example": null },
+      "presentation": { "name": "Hero image", "description": "Wide dealership image shown beside the main heading", "group": "Home", "order": 1, "example": null },
       "semantics": { "kind": "informative" },
-      "acceptedMimeTypes": ["image/png"],
-      "outputMimeTypes": ["image/png"],
-      "minWidth": 256,
-      "maxWidth": 2048,
-      "minHeight": 256,
-      "maxHeight": 2048,
-      "aspectRatios": [{ "width": 1, "height": 1 }],
+      "acceptedMimeTypes": ["image/webp", "image/png", "image/jpeg"],
+      "outputMimeTypes": ["image/webp"],
+      "minWidth": 1200,
+      "maxWidth": 2400,
+      "minHeight": 600,
+      "maxHeight": 1600,
+      "aspectRatios": [{ "width": 1750, "height": 899 }],
       "cropPolicy": "optional",
       "focalPointPolicy": "optional",
       "maxBytes": 5242880

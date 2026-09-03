@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement, ReactNode } from "react";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow_Condensed, Manrope } from "next/font/google";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { LeadAttribution } from "@/components/analytics/LeadAttribution";
 import { GomegaReviewBridge } from "@/components/analytics/GomegaReviewBridge";
@@ -12,13 +12,14 @@ import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/site.config";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-display",
+  weight: ["600", "700", "800"],
   subsets: ["latin"],
 });
 
@@ -32,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang={siteConfig.locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${manrope.variable} ${barlowCondensed.variable} h-full antialiased`}
     >
       <head>
         <GomegaReviewBridge />
@@ -45,9 +46,9 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <main id="main-content" className="flex flex-1 flex-col">
+        <div id="main-content" className="flex flex-1 flex-col">
           {children}
-        </main>
+        </div>
         <ConsentBanner />
         <GoogleAnalytics />
         <MegaSnippet />
