@@ -4,13 +4,13 @@
     "title": "We Help Dealerships Generate More Appointments And Sell More Cars.",
     "description": "BDC Promotions helps dealers turn Facebook traffic, paid social campaigns, and online conversations into real showroom opportunities. We focus on fast lead response, stronger customer engagement, and more booked appointments for your sales team.",
     "image": {
-      "path": "public/logo.png",
-      "sha256": "5e58b0624d7929f62df00080310d6c929ff390d371eb20c219ba9fb52890a4a7",
-      "mimeType": "image/png",
-      "width": 512,
-      "height": 512,
-      "bytes": 1881,
-      "altText": "BDC Promotions logo",
+      "path": "public/images/bdc-night-showroom.webp",
+      "sha256": "cd4503b4e2b4bff501e530fee7bb14d9566111e6b8e43ca768e2385720845530",
+      "mimeType": "image/webp",
+      "width": 1750,
+      "height": 899,
+      "bytes": 170856,
+      "altText": "Modern automotive dealership showroom illuminated at blue hour",
       "crop": null,
       "focalPoint": null
     }

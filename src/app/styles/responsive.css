@@ -1,0 +1,162 @@
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: -9999px;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--ink);
+}
+
+.skip-link:focus-visible {
+  left: 0.5rem;
+}
+
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .site-nav {
+    display: none;
+  }
+  .site-header {
+    grid-template-columns: 1fr auto;
+  }
+  .hero {
+    grid-template-columns: 1fr;
+    padding-top: 4rem;
+  }
+  .hero::before {
+    display: none;
+  }
+  .hero__visual {
+    min-height: 500px;
+  }
+  .section-intro--split,
+  .focus-section,
+  .contact-section {
+    grid-template-columns: 1fr;
+  }
+  .value-grid,
+  .process-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .value-card:nth-child(2) {
+    border-right: 0;
+  }
+  .process-card {
+    border-right: 1px solid var(--line);
+  }
+  .process-card:first-child,
+  .process-card:last-child {
+    border-radius: 0;
+  }
+  .services-grid,
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+  .service-card {
+    min-height: 300px;
+  }
+  .focus-panel {
+    min-height: auto;
+  }
+  .contact-card {
+    min-height: 350px;
+  }
+}
+
+@media (max-width: 620px) {
+  .section-shell,
+  .site-header {
+    width: min(100% - 2rem, 1180px);
+  }
+  .site-header {
+    min-height: 76px;
+  }
+  .brand__copy small {
+    display: none;
+  }
+  .button--compact {
+    min-height: 40px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.72rem;
+  }
+  .button__signal {
+    display: none;
+  }
+  .hero {
+    min-height: auto;
+    padding-block: 3.5rem 5rem;
+  }
+  .display-title {
+    font-size: clamp(3.75rem, 18vw, 5rem);
+  }
+  .hero__visual {
+    height: 420px;
+    min-height: 420px;
+    border-radius: 14px 14px 54px 14px;
+  }
+  .hero__signals {
+    display: grid;
+  }
+  .section-intro--split {
+    gap: 1.5rem;
+  }
+  .value-section,
+  .process-section,
+  .services-section .section-shell,
+  .insights-section .section-shell,
+  .focus-section {
+    padding-block: 5rem;
+  }
+  .value-grid,
+  .process-grid {
+    grid-template-columns: 1fr;
+  }
+  .value-card {
+    min-height: 180px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .value-card:last-child {
+    border-bottom: 0;
+  }
+  .process-card {
+    min-height: 250px;
+  }
+  .contact-section {
+    margin-block: 5rem;
+  }
+  .contact-card > a {
+    font-size: 2.5rem;
+  }
+  .site-footer {
+    flex-direction: column;
+  }
+  .site-footer__links {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

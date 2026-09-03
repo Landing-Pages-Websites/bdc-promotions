@@ -506,15 +506,15 @@
   "assets": [
     {
       "id": "asset_000000000000000000000000a0",
-      "presentation": { "name": "Hero image", "description": "Square image shown above the main heading", "group": "Home", "order": 1, "example": null },
+      "presentation": { "name": "Hero image", "description": "Wide dealership image shown beside the main heading", "group": "Home", "order": 1, "example": null },
       "semantics": { "kind": "informative" },
-      "acceptedMimeTypes": ["image/png"],
-      "outputMimeTypes": ["image/png"],
-      "minWidth": 256,
-      "maxWidth": 2048,
-      "minHeight": 256,
-      "maxHeight": 2048,
-      "aspectRatios": [{ "width": 1, "height": 1 }],
+      "acceptedMimeTypes": ["image/webp", "image/png", "image/jpeg"],
+      "outputMimeTypes": ["image/webp"],
+      "minWidth": 1200,
+      "maxWidth": 2400,
+      "minHeight": 600,
+      "maxHeight": 1600,
+      "aspectRatios": [{ "width": 1750, "height": 899 }],
       "cropPolicy": "optional",
       "focalPointPolicy": "optional",
       "maxBytes": 5242880
