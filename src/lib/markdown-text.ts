@@ -401,20 +401,37 @@ function linesOf(pieces: Piece[]): Piece[][] {
   return lines;
 }
 
-/** Blank lines separate blocks. */
-function groupsOf(lines: Piece[][]): Piece[][][] {
+/**
+ * A markdown body can arrive with section headings immediately followed by
+ * prose, without a blank line between them. The content pipeline emits that
+ * shape, so a blank-line-only splitter would keep the heading marker inside a
+ * paragraph and ship literal `##` text to the reader. Split heading lines into
+ * their own groups before applying the other block grammars.
+ */
+function splitHeadingLines(lines: Piece[][]): Piece[][][] {
   const groups: Piece[][][] = [];
   let current: Piece[][] = [];
+  const flush = (): void => {
+    if (current.length > 0) groups.push(current);
+    current = [];
+  };
   for (const line of lines) {
-    if (isBlank(line)) {
-      if (current.length > 0) groups.push(current);
-      current = [];
-      continue;
+    if (dropMarker(line, HEADING) !== null) {
+      flush();
+      groups.push([line]);
+    } else if (isBlank(line)) {
+      flush();
+    } else {
+      current.push(line);
     }
-    current.push(line);
   }
-  if (current.length > 0) groups.push(current);
+  flush();
   return groups;
+}
+
+/** Blank lines, and standalone heading lines, separate blocks. */
+function groupsOf(lines: Piece[][]): Piece[][][] {
+  return splitHeadingLines(lines);
 }
 
 const BLANK_CELL = /\s/;
