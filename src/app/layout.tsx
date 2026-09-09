@@ -68,8 +68,9 @@ export default function RootLayout({
           The MegaTag optimizer for the LP is emitted ONLY by
           src/app/lp/layout.tsx (never on this primary layout), so it never
           double-fires. That layout sets window.MEGA_TAG_CONFIG (siteKey:
-          "sk_site_key_placeholder" — swapped after `mega site-tracking enable`;
-          gtmId: "GTM-58F655CG"; pixelId: "1428646815833636"), plus
+          "mgkgctdyuv7c8cby" — the registered MEGA site key from
+          `mega site-tracking enable`; gtmId: "GTM-58F655CG"; pixelId:
+          "1428646815833636"), plus
           window.API_ENDPOINT and window.TRACKING_API_ENDPOINT, then loads
           https://cdn.gomega.ai/scripts/optimizer.min.js as
           <script id="optimizer-script" async>. GTM + Meta Pixel are installed

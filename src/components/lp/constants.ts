@@ -1,21 +1,21 @@
 /**
  * Central config for the BDC Promotions paid landing page (`/lp`).
  *
- * The two deploy placeholders live ONLY here (and are re-exported to the hook /
- * layout) so the orchestrator can swap them in one place after
- * `mega site-tracking enable`. Do NOT inline these strings elsewhere.
+ * The two MEGA tracking identifiers live ONLY here (and are re-exported to the
+ * hook / layout) so they stay in one place. Do NOT inline these strings
+ * elsewhere.
  *
- *   LP_SITE_ID  → "SITE_ID_PLACEHOLDER"      (form submission `site_id`)
- *   LP_SITE_KEY → "sk_site_key_placeholder"  (MegaTag `siteKey`)
+ *   LP_SITE_ID  → form submission `site_id`
+ *   LP_SITE_KEY → MegaTag `siteKey`
  *
  * Everything else here is a real, task-provided value and must NOT be treated
  * as a placeholder.
  */
 
-/** Deploy placeholder — replaced post-registration. Isolated on purpose. */
-export const LP_SITE_ID = "SITE_ID_PLACEHOLDER";
-/** Deploy placeholder — replaced post-registration. Isolated on purpose. */
-export const LP_SITE_KEY = "sk_site_key_placeholder";
+/** MEGA site ID — registered post-`mega site-tracking enable`. Isolated on purpose. */
+export const LP_SITE_ID = "59440d50-448b-4d13-b0e0-6ae2ada4d18a";
+/** MEGA site key — registered post-`mega site-tracking enable`. Isolated on purpose. */
+export const LP_SITE_KEY = "mgkgctdyuv7c8cby";
 
 /** Real, task-provided identifiers. */
 export const LP_CUSTOMER_ID = "9951b3b9-96d6-4185-a938-f509cd50ae67";
