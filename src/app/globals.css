@@ -2,3 +2,26 @@
 @import "./styles/base.css";
 @import "./styles/sections.css";
 @import "./styles/responsive.css";
+
+/*
+ * BDC Promotions paid landing page (/lp) brand tokens.
+ *
+ * Additive and namespaced (`lp-*`) so they only ever mint NEW Tailwind
+ * utilities — nothing here changes an existing token, so the primary website
+ * renders byte-for-byte the same. Values come verbatim from the LP design
+ * system (color_roles + states); do not substitute generic colors.
+ */
+@theme {
+  --color-lp-ink: #080b12;
+  --color-lp-panel: #0e1420;
+  --color-lp-raised: #141d2c;
+  --color-lp-blue: #247dff;
+  --color-lp-cyan: #19c8ff;
+  --color-lp-text: #f7f9fc;
+  --color-lp-muted: #a9b5c8;
+  --color-lp-border: #2c3850;
+  --color-lp-active: #1767d6;
+  --color-lp-disabled: #6b758c;
+  --color-lp-error: #ff5a67;
+  --color-lp-success: #35d08a;
+}
