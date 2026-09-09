@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">BDC Promotions</title>
+  <defs>
+    <linearGradient id="blue" x1="72" y1="48" x2="438" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#19C8FF"/>
+      <stop offset="1" stop-color="#247DFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="132" fill="#080B12"/>
+  <rect x="28" y="28" width="456" height="456" rx="112" fill="url(#blue)"/>
+  <path d="M105 126h302" stroke="#07111F" stroke-opacity=".22" stroke-width="12"/>
+  <path d="M105 386h302" stroke="#07111F" stroke-opacity=".22" stroke-width="12"/>
+  <text x="256" y="303" fill="#05101D" font-family="Arial, sans-serif" font-size="150" font-weight="800" letter-spacing="-8" text-anchor="middle">BDC</text>
+</svg>
