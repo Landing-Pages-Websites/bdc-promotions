@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 import {
   LP_GTM_ID,
   LP_META_PIXEL_ID,
+  LP_SITE_ID,
   LP_SITE_KEY,
 } from "@/components/lp/constants";
 
@@ -38,6 +39,11 @@ export const metadata: Metadata = {
   // Paid-traffic LP: keep it out of organic search and separate from the
   // primary site's SEO surface.
   robots: { index: false, follow: false },
+  // Mega site identity meta tag — emitted into raw <head> so the optimizer /
+  // Mega pipeline can read the registered site UUID directly from the document
+  // (mirrors the optimizer <script data-site-id>). Same value as the form
+  // submission `site_id`; swapped alongside siteKey after registration.
+  other: { "mega-site-id": LP_SITE_ID },
   icons: {
     icon: "/lp/favicon.ico",
     apple: "/lp/apple-icon.png",
@@ -60,6 +66,7 @@ export default function LpLayout({
       <script
         id="optimizer-script"
         src="https://cdn.gomega.ai/scripts/optimizer.min.js"
+        data-site-id={LP_SITE_ID}
         async
       />
       {children}

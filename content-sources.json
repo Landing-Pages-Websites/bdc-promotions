@@ -1,0 +1,90 @@
+{
+  "$comment": "Provenance for every substantive claim rendered on the /lp BDC Promotions landing page. Each record ties on-page copy to an authoritative source: the customer's live site, the in-repo build spec/plan, or the paid-LP build task brief. No proof (metrics, named results, testimonials-as-fact) is invented here; records that describe a 'proof standard' document what evidence BDC offers, not specific outcomes.",
+  "sources": {
+    "live-site": {
+      "type": "url",
+      "id": "https://bdcpromotions.com",
+      "description": "The customer's live BDC Promotions website. Canonical origin recorded in the build plan; its substantive copy is preserved per the plan's global constraints."
+    },
+    "design-spec": {
+      "type": "repo-doc",
+      "id": "docs/superpowers/specs/2026-09-03-bdc-promotions-design.md",
+      "description": "Approved BDC Promotions build design spec (visual direction, page structure, phone-first path)."
+    },
+    "build-plan": {
+      "type": "repo-doc",
+      "id": "docs/superpowers/plans/2026-09-03-bdc-promotions.md",
+      "description": "Approved BDC Promotions implementation plan; states preserved business facts including the phone number."
+    },
+    "lp-task": {
+      "type": "task",
+      "id": "lp-9951b3b9-build (customer 9951b3b9-96d6-4185-a938-f509cd50ae67)",
+      "description": "Paid landing-page build task brief for /lp. Origin of LP-specific elements: the free-audit offer framing, the inventory qualifier, the automotive service set, the proof standard, and the tracking IDs."
+    }
+  },
+  "records": [
+    {
+      "id": "hero-pitch",
+      "claim": "Turn paid social into more qualified showroom appointments — BDC Promotions turns paid social attention into booked appointments and showroom opportunities, not impressions that never reach the sales floor.",
+      "location": "src/components/lp/LpHero.tsx",
+      "sources": ["live-site", "design-spec", "lp-task"],
+      "note": "Preserves the live site's appointment-focused hero message (design spec §Page Structure item 2). No specific numbers are claimed."
+    },
+    {
+      "id": "fifteen-years",
+      "claim": "15 years spent exclusively on automotive marketing for dealerships.",
+      "location": "src/components/lp/TrustBar.tsx, src/components/lp/LpHero.tsx",
+      "sources": ["live-site"],
+      "note": "Existing customer brand claim carried over from the live BDC Promotions site; preserved per build-plan global constraint 'preserve the current site's substantive copy'. Not independently re-verified here — it is the customer's own stated tenure."
+    },
+    {
+      "id": "pillars-fast-focused-social-results",
+      "claim": "Four dealership value pillars: Fast, Focused, Social, Results.",
+      "location": "src/components/lp/TrustBar.tsx, src/components/lp/LpHero.tsx",
+      "sources": ["design-spec", "live-site"],
+      "note": "Design spec §Page Structure item 3: 'Four dealership value points: fast response, automotive focus, social engagement, and results.'"
+    },
+    {
+      "id": "service-list",
+      "claim": "Automotive marketing services: New-car lead generation, Inventory ads, Event ads, Reels & value-proposition videos, Testimonial videos.",
+      "location": "src/components/lp/Services.tsx",
+      "sources": ["lp-task", "live-site"],
+      "note": "LP-specific automotive service set specified by the paid-LP task brief; consistent with the website spec's core services (design spec item 4: Messenger lead response, paid social campaigns, appointment generation). Descriptive of offerings, not claimed results."
+    },
+    {
+      "id": "proof-standard",
+      "claim": "Proof standard: verified campaign screenshots pulled from the ad platforms, real named-dealership testimonials, and outcomes measured against the dealership's own CRM.",
+      "location": "src/components/lp/ProofMethod.tsx",
+      "sources": ["lp-task"],
+      "note": "Describes the TYPE of evidence BDC provides during an audit — a proof standard, not any specific metric or named result. No figures or client names are asserted as fact in the copy."
+    },
+    {
+      "id": "audit-offer-and-process",
+      "claim": "Free dealership marketing audit and consultation, no obligation: (1) Review your current marketing, (2) Identify the biggest conversion gaps, (3) Deliver focused next-step recommendations.",
+      "location": "src/components/lp/HowItWorks.tsx, src/components/lp/FinalCta.tsx",
+      "sources": ["lp-task"],
+      "note": "Free-audit offer and three-step process defined by the paid-LP task brief."
+    },
+    {
+      "id": "inventory-qualifier",
+      "claim": "Inventory qualifier question 'How many vehicles do you currently have in your inventory?' with exactly two options: 'Fewer than 50' and '50 or more' (50 or more is the qualifying answer).",
+      "location": "src/components/lp/constants.ts, src/components/lp/LpLeadForm.tsx",
+      "sources": ["lp-task"],
+      "note": "Exact qualifier question and option labels specified by the paid-LP task brief. Answer is captured as metadata and never suppresses lead delivery."
+    },
+    {
+      "id": "phone-number",
+      "claim": "Contact phone number 352-207-1074 (tel:+13522071074).",
+      "location": "src/components/lp/constants.ts",
+      "sources": ["build-plan", "design-spec", "live-site"],
+      "note": "Build plan global constraint records the phone number '352-207-1074'; design spec uses tel:3522071074. Existing customer business number."
+    },
+    {
+      "id": "target-states-faq",
+      "claim": "FAQ: 'We partner with dealerships across multiple U.S. states. Share your details on the form or give us a call and we'll confirm fit for your market.'",
+      "location": "src/components/lp/LpFaq.tsx",
+      "sources": ["lp-task", "live-site"],
+      "note": "Deliberately non-specific coverage statement from the LP task brief; no specific state list or exclusivity is asserted, and fit is confirmed per prospect rather than claimed."
+    }
+  ]
+}
