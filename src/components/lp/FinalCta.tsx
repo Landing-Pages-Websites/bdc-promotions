@@ -42,8 +42,8 @@ export function FinalCta(): ReactElement {
             ))}
           </ul>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <PhoneCtaButton className="w-full sm:w-auto" />
+          <div className="mt-8 flex flex-row items-center gap-3">
+            <PhoneCtaButton className="shrink-0" />
             <p className="text-[0.9rem] text-lp-muted">
               Prefer to talk it through? Call{" "}
               <a
