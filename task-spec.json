@@ -1,0 +1,113 @@
+{
+  "$comment": "Machine-readable spec for the BDC Promotions paid landing page. Source of truth for QA of the /lp route. Values mirror src/components/lp/constants.ts and src/app/lp/layout.tsx; do not edit one without the other.",
+  "name": "BDC Promotions — Free Dealership Marketing Audit landing page",
+  "route": "/lp",
+  "customerId": "9951b3b9-96d6-4185-a938-f509cd50ae67",
+  "buildTask": "lp-9951b3b9-build",
+  "phone": {
+    "display": "352-207-1074",
+    "href": "tel:+13522071074"
+  },
+  "colors": {
+    "ink": "#080B12",
+    "blue": "#247DFF",
+    "cyan": "#19C8FF",
+    "notes": "Verified against src/app/styles/base.css (--ink/--blue/--cyan) and src/app/globals.css (--color-lp-ink/--color-lp-blue/--color-lp-cyan)."
+  },
+  "form": {
+    "name": "lp-lead-form",
+    "component": "src/components/lp/LpLeadForm.tsx",
+    "submitEndpoint": "https://analytics.gomega.ai/submission/submit",
+    "sourceProvider": "bdc-promotions-landing-free-audit",
+    "submitControl": "Validate-first type=\"button\" whose onClick runs client validation then calls formRef.requestSubmit(); the native <form onSubmit> then performs the submit. Intentionally NOT a native type=\"submit\" — prevents empty/invalid submissions from firing optimizer conversion events.",
+    "behavior": "Fail-closed: only a server-confirmed { ok: true } response fires conversion events and shows success. A failed/unconfirmed submit shows a retryable error, fires no analytics, and keeps fields editable. A synchronous inFlightRef guard prevents duplicate submits.",
+    "fields": [
+      {
+        "key": "firstName",
+        "name": "firstName",
+        "label": "First name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "lastName",
+        "name": "lastName",
+        "label": "Last name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "email",
+        "name": "email",
+        "label": "Work email",
+        "type": "email",
+        "required": true,
+        "validation": "RFC-5322-lite pattern; blocks submit until valid"
+      },
+      {
+        "key": "phone",
+        "name": "phone",
+        "label": "Phone",
+        "type": "tel",
+        "required": true,
+        "inputMode": "numeric",
+        "pattern": "\\(\\d{3}\\) \\d{3}-\\d{4}",
+        "validation": "Strips non-numeric, limits to exactly 10 digits, auto-formats as (XXX) XXX-XXXX; blocks submit until 10 digits"
+      },
+      {
+        "key": "inventorySize",
+        "name": "inventorySize",
+        "label": "How many vehicles do you currently have in your inventory?",
+        "type": "select",
+        "required": true,
+        "isQualifier": true,
+        "options": ["Fewer than 50", "50 or more"]
+      }
+    ]
+  },
+  "qualifier": {
+    "question": "How many vehicles do you currently have in your inventory?",
+    "field": "inventorySize",
+    "options": ["Fewer than 50", "50 or more"],
+    "qualifyingAnswer": "50 or more",
+    "behavior": "The answer is captured as form metadata (qualified = inventorySize === \"50 or more\") and rides along with the lead. Qualification NEVER suppresses delivery: both answers are submitted and routed. The qualifier tailors follow-up; it does not gate access to the free audit."
+  },
+  "tracking": {
+    "note": "LP tracking is isolated to /lp via src/app/lp/layout.tsx; the primary site's analytics are suppressed on /lp (PrimaryRouteOnly). GTM and Meta Pixel are installed by the optimizer via MEGA_TAG_CONFIG — never added as separate manual scripts.",
+    "siteId": "da4beb53-0565-46a9-be0c-95d0c92c9c6f",
+    "siteKey": "vrci0s1s9xiba4g2",
+    "gtmId": "GTM-58F655CG",
+    "metaPixelId": "1428646815833636",
+    "optimizerScript": "https://cdn.gomega.ai/scripts/optimizer.min.js",
+    "optimizerDataSiteId": "da4beb53-0565-46a9-be0c-95d0c92c9c6f",
+    "metaSiteIdTag": "<meta name=\"mega-site-id\" content=\"da4beb53-0565-46a9-be0c-95d0c92c9c6f\">",
+    "apiEndpoint": "https://optimizer.gomega.ai",
+    "trackingApiEndpoint": "https://events-api.gomega.ai",
+    "callTrackingMetrics": "https://572388.tctm.co/t.js"
+  },
+  "content": {
+    "hero": {
+      "headline": "Turn paid social into more qualified showroom appointments",
+      "image": "/lp/bdc-night-showroom.webp"
+    },
+    "yearsInBusiness": 15,
+    "pillars": ["Fast", "Focused", "Social", "Results"],
+    "services": [
+      "New-car lead generation",
+      "Inventory ads",
+      "Event ads",
+      "Reels & value-proposition videos",
+      "Testimonial videos"
+    ],
+    "auditProcess": [
+      "Review your current marketing",
+      "Identify the biggest conversion gaps",
+      "Deliver focused next-step recommendations"
+    ],
+    "offer": "Free dealership marketing audit and consultation — no cost, no obligation.",
+    "contentImages": [
+      "/lp/bdc-night-showroom.webp",
+      "/lp/appointment-gap.webp"
+    ]
+  }
+}

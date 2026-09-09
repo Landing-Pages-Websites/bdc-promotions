@@ -152,6 +152,7 @@ consent-gated** — it is the business-critical lead-capture/optimizer script
 | `npm run check-config` | Fails if `TODO_` sentinels / empty fields remain in operational config or structured content |
 | `npm run build` | check-config, then production build (`ALLOW_TODO=1` downgrades to a warning) |
 | `npm run lint` | ESLint |
+| `npm run lint:lp` | Runs the canonical landing-page linter against an **LP-only scan copy** of the `/lp` route (`scripts/lint-lp.mjs`). Use this to lint `/lp` — the canonical linter is route-blind and, run at the repo root, evaluates the primary site's root layout/page and false-fails on the primary contact form (`src/components/LeadForm.tsx`: optional `attachments` upload + validate-first `type="button"`). This scopes the scan to `/lp` without weakening any LP check or altering the primary form. Point at a non-default linter location with `LP_LINT_SCRIPT=/path/to/lint-landing-page.js`. |
 
 ## Conventions
 

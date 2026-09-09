@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import {
   LP_GTM_ID,
   LP_META_PIXEL_ID,
+  LP_SITE_ID,
   LP_SITE_KEY,
 } from "@/components/lp/constants";
 
@@ -46,6 +47,8 @@ export function useTrackingLp(): void {
     const script = document.createElement("script");
     script.id = "optimizer-script";
     script.src = "https://cdn.gomega.ai/scripts/optimizer.min.js";
+    // Mirror the layout tag's site-id so the fallback path carries it too.
+    script.setAttribute("data-site-id", LP_SITE_ID);
     script.async = true;
     document.head.appendChild(script);
   }, []);
