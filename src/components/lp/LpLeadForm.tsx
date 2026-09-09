@@ -43,37 +43,13 @@ const labelClasses =
 
 const SUBMIT_ERROR = `Something went wrong sending your request. Please check your connection and try again, or call us at ${PHONE_DISPLAY}.`;
 
-function fireConversion(fields: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  inventorySize: string;
-  qualified: boolean;
-}): void {
+// The optimizer natively captures the validated requestSubmit() form event as
+// the single `form_submit` conversion — we do NOT emit our own MegaTag
+// `form_submit`, or the lead would be double-counted. This helper pushes ONLY
+// the GTM dataLayer `form_submission` event, under a distinct name so GTM has
+// its own trigger, and runs after confirmed persistence.
+function pushFormSubmission(): void {
   if (typeof window === "undefined") return;
-  // Manual MegaTag form_submit — each field its own key, never concatenated.
-  const mt = (
-    window as unknown as {
-      MegaTag?: {
-        trackEvent?: (event: string, data: Record<string, string>) => void;
-      };
-    }
-  ).MegaTag;
-  try {
-    mt?.trackEvent?.("form_submit", {
-      element: "lp-lead-form",
-      firstName: fields.firstName,
-      lastName: fields.lastName,
-      email: fields.email,
-      phone: fields.phone,
-      inventorySize: fields.inventorySize,
-      qualified: String(fields.qualified),
-    });
-  } catch (err) {
-    console.warn("MegaTag.trackEvent failed:", err);
-  }
-  // Distinct dataLayer event name so GTM has its own trigger (no double count).
   const w = window as typeof window & { dataLayer?: Record<string, unknown>[] };
   w.dataLayer = w.dataLayer || [];
   w.dataLayer.push({
@@ -151,7 +127,9 @@ export function LpLeadForm({
       if (res?.ok !== true) {
         throw new Error("Submission not confirmed by server.");
       }
-      fireConversion({ ...formData, phone: phone.trim(), qualified });
+      // Post-success GTM signal only. The optimizer already captured the
+      // native `form_submit` conversion from the validated requestSubmit().
+      pushFormSubmission();
       setSubmitted(true);
     } catch (error) {
       // The visitor is fine; the LEAD would be dropped. Surface a retryable
