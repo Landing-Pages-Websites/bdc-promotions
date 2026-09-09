@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactElement, SVGProps } from "react";
 import { DualCta, SECTION_SHELL, SectionHeading } from "@/components/lp/ui";
 import {
@@ -48,18 +49,32 @@ export function Services(): ReactElement {
   return (
     <section id="services" className="border-y border-lp-border/60 bg-lp-panel/30 py-20 md:py-28">
       <div className={SECTION_SHELL}>
-        <SectionHeading
-          eyebrow="Automotive Marketing Services"
-          title={
-            <>
-              Everything paid social should do for a{" "}
-              <span className="text-lp-cyan">dealership</span>
-            </>
-          }
-          intro="Five services, built for how cars actually get sold today. Each one is scoped to a real dealership outcome — not a generic marketing deliverable."
-        />
+        {/* Asymmetric intro: heading holds the left rail, an approved sample of
+            our inventory-ad production anchors the right. */}
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+          <SectionHeading
+            eyebrow="Automotive Marketing Services"
+            title={
+              <>
+                Everything paid social should do for a{" "}
+                <span className="text-lp-cyan">dealership</span>
+              </>
+            }
+            intro="Five services, built for how cars actually get sold today. Each one is scoped to a real dealership outcome — not a generic marketing deliverable."
+          />
+          <figure className="overflow-hidden rounded-[16px] border border-lp-border/70 bg-lp-panel/40 shadow-[0_24px_70px_-30px_rgba(3,10,24,0.9)]">
+            <Image
+              src="/lp/bdc-inventory-production.webp"
+              alt="BDC Promotions marketers building paid-social inventory ads from a dealership's vehicle lineup"
+              width={1248}
+              height={832}
+              sizes="(min-width: 1024px) 520px, 100vw"
+              className="h-auto w-full"
+            />
+          </figure>
+        </div>
 
-        <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map(({ name, copy, Icon, wide }) => (
             <li
               key={name}

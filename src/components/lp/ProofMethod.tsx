@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactElement, SVGProps } from "react";
 import { DualCta, SECTION_SHELL, SectionHeading } from "@/components/lp/ui";
 import {
@@ -51,6 +52,19 @@ export function ProofMethod(): ReactElement {
             proof looks like and how we&apos;d measure success for a store like
             yours.
           </p>
+
+          {/* Approved sample: the human follow-up behind the proof — a BDC
+              specialist working a shopper conversation, not a data claim. */}
+          <figure className="mt-8 overflow-hidden rounded-[16px] border border-lp-border/70 bg-lp-panel/40 shadow-[0_24px_70px_-30px_rgba(3,10,24,0.9)]">
+            <Image
+              src="/lp/bdc-team-follow-up.webp"
+              alt="A BDC Promotions specialist following up with a car shopper by phone at a dealership"
+              width={1248}
+              height={832}
+              sizes="(min-width: 1024px) 520px, 100vw"
+              className="h-auto w-full"
+            />
+          </figure>
         </div>
 
         {/* Evidence board — describes the proof standard; no fabricated data. */}
