@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { ReactElement, SVGProps } from "react";
 import { DualCta, SECTION_SHELL, SectionHeading } from "@/components/lp/ui";
 import {
@@ -52,23 +51,6 @@ export function ProofMethod(): ReactElement {
             proof looks like and how we&apos;d measure success for a store like
             yours.
           </p>
-
-          {/*
-            Real BDC Promotions dealership composition (blue-hour storefront) —
-            a third distinct on-page visual reinforcing that this is built for
-            real dealerships. Approved customer-owned asset; no data or claims
-            are overlaid, so it introduces no fabricated proof.
-          */}
-          <figure className="mt-8 overflow-hidden rounded-[16px] border border-lp-border/70 bg-lp-panel/40 shadow-[0_28px_70px_-30px_rgba(3,10,24,0.9)]">
-            <Image
-              src="/lp/bdc-dealership-exterior.png"
-              alt="BDC Promotions dealership storefront illuminated at dusk, clean modern vehicles behind the showroom glass"
-              width={1200}
-              height={630}
-              sizes="(min-width: 1024px) 560px, 100vw"
-              className="h-auto w-full"
-            />
-          </figure>
         </div>
 
         {/* Evidence board — describes the proof standard; no fabricated data. */}
