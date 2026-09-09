@@ -17,7 +17,7 @@ import {
  * and Meta Pixel. GTM + Meta Pixel are installed BY the optimizer via config;
  * we never add those scripts manually (that would double-fire).
  *
- * siteKey is the `sk_site_key_placeholder` deploy placeholder (Flow B) — the
+ * siteKey is the `vrci0s1s9xiba4g2` deploy placeholder (Flow B) — the
  * orchestrator swaps it after `mega site-tracking enable`. gtmId + pixelId are
  * real, task-provided values.
  */

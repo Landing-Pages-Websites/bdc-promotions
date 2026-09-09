@@ -5,17 +5,17 @@
  * layout) so the orchestrator can swap them in one place after
  * `mega site-tracking enable`. Do NOT inline these strings elsewhere.
  *
- *   LP_SITE_ID  → "SITE_ID_PLACEHOLDER"      (form submission `site_id`)
- *   LP_SITE_KEY → "sk_site_key_placeholder"  (MegaTag `siteKey`)
+ *   LP_SITE_ID  → "da4beb53-0565-46a9-be0c-95d0c92c9c6f"      (form submission `site_id`)
+ *   LP_SITE_KEY → "vrci0s1s9xiba4g2"  (MegaTag `siteKey`)
  *
  * Everything else here is a real, task-provided value and must NOT be treated
  * as a placeholder.
  */
 
 /** Deploy placeholder — replaced post-registration. Isolated on purpose. */
-export const LP_SITE_ID = "SITE_ID_PLACEHOLDER";
+export const LP_SITE_ID = "da4beb53-0565-46a9-be0c-95d0c92c9c6f";
 /** Deploy placeholder — replaced post-registration. Isolated on purpose. */
-export const LP_SITE_KEY = "sk_site_key_placeholder";
+export const LP_SITE_KEY = "vrci0s1s9xiba4g2";
 
 /** Real, task-provided identifiers. */
 export const LP_CUSTOMER_ID = "9951b3b9-96d6-4185-a938-f509cd50ae67";
