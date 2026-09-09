@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type KeyboardEvent,
   type ReactElement,
 } from "react";
 import {
@@ -38,13 +39,21 @@ declare global {
  * BDC Promotions lead form — the ONE conversion surface, rendered in the hero
  * and again in the lower `#get-started` section.
  *
- * Contract (landing-page-forms + task): separate camelCase keys, matching
- * `name` attributes, RFC-5322-lite email, exact-10-digit phone, visible select
- * chevron, validate-first `type="button"` then requestSubmit(), synchronous
- * inFlightRef one-submit guard, and FAIL-CLOSED behavior — a failed/unconfirmed
- * submit shows a retryable error, fires NO conversion events, and never shows
- * success. Qualification metadata (`qualified`) rides along WITHOUT suppressing
- * delivery of either answer.
+ * Contract (landing-page-forms + task): matching `name` attributes, RFC-5322-lite
+ * email, exact-10-digit phone, visible select chevron, synchronous inFlightRef
+ * one-submit guard, and FAIL-CLOSED behavior — a failed/unconfirmed submit shows
+ * a retryable error, fires NO conversion events, and never shows success.
+ * Qualification metadata rides along WITHOUT suppressing delivery of either answer.
+ *
+ * NO-NATIVE-SUBMIT architecture: the form NEVER dispatches a native submit event.
+ * The submit control is a validate-first `type="button"` whose onClick calls
+ * performSubmit() directly, and Enter is intercepted by a form keydown handler that
+ * prevents the default native submit and takes the same direct path. We do NOT use
+ * requestSubmit() or dispatch a synthetic submit. This matters because the
+ * optimizer registers `document.addEventListener("submit", …, true)` in the CAPTURE
+ * phase — a native submit would reach that listener BEFORE React could suppress
+ * propagation, producing a second Mega `form_submit`. By never firing a native
+ * submit, the SOLE Mega conversion is the one explicit trackEvent in performSubmit.
  */
 
 const inputClasses =
@@ -60,9 +69,9 @@ const DISQUALIFICATION_REASON = "Inventory is fewer than 50 vehicles";
 
 // GTM dataLayer signal — a distinct `form_submission` event name so GTM has its
 // own trigger and does not double-count the Mega `form_submit` conversion. The
-// single Mega `form_submit` is emitted explicitly in performSubmit (the native
-// submit event's propagation is suppressed in handleSubmit so the optimizer
-// never captures a second one). Runs only after confirmed persistence.
+// single Mega `form_submit` is emitted explicitly in performSubmit; because the
+// form never dispatches a native submit event, the optimizer's capture-phase
+// document listener has nothing to observe. Runs only after confirmed persistence.
 function pushFormSubmission(): void {
   if (typeof window === "undefined") return;
   const w = window as typeof window & { dataLayer?: Record<string, unknown>[] };
@@ -104,22 +113,43 @@ export function LpLeadForm({
     isValidPhone(phone) &&
     inventorySize !== "";
 
-  function handleClick(): void {
-    if (!canSubmit) {
-      formRef.current?.reportValidity();
+  // Single validate-first entry point shared by the submit button and the Enter
+  // key. Validates via checkValidity()/reportValidity(), then calls
+  // performSubmit() DIRECTLY — no requestSubmit(), no dispatched native submit —
+  // so the optimizer's capture-phase document "submit" listener never fires.
+  function validateAndSubmit(): void {
+    const form = formRef.current;
+    if (!form) return;
+    if (!canSubmit || !form.checkValidity()) {
+      form.reportValidity();
       return;
     }
-    formRef.current?.requestSubmit();
+    void performSubmit();
+  }
+
+  function handleClick(): void {
+    validateAndSubmit();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLFormElement>): void {
+    // Enter inside a field would trigger a native form submit; prevent that and
+    // route through the same validate-first direct-submit path so keyboard users
+    // get identical behavior without any native submit event ever firing.
+    if (event.key !== "Enter") return;
+    if (event.target instanceof HTMLTextAreaElement) return; // allow multiline
+    event.preventDefault();
+    validateAndSubmit();
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
-    // Suppress the native submit event so the optimizer's document-level
-    // listener cannot independently capture a second `form_submit`. The one
-    // Mega conversion is the explicit trackEvent call in performSubmit.
+    // Defensive only. No native submit should ever reach here — the control is
+    // type="button" and Enter is intercepted in handleKeyDown — but if one is
+    // somehow dispatched we cancel it and DO NOT call performSubmit(). The sole
+    // Mega `form_submit` is the explicit trackEvent in performSubmit; a native
+    // submit here must never become a second conversion.
     event.preventDefault();
     event.stopPropagation();
     event.nativeEvent.stopImmediatePropagation();
-    void performSubmit();
   }
 
   async function performSubmit(): Promise<void> {
@@ -139,9 +169,10 @@ export function LpLeadForm({
       // Qualification metadata: distinguishes 50+ dealerships. Both answers
       // persist and route — this never suppresses delivery.
       qualified,
-      // Concrete reason only when disqualified; qualified leads carry null so
-      // the key is present once without a fabricated reason.
-      disqualificationReason: qualified ? null : DISQUALIFICATION_REASON,
+      // QA-required snake_case key. Concrete reason only when disqualified;
+      // qualified leads carry null so the key is present exactly once, without a
+      // fabricated reason and without a duplicate camelCase copy.
+      disqualification_reason: qualified ? null : DISQUALIFICATION_REASON,
     };
 
     try {
@@ -165,7 +196,7 @@ export function LpLeadForm({
             qualified: String(qualified),
             ...(qualified
               ? {}
-              : { disqualificationReason: DISQUALIFICATION_REASON }),
+              : { disqualification_reason: DISQUALIFICATION_REASON }),
           });
         } catch (trackErr) {
           console.warn("MegaTag.trackEvent failed:", trackErr);
@@ -213,6 +244,7 @@ export function LpLeadForm({
     <form
       ref={formRef}
       onSubmit={handleSubmit}
+      onKeyDown={handleKeyDown}
       noValidate={false}
       className="flex w-full flex-col gap-4"
       aria-label="Free dealership audit request"
@@ -329,11 +361,13 @@ export function LpLeadForm({
 
       {/*
         Canonical LP submit control: a validate-first `type="button"` whose
-        onClick runs client validation, then calls formRef.requestSubmit() so
-        the <form onSubmit> handler (and the optimizer's form_submit) fire only
-        for a complete, valid lead. We intentionally do NOT use a native
-        type="submit" button here — that would let empty/invalid submissions
-        fire conversion events. (Keep type="button"; do not "fix" to submit.)
+        onClick runs client validation, then calls performSubmit() DIRECTLY — no
+        requestSubmit(), no dispatched native submit — so the sole Mega
+        `form_submit` fires only for a complete, valid lead and the optimizer's
+        capture-phase document listener never observes a second submit. We
+        intentionally do NOT use a native type="submit" button here — that would
+        let empty/invalid submissions fire conversion events. (Keep
+        type="button"; do not "fix" to submit.)
       */}
       <button
         type="button"
