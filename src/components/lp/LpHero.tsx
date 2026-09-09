@@ -68,7 +68,7 @@ export function LpHero(): ReactElement {
             ))}
           </div>
 
-          <div className="mt-8 lg:hidden">
+          <div className="mt-8">
             <PhoneCtaButton className="w-full sm:w-auto" />
           </div>
         </div>

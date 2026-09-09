@@ -23,6 +23,17 @@ import {
 } from "@/components/lp/constants";
 import { IconCheck, IconChevronDown } from "@/components/lp/icons";
 
+// The optimizer exposes `window.MegaTag.trackEvent` at runtime. Declared here so
+// the explicit post-success `form_submit` call below is typed (merges with the
+// identical global augmentation elsewhere in the app).
+declare global {
+  interface Window {
+    MegaTag?: {
+      trackEvent?: (event: string, data: Record<string, string>) => void;
+    };
+  }
+}
+
 /*
  * BDC Promotions lead form — the ONE conversion surface, rendered in the hero
  * and again in the lower `#get-started` section.
@@ -43,11 +54,15 @@ const labelClasses =
 
 const SUBMIT_ERROR = `Something went wrong sending your request. Please check your connection and try again, or call us at ${PHONE_DISPLAY}.`;
 
-// The optimizer natively captures the validated requestSubmit() form event as
-// the single `form_submit` conversion — we do NOT emit our own MegaTag
-// `form_submit`, or the lead would be double-counted. This helper pushes ONLY
-// the GTM dataLayer `form_submission` event, under a distinct name so GTM has
-// its own trigger, and runs after confirmed persistence.
+// Concrete reason attached to disqualified inventory leads. Qualified leads
+// carry no reason (see performSubmit) — we never fabricate one.
+const DISQUALIFICATION_REASON = "Inventory is fewer than 50 vehicles";
+
+// GTM dataLayer signal — a distinct `form_submission` event name so GTM has its
+// own trigger and does not double-count the Mega `form_submit` conversion. The
+// single Mega `form_submit` is emitted explicitly in performSubmit (the native
+// submit event's propagation is suppressed in handleSubmit so the optimizer
+// never captures a second one). Runs only after confirmed persistence.
 function pushFormSubmission(): void {
   if (typeof window === "undefined") return;
   const w = window as typeof window & { dataLayer?: Record<string, unknown>[] };
@@ -98,7 +113,12 @@ export function LpLeadForm({
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    // Suppress the native submit event so the optimizer's document-level
+    // listener cannot independently capture a second `form_submit`. The one
+    // Mega conversion is the explicit trackEvent call in performSubmit.
     event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
     void performSubmit();
   }
 
@@ -119,6 +139,9 @@ export function LpLeadForm({
       // Qualification metadata: distinguishes 50+ dealerships. Both answers
       // persist and route — this never suppresses delivery.
       qualified,
+      // Concrete reason only when disqualified; qualified leads carry null so
+      // the key is present once without a fabricated reason.
+      disqualificationReason: qualified ? null : DISQUALIFICATION_REASON,
     };
 
     try {
@@ -127,8 +150,28 @@ export function LpLeadForm({
       if (res?.ok !== true) {
         throw new Error("Submission not confirmed by server.");
       }
-      // Post-success GTM signal only. The optimizer already captured the
-      // native `form_submit` conversion from the validated requestSubmit().
+      // Explicit, post-success Mega conversion — the SOLE `form_submit` surface
+      // (the native submit event was suppressed in handleSubmit). Each field is
+      // its own key per landing-page-tracking; only a confirmed lead fires it.
+      if (typeof window !== "undefined" && window.MegaTag?.trackEvent) {
+        try {
+          window.MegaTag.trackEvent("form_submit", {
+            element: `lp-lead-form-${idSuffixHint}`,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            inventorySize: formData.inventorySize,
+            qualified: String(qualified),
+            ...(qualified
+              ? {}
+              : { disqualificationReason: DISQUALIFICATION_REASON }),
+          });
+        } catch (trackErr) {
+          console.warn("MegaTag.trackEvent failed:", trackErr);
+        }
+      }
+      // Distinct GTM signal alongside the Mega conversion.
       pushFormSubmission();
       setSubmitted(true);
     } catch (error) {

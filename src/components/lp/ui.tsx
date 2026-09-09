@@ -17,12 +17,15 @@ import { IconArrowRight, IconPhone } from "@/components/lp/icons";
 const FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lp-text focus-visible:ring-offset-2 focus-visible:ring-offset-lp-ink";
 
+// Compact responsive padding/type so a primary + phone pair fits side-by-side
+// at 390px without overflow, then relaxes to full size from sm up.
 const PRIMARY_BTN =
-  "group inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-[10px] bg-gradient-to-br from-lp-cyan to-lp-blue px-6 py-3.5 font-display text-[1.02rem] font-extrabold uppercase tracking-[0.02em] text-[#03101b] shadow-[0_12px_34px_rgba(14,112,255,0.28)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:from-lp-cyan hover:to-lp-cyan hover:shadow-[0_18px_46px_rgba(25,200,255,0.42)] active:translate-y-0 active:from-lp-active active:to-lp-active " +
+  "group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[10px] bg-gradient-to-br from-lp-cyan to-lp-blue px-4 py-3 text-center font-display text-[0.9rem] font-extrabold uppercase tracking-[0.02em] text-[#03101b] shadow-[0_12px_34px_rgba(14,112,255,0.28)] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:from-lp-cyan hover:to-lp-cyan hover:shadow-[0_18px_46px_rgba(25,200,255,0.42)] active:translate-y-0 active:from-lp-active active:to-lp-active sm:min-h-[52px] sm:gap-2.5 sm:px-6 sm:py-3.5 sm:text-[1.02rem] " +
   FOCUS;
 
+// Less-prominent than the filled primary: bordered/ghost surface, same footprint.
 const SECONDARY_BTN =
-  "group inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-[10px] border border-lp-border bg-white/[0.04] px-6 py-3.5 font-display text-[1.02rem] font-bold uppercase tracking-[0.02em] text-lp-text transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-lp-cyan hover:text-lp-cyan active:translate-y-0 " +
+  "group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[10px] border border-lp-border bg-white/[0.04] px-4 py-3 text-center font-display text-[0.9rem] font-bold uppercase tracking-[0.02em] text-lp-text transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-lp-cyan hover:text-lp-cyan active:translate-y-0 sm:min-h-[52px] sm:gap-2.5 sm:px-6 sm:py-3.5 sm:text-[1.02rem] " +
   FOCUS;
 
 export function PrimaryCtaButton({
@@ -59,7 +62,10 @@ export function PhoneCtaButton({
 
 /**
  * The dual conversion action — centered, side-by-side form + phone CTA.
- * Repeated at the end of every content section per the LP hard rules.
+ * Repeated at the end of every content section per the LP hard rules. Always a
+ * horizontal row (never `flex-col`): at 390px the two actions share the row via
+ * `flex-1`, then size to content from sm up. The filled primary and the ghost
+ * phone action stay visually distinct.
  */
 export function DualCta({
   label,
@@ -70,10 +76,10 @@ export function DualCta({
 }): ReactElement {
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-3 sm:flex-row ${className}`}
+      className={`flex items-stretch justify-center gap-2.5 sm:gap-3 ${className}`}
     >
-      <PrimaryCtaButton label={label} className="w-full sm:w-auto" />
-      <PhoneCtaButton className="w-full sm:w-auto" />
+      <PrimaryCtaButton label={label} className="min-w-0 flex-1 sm:flex-none" />
+      <PhoneCtaButton className="min-w-0 flex-1 sm:flex-none" />
     </div>
   );
 }
