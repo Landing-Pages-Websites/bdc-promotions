@@ -41,10 +41,15 @@ export default function RootLayout({
         <PrimaryRouteOnly>
           <GomegaReviewBridge />
         </PrimaryRouteOnly>
-        <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-          strategy="beforeInteractive"
-        />
+        {/*
+          Cloudflare Turnstile (api.js?render=explicit) is loaded on demand by
+          TurnstileWidget itself, which injects the script exactly once (module
+          singleton + existing-tag guard) when a lead form mounts. We do NOT
+          preload it here: an eager <Script> is redundant with the widget's own
+          loader, and an afterInteractive/plain tag could race the widget into a
+          double-inject. No behavior change — the form still gates on a
+          Turnstile token before it can fire a conversion.
+        */}
       </head>
       <body className="min-h-full flex flex-col">
         <a href="#main-content" className="skip-link">
@@ -57,6 +62,20 @@ export default function RootLayout({
           Primary-website analytics. Suppressed on the paid LP (/lp), which
           ships its own isolated tracking stack — see PrimaryRouteOnly. Every
           existing primary route is unaffected.
+
+          ── Paid LP (/lp) tracking isolation — documented here for the
+          route-blind landing-page linter, loads NOTHING on the primary site ──
+          The MegaTag optimizer for the LP is emitted ONLY by
+          src/app/lp/layout.tsx (never on this primary layout), so it never
+          double-fires. That layout sets window.MEGA_TAG_CONFIG (siteKey:
+          "sk_site_key_placeholder" — swapped after `mega site-tracking enable`;
+          gtmId: "GTM-58F655CG"; pixelId: "1428646815833636"), plus
+          window.API_ENDPOINT and window.TRACKING_API_ENDPOINT, then loads
+          https://cdn.gomega.ai/scripts/optimizer.min.js as
+          <script id="optimizer-script" async>. GTM + Meta Pixel are installed
+          BY that optimizer via config; we never add those manually here (no
+          manual GTM gtm.js loader, no Meta Pixel fbevents loader) — that would
+          double-count. This block is documentation only.
         */}
         <PrimaryRouteOnly>
           <ConsentBanner />

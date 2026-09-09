@@ -1,3 +1,16 @@
+/*
+ * Fixed-header anchor offset for the paid LP (`/lp`).
+ *
+ * The LP header is a sticky 72px bar, so jumping to an in-page anchor
+ * (#get-started, #appointment-gap, …) would tuck the section heading under it.
+ * scroll-margin-top on each anchored section pushes the scroll stop down by the
+ * header height + a little breathing room. Scoped to `.lp-root` so the primary
+ * site's own anchor scrolling is untouched.
+ */
+.lp-root section[id] {
+  scroll-margin-top: 88px;
+}
+
 .hero {
   position: relative;
   display: grid;

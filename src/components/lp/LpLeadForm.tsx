@@ -258,12 +258,12 @@ export function LpLeadForm({
           type="tel"
           inputMode="numeric"
           required
-          autoComplete="tel"
-          value={phone}
-          onChange={(e) => setPhone(formatPhone(e.target.value))}
-          placeholder="(555) 123-4567"
           pattern="\(\d{3}\) \d{3}-\d{4}"
           title="Please enter a valid 10-digit phone number"
+          autoComplete="tel"
+          placeholder="(555) 123-4567"
+          value={phone}
+          onChange={(e) => setPhone(formatPhone(e.target.value))}
           className={inputClasses}
         />
       </div>
@@ -306,6 +306,14 @@ export function LpLeadForm({
         </p>
       ) : null}
 
+      {/*
+        Canonical LP submit control: a validate-first `type="button"` whose
+        onClick runs client validation, then calls formRef.requestSubmit() so
+        the <form onSubmit> handler (and the optimizer's form_submit) fire only
+        for a complete, valid lead. We intentionally do NOT use a native
+        type="submit" button here — that would let empty/invalid submissions
+        fire conversion events. (Keep type="button"; do not "fix" to submit.)
+      */}
       <button
         type="button"
         onClick={handleClick}

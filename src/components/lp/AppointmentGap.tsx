@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactElement } from "react";
 import { DualCta, SECTION_SHELL, SectionHeading } from "@/components/lp/ui";
 import { IconArrowRight } from "@/components/lp/icons";
@@ -75,6 +76,30 @@ export function AppointmentGap(): ReactElement {
           </div>
         </div>
       </div>
+
+      {/*
+        Illustrative campaign creative — an approved BDC Promotions sample of
+        the paid-social creative + appointment-focused reporting we build for
+        dealerships. Presented as an example of the work (not this prospect's
+        results), so no specific figures are claimed as fact in the copy.
+      */}
+      <figure className={`${SECTION_SHELL} mt-16`}>
+        <div className="overflow-hidden rounded-[18px] border border-lp-border/70 bg-lp-panel/40 shadow-[0_30px_80px_-30px_rgba(3,10,24,0.9)]">
+          <Image
+            src="/lp/appointment-gap.webp"
+            alt="Sample BDC Promotions dealership campaign: paid-social creative alongside an appointment-and-opportunity reporting view"
+            width={1400}
+            height={933}
+            sizes="(min-width: 1024px) 1100px, 100vw"
+            className="h-auto w-full"
+          />
+        </div>
+        <figcaption className="mt-3 text-center text-[0.8rem] leading-relaxed text-lp-muted/80">
+          Illustrative example of BDC Promotions creative and
+          appointment-focused reporting — your audit shows what this looks like
+          for your store.
+        </figcaption>
+      </figure>
 
       <div className={`${SECTION_SHELL} mt-14`}>
         <DualCta label="Request My Free Consultation" />

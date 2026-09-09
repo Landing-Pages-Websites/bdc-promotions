@@ -14,7 +14,7 @@ import { LpTrackingBackup } from "@/components/lp/LpTrackingBackup";
 
 export default function LpPage(): ReactElement {
   return (
-    <div className="min-h-screen bg-lp-ink text-lp-text">
+    <div className="lp-root min-h-screen bg-lp-ink text-lp-text">
       <LpHeader />
       <main>
         <LpHero />

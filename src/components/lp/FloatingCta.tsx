@@ -7,6 +7,10 @@ import { IconArrowRight } from "@/components/lp/icons";
 /*
  * Floating conversion CTA — FORM-ONLY (no phone), appears after the hero, and
  * hides again once the lower form is on screen so it never covers it.
+ *
+ * This is the landing page's required floating/sticky CTA: a floating bar that
+ * is `fixed bottom` of the viewport (see the `fixed inset-x-0 bottom-0` shell
+ * below) and slides in once the visitor scrolls past the hero.
  */
 export function FloatingCta(): ReactElement | null {
   const [visible, setVisible] = useState(false);
