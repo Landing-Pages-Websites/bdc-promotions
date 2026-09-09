@@ -20,6 +20,11 @@
       "type": "task",
       "id": "lp-9951b3b9-build (customer 9951b3b9-96d6-4185-a938-f509cd50ae67)",
       "description": "Paid landing-page build task brief for /lp. Origin of LP-specific elements: the free-audit offer framing, the inventory qualifier, the automotive service set, the proof standard, and the tracking IDs."
+    },
+    "ai-generated-visual": {
+      "type": "generated-asset",
+      "id": "ai-generated-approved-supporting-visuals",
+      "description": "AI-generated, human-approved supporting visuals added to give the /lp page an editorial visual rhythm. They are illustrative depictions of BDC Promotions' work — NOT customer proof. They carry no metrics, named results, or testimonials, and make no factual claim beyond the generic activity depicted."
     }
   },
   "records": [
@@ -85,6 +90,13 @@
       "location": "src/components/lp/LpFaq.tsx",
       "sources": ["lp-task", "live-site"],
       "note": "Deliberately non-specific coverage statement from the LP task brief; no specific state list or exclusivity is asserted, and fit is confirmed per prospect rather than claimed."
+    },
+    {
+      "id": "supporting-visuals",
+      "claim": "Three supporting section visuals: inventory-ad production (Services), a BDC specialist following up with a shopper (Proof Standard), and an audit consultation walkthrough (How The Free Audit Works).",
+      "location": "src/components/lp/Services.tsx, src/components/lp/ProofMethod.tsx, src/components/lp/HowItWorks.tsx",
+      "sources": ["ai-generated-visual"],
+      "note": "AI-generated, human-approved illustrative visuals — supporting art, not customer proof. Each is used exactly once with distinct alt text; the surrounding copy asserts no metrics, testimonials, or specific results tied to these images. Depict generic BDC Promotions activity only."
     }
   ]
 }

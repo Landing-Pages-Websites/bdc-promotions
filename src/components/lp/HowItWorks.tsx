@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactElement } from "react";
 import { DualCta, SECTION_SHELL, SectionHeading } from "@/components/lp/ui";
 
@@ -33,6 +34,29 @@ export function HowItWorks(): ReactElement {
           }
           intro="The audit is genuinely free. Here's exactly what happens once you request one."
         />
+
+        {/* Cinematic lead-in: an approved sample of an audit consultation,
+            wide-cropped so it reads as a banner rather than a card. */}
+        <figure className="relative mt-12 overflow-hidden rounded-[18px] border border-lp-border/70 shadow-[0_30px_80px_-30px_rgba(3,10,24,0.9)]">
+          <Image
+            src="/lp/bdc-audit-consultation.webp"
+            alt="A BDC Promotions consultant walking a dealer through a free marketing audit on screen"
+            width={1248}
+            height={832}
+            sizes="(min-width: 1024px) 1100px, 100vw"
+            className="h-full max-h-[420px] w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-lp-ink via-lp-ink/25 to-transparent" />
+          <figcaption className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+            <span className="font-display text-[0.72rem] font-bold uppercase tracking-[0.16em] text-lp-cyan">
+              Inside a free audit consultation
+            </span>
+            <p className="mt-1.5 max-w-md text-[0.9rem] leading-relaxed text-lp-text/90">
+              We walk your team through what we find — screen to screen, no
+              pressure, no obligation.
+            </p>
+          </figcaption>
+        </figure>
 
         {/* Numbered process rail — the numbering encodes a real sequence. */}
         <ol className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">

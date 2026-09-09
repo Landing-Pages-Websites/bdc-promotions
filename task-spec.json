@@ -108,6 +108,28 @@
     "contentImages": [
       "/lp/bdc-night-showroom.webp",
       "/lp/appointment-gap.webp"
-    ]
+    ],
+    "supportingVisuals": {
+      "$comment": "AI-generated, human-approved supporting visuals used to give the page an editorial rhythm. These are illustrative depictions of BDC Promotions' work, NOT customer proof — they assert no metrics, named results, or testimonials, and each is used exactly once in a distinct section.",
+      "provenance": "ai-generated-approved",
+      "role": "supporting-visual",
+      "images": [
+        {
+          "src": "/lp/bdc-inventory-production.webp",
+          "section": "src/components/lp/Services.tsx",
+          "depicts": "Building paid-social inventory ads from a dealership's vehicle lineup."
+        },
+        {
+          "src": "/lp/bdc-team-follow-up.webp",
+          "section": "src/components/lp/ProofMethod.tsx",
+          "depicts": "A BDC specialist following up with a car shopper by phone."
+        },
+        {
+          "src": "/lp/bdc-audit-consultation.webp",
+          "section": "src/components/lp/HowItWorks.tsx",
+          "depicts": "An audit consultation walkthrough with a dealer."
+        }
+      ]
+    }
   }
 }
