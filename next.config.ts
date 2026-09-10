@@ -23,11 +23,25 @@ const nextConfig: NextConfig = {
     // 301-equivalent redirects for migrations. Builders fill the map in
     // src/lib/redirects.ts; Next serves permanent redirects as 308
     // (SEO-equivalent to 301 — go-live QA accepts either).
-    return redirectMap.map(({ source, destination }) => ({
+    const migrationRedirects = redirectMap.map(({ source, destination }) => ({
       source,
       destination,
       permanent: true,
     }));
+    // The paid landing Vercel project serves info.bdcpromotions.com, whose
+    // validated LP lives at /lp. Send only that host's root to the LP so the
+    // custom-domain root opens the landing page; the primary domain
+    // (bdcpromotions.com) root is untouched and keeps serving the homepage.
+    // Temporary (307) — this is corrective host routing, not a permanent move.
+    return [
+      {
+        source: "/",
+        has: [{ type: "host", value: "info.bdcpromotions.com" }],
+        destination: "/lp",
+        permanent: false,
+      },
+      ...migrationRedirects,
+    ];
   },
   async rewrites() {
     // Same-origin reverse proxy for PostHog (PostHog's documented Next.js
