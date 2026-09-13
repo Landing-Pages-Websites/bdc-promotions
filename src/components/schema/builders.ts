@@ -63,6 +63,11 @@ function businessSchemaBase(identity?: BusinessSchemaIdentity): SchemaObject {
     telephone: identity?.telephone ?? contact.phone,
     address: { "@type": "PostalAddress", ...address },
     sameAs: identity?.sameAs ?? siteConfig.socialLinks.map((link) => link.url),
+    foundingDate: siteConfig.foundingDate,
+    contactPoint: {
+      "@type": "ContactPoint",
+      ...siteConfig.contactPoint,
+    },
   };
 }
 

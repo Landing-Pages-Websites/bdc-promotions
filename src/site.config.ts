@@ -25,6 +25,14 @@ export interface SiteContact {
   address: SiteAddress;
 }
 
+export interface SchemaContactPoint {
+  telephone: string;
+  email: string;
+  contactType: string;
+  areaServed: string;
+  availableLanguage: string;
+}
+
 export interface SocialLink {
   label: string;
   url: string;
@@ -49,6 +57,10 @@ export interface SiteConfig {
   /** One-to-two sentence description used for SEO meta + llms.txt. */
   description: string;
   contact: SiteContact;
+  /** Verified company founding date emitted in Organization schema. */
+  foundingDate: string;
+  /** Verified sales contact details emitted in Organization schema. */
+  contactPoint: SchemaContactPoint;
   /** LocalBusiness for physical/service-area businesses; Organization otherwise. */
   schemaType: SchemaType;
   /** Cities/regions served, e.g. ["Austin, TX", "Round Rock, TX"]. */
@@ -113,6 +125,14 @@ export const siteConfig: SiteConfig = {
       postalCode: siteContent.identity.postalAddress.postalCode,
       country: siteContent.identity.postalAddress.addressCountry,
     },
+  },
+  foundingDate: "2011-03-25",
+  contactPoint: {
+    telephone: siteContent.identity.telephone,
+    email: siteContent.identity.email,
+    contactType: "sales",
+    areaServed: "United States",
+    availableLanguage: "English",
   },
   schemaType: "Organization",
   serviceAreas: ["United States"],
