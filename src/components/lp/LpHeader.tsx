@@ -35,25 +35,17 @@ export function LpHeader(): ReactElement {
       <div className="mx-auto flex h-[72px] w-[min(1180px,calc(100%-2rem))] items-center justify-between gap-4">
         <a
           href="#hero"
-          className="flex items-center gap-2.5"
+          className="flex items-center"
           aria-label="BDC Promotions home"
         >
           <Image
-            src="/lp/bdc-logo.png"
-            alt="BDC Promotions"
-            width={40}
-            height={40}
-            priority
-            className="h-9 w-9 rounded-[9px] border border-white/15 bg-lp-panel object-contain p-0.5"
+            src="/lp/bdc-logo-header.png"
+            alt="BDC Promotions — Automotive Marketing"
+            width={1254}
+            height={749}
+            preload
+            className="h-10 w-auto sm:h-12"
           />
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-[1.05rem] font-extrabold tracking-[0.01em] text-lp-text">
-              BDC Promotions
-            </span>
-            <span className="mt-1 font-display text-[0.6rem] font-bold uppercase tracking-[0.24em] text-lp-muted">
-              Automotive Marketing
-            </span>
-          </span>
         </a>
 
         <div className="flex items-center gap-2.5">
