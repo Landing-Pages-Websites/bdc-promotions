@@ -1,0 +1,156 @@
+<!doctype html><meta charset='utf-8'>
+<title>Image asset review</title><style>
+body{margin:0;padding:24px;background:#111;color:#eee;
+     font:14px/1.5 -apple-system,'Segoe UI',sans-serif}
+a{color:#8bd} .muted{color:#999} h1{font-size:20px}
+.proto{background:#1b1b1b;border:1px solid #333;border-radius:8px;
+       padding:12px 16px;max-width:900px;margin-bottom:24px}
+.proto code{background:#000;padding:1px 5px;border-radius:4px}
+.card{background:#1b1b1b;border:1px solid #333;border-radius:8px;
+      padding:16px;margin-bottom:20px;max-width:1200px}
+.card.missing{border-color:#a33}
+.pair{display:flex;gap:16px;flex-wrap:wrap}
+.pair figure{margin:0;flex:1;min-width:280px}
+.pair img{max-width:100%;border:1px solid #444}
+.asset-preview{display:grid;place-items:center;min-height:180px;
+  background-color:#fff;background-image:linear-gradient(45deg,#ddd 25%,transparent 25%),
+  linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),
+  linear-gradient(-45deg,transparent 75%,#ddd 75%);background-size:24px 24px;
+  background-position:0 0,0 12px,12px -12px,-12px 0}
+.asset-preview img,.intended-preview img{display:block;max-height:520px}
+.intended-preview{display:grid;place-items:center;min-height:180px;border:1px solid #444}
+figcaption{font-size:12px;color:#999;margin-top:4px}
+.chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;
+      background:#333;margin-left:8px;text-transform:uppercase}
+.chip.extract{background:#264} .chip.inpaint{background:#452}
+.chip.code{background:#345}
+.chip.plate{background:#246} .chip.generated{background:#525}
+.chip.unmapped{background:#630} .chip.client-copy{background:#444}
+.chip.composite{background:#536}
+</style>
+<h1>Image asset review</h1>
+<p class='muted'>7 CODE regions and 6 raster assets to review: 6 extract, 0 inpaint.</p>
+<div class='proto'><b>How to review:</b> judge every planned treatment against its design reference on the left. For CODE cards, verify the build note can preserve the region's silhouette, materiality, and compositing—not merely approximate its geometry. To swap a raster, replace the file directly in git — same path, push to main (<a href='https://github.com/Landing-Pages-Websites/bdc-promotions/tree/main/public/images/design'>assets folder in the repo</a>; each card links to its file). Replaced files are authoritative — the pipeline never overwrites them. This page updates on every push. Complete the review subtask to approve; the build does not start until then.</div>
+<div class='card' id='01-showroom-momentum-r0'>
+<b>01-showroom-momentum-r0</b><span class='chip code'>code</span>
+<div class='muted'>editorial nav, live serif headline, proof note, folio rule, CTAs, warm paper field, and navy/cobalt frame</div>
+<div class='muted'>Use a section-specific asymmetric CSS grid with Cormorant Garamond live type, warm-paper surface, cobalt rules, teal proof-note block, and square-cornered action rows.</div>
+<div class='pair'>
+<figure><a href='crops/01-showroom-momentum-context.png'><img src='crops/01-showroom-momentum-r0-ref.png' alt=''></a><figcaption>design reference — 01-showroom-momentum (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Use a section-specific asymmetric CSS grid with Cormorant Garamond live type, warm-paper surface, cobalt rules, teal proof-note block, and square-cornered action rows.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<div class='card' id='01-showroom-momentum-r1'>
+<b>01-showroom-momentum-r1</b><span class='chip extract'>extract</span>
+<div class='muted'>documented luxury campaign source plate</div>
+<div class='muted'>presentation: {&quot;alpha_required&quot;: false, &quot;crop_contract&quot;: &quot;Keep the complete campaign poster centered inside the cobalt documentary frame; mobile stacks it below the copy.&quot;, &quot;intended_background&quot;: &quot;#F3F1EC&quot;, &quot;minimum_visible_fraction&quot;: &quot;100%&quot;, &quot;mode&quot;: &quot;framed-panel&quot;}</div>
+<div class='pair'>
+<figure><a href='crops/01-showroom-momentum-context.png'><img src='crops/01-showroom-momentum-r1-ref.png' alt=''></a><figcaption>design reference — 01-showroom-momentum (click for full frame)</figcaption></figure>
+<figure><div class='asset-preview'><img src='../images/design/hero-luxury-campaign.png' alt=''></div><figcaption>shipped asset on transparency checkerboard — <a href='https://github.com/Landing-Pages-Websites/bdc-promotions/blob/main/public/images/design/hero-luxury-campaign.png'><code>hero-luxury-campaign.png</code></a> (replace in git)</figcaption></figure>
+<figure><div class='intended-preview' style='background:#F3F1EC'><img src='../images/design/hero-luxury-campaign.png' alt=''></div><figcaption>asset on intended background — #F3F1EC</figcaption></figure>
+</div></div>
+<div class='card' id='02-operating-signal-r0'>
+<b>02-operating-signal-r0</b><span class='chip code'>code</span>
+<div class='muted'>paper index strip with four ruled proof columns and alternating cobalt/teal numerals</div>
+<div class='muted'>Use a compact CSS four-column index with Cormorant heading, Inter labels, one-pixel ink rules, and alternating approved cobalt and teal semantic accents; wrap to two columns on mobile.</div>
+<div class='pair'>
+<figure><a href='crops/02-operating-signal-context.png'><img src='crops/02-operating-signal-r0-ref.png' alt=''></a><figcaption>design reference — 02-operating-signal (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Use a compact CSS four-column index with Cormorant heading, Inter labels, one-pixel ink rules, and alternating approved cobalt and teal semantic accents; wrap to two columns on mobile.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<div class='card' id='03-growth-lane-r0'>
+<b>03-growth-lane-r0</b><span class='chip code'>code</span>
+<div class='muted'>editorial process map, margin notes, vertical teal route, live step copy, and navy source-note frame</div>
+<div class='muted'>Build a three-zone CSS grid with handwritten-style annotation text, live five-step Inter ledger, vertical teal SVG route and cobalt decision arrows; simplify to one ordered column on mobile.</div>
+<div class='pair'>
+<figure><a href='crops/03-growth-lane-context.png'><img src='crops/03-growth-lane-r0-ref.png' alt=''></a><figcaption>design reference — 03-growth-lane (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Build a three-zone CSS grid with handwritten-style annotation text, live five-step Inter ledger, vertical teal SVG route and cobalt decision arrows; simplify to one ordered column on mobile.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<div class='card' id='03-growth-lane-r1'>
+<b>03-growth-lane-r1</b><span class='chip extract'>extract</span>
+<div class='muted'>repo-sale campaign source plate</div>
+<div class='muted'>presentation: {&quot;alpha_required&quot;: false, &quot;crop_contract&quot;: &quot;Keep the full poster inside a paper-on-navy documented plate; mobile moves the plate after the steps.&quot;, &quot;intended_background&quot;: &quot;#020716&quot;, &quot;minimum_visible_fraction&quot;: &quot;100%&quot;, &quot;mode&quot;: &quot;framed-panel&quot;}</div>
+<div class='pair'>
+<figure><a href='crops/03-growth-lane-context.png'><img src='crops/03-growth-lane-r1-ref.png' alt=''></a><figcaption>design reference — 03-growth-lane (click for full frame)</figcaption></figure>
+<figure><div class='asset-preview'><img src='../images/design/growth-repo-sale.png' alt=''></div><figcaption>shipped asset on transparency checkerboard — <a href='https://github.com/Landing-Pages-Websites/bdc-promotions/blob/main/public/images/design/growth-repo-sale.png'><code>growth-repo-sale.png</code></a> (replace in git)</figcaption></figure>
+<figure><div class='intended-preview' style='background:#020716'><img src='../images/design/growth-repo-sale.png' alt=''></div><figcaption>asset on intended background — #020716</figcaption></figure>
+</div></div>
+<div class='card' id='04-work-in-motion-r0'>
+<b>04-work-in-motion-r0</b><span class='chip code'>code</span>
+<div class='muted'>navy documentary contact-sheet field, live serif heading, tab-like static category labels, crop marks, cobalt rails, teal provenance notes, and CTA</div>
+<div class='muted'>Use a bespoke masonry-like CSS contact sheet on solid navy with Cormorant live heading, Inter captions, crisp one-pixel crop marks, cobalt decision rail, and teal source annotations; stack without horizontal overflow on mobile.</div>
+<div class='pair'>
+<figure><a href='crops/04-work-in-motion-context.png'><img src='crops/04-work-in-motion-r0-ref.png' alt=''></a><figcaption>design reference — 04-work-in-motion (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Use a bespoke masonry-like CSS contact sheet on solid navy with Cormorant live heading, Inter captions, crisp one-pixel crop marks, cobalt decision rail, and teal source annotations; stack without horizontal overflow on mobile.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<div class='card' id='04-work-in-motion-r1'>
+<b>04-work-in-motion-r1</b><span class='chip extract'>extract</span>
+<div class='muted'>event campaign source plate</div>
+<div class='muted'>presentation: {&quot;alpha_required&quot;: false, &quot;crop_contract&quot;: &quot;Show the full poster within documentary crop marks.&quot;, &quot;intended_background&quot;: &quot;#020716&quot;, &quot;minimum_visible_fraction&quot;: &quot;100%&quot;, &quot;mode&quot;: &quot;framed-panel&quot;}</div>
+<div class='pair'>
+<figure><a href='crops/04-work-in-motion-context.png'><img src='crops/04-work-in-motion-r1-ref.png' alt=''></a><figcaption>design reference — 04-work-in-motion (click for full frame)</figcaption></figure>
+<figure><div class='asset-preview'><img src='../images/design/work-event-campaign.png' alt=''></div><figcaption>shipped asset on transparency checkerboard — <a href='https://github.com/Landing-Pages-Websites/bdc-promotions/blob/main/public/images/design/work-event-campaign.png'><code>work-event-campaign.png</code></a> (replace in git)</figcaption></figure>
+<figure><div class='intended-preview' style='background:#020716'><img src='../images/design/work-event-campaign.png' alt=''></div><figcaption>asset on intended background — #020716</figcaption></figure>
+</div></div>
+<div class='card' id='04-work-in-motion-r2'>
+<b>04-work-in-motion-r2</b><span class='chip extract'>extract</span>
+<div class='muted'>luxury video storyboard source plate</div>
+<div class='muted'>presentation: {&quot;alpha_required&quot;: false, &quot;crop_contract&quot;: &quot;Keep every scene row and metadata note visible.&quot;, &quot;intended_background&quot;: &quot;#020716&quot;, &quot;minimum_visible_fraction&quot;: &quot;100%&quot;, &quot;mode&quot;: &quot;framed-panel&quot;}</div>
+<div class='pair'>
+<figure><a href='crops/04-work-in-motion-context.png'><img src='crops/04-work-in-motion-r2-ref.png' alt=''></a><figcaption>design reference — 04-work-in-motion (click for full frame)</figcaption></figure>
+<figure><div class='asset-preview'><img src='../images/design/work-luxury-storyboard.png' alt=''></div><figcaption>shipped asset on transparency checkerboard — <a href='https://github.com/Landing-Pages-Websites/bdc-promotions/blob/main/public/images/design/work-luxury-storyboard.png'><code>work-luxury-storyboard.png</code></a> (replace in git)</figcaption></figure>
+<figure><div class='intended-preview' style='background:#020716'><img src='../images/design/work-luxury-storyboard.png' alt=''></div><figcaption>asset on intended background — #020716</figcaption></figure>
+</div></div>
+<div class='card' id='04-work-in-motion-r3'>
+<b>04-work-in-motion-r3</b><span class='chip extract'>extract</span>
+<div class='muted'>inventory advertising source plate</div>
+<div class='muted'>presentation: {&quot;alpha_required&quot;: false, &quot;crop_contract&quot;: &quot;Keep phone and inventory carousel together.&quot;, &quot;intended_background&quot;: &quot;#020716&quot;, &quot;minimum_visible_fraction&quot;: &quot;100%&quot;, &quot;mode&quot;: &quot;framed-panel&quot;}</div>
+<div class='pair'>
+<figure><a href='crops/04-work-in-motion-context.png'><img src='crops/04-work-in-motion-r3-ref.png' alt=''></a><figcaption>design reference — 04-work-in-motion (click for full frame)</figcaption></figure>
+<figure><div class='asset-preview'><img src='../images/design/work-inventory-ad.png' alt=''></div><figcaption>shipped asset on transparency checkerboard — <a href='https://github.com/Landing-Pages-Websites/bdc-promotions/blob/main/public/images/design/work-inventory-ad.png'><code>work-inventory-ad.png</code></a> (replace in git)</figcaption></figure>
+<figure><div class='intended-preview' style='background:#020716'><img src='../images/design/work-inventory-ad.png' alt=''></div><figcaption>asset on intended background — #020716</figcaption></figure>
+</div></div>
+<div class='card' id='04-work-in-motion-r4'>
+<b>04-work-in-motion-r4</b><span class='chip extract'>extract</span>
+<div class='muted'>Google Vehicle Listing Ads source plate</div>
+<div class='muted'>presentation: {&quot;alpha_required&quot;: false, &quot;crop_contract&quot;: &quot;Keep complete search panel at honest source resolution.&quot;, &quot;intended_background&quot;: &quot;#020716&quot;, &quot;minimum_visible_fraction&quot;: &quot;100%&quot;, &quot;mode&quot;: &quot;framed-panel&quot;}</div>
+<div class='pair'>
+<figure><a href='crops/04-work-in-motion-context.png'><img src='crops/04-work-in-motion-r4-ref.png' alt=''></a><figcaption>design reference — 04-work-in-motion (click for full frame)</figcaption></figure>
+<figure><div class='asset-preview'><img src='../images/design/work-google-vla.png' alt=''></div><figcaption>shipped asset on transparency checkerboard — <a href='https://github.com/Landing-Pages-Websites/bdc-promotions/blob/main/public/images/design/work-google-vla.png'><code>work-google-vla.png</code></a> (replace in git)</figcaption></figure>
+<figure><div class='intended-preview' style='background:#020716'><img src='../images/design/work-google-vla.png' alt=''></div><figcaption>asset on intended background — #020716</figcaption></figure>
+</div></div>
+<div class='card' id='05-proof-with-standards-r0'>
+<b>05-proof-with-standards-r0</b><span class='chip code'>code</span>
+<div class='muted'>quiet centered editorial statement, teal method band, cobalt separators, and process link</div>
+<div class='muted'>Use a warm-paper CSS field with centered Cormorant statement, generous quiet space, one solid teal three-column standards band, thin cobalt vertical rules, and live Inter copy.</div>
+<div class='pair'>
+<figure><a href='crops/05-proof-with-standards-context.png'><img src='crops/05-proof-with-standards-r0-ref.png' alt=''></a><figcaption>design reference — 05-proof-with-standards (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Use a warm-paper CSS field with centered Cormorant statement, generous quiet space, one solid teal three-column standards band, thin cobalt vertical rules, and live Inter copy.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<div class='card' id='06-supported-options-r0'>
+<b>06-supported-options-r0</b><span class='chip code'>code</span>
+<div class='muted'>transparent editorial price ledger with navy investment cells, teal term cells, cobalt CTA, and paper description cells</div>
+<div class='muted'>Build an accessible CSS grid ledger with live text, horizontal ink rules, solid navy investment column, solid teal term column, cobalt action block, and stacked labeled rows on mobile.</div>
+<div class='pair'>
+<figure><a href='crops/06-supported-options-context.png'><img src='crops/06-supported-options-r0-ref.png' alt=''></a><figcaption>design reference — 06-supported-options (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Build an accessible CSS grid ledger with live text, horizontal ink rules, solid navy investment column, solid teal term column, cobalt action block, and stacked labeled rows on mobile.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<div class='card' id='07-clear-the-lane-r0'>
+<b>07-clear-the-lane-r0</b><span class='chip code'>code</span>
+<div class='muted'>three-column editorial close with serif statement, ruled FAQ sequence, navy commitment card, cobalt decision action, teal method iconography, and navy footer</div>
+<div class='muted'>Use a bespoke three-column CSS close, Cormorant statement, semantic details ledger, solid navy audit card, cobalt primary action, teal inline SVG utility icons, and a responsive paper-to-navy footer transition.</div>
+<div class='pair'>
+<figure><a href='crops/07-clear-the-lane-context.png'><img src='crops/07-clear-the-lane-r0-ref.png' alt=''></a><figcaption>design reference — 07-clear-the-lane (click for full frame)</figcaption></figure>
+<figure><div class='proto'><b>Planned code treatment</b><p>Use a bespoke three-column CSS close, Cormorant statement, semantic details ledger, solid navy audit card, cobalt primary action, teal inline SVG utility icons, and a responsive paper-to-navy footer transition.</p></div><figcaption>No raster file. Reject this verdict if simple CSS/SVG cannot preserve the reference-specific visual identity.</figcaption></figure>
+</div></div>
+<details><summary>NOTES.md — CSS/SVG techniques the build uses instead of images</summary><pre># Direction B decomposition notes
+
+- Build every field, rule, crop mark, folio number, index, margin note, price ledger, proof band, CTA, and FAQ in live HTML/CSS/inline SVG. Raster assets are only the customer-supplied portfolio artifacts.
+- Use Cormorant Garamond and Inter exactly per the typography contract. Keep sentence-case editorial headings and compact sans utility labels.
+- Color is semantic and load-bearing: cobalt marks decisions/motion, teal marks method/annotation, navy frames evidence/commitment, and warm paper carries clarity/trust. Do not flatten these roles into incidental accents.
+- `01-showroom-momentum` balances a large quiet serif headline against one full documented campaign plate. The complete plate stays visible inside its cobalt frame.
+- `02-operating-signal` is a compact paper index with alternating cobalt and teal folio numerals.
+- `03-growth-lane` keeps margin annotations distinct from the ordered live step ledger and the navy-framed source plate.
+- `04-work-in-motion` is a staggered documentary contact sheet. Preserve all four source artifacts whole, at deliberately varied scales, with live crop marks and provenance notes.
+- `05-proof-with-standards` keeps broad paper quiet space above one teal methods band. No generic cards.
+- `06-supported-options` is a typographic ledger, not cards. On mobile each row becomes a labeled mini-ledger while preserving service/investment/term/includes hierarchy.
+- `07-clear-the-lane` is a three-column commitment chapter: statement, FAQ sequence, and navy guided-audit card. Use real links and semantic FAQ disclosures.
+</pre></details>

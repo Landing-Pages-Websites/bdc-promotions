@@ -14,7 +14,7 @@ export default function HomePage(): ReactElement {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Image src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} priority sizes="150px" />
+        <Image src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} preload sizes="150px" />
         <p>Approved homepage directions · review branch</p>
       </header>
       <div className={styles.intro}>
