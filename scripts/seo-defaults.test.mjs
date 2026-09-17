@@ -22,6 +22,8 @@ async function loadMetadataRoute(path, replacements) {
 test("sitemap gives every registered prelaunch route a weekly crawl default", async () => {
   const siteRoutes = [{ path: "/", priority: 1 }, { path: "/services" }];
   const { default: sitemap } = await loadMetadataRoute(sitemapPath, {
+    'const REVIEW_ROUTES = ["/", "/variant-a", "/variant-b"];':
+      "const REVIEW_ROUTES = siteRoutes.map(({ path }) => path);",
     'import type { MetadataRoute } from "next";': "",
     'import { listPublishedPosts, publishedDate } from "@/lib/blog";':
       "const listPublishedPosts = () => []; const publishedDate = () => null;",
@@ -60,11 +62,17 @@ test("a post's lastModified comes from publishedDate, and is omitted when it has
   // the test agree with itself rather than with the loader.
   const posts = [{ slug: "dated" }, { slug: "no-usable-date" }];
   const { default: sitemap } = await loadMetadataRoute(sitemapPath, {
+    'const REVIEW_ROUTES = ["/", "/variant-a", "/variant-b"];': "const REVIEW_ROUTES = [];",
     'import type { MetadataRoute } from "next";': "",
     'import { listPublishedPosts, publishedDate } from "@/lib/blog";': `const listPublishedPosts = () => ${JSON.stringify(posts)};
        const publishedDate = (post) =>
          post.slug === "dated" ? new Date("2026-01-15T00:00:00.000Z") : null;`,
     'import { siteRoutes } from "@/lib/routes";': "const siteRoutes = [];",
+    '  return REVIEW_ROUTES.map((path) => ({':
+      '  return listPublishedPosts().map((post) => ({',
+    '    url: absoluteUrl(path),': '    url: absoluteUrl(`/blog/${post.slug}`),',
+    '    lastModified: new Date(),': '    lastModified: publishedDate(post) ?? undefined,',
+    '    priority: path === "/" ? 1 : DEFAULT_PRIORITY,': "",
     'import { absoluteUrl } from "@/lib/seo";': 'const absoluteUrl = (path) => `https://preview.example${path}`;',
   });
 

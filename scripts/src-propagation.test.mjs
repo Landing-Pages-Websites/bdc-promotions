@@ -32,7 +32,6 @@ import test from "node:test";
  * here; anything else still fails closed.
  */
 const EXEMPT_BECAUSE_THE_SUBSYSTEM_DOES_NOT_PROPAGATE = new Set([
-  "src/app/page.tsx",
   "src/app/llms.txt/route.ts",
   "src/components/home/ContactCard.tsx",
   "src/components/home/ContactSection.tsx",
