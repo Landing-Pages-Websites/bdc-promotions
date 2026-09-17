@@ -1,0 +1,69 @@
+{
+  "variant": "b",
+  "route": "/variant-b",
+  "sections": [
+    {
+      "frame_id": "01-showroom-momentum",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "approved hero copy and audit/call actions",
+      "imagery_evidence": "customer-supplied hero campaign media with authoritative logo",
+      "composition_evidence": "asymmetric copy/media hero with framed source work",
+      "visual_treatment_evidence": "navy/blue/mint kinetic field",
+      "responsive_evidence": "single-column mobile hero with overlapping media preserved"
+    },
+    {
+      "frame_id": "02-operating-signal",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "approved four-part operating signal",
+      "imagery_evidence": "no raster imagery; CSS route and nodes",
+      "composition_evidence": "short ruled signal strip",
+      "visual_treatment_evidence": "condensed technical signal treatment",
+      "responsive_evidence": "two-column mobile proof list"
+    },
+    {
+      "frame_id": "03-growth-lane",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "approved five-step growth path",
+      "imagery_evidence": "section-owned repossession sale creative",
+      "composition_evidence": "horizontal operating lane with stepped route",
+      "visual_treatment_evidence": "cool-white chapter interruption",
+      "responsive_evidence": "vertical route and media plate on mobile"
+    },
+    {
+      "frame_id": "04-work-in-motion",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "approved work categories and range copy",
+      "imagery_evidence": "four section-owned supplied work assets",
+      "composition_evidence": "editorial media rail/contact sheet",
+      "visual_treatment_evidence": "dark evidence field with mint annotations",
+      "responsive_evidence": "single-column source plates with explicit image sizing"
+    },
+    {
+      "frame_id": "05-proof-with-standards",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "approved standards and automotive-specialist copy",
+      "imagery_evidence": "no fabricated proof image; geometric treatment only",
+      "composition_evidence": "quiet standards statement and three proof rules",
+      "visual_treatment_evidence": "restrained evidence/commitment chapter",
+      "responsive_evidence": "stacked proof rules and decorative field"
+    },
+    {
+      "frame_id": "06-supported-options",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "all four supported prices, terms, and inclusions",
+      "imagery_evidence": "no raster imagery",
+      "composition_evidence": "bespoke pricing selector/ledger",
+      "visual_treatment_evidence": "load-bearing blue or semantic editorial cells",
+      "responsive_evidence": "stacked labeled service rows"
+    },
+    {
+      "frame_id": "07-clear-the-lane",
+      "owner_source_file": "src/components/review/variant-b/DealerFieldJournal.tsx",
+      "content_evidence": "approved close, call actions, and four FAQs",
+      "imagery_evidence": "no raster imagery",
+      "composition_evidence": "two-column FAQ close / three-column closing folio",
+      "visual_treatment_evidence": "navy commitment and visible focus states",
+      "responsive_evidence": "stacked close, semantic details, 44px controls"
+    }
+  ]
+}

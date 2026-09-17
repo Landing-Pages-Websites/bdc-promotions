@@ -4,7 +4,6 @@ import Script from "next/script";
 import { Barlow_Condensed, Manrope } from "next/font/google";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { LeadAttribution } from "@/components/analytics/LeadAttribution";
-import { GomegaReviewBridge } from "@/components/analytics/GomegaReviewBridge";
 import { MegaSnippet } from "@/components/analytics/MegaSnippet";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { PrimaryRouteOnly } from "@/components/analytics/PrimaryRouteOnly";
@@ -36,21 +35,12 @@ export default function RootLayout({
       lang={siteConfig.locale}
       className={`${manrope.variable} ${barlowCondensed.variable} h-full antialiased`}
     >
-      <head>
-        {/* Primary-site review bridge — not loaded on the isolated LP (/lp). */}
-        <PrimaryRouteOnly>
-          <GomegaReviewBridge />
-        </PrimaryRouteOnly>
-        {/*
-          Cloudflare Turnstile (api.js?render=explicit) is loaded on demand by
-          TurnstileWidget itself, which injects the script exactly once (module
-          singleton + existing-tag guard) when a lead form mounts. We do NOT
-          preload it here: an eager <Script> is redundant with the widget's own
-          loader, and an afterInteractive/plain tag could race the widget into a
-          double-inject. No behavior change — the form still gates on a
-          Turnstile token before it can fire a conversion.
-        */}
-      </head>
+      <head
+        dangerouslySetInnerHTML={{
+          __html:
+            '<script src="https://app.gomega.ai/review-bridge/v7/review-bridge.js" integrity="sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ" crossorigin="anonymous" defer></script>',
+        }}
+      />
       <body className="min-h-full flex flex-col">
         <a href="#main-content" className="skip-link">
           Skip to main content

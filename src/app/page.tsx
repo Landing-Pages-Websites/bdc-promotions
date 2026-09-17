@@ -1,82 +1,39 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
-import { managedSitePageAttributesV1 } from "@landing-pages-websites/managed-site-contract";
+import Image from "next/image";
+import Link from "next/link";
+import styles from "./review-chooser.module.css";
 
-import {
-  LandingPage,
-  type LandingPageContent,
-} from "@/components/home/LandingPage";
-import { JsonLd } from "@/components/schema/JsonLd";
-import {
-  buildBusinessSchema,
-  buildFaqSchema,
-} from "@/components/schema/builders";
-import { managedHome } from "@/content/managed-site";
-import { buildMetadata } from "@/lib/seo";
-
-const { identity, metadata: seo } = managedHome.seo;
-
-export const metadata: Metadata = buildMetadata({
-  title: seo.title,
-  description: seo.description,
-  siteName: identity.displayName,
-  path: seo.canonical,
-  robots: {
-    index: seo.indexing.index,
-    follow: seo.indexing.follow,
-    noarchive: !seo.indexing.archive,
-    noimageindex: !seo.indexing.imageIndex,
-    "max-snippet": seo.indexing.maxSnippet,
-    "max-image-preview": seo.indexing.maxImagePreview,
-    "max-video-preview": seo.indexing.maxVideoPreview,
-  },
-});
-
-const businessSchema = buildBusinessSchema(identity);
-// The schema wants the words; the content module carries the words and the
-// identity of the cell they came from. Narrowed here rather than teaching the
-// schema builders what a field id is.
-const faqSchema = buildFaqSchema(
-  managedHome.faq.items.map((item) => ({
-    answer: item.answer.value,
-    question: item.question.value,
-  })),
-);
-
-const landingContent: LandingPageContent = {
-  hero: managedHome.hero,
-  values: managedHome.values,
-  services: managedHome.services,
-  focus: managedHome.focus,
-  process: managedHome.process,
-  insights: {
-    eyebrow: managedHome.insights.eyebrow,
-    heading: managedHome.insights.heading,
-    fieldId: managedHome.insights.fieldId,
-    items: managedHome.insights.items.map((item) => ({
-      itemId: item.itemId,
-      title: item.question,
-      description: item.answer,
-    })),
-  },
-  contact: managedHome.contact,
-};
-
-const brandIdentity = {
-  displayName: managedHome.seo.identity.displayName,
-  description: managedHome.seo.identity.description,
-  telephone: managedHome.seo.identity.telephone,
+export const metadata: Metadata = {
+  title: "BDC Promotions Homepage Review",
+  description: "Choose between the two approved BDC Promotions homepage directions.",
+  robots: { index: false, follow: false },
 };
 
 export default function HomePage(): ReactElement {
   return (
-    <div
-      className="contents"
-      {...managedSitePageAttributesV1(managedHome.pageId)}
-    >
-      <JsonLd data={businessSchema} />
-      <JsonLd data={faqSchema} />
-      <LandingPage content={landingContent} identity={brandIdentity} />
-    </div>
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <Image src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} priority sizes="150px" />
+        <p>Approved homepage directions · review branch</p>
+      </header>
+      <div className={styles.intro}>
+        <p className={styles.kicker}>Choose a direction</p>
+        <h1>Two distinct paths to the showroom.</h1>
+        <p>Review each complete responsive homepage. Both directions use the same approved content and customer-supplied work.</p>
+      </div>
+      <section className={styles.grid} aria-label="Homepage directions">
+        <Link className={`${styles.card} ${styles.signal}`} href="/variant-a">
+          <span>Direction A</span><strong>Signal Lane</strong>
+          <p>Kinetic, technical, proof-forward. A continuous electric route moves from creative to appointment.</p>
+          <b>View Signal Lane <i aria-hidden="true">→</i></b>
+        </Link>
+        <Link className={`${styles.card} ${styles.journal}`} href="/variant-b">
+          <span>Direction B</span><strong>Dealer Field Journal</strong>
+          <p>Editorial, documentary, assured. A warm folio organizes decisions, method, evidence, and commitment.</p>
+          <b>View Dealer Field Journal <i aria-hidden="true">→</i></b>
+        </Link>
+      </section>
+    </main>
   );
 }
