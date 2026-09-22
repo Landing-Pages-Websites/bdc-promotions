@@ -155,7 +155,7 @@ function renderBlock(block: Block, key: number): ReactElement {
       return (
         <p
           key={key}
-          className="mt-4 leading-relaxed text-neutral-700 first:mt-0 dark:text-neutral-300"
+          className="mt-4 leading-relaxed text-neutral-300 first:mt-0"
         >
           {renderInline(block.inline)}
         </p>
