@@ -6,7 +6,12 @@ import MarkdownBody from "@/components/blog/MarkdownBody";
 import BlogImage from "@/components/blog/BlogImage";
 import { JsonLd } from "@/components/schema/JsonLd";
 import { buildArticleSchema } from "@/components/schema/builders";
-import { getPublishedPost, listPublishedPosts, publishedDate } from "@/lib/blog";
+import {
+  formatPublishedDate,
+  getPublishedPost,
+  listPublishedPosts,
+  publishedDate,
+} from "@/lib/blog";
 import { buildMetadata } from "@/lib/seo";
 
 interface ArticleParams {
@@ -75,7 +80,7 @@ export default async function BlogArticlePage({
           <>
             {" · "}
             {publishedIso ? (
-              <time dateTime={publishedIso}>{post.date}</time>
+              <time dateTime={publishedIso}>{formatPublishedDate(post)}</time>
             ) : (
               post.date
             )}
