@@ -29,7 +29,11 @@ function renderInline(nodes: InlineNode[]): ReactNode[] {
         );
       case "link":
         return (
-          <a key={index} href={node.href} className="underline">
+          <a
+            key={index}
+            href={node.href}
+            className="text-cyan-300 underline decoration-cyan-300/70 underline-offset-2 hover:text-cyan-200"
+          >
             {node.text}
           </a>
         );
@@ -92,7 +96,7 @@ function renderBlock(block: Block, key: number): ReactElement {
       return (
         <blockquote
           key={key}
-          className="mt-6 border-l-4 border-neutral-300 pl-4 italic text-neutral-600 dark:border-neutral-600 dark:text-neutral-400"
+          className="mt-6 border-l-4 border-neutral-600 pl-4 italic text-neutral-300"
         >
           {block.lines.map((line, index) => (
             <p key={index} className={index === 0 ? "" : "mt-3"}>
@@ -166,5 +170,5 @@ function renderBlock(block: Block, key: number): ReactElement {
 export default function MarkdownBody({
   source,
 }: MarkdownBodyProps): ReactElement {
-  return <div>{parseBlocks(source).map(renderBlock)}</div>;
+  return <div className="text-neutral-300">{parseBlocks(source).map(renderBlock)}</div>;
 }
