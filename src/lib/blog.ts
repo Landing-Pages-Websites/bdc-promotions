@@ -127,6 +127,17 @@ export function publishedDate(post: BlogPost): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+export function formatPublishedDate(post: BlogPost): string | null {
+  const date = publishedDate(post);
+  if (!date) return post.date;
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 function toPost(filename: string, raw: string): BlogPost | null {
   const { data, body } = parseFrontmatter(raw);
   // Eligibility is asked once, of the shared rule, so the prebuild gate judges

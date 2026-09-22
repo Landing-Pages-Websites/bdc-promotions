@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactElement } from "react";
-import { publishedDate, type BlogPost } from "@/lib/blog";
+import { formatPublishedDate, publishedDate, type BlogPost } from "@/lib/blog";
 
 interface PostCardProps {
   post: BlogPost;
@@ -16,7 +16,7 @@ export default function PostCard({ post }: PostCardProps): ReactElement {
     <article className="border-b border-neutral-200 py-8 last:border-b-0">
       {post.date && publishedIso ? (
         <time dateTime={publishedIso} className={dateClassName}>
-          {post.date}
+          {formatPublishedDate(post)}
         </time>
       ) : null}
       {post.date && !publishedIso ? (
