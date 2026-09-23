@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BDC Promotions — Automotive Marketing</title>
+<meta name="description" content="BDC Promotions combines automotive ad creative, campaign optimization, BDC follow-up, and AI-supported nurturing to create more qualified sales opportunities.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+/* ================= Tokens ================= */
+:root{
+  /* light grounds: the page runs on warm paper; sections separate by ground, not hairlines */
+  --paper:#FAF9F7; --sand:#F2EFE9; --card:#FFFFFF;
+  --line:#E7E3DC; --line-2:#D6D0C6;
+  --ink:#171614; --ink-2:#5E5A53; --ink-3:#6B665E;
+  /* night: hero, the work band, the connected plan, the close, the footer */
+  --night:#0E0F12; --n1:#16181C; --n2:#1D2025;
+  --nline:rgba(242,238,230,.1); --nline-2:rgba(242,238,230,.2);
+  --ntx:#F3F0EA; --ntx-2:#B7B2A9; --ntx-3:#9A958D;
+  /* one accent: showroom amber */
+  --amber:#F4A83A; --amber-ink:#17100A; --amber-tx:#955509; --red:#C8373E;
+  --f:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* type ramp: 7 sizes */
+  --t-1:72px; --t-2:48px; --t-3:28px; --t-4:20px; --t-5:17px; --t-6:15px; --t-7:13px;
+  /* spacing (4/8 base). Section padding by weight: tight pair 64, default 96, loud 128 */
+  --s-tight:64px; --s:96px; --s-loud:128px; --head-gap:48px;
+  --container:1280px; --gutter:40px; --col-gap:24px;
+  --r-xl:32px; --r-lg:24px; --r-md:16px; --r-sm:12px;
+  --head-h:80px;
+  /* the one shadow recipe, creatives only */
+  --shadow-work:0 1px 2px rgb(0 0 0/.3),0 12px 32px -12px rgb(0 0 0/.5);
+}
+@media (min-width:1800px){ :root{ --container:1440px; --t-1:84px; --t-2:56px; --t-3:30px; --t-4:22px; --t-5:18px; --t-6:16px; --t-7:14px; --s-tight:72px; --s:112px; --s-loud:160px; --head-gap:64px; } }
+@media (max-width:1200px){ :root{ --t-1:64px; } }
+@media (max-width:1024px){ :root{ --t-1:56px; --t-2:40px; --s-tight:56px; --s:80px; --s-loud:96px; --head-gap:48px; --gutter:32px; } }
+@media (max-width:720px){ :root{ --t-1:40px; --t-2:32px; --t-3:24px; --t-4:17px; --t-5:16px; --s-tight:32px; --s:48px; --s-loud:56px; --head-gap:28px; --gutter:20px; --col-gap:16px; --head-h:64px; } }
+@media (max-width:360px){ :root{ --gutter:16px; --t-1:36px; --t-2:29px; } }
+
+/* ================= Base ================= */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--head-h) + 16px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);font-size:var(--t-5);line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit}
+h1,h2,h3,h4,p,ul,ol,figure,dl,dd,dt{margin:0}
+ul,ol{padding:0;list-style:none}
+p{text-wrap:pretty}
+:focus-visible{outline:2px solid var(--amber-tx);outline-offset:3px;border-radius:8px}
+.night :focus-visible,.hero :focus-visible,.site-head :focus-visible,.foot :focus-visible{outline-color:var(--amber)}
+.wrap{width:min(100% - 2*var(--gutter), var(--container));margin-inline:auto}
+.sr-only{font:inherit;position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:16px;top:-80px;z-index:100;background:var(--amber);color:var(--amber-ink);padding:12px 16px;border-radius:var(--r-sm);font-weight:500;text-decoration:none}
+.skip:focus{top:16px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* ================= Type ================= */
+.h1{font-size:var(--t-1);line-height:1.02;letter-spacing:-.036em;font-weight:500;text-wrap:balance}
+.h2{font-size:var(--t-2);line-height:1.06;letter-spacing:-.032em;font-weight:500;text-wrap:balance}
+.h3{font-size:var(--t-3);line-height:1.18;letter-spacing:-.022em;font-weight:500;text-wrap:balance}
+.h4{font-size:var(--t-4);line-height:1.3;letter-spacing:-.014em;font-weight:500}
+.lede{font-size:var(--t-4);line-height:1.55;color:var(--ink-2);letter-spacing:-.006em}
+.body{font-size:var(--t-5);line-height:1.62;color:var(--ink-2)}
+.small{font-size:var(--t-6);line-height:1.55;color:var(--ink-2)}
+/* labels: Geist 500 13 caps +.06em, led by the amber signal tick (the page's one recurring mark) */
+.label{display:inline-flex;align-items:center;gap:10px;font-size:var(--t-7);font-weight:500;letter-spacing:.06em;text-transform:uppercase;line-height:1.3;color:var(--ink-2)}
+.label::before{content:"";flex:none;width:16px;height:2px;border-radius:2px;background:var(--amber)}
+.label.plain::before{display:none}
+.num{font-size:var(--t-6);font-weight:500;font-feature-settings:"tnum";letter-spacing:0;color:var(--amber-tx);line-height:1.4}
+.accent{color:var(--amber)}
+@media (min-width:721px){ .br{display:block} }
+.night,.hero{color:var(--ntx)}
+.night .lede,.night .body,.night .small{color:var(--ntx-2)}
+.night .label{color:var(--ntx-2)}
+.night .num{color:var(--amber)}
+
+/* ================= Controls ================= */
+.actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border-radius:var(--r-sm);font:500 var(--t-5)/1.2 var(--f);letter-spacing:-.01em;text-decoration:none;text-align:center;transition:background-color .2s,border-color .2s,color .2s}
+.btn-amber{background:var(--amber);color:var(--amber-ink)}
+.btn-amber:hover{background:#FFB852}
+.btn-line{border:1px solid var(--line-2);color:var(--ink);background:var(--card)}
+.btn-line:hover{border-color:#A9A298}
+.night .btn-line,.hero .btn-line{border-color:rgba(242,238,230,.32);color:var(--ntx);background:transparent}
+.night .btn-line:hover,.hero .btn-line:hover{border-color:rgba(242,238,230,.6)}
+.btn .arr{transition:transform .2s}
+.btn:hover .arr{transform:translateX(3px)}
+.link{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--ink);text-decoration:none;font-weight:500}
+.link span{color:var(--amber-tx);transition:transform .2s}
+.link:hover span{transform:translateX(3px)}
+.night .link{color:var(--ntx)} .night .link span{color:var(--amber)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg)}
+.tag{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:rgba(8,9,11,.88);border:1px solid rgba(242,238,230,.16);font-size:var(--t-7);font-weight:500;color:#E4DFD6;white-space:nowrap}
+
+/* ================= Header ================= */
+.site-head{position:fixed;inset:0 0 auto;z-index:50;background:var(--night);border-bottom:1px solid var(--nline);color:var(--ntx)}
+.head-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:var(--head-h);gap:24px}
+.brand{display:inline-flex;align-items:center;min-height:44px;justify-self:start}
+.brand img{width:136px}
+.nav{display:flex;gap:4px}
+.nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:10px;font-size:var(--t-6);color:var(--ntx-2);text-decoration:none;transition:color .2s,background-color .2s}
+.nav a:hover{color:var(--ntx);background:rgba(242,238,230,.06)}
+.head-cta{display:flex;align-items:center;gap:8px;justify-self:end}
+.tel{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;font-size:var(--t-6);color:var(--ntx);text-decoration:none;font-feature-settings:"tnum"}
+.tel svg{color:var(--amber)}
+.head-cta .btn{min-height:44px;padding:0 18px;font-size:var(--t-6)}
+.menu{display:none;position:relative;justify-self:end}
+.menu summary{list-style:none;display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;border:1px solid var(--nline-2);border-radius:var(--r-sm);font-size:var(--t-6);cursor:pointer}
+.menu summary::-webkit-details-marker{display:none}
+.menu summary i{display:block;width:14px;height:1.5px;background:currentColor;box-shadow:0 5px 0 currentColor,0 -5px 0 currentColor}
+.menu nav{position:absolute;right:0;top:calc(100% + 10px);width:240px;padding:8px;border-radius:var(--r-md);background:var(--n2);border:1px solid var(--nline-2);display:grid}
+.menu nav a{display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:10px;text-decoration:none;color:var(--ntx)}
+.menu nav a:hover{background:rgba(242,238,230,.06)}
+
+/* ================= Sections ================= */
+main{display:block}
+.sec{padding-block:var(--s)}
+.sand{background:var(--sand)}
+.night{background:var(--night)}
+/* related pairs share a ground and sit 64 apart */
+.pair-a{padding-bottom:0}
+.pair-b{padding-top:var(--s-tight)}
+.head{max-width:820px;margin-bottom:var(--head-gap)}
+.head.wide{max-width:1120px}
+.head .h2{margin-top:18px}
+.head .lede{margin-top:20px;max-width:640px}
+.head.center{margin-inline:auto;text-align:center}
+.head-split{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap);row-gap:20px;align-items:end;margin-bottom:var(--head-gap)}
+.head-split > :first-child{grid-column:1 / span 6}
+.head-split > :last-child{grid-column:7 / -1}
+.head-split .h2{margin-top:18px}
+.head-split .lede,.head-split .body{max-width:560px}
+.head-split .link{margin-top:12px}
+.grid12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap)}
+
+/* ================= 1 · Hero ================= */
+.hero{position:relative;min-height:clamp(760px,100svh,960px);display:flex;flex-direction:column;justify-content:flex-end;padding-top:var(--head-h);overflow:hidden;background:#07080A;isolation:isolate}
+.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:62% 46%;z-index:-2}
+.hero-scrim{position:absolute;inset:0;z-index:-1;background:
+  linear-gradient(90deg,rgba(8,9,11,.94) 0%,rgba(8,9,11,.86) 30%,rgba(8,9,11,.55) 50%,rgba(8,9,11,.08) 70%,rgba(8,9,11,0) 82%),
+  linear-gradient(180deg,rgba(8,9,11,.5) 0%,rgba(8,9,11,0) 26%,rgba(8,9,11,0) 56%,rgba(8,9,11,.92) 100%)}
+.hero-inner{padding-block:48px 56px}
+.hero .label{color:#D4CFC6}
+.hero .h1{max-width:11.6em;margin-top:22px}
+.hero .lede{max-width:600px;margin-top:26px;color:#CFCAC1}
+.hero .actions{margin-top:36px}
+.hero .offer{margin-top:18px;font-size:var(--t-6);color:#CFCAC1}
+.hero-tag{position:absolute;top:calc(var(--head-h) + 20px);right:max(var(--gutter),calc((100% - var(--container))/2))}
+.hero-rail{border-top:1px solid rgba(242,238,230,.16);padding-block:28px 34px}
+.pillars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.pillars li{display:grid;align-content:start;gap:6px;padding-inline:24px}
+.pillars li:first-child{padding-left:0}
+.pillars li + li{border-left:1px solid rgba(242,238,230,.14)}
+.pillars b{font-size:var(--t-5);font-weight:500;color:var(--ntx);letter-spacing:-.01em}
+.pillars span{font-size:var(--t-6);line-height:1.5;color:#BDB8AF}
+@media (min-width:1800px){ .hero{min-height:clamp(760px,100svh,1080px)} .hero .lede{max-width:640px} }
+/* short laptop screens (1280×800): keep the pillar rail inside the fold */
+@media (min-width:721px) and (max-height:820px){ .hero{min-height:clamp(700px,100svh,960px)} .hero-inner{padding-block:24px 36px} .hero .h1{margin-top:18px} .hero .lede{margin-top:20px} .hero .actions{margin-top:28px} .hero-rail{padding-block:22px 26px} }
+
+/* ================= 2 · Positioning ================= */
+.pos .label{margin-bottom:28px}
+.pos-h{grid-column:1 / span 11;font-size:var(--t-2);line-height:1.12;letter-spacing:-.03em;font-weight:500;color:var(--ink);text-wrap:balance}
+.pos-h .dim{color:#8A857D}
+.pos-foot{grid-column:1 / -1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap);align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
+.proof3{grid-column:1 / span 9;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:var(--col-gap)}
+.proof3 li{display:flex;align-items:center;gap:12px;font-size:var(--t-5);font-weight:500;letter-spacing:-.01em}
+.proof3 svg{flex:none;color:var(--amber-tx)}
+.pos-foot .link{grid-column:10 / -1;justify-self:end}
+
+/* ================= 3 · The gap (funnel) ================= */
+.gap .head{margin-bottom:48px}
+.funnel{--fh:220px;max-width:1200px;margin-inline:auto}
+.fn-caps,.fn-row{display:grid;grid-template-columns:minmax(0,1fr) var(--fh) var(--fh) minmax(0,1fr)}
+.fn-caps{padding-bottom:28px;font-size:var(--t-7);font-weight:500;letter-spacing:.06em;text-transform:uppercase;line-height:1.3}
+.fn-caps .l{grid-column:1 / 3;text-align:right;padding-right:28px;color:var(--ink-2)}
+.fn-caps .r{grid-column:3 / 5;padding-left:28px;color:var(--amber-tx)}
+.fn-rows{position:relative;display:grid;gap:8px}
+.fn-row{height:88px;align-items:center}
+.fn-b{position:relative;height:100%}
+.fn-b i{position:absolute;inset:0}
+.fn-b.l i{background:var(--g);clip-path:polygon(var(--t) 0,100% 0,100% 100%,var(--b) 100%)}
+.fn-b.r i{background:var(--a);clip-path:polygon(0 0,calc(100% - var(--t)) 0,calc(100% - var(--b)) 100%,0 100%)}
+.r1{--t:0%;--b:20%;--m:10%;--g:#DCD7CF;--a:#F9D6A2}
+.r2{--t:20%;--b:40%;--m:30%;--g:#CFC9C0;--a:#F7C173}
+.r3{--t:40%;--b:60%;--m:50%;--g:#C2BBB1;--a:#F4A83A}
+/* leaders: label → 48px rule → band edge */
+.fn-b.l::before,.fn-b.r::before{content:"";position:absolute;top:50%;width:var(--m);height:1px;background:var(--line-2)}
+.fn-b.l::before{left:0} .fn-b.r::before{right:0}
+/* what leaks: two drops falling off each grey band */
+.fn-b.l::after{content:"";position:absolute;left:calc(var(--m) - 20px);top:74%;width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:-10px 12px 0 -1px var(--g)}
+.fn-l,.fn-r{display:flex;align-items:center;gap:14px;font-size:var(--t-6);line-height:1.35}
+.fn-l{justify-content:flex-end;text-align:right;color:var(--ink-3)}
+.fn-l s{text-decoration-color:var(--red);text-decoration-thickness:1.5px}
+.fn-r{color:var(--ink);font-weight:500}
+.fn-l::after,.fn-r::before{content:"";flex:0 0 48px;height:1px;background:var(--line-2)}
+.fn-axis{position:absolute;left:50%;top:-20px;bottom:-30px;width:2px;margin-left:-1px;background:var(--ink)}
+.fn-axis::after{content:"";position:absolute;left:50%;bottom:-16px;width:12px;height:18px;margin-left:-6px;border-radius:4px;background:var(--ink)}
+.fn-notes{display:grid;grid-template-columns:1fr 1fr;column-gap:56px;max-width:1120px;margin:56px auto 0}
+.fn-notes p{max-width:440px}
+.fn-notes p:first-child{justify-self:end;text-align:right}
+.gap .actions{justify-content:center;margin-top:40px}
+
+/* ================= 4–5 · The work (night band) ================= */
+.work-a{padding-top:var(--s-loud)}
+.work-b{padding-bottom:var(--s-loud)}
+.plate{border-radius:var(--r-lg);background:var(--n1);border:1px solid var(--nline)}
+/* the feed frame: 1px chrome drawn around each portrait ad so it reads as it runs */
+.post{width:min(100%,var(--w,400px));background:#1A1C21;border:1px solid rgba(242,238,230,.14);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-work)}
+.post img{width:100%}
+.post-top,.post-cta{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.post-top .av{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid rgba(242,238,230,.26);background:#24272D}
+.post-top .who{flex:1;display:grid;gap:6px}
+.sk{display:block;height:8px;width:96px;border-radius:4px;background:rgba(242,238,230,.16)}
+.sk.s2{width:64px;background:rgba(242,238,230,.1)}
+.post-top .sp{font-size:var(--t-7);line-height:1;color:var(--ntx-3)}
+.post-top svg{color:var(--ntx-3)}
+.post-cta{justify-content:space-between;border-top:1px solid rgba(242,238,230,.1);background:#1E2126}
+.post-cta .who{display:grid;gap:6px}
+.post-cta .pill{flex:none;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:8px;border:1px solid rgba(242,238,230,.24);font-size:var(--t-7);font-weight:500;color:var(--ntx)}
+
+.feat{grid-template-rows:1fr auto auto 1fr}
+.feat-plate{grid-column:1 / span 6;grid-row:1 / 5;display:grid;place-items:center;padding:36px 40px}
+.feat-head{grid-column:8 / -1;grid-row:2}
+.feat-head .h2{margin-top:18px}
+.case{grid-column:8 / -1;grid-row:3;margin-top:36px;padding-top:32px;border-top:1px solid var(--nline-2)}
+.case .h3{margin-bottom:14px}
+.case .body{max-width:460px}
+.spec{margin-top:28px;border-top:1px solid var(--nline)}
+.spec div{display:grid;grid-template-columns:112px 1fr;gap:16px;padding-block:14px;border-bottom:1px solid var(--nline);align-items:baseline}
+.spec dt{font-size:var(--t-7);font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ntx-3)}
+.spec dd{font-size:var(--t-6);color:var(--ntx)}
+.case .link{margin-top:20px}
+
+.tray{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--col-gap)}
+.tile .plate{display:grid;place-items:center;padding:36px 32px;height:100%}
+.tile{display:grid;grid-template-rows:1fr auto}
+.cap{display:grid;gap:2px;padding:18px 0 0}
+.cap b{font-size:var(--t-5);font-weight:500;letter-spacing:-.01em}
+.cap span{font-size:var(--t-6);color:var(--ntx-2)}
+.duo{margin-top:var(--col-gap)}
+.duo .plate{display:grid;grid-template-columns:1fr 1fr;gap:40px;padding:36px 40px;align-items:end}
+.duo .plate > figure{justify-self:center;width:min(100%,var(--w))}
+.duo img{width:100%;border-radius:8px;box-shadow:var(--shadow-work)}
+.duo .cap{padding-top:16px}
+
+/* ================= 6 · Services ================= */
+.svc{overflow:hidden}
+.svc-lead{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--col-gap);padding:8px}
+.svc-text{align-self:center;padding:40px 32px 40px 40px}
+.svc-text .h3{margin-top:14px}
+.svc-text .body{margin-top:14px;max-width:480px}
+.svc-text .actions{margin-top:32px}
+.svc-fig{position:relative;justify-self:start;width:min(100%,620px)}
+.svc-fig img{width:100%;border-radius:var(--r-md)}
+.svc-fig .tag{position:absolute;left:14px;bottom:14px}
+.svc-rows li{display:grid;grid-template-columns:64px minmax(0,1fr) calc(50% - 12px);column-gap:var(--col-gap);align-items:baseline;min-height:72px;padding:20px 48px;border-top:1px solid var(--line)}
+.svc-rows li:first-child{margin-top:8px}
+.svc-rows .h4{min-height:1lh}
+.svc-rows .body{max-width:600px}
+
+/* ================= 7 · Path ================= */
+.path{padding:48px 48px 20px}
+.steps{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:32px}
+.steps::before,.steps::after{content:"";position:absolute;top:6px;height:2px;border-radius:2px}
+.steps::before{left:0;right:calc((100% - 128px) / 5 - 14px);background:var(--line-2)}
+/* only the last segment lights: optimization → nurture is grey, nurture → appointment is amber */
+.steps::after{left:calc(3 * (100% + 32px) / 5);width:calc((100% + 32px) / 5 + 2px);background:var(--amber)}
+.node{position:relative;z-index:1;display:block;width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid #A9A298}
+.step:nth-child(4) .node{border-color:var(--amber)}
+.step:last-child .node{background:var(--amber);border-color:var(--amber)}
+.step .num{display:block;margin-top:28px}
+.step .h4{margin-top:6px}
+.step p{margin-top:10px}
+.bracket{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:32px;margin-top:24px}
+.bracket a{grid-column:4 / span 2;display:grid;justify-items:center;text-decoration:none;color:var(--ink);font-size:var(--t-6);font-weight:500}
+.bracket a::before{content:"";justify-self:stretch;height:12px;border:1px solid var(--line-2);border-top:0;border-radius:0 0 8px 8px}
+.bracket span{display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.bracket span i{font-style:normal;color:var(--amber-tx)}
+
+/* ================= 8 · Follow-up diagram ================= */
+.flow{padding:48px}
+.fd{display:grid;grid-template-columns:200px minmax(56px,1fr) 300px minmax(56px,1fr) 280px;grid-template-rows:auto 1fr 1fr;align-items:center}
+.fd-hd{grid-column:3;grid-row:1;display:grid;justify-items:center;gap:2px;padding-bottom:18px;text-align:center}
+.fd-hd b{font-size:var(--t-5);font-weight:500}
+.fd-hd span{font-size:var(--t-6);color:var(--ink-2)}
+.fd-hd::after{content:"";justify-self:stretch;height:10px;margin-top:12px;border:1px solid var(--line-2);border-bottom:0;border-radius:8px 8px 0 0}
+.fd-a{grid-column:1;grid-row:2 / 4}
+.fd-b1{grid-column:3;grid-row:2;margin-bottom:8px}
+.fd-b2{grid-column:3;grid-row:3;margin-top:8px}
+.fd-z{grid-column:5;grid-row:2 / 4}
+.fd svg.c{width:100%;height:100%;align-self:stretch;overflow:visible}
+.fd .c1{grid-column:2;grid-row:2 / 4}
+.fd .c2{grid-column:4;grid-row:2 / 4}
+.fd .v{display:none}
+.nd{position:relative;display:grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:2px;align-items:center;padding:18px 20px;border-radius:var(--r-md);background:var(--paper);border:1px solid var(--line)}
+.nd svg{grid-row:1 / span 2;color:var(--ink)}
+.nd b{font-size:var(--t-5);font-weight:500;letter-spacing:-.01em;line-height:1.3}
+.nd span{grid-column:2;font-size:var(--t-6);line-height:1.45;color:var(--ink-2)}
+.nd.in::before,.nd.out::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--card);border:1.5px solid #8B857C}
+.nd.in::before{left:-5px} .nd.out::after{right:-5px}
+.fd-z .nd{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+.fd-z .nd span{color:#3A2A12}
+.fd-z .nd svg{color:var(--amber-ink)}
+.fd-z .nd.in::before{border-color:var(--amber-tx)}
+
+/* ================= 9 · Pricing ================= */
+.price-grid{align-items:stretch;row-gap:var(--col-gap)}
+.plan-big{grid-column:1 / span 6;padding:48px;border-radius:var(--r-lg);display:flex;flex-direction:column}
+.plan-sum{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:20px}
+.chip{display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--nline-2);font-size:var(--t-7);font-weight:500;color:var(--ntx)}
+.plan-sum .plus{color:var(--amber);font-size:var(--t-4);line-height:1}
+.price{display:flex;align-items:baseline;gap:12px;margin-top:44px;font-feature-settings:"tnum"}
+.price b{font-size:var(--t-1);font-weight:400;letter-spacing:-.04em;line-height:1}
+.price span{font-size:var(--t-4);color:var(--ntx-2)}
+.term{margin-top:12px;font-size:var(--t-6);color:var(--ntx-2)}
+.plan-inc{margin-top:32px;padding-top:22px;border-top:1px solid var(--nline);display:grid;grid-template-columns:112px 1fr;gap:16px;align-items:baseline}
+.plan-inc dt{font-size:var(--t-7);font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ntx-3)}
+.plan-inc dd{font-size:var(--t-5);color:var(--ntx)}
+.plan-big .actions{margin-top:auto;padding-top:40px}
+.plan-list{grid-column:7 / -1;display:grid;grid-template-rows:repeat(3,1fr)}
+.plan-row{display:grid;grid-template-columns:1fr auto;gap:4px 20px;align-content:center;padding:28px 32px}
+.plan-row + .plan-row{border-top:1px solid var(--line)}
+.plan-row .row-price{font-size:var(--t-4);font-weight:500;letter-spacing:-.01em;font-feature-settings:"tnum";white-space:nowrap;text-align:right}
+.plan-row .t{grid-column:1 / -1;font-size:var(--t-6);color:var(--ink-3)}
+.plan-row .small{grid-column:1 / -1;margin-top:10px;color:var(--ink)}
+.assure{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--col-gap);margin-top:var(--col-gap)}
+.assure > div{padding:28px 32px;border-radius:var(--r-lg);border:1px dashed #C9C2B7}
+.assure .body{margin-top:8px}
+
+/* ================= 10 · Proof ================= */
+.proof{align-items:start}
+.proof-head{grid-column:1 / span 5}
+.proof-head .h2{margin-top:18px}
+.proof-head .lede{margin-top:24px}
+.proof-head .body{margin-top:16px}
+.proof-head .actions{margin-top:32px}
+.proof-side{grid-column:7 / -1}
+.ev li{display:grid;grid-template-columns:72px 1fr;padding-block:24px;border-top:1px solid var(--line)}
+.ev li:first-child{border-top:0;padding-top:4px}
+.ev .body{margin-top:6px}
+.rules{margin-top:12px;padding:28px 32px;border-radius:var(--r-lg);background:var(--sand)}
+.rules ul{margin-top:16px;display:grid;gap:10px}
+.rules li{display:grid;grid-template-columns:24px 1fr;gap:8px;font-size:var(--t-6);line-height:1.5;color:var(--ink)}
+.rules li::before{content:"";width:12px;height:2px;margin-top:.72em;background:var(--ink-3)}
+
+/* ================= 11 · Free audit ================= */
+.audit{align-items:start}
+.audit-fig{grid-column:1 / span 5}
+.audit-fig .ph{position:relative;width:min(100%,460px)}
+.audit-fig img{width:100%;border-radius:var(--r-md)}
+.audit-fig .tag{position:absolute;left:12px;bottom:12px}
+.audit-fig figcaption{padding-top:20px;max-width:460px}
+.audit-fig figcaption .body{margin-top:8px}
+.audit-steps{grid-column:7 / -1}
+.audit-steps ol{display:grid;gap:12px}
+.audit-steps li{display:grid;grid-template-columns:56px 1fr;padding:22px 28px}
+.audit-steps .body{margin-top:6px}
+.audit-steps .actions{margin-top:28px}
+
+/* ================= 12 · FAQ ================= */
+.faq{align-items:start}
+.faq-head{grid-column:1 / span 4;position:sticky;top:calc(var(--head-h) + 32px)}
+.faq-head .h2{margin-top:18px}
+.faq-head .body{margin-top:20px}
+.faq-head .actions{margin-top:28px;flex-direction:column;align-items:stretch}
+.faq-list{grid-column:6 / -1;display:grid;gap:10px}
+.faq-list details{border-radius:var(--r-md);background:var(--card);border:1px solid var(--line);transition:border-color .2s}
+.faq-list details[open]{border-color:#E9CFA6}
+.faq-list summary{display:flex;justify-content:space-between;align-items:center;gap:24px;min-height:64px;padding:12px 20px 12px 24px;cursor:pointer;list-style:none;font-size:var(--t-4);font-weight:500;letter-spacing:-.012em;line-height:1.35}
+.faq-list summary::-webkit-details-marker{display:none}
+.pm{flex:none;position:relative;width:32px;height:32px;border-radius:50%;background:var(--sand)}
+.pm::before,.pm::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:1.5px;background:var(--ink);transform:translate(-50%,-50%);transition:transform .25s}
+.pm::after{transform:translate(-50%,-50%) rotate(90deg)}
+details[open] .pm{background:#FBE9CE}
+details[open] .pm::after{transform:translate(-50%,-50%) rotate(0deg)}
+.faq-list .ans{padding:0 72px 26px 24px;max-width:760px}
+.faq-list .ans a{color:var(--ink);text-decoration-color:var(--amber-tx);text-underline-offset:3px}
+
+/* ================= 13 · Close ================= */
+.close{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap);align-items:center;padding:64px 72px;border-radius:var(--r-xl)}
+.close-copy{grid-column:1 / span 7}
+.close-copy .h2{margin-top:18px;max-width:13em}
+.close-copy .lede{margin-top:22px;max-width:540px}
+.close-copy .actions{margin-top:36px}
+.recap{grid-column:9 / -1;padding:32px;border-radius:var(--r-lg);background:var(--n2);border:1px solid var(--nline-2)}
+.recap > p{color:var(--ntx)}
+.recap ul{margin-top:18px;border-top:1px solid var(--nline)}
+.recap li{display:grid;grid-template-columns:20px 1fr;gap:14px;padding-block:14px;border-bottom:1px solid var(--nline);font-size:var(--t-6);color:var(--ntx)}
+.recap li:last-child{border-bottom:0;padding-bottom:0}
+.recap li svg{margin-top:3px;color:var(--amber)}
+
+/* ================= Footer ================= */
+.foot{padding-block:72px 36px;background:var(--night);color:var(--ntx)}
+.foot-top{align-items:start}
+.foot-brand{grid-column:1 / span 4}
+.foot-brand img{width:136px}
+.foot-brand p{margin-top:18px;color:var(--ntx-2)}
+.foot-col{grid-column:span 2}
+nav.foot-col{display:grid;grid-template-columns:auto auto;column-gap:28px;align-content:start;justify-content:start}
+nav.foot-col .label{grid-column:1 / -1}
+.foot-col.wide{grid-column:span 3}
+.foot-col .label{display:flex;margin-bottom:12px;color:var(--ntx-3)}
+.foot-col .label::before{display:none}
+.foot-col a{display:flex;align-items:center;min-height:44px;min-width:44px;color:var(--ntx-2);text-decoration:none;font-size:var(--t-6)}
+.foot-col a:hover{color:var(--ntx)}
+.foot-col .btn{color:var(--amber-ink);margin-top:6px;min-height:48px;display:inline-flex}
+.foot-legal{margin-top:48px;padding-top:24px;border-top:1px solid var(--nline);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 32px;align-items:center}
+.foot-legal nav{display:flex;flex-wrap:wrap;gap:4px 24px}
+.foot-legal a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;color:var(--ntx-2);text-decoration:none;font-size:var(--t-6)}
+.foot-legal a:hover{color:var(--ntx)}
+.foot .small{color:var(--ntx-2)}
+.foot-disc{margin-top:12px;max-width:760px}
+.mbar{display:none}
+.mbar .btn-line{border-color:rgba(242,238,230,.32);color:var(--ntx);background:transparent}
+
+/* ================= ≥1800 (the owner's 2560 screen) ================= */
+@media (min-width:1800px){
+  .feat-plate{justify-self:start;width:100%;max-width:640px}
+  .fd{grid-template-columns:220px minmax(64px,1fr) 320px minmax(64px,1fr) 300px}
+  .funnel{--fh:250px;max-width:1320px}
+  .fn-notes{max-width:1200px}
+}
+
+/* ================= ≤1100 ================= */
+@media (max-width:1100px){
+  .nav,.head-cta{display:none}
+  .head-row{grid-template-columns:auto 1fr auto}
+  .menu{display:block;grid-column:3}
+  .svc-text{padding:28px 20px 28px 28px}
+  .svc-rows li{padding:22px 32px;grid-template-columns:48px minmax(0,1fr) calc(50% - 12px)}
+  .funnel{--fh:200px}
+  .steps{grid-template-columns:1fr;gap:0}
+  .steps::before{top:6px;bottom:6px;left:6px;right:auto;width:2px;height:auto}
+  .steps::after{display:none}
+  .step{display:grid;grid-template-columns:14px 1fr;column-gap:28px;padding-bottom:32px}
+  .step:nth-child(4){background:linear-gradient(var(--amber),var(--amber)) 6px 7px / 2px 100% no-repeat}
+  .step:last-child{padding-bottom:0}
+  .step .node{grid-row:1 / span 3;margin-top:4px}
+  .step .num{margin-top:0}
+  .step .h4,.step p,.step .num{grid-column:2}
+  .step p{max-width:560px}
+  .path{padding:40px 40px 16px}
+  .bracket{display:block;margin-top:16px;padding-left:42px}
+  .bracket a{display:inline-flex}
+  .bracket a::before{display:none}
+  .fd{grid-template-columns:170px minmax(32px,1fr) 240px minmax(32px,1fr) 200px}
+  .flow{padding:40px 28px}
+}
+
+/* ================= ≤1024 (tablet landscape keeps the two-column compositions) ================= */
+@media (max-width:1024px){
+  .hero-scrim{background:linear-gradient(90deg,rgba(8,9,11,.93) 0%,rgba(8,9,11,.86) 50%,rgba(8,9,11,.66) 80%,rgba(8,9,11,.5) 100%),linear-gradient(180deg,rgba(8,9,11,.5) 0%,rgba(8,9,11,0) 26%,rgba(8,9,11,0) 56%,rgba(8,9,11,.92) 100%)}
+  .feat-plate{padding:32px 24px}
+  .w-lux{--w:330px!important}
+  .tray{gap:16px}
+  .tile .plate{padding:32px 20px}
+  .w-event{--w:330px!important} .w-whole{--w:352px!important}
+  .duo .plate{gap:24px;padding-inline:24px}
+  .plan-big{padding:40px 36px}
+  .plan-row{padding:24px 28px}
+  .faq-head{grid-column:1 / span 5}
+  .close{padding:64px 48px}
+  .close-copy,.recap{grid-column:1 / -1}
+  .recap{margin-top:40px;max-width:560px}
+  .foot-brand{grid-column:1 / -1;margin-bottom:24px}
+  .foot-col,.foot-col.wide{grid-column:span 4}
+}
+
+/* ================= ≤900 (tablet portrait: compositions stack) ================= */
+@media (max-width:900px){
+  .svc-lead{grid-template-columns:1fr}
+  .svc-fig{order:-1;justify-self:center}
+  .svc-text{padding:32px 32px 24px}
+  .head-split > :first-child,.head-split > :last-child{grid-column:1 / -1}
+  .pos-h{grid-column:1 / -1}
+  .proof3{grid-column:1 / -1;grid-template-columns:1fr;row-gap:12px}
+  .pos-foot .link{grid-column:1 / -1;justify-self:start;margin-top:16px}
+  .feat{grid-template-rows:none}
+  .feat-head,.feat-plate,.case{grid-column:1 / -1;grid-row:auto}
+  .feat-plate{margin-top:36px}
+  .case{margin-top:36px}
+  .plan-big,.plan-list{grid-column:1 / -1}
+  .proof-head,.proof-side{grid-column:1 / -1}
+  .proof-side{margin-top:40px}
+  .audit-fig,.audit-steps{grid-column:1 / -1}
+  .audit-steps{margin-top:40px}
+  .faq-head,.faq-list{grid-column:1 / -1;position:static}
+  .faq-head{max-width:640px}
+  .faq-head .actions{flex-direction:row}
+  .faq-list{margin-top:40px}
+}
+
+/* ================= ≤720 (mobile is designed, not collapsed) ================= */
+@media (max-width:720px){
+  body{padding-bottom:76px}
+  .lede{font-size:var(--t-5)}
+  .body{font-size:var(--t-6)}
+  .foot-cta{display:none}
+  .site-head{position:absolute}
+  .brand img{width:112px}
+  /* hero: photo band on top (its tag sits on it), copy on the dark ground below */
+  .hero{min-height:0;padding-top:var(--head-h);justify-content:flex-start}
+  .hero-img{position:relative;inset:auto;height:auto;aspect-ratio:4 / 3.2;object-position:74% 50%;z-index:0}
+  .hero-scrim{bottom:auto;height:calc(var(--head-h) + 80vw);background:linear-gradient(180deg,rgba(8,9,11,.35) 0%,rgba(8,9,11,0) 30%,rgba(8,9,11,0) 58%,rgba(8,9,11,1) 100%);z-index:1}
+  .hero-tag{top:calc(var(--head-h) + 12px);right:var(--gutter);z-index:3}
+  .hero-inner{position:relative;z-index:2;margin-top:-48px;padding-block:0 36px}
+  .hero .label{text-transform:none;letter-spacing:0}
+  .hero .h1{margin-top:16px}
+  .hero .lede{margin-top:18px;font-size:var(--t-5)}
+  .hero .actions{margin-top:28px}
+  .hero-rail{position:relative;z-index:2;padding-block:24px 32px}
+  .pillars{grid-template-columns:1fr}
+  .pillars li{grid-template-columns:76px 1fr;column-gap:12px;align-items:baseline;padding:12px 0;border-left:0!important;border-top:1px solid rgba(242,238,230,.1)}
+  .pillars li:first-child{border-top:0;padding-top:0}
+  .pillars li:last-child{padding-bottom:0}
+  /* the fixed bar carries Free audit + Call on mobile, so mid-page call duplicates drop */
+  .gap .btn-line,.svc-text .actions,.plan-big .btn-line,.faq-head .actions{display:none}
+  .actions{flex-direction:column;align-items:stretch}
+  .actions .btn{width:100%}
+  .pos-h{font-size:26px;line-height:1.22;letter-spacing:-.02em}
+  .pos-foot{margin-top:32px;padding-top:24px}
+  /* funnel: bands stay one shape; labels sit under each pair */
+  .funnel{--fh:auto}
+  .fn-caps{grid-template-columns:1fr 1fr;padding-bottom:20px}
+  .fn-caps .l{grid-column:1;padding-right:16px}
+  .fn-caps .r{grid-column:2;padding-left:16px}
+  .fn-rows{gap:14px}
+  .fn-row{grid-template-columns:1fr 1fr;grid-template-areas:"bl br" "tl tr";height:auto;row-gap:10px;align-items:start}
+  .fn-b{height:48px}
+  .fn-b.l{grid-area:bl} .fn-b.r{grid-area:br}
+  .fn-l{grid-area:tl;padding-right:16px} .fn-r{grid-area:tr;padding-left:16px}
+  .fn-l::after,.fn-r::before,.fn-b::before,.fn-b.l::after{display:none}
+  .fn-axis{bottom:-24px}
+  .fn-notes{grid-template-columns:1fr;row-gap:16px;margin-top:48px}
+  .fn-notes p:first-child{justify-self:start;text-align:left}
+  /* work: portrait posts swipe, the two landscape formats stack in one plate */
+  .feat-plate{padding:24px 16px;margin-top:28px}
+  .case{margin-top:28px;padding-top:24px}
+  .w-lux{--w:280px!important}
+  .spec div{grid-template-columns:96px 1fr}
+  .tray{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gutter);margin-inline:calc(var(--gutter) * -1);padding-inline:var(--gutter);padding-bottom:6px;scrollbar-width:none}
+  .tray::-webkit-scrollbar{display:none}
+  .tile{flex:0 0 84%;scroll-snap-align:start}
+  .tile .plate{padding:20px 12px}
+  .w-event{--w:250px!important} .w-whole{--w:262px!important}
+  /* the two landscape formats swipe inside their plate, like the portrait posts above */
+  .duo .plate{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;padding:20px 16px;scrollbar-width:none}
+  .duo .plate::-webkit-scrollbar{display:none}
+  .duo .plate > figure{flex:0 0 88%;scroll-snap-align:start}
+  .svc-lead{padding:6px}
+  .svc-text{padding:20px 14px 12px}
+  .svc-rows li{grid-template-columns:40px 1fr;row-gap:6px;padding:20px 18px;min-height:0}
+  .svc-rows .body{grid-column:2;font-size:var(--t-6)}
+  .path{padding:28px 20px 12px}
+  .step{column-gap:20px}
+  .bracket{padding-left:34px}
+  .flow{padding:24px 16px}
+  .fd{grid-template-columns:1fr 1fr;grid-template-rows:auto 48px auto 48px auto;column-gap:12px}
+  .fd-hd,.fd .c1,.fd .c2{display:none}
+  .fd .v{display:block;width:100%;height:100%}
+  .fd .v1{grid-column:1 / -1;grid-row:2}
+  .fd .v2{grid-column:1 / -1;grid-row:4}
+  .fd-a{grid-column:1 / -1;grid-row:1;justify-self:center;width:min(100%,240px)}
+  .fd-b1{grid-column:1;grid-row:3;margin:0}
+  .fd-b2{grid-column:2;grid-row:3;margin:0}
+  .fd-z{grid-column:1 / -1;grid-row:5}
+  .fd-b1,.fd-b2{align-self:stretch}
+  .fd-b1 .nd,.fd-b2 .nd{height:100%;grid-template-columns:1fr;align-content:start;padding:16px}
+  .fd-b1 .nd svg,.fd-b2 .nd svg{grid-row:auto;margin-bottom:8px}
+  .fd-b1 .nd span,.fd-b2 .nd span{grid-column:1}
+  .nd.in::before{left:50%;top:-5px;margin:0 0 0 -4.5px}
+  .nd.out::after{right:auto;left:50%;top:auto;bottom:-5px;margin:0 0 0 -4.5px}
+  .plan-big{padding:28px 22px}
+  .price{margin-top:28px}
+  .plan-inc{margin-top:24px;padding-top:18px}
+  .plan-big .actions{padding-top:28px}
+  .plan-sum{display:inline-grid;justify-items:center;gap:6px}
+  .plan-inc{grid-template-columns:1fr;gap:6px}
+  .plan-row{padding:22px 24px}
+  .assure{grid-template-columns:1fr;gap:12px}
+  .assure > div{padding:20px 22px}
+  .ev li{grid-template-columns:48px 1fr;padding-block:18px}
+  .rules{padding:24px 20px}
+  .audit-steps li{grid-template-columns:44px 1fr;padding:18px 20px}
+  .faq-list summary{min-height:64px;padding:14px 16px 14px 18px}
+  .faq-list .ans{padding:0 18px 22px}
+  .faq-list{margin-top:28px}
+  .close{padding:36px 20px;border-radius:var(--r-lg)}
+  .recap{padding:24px}
+  .foot{padding-block:48px 28px}
+  .foot-legal{margin-top:32px}
+  .foot-col,.foot-col.wide{grid-column:1 / -1;margin-top:20px}
+  nav.foot-col{display:flex;flex-wrap:wrap;column-gap:24px}
+  nav.foot-col .label{flex-basis:100%}
+  .foot-legal{flex-direction:column;align-items:flex-start}
+  .mbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--night);border-top:1px solid var(--nline-2)}
+  .mbar .btn{min-height:52px;width:100%}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="brand" href="#top"><img src="bdc-logo-trim.png" alt="BDC Promotions — Automotive Marketing" width="1213" height="574"></a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#services">Services</a><a href="#work">Work</a><a href="#path">Process</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
+    </nav>
+    <div class="head-cta">
+      <a class="tel" href="tel:+13522071074" aria-label="Call BDC Promotions at (352) 207-1074"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>(352) 207-1074</a>
+      <a class="btn btn-amber" href="/lp#get-started">Free audit</a>
+    </div>
+    <details class="menu">
+      <summary><i aria-hidden="true"></i>Menu</summary>
+      <nav aria-label="Mobile">
+        <a href="#services">Services</a><a href="#work">Work</a><a href="#path">Process</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="tel:+13522071074" aria-label="Call BDC Promotions at (352) 207-1074">Call (352) 207-1074</a>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- 1 · Hero -->
+<section class="hero" id="top" aria-labelledby="h1">
+  <img class="hero-img" src="/images/design/shared/photo-night-showroom-retouched.jpg" alt="Illustrative night view of a glass-fronted dealership showroom" width="3840" height="1973" fetchpriority="high">
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <span class="tag hero-tag">Illustrative photograph</span>
+  <div class="wrap hero-inner">
+    <p class="label">Automotive marketing / creative to appointment</p>
+    <h1 class="h1" id="h1">Turn paid social into more <span class="accent">qualified showroom appointments</span></h1>
+    <p class="lede">BDC Promotions combines automotive ad creative, campaign optimization, BDC follow-up, and AI-supported nurturing to create more qualified sales opportunities.</p>
+    <div class="actions">
+      <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
+      <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
+    </div>
+    <p class="offer">Free dealership marketing audit and consultation — no cost, no obligation.</p>
+  </div>
+  <div class="wrap">
+    <div class="hero-rail">
+      <h2 class="sr-only">Fast / Focused / Social / Results</h2>
+      <ul class="pillars">
+        <li><b>Fast</b><span>Creative and campaigns that move at dealership speed.</span></li>
+        <li><b>Focused</b><span>Automotive only — never a generic agency playbook.</span></li>
+        <li><b>Social</b><span>Built for how today’s shoppers actually scroll.</span></li>
+        <li><b>Results</b><span>Measured on appointments and sales opportunities.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · Positioning -->
+<section class="sec pos" id="about" aria-labelledby="pos-h">
+  <div class="wrap grid12">
+    <p class="label" style="grid-column:1 / -1;justify-self:start">Automotive-specialist positioning</p>
+    <h2 class="pos-h" id="pos-h"><span class="dim">BDC Promotions is built around dealership creative, customer engagement, and</span> the operating path from campaign response to showroom opportunity.</h2>
+    <div class="pos-foot">
+      <ul class="proof3">
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Real automotive creative.</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Real follow-up.</li>
+        <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>A clearer path to appointments.</li>
+      </ul>
+      <a class="link" href="#path">See how the process works <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · The gap: a funnel -->
+<section class="sec sand gap" id="gap" aria-labelledby="gap-h">
+  <div class="wrap">
+    <div class="head center">
+      <p class="label">The Appointment Gap</p>
+      <h2 class="h2" id="gap-h">Impressions don’t sell cars. <span class="br">Conversations do.</span></h2>
+    </div>
+    <div class="sr-only">
+      <p>What most campaigns deliver</p>
+      <ul><li><s>Impressions</s></li><li><s>Clicks</s></li><li><s>Raw form fills</s></li></ul>
+      <p>What we build toward</p>
+      <ul><li>Real shopper conversations</li><li>Booked showroom appointments</li><li>Sales opportunities your team can work</li></ul>
+    </div>
+    <div class="funnel" aria-hidden="true">
+      <div class="fn-caps"><p class="l">What most campaigns deliver</p><p class="r">What we build toward</p></div>
+      <div class="fn-rows">
+        <div class="fn-row r1"><span class="fn-l"><s>Impressions</s></span><span class="fn-b l"><i></i></span><span class="fn-b r"><i></i></span><span class="fn-r">Real shopper conversations</span></div>
+        <div class="fn-row r2"><span class="fn-l"><s>Clicks</s></span><span class="fn-b l"><i></i></span><span class="fn-b r"><i></i></span><span class="fn-r">Booked showroom appointments</span></div>
+        <div class="fn-row r3"><span class="fn-l"><s>Raw form fills</s></span><span class="fn-b l"><i></i></span><span class="fn-b r"><i></i></span><span class="fn-r">Sales opportunities your team can work</span></div>
+        <span class="fn-axis"></span>
+      </div>
+    </div>
+    <div class="fn-notes">
+      <p class="body">Most dealership social spend buys reach and raw leads that never reach the sales floor. The number that grows on the dashboard has nothing to do with the number of people sitting across from your closers.</p>
+      <p class="body" style="color:var(--ink)">BDC Promotions is built to close that gap — converting paid attention into real conversations, booked appointments, and showroom opportunities, then measuring the work on what your CRM actually records.</p>
+    </div>
+    <div class="actions">
+      <a class="btn btn-amber" href="/lp#get-started">Request My Free Consultation <span class="arr" aria-hidden="true">→</span></a>
+      <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · Featured work -->
+<section class="sec night work-a pair-a" id="work" aria-labelledby="work-h">
+  <div class="wrap grid12 feat">
+    <div class="feat-head">
+      <p class="label">The work is the proof</p>
+      <h2 class="h2" id="work-h">Automotive creative built for the real feed</h2>
+    </div>
+    <div class="plate feat-plate">
+      <figure class="post w-lux" style="--w:380px">
+        <div class="post-top" aria-hidden="true"><span class="av"></span><span class="who"><i class="sk"></i><span class="sp">Sponsored</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+        <img src="/images/design/shared/work-luxury-campaign.webp" alt="Campaign creative headlined We Make Luxury Affordable, showing three luxury vehicles parked in front of a dealership at sunset" width="1122" height="1402">
+        <div class="post-cta" aria-hidden="true"><span class="who"><i class="sk"></i><i class="sk s2"></i></span><span class="pill">Send message</span></div>
+      </figure>
+    </div>
+    <div class="case">
+        <h3 class="h3">“We Make Luxury Affordable”</h3>
+        <p class="body">Campaign style, offer messaging, and luxury positioning used to drive attention and start conversations.</p>
+        <dl class="spec">
+          <div><dt>Piece</dt><dd>Luxury campaign</dd></div>
+          <div><dt>Category</dt><dd>Event campaigns / Promotional ad creative</dd></div>
+        </dl>
+        <a class="link" href="#gallery">Explore the work <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · Work gallery -->
+<section class="sec night work-b pair-b" id="gallery" aria-labelledby="gal-h">
+  <div class="wrap">
+    <div class="head-split">
+      <div><p class="label">Creative</p><h2 class="h2" id="gal-h">Our work</h2></div>
+      <p class="lede">Inspect the range: new-car lead generation, event advertising, testimonial videos, employee stories, luxury films, viral concepts, Meta inventory ads, and Google Vehicle Listing Ads.</p>
+    </div>
+    <div class="tray" role="list" aria-label="More automotive ad creative">
+      <figure class="tile" role="listitem">
+        <div class="plate">
+          <div class="post w-event" style="--w:324px">
+            <div class="post-top" aria-hidden="true"><span class="av"></span><span class="who"><i class="sk"></i><span class="sp">Sponsored</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+            <img src="/images/design/shared/work-used-car-event.webp" alt="Event ad creative headlined Massive Used Car Sales Event, showing four SUVs and a sedan on a red background" width="1086" height="1448">
+            <div class="post-cta" aria-hidden="true"><span class="who"><i class="sk"></i><i class="sk s2"></i></span><span class="pill">Send message</span></div>
+          </div>
+        </div>
+        <figcaption class="cap"><b>Massive Used Car Sales Event</b><span>Event campaigns / Promotional ad creative</span></figcaption>
+      </figure>
+      <figure class="tile" role="listitem">
+        <div class="plate">
+          <div class="post w-whole" style="--w:346px">
+            <div class="post-top" aria-hidden="true"><span class="av"></span><span class="who"><i class="sk"></i><span class="sp">Sponsored</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+            <img src="/images/design/shared/work-wholesale-public.webp" alt="Event ad creative headlined Wholesale to the Public, showing four luxury vehicles in front of a dealership at sunset" width="1122" height="1402">
+            <div class="post-cta" aria-hidden="true"><span class="who"><i class="sk"></i><i class="sk s2"></i></span><span class="pill">Send message</span></div>
+          </div>
+        </div>
+        <figcaption class="cap"><b>Wholesale to the Public</b><span>Event campaigns / Promotional ad creative</span></figcaption>
+      </figure>
+    </div>
+    <div class="duo" role="group" aria-label="Inventory and vehicle-listing formats">
+      <div class="plate">
+        <figure style="--w:460px"><img src="/images/design/shared/work-meta-inventory.webp" alt="Meta inventory ad shown as a carousel of pre-owned pickup trucks in a social feed on a phone" width="1090" height="596"><figcaption class="cap"><b>Meta inventory ad</b><span>Inventory advertising</span></figcaption></figure>
+        <figure style="--w:420px"><img src="/images/design/shared/work-google-vla.webp" alt="Google Vehicle Listing Ads shown as a row of new pickup truck listings in search results" width="963" height="509"><figcaption class="cap"><b>Google Vehicle Listing Ads</b><span>New car lead gen</span></figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · Services -->
+<section class="sec" id="services" aria-labelledby="svc-h">
+  <div class="wrap">
+    <div class="head-split">
+      <div><p class="label">Automotive Marketing Services</p><h2 class="h2" id="svc-h">Everything paid social should do for a dealership</h2></div>
+      <p class="lede">Five services, built for how cars actually get sold today. Each one is scoped to a real dealership outcome — not a generic marketing deliverable.</p>
+    </div>
+    <div class="card svc">
+      <article class="svc-lead">
+        <div class="svc-text">
+          <span class="num">01</span>
+          <h3 class="h3">New-car lead generation</h3>
+          <p class="body">Paid social campaigns built to put your new-car inventory in front of in-market shoppers and start real conversations your BDC team can follow up on.</p>
+          <div class="actions">
+            <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
+            <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
+          </div>
+        </div>
+        <figure class="svc-fig">
+          <img src="/lp/bdc-inventory-production.webp" alt="BDC Promotions marketers building paid-social inventory ads from a dealership's vehicle lineup" width="1248" height="832">
+          <figcaption class="tag">Illustrative photograph</figcaption>
+        </figure>
+      </article>
+      <ul class="svc-rows">
+        <li><span class="num">02</span><h3 class="h4">Inventory ads</h3><p class="body">Turn the vehicles on your lot into scroll-stopping ads that move specific units — not just rack up impressions.</p></li>
+        <li><span class="num">03</span><h3 class="h4">Event ads</h3><p class="body">Fill your sales events and seasonal pushes with campaigns designed to drive foot traffic and appointments.</p></li>
+        <li><span class="num">04</span><h3 class="h4">Reels &amp; value-proposition videos</h3><p class="body">Short-form video that tells shoppers why your store — the reasons to buy from you, delivered in their feed.</p></li>
+        <li><span class="num">05</span><h3 class="h4">Testimonial videos</h3><p class="body">Real customer stories, produced to build trust before a shopper ever walks onto your lot.</p></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · Path -->
+<section class="sec sand pair-a" id="path" aria-labelledby="path-h">
+  <div class="wrap">
+    <div class="head-split">
+      <div><p class="label">Process</p><h2 class="h2" id="path-h">One connected path from scroll to showroom</h2></div>
+      <p class="lede">Choose the pieces your dealership needs or connect the full operating lane.</p>
+    </div>
+    <div class="card path">
+      <ol class="steps">
+        <li class="step"><span class="node" aria-hidden="true"></span><span class="num">01</span><h3 class="h4">Strategy</h3><p class="small">Shape the campaign around your store, inventory, market, and sales priorities.</p></li>
+        <li class="step"><span class="node" aria-hidden="true"></span><span class="num">02</span><h3 class="h4">Creative</h3><p class="small">Build static, event, inventory, and video advertising designed for automotive shoppers.</p></li>
+        <li class="step"><span class="node" aria-hidden="true"></span><span class="num">03</span><h3 class="h4">Optimization</h3><p class="small">Launch and refine paid campaigns around qualified dealership opportunities.</p></li>
+        <li class="step"><span class="node" aria-hidden="true"></span><span class="num">04</span><h3 class="h4">Nurture</h3><p class="small">Use BDC staff and AI tools to keep conversations moving quickly and professionally.</p></li>
+        <li class="step"><span class="node" aria-hidden="true"></span><span class="num">05</span><h3 class="h4">Appointment</h3><p class="small">Move interested shoppers toward a scheduled dealership visit with a day and time.</p></li>
+      </ol>
+      <div class="bracket"><a href="#follow-up"><span>Follow-up <i aria-hidden="true">↓</i></span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · Follow-up -->
+<section class="sec sand pair-b" id="follow-up" aria-labelledby="fu-h">
+  <div class="wrap">
+    <div class="head-split">
+      <div><p class="label">Follow-up</p><h2 class="h2" id="fu-h">Human + <span style="white-space:nowrap">AI-supported</span> follow-up</h2></div>
+      <div><p class="lede">Depending on your service mix, BDC staff and AI-supported tools can nurture the conversation and move the shopper toward an appointment with a scheduled day and time.</p></div>
+    </div>
+    <div class="card flow">
+      <div class="fd">
+        <div class="fd-hd"><b>Nurture</b><span>Keep conversations moving.</span></div>
+        <div class="fd-a"><div class="nd out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11h-9l-5 4v-4H4z"/></svg><b>Lead</b></div></div>
+        <svg class="c c1" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C45 50 55 25 100 25 M0 50 C45 50 55 75 100 75" fill="none" stroke="#8B857C" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="v v1" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 C50 50 25 50 25 100 M50 0 C50 50 75 50 75 100" fill="none" stroke="#8B857C" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+        <div class="fd-b1"><div class="nd in out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19c0 1.4-1.8 2.3-4.5 2.3"/></svg><b>BDC staff</b><span>Live BDC Agent Team</span></div></div>
+        <div class="fd-b2"><div class="nd in out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.7 4.4 2.6 6.5 6.5 7.2-3.9.7-5.8 2.8-6.5 7.2-.7-4.4-2.6-6.5-6.5-7.2 3.9-.7 5.8-2.8 6.5-7.2z"/><path d="M19 16.5v4M17 18.5h4"/></svg><b>AI-supported tools</b></div></div>
+        <svg class="c c2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25 C45 25 55 50 100 50 M0 75 C45 75 55 50 100 50" fill="none" stroke="#D08A1E" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="v v2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M25 0 C25 50 50 50 50 100 M75 0 C75 50 50 50 50 100" fill="none" stroke="#D08A1E" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+        <div class="fd-z"><div class="nd in"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3"/></svg><b>Appointment</b><span>Scheduled dealership visit with a day and time.</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 · Pricing -->
+<section class="sec pair-a" id="pricing" aria-labelledby="price-h">
+  <div class="wrap">
+    <div class="head wide">
+      <p class="label">Select the support your store needs</p>
+      <h2 class="h2" id="price-h">Start with one service. Connect the full lane.</h2>
+    </div>
+    <div class="grid12 price-grid">
+      <article class="plan-big night">
+        <h3 class="h3">Lead Gen + BDC Team</h3>
+        <div class="plan-sum" aria-hidden="true"><span class="chip">Lead Generation</span><span class="plus">+</span><span class="chip">Live BDC Agent Team</span></div>
+        <p class="price"><b>$5,000</b><span>/ month</span></p>
+        <p class="term">3-month commitment</p>
+        <dl class="plan-inc"><dt>Includes</dt><dd>Connected campaign and follow-up support</dd></dl>
+        <div class="actions">
+          <a class="btn btn-amber" href="/lp#get-started">Find the right mix <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
+        </div>
+      </article>
+      <div class="plan-list card">
+        <article class="plan-row"><h3 class="h4">Lead Generation</h3><p class="row-price">$2,500 / month</p><p class="t">3-month commitment</p><p class="small">Static ad creation, video ad editing, and ad optimization</p></article>
+        <article class="plan-row"><h3 class="h4">Live BDC Agent Team</h3><p class="row-price">$2,500 / month</p><p class="t">3-month commitment</p><p class="small">Lead nurturing, pre-qualifications, and appointment scheduling</p></article>
+        <article class="plan-row"><h3 class="h4">Luxury Video</h3><p class="row-price">$750 / month</p><p class="t">Includes 1 new video each month</p><p class="small">Premium automotive video creative</p></article>
+      </div>
+    </div>
+    <div class="assure">
+      <div><h3 class="h4">Are results guaranteed?</h3><p class="body">No specific lead, appointment, show, or sales result is guaranteed. The work is designed to create stronger opportunities and a clearer follow-up process.</p></div>
+      <div><h3 class="h4">Do we have to buy every service?</h3><p class="body">No. Dealerships may select individual services or connect them into a broader program.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · Proof standard -->
+<section class="sec pair-b" id="proof" aria-labelledby="proof-h">
+  <div class="wrap grid12 proof">
+    <div class="proof-head">
+      <p class="label">Our Proof Standard</p>
+      <h2 class="h2" id="proof-h">We believe in showing the receipts</h2>
+      <p class="lede">We don’t ask you to take our word for it. When we work with a dealership, proof comes from evidence you can verify — not a vanity dashboard or a borrowed case study.</p>
+      <p class="body">During your free audit we’ll walk you through exactly what that proof looks like and how we’d measure success for a store like yours.</p>
+      <div class="actions"><a class="btn btn-line" href="/lp#get-started">See What Your Marketing Is Missing <span class="arr" aria-hidden="true">→</span></a></div>
+    </div>
+    <div class="proof-side">
+      <ol class="ev">
+        <li><span class="num">01</span><div><h3 class="h4">Verified campaign screenshots</h3><p class="body">Pulled straight from the ad platforms — real spend, real delivery, never a mockup.</p></div></li>
+        <li><span class="num">02</span><div><h3 class="h4">Real customer testimonials</h3><p class="body">Named dealership voices describing the difference, in their own words.</p></div></li>
+        <li><span class="num">03</span><div><h3 class="h4">Dealership CRM outcomes</h3><p class="body">Measured against your own system of record — the source of truth your team already trusts.</p></div></li>
+      </ol>
+      <div class="rules">
+        <p class="label plain">Proof with standards</p>
+        <ul>
+          <li>Show only customer-approved work and attribution</li>
+          <li>Use testimonial video only after transcript and publication approval</li>
+          <li>Never imply guaranteed lead volume, CPL, sales, ROAS, or show rate</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 · Free audit -->
+<section class="sec sand" id="audit" aria-labelledby="audit-h">
+  <div class="wrap">
+    <div class="head-split">
+      <div><p class="label">How The Free Audit Works</p><h2 class="h2" id="audit-h">Three steps. Zero cost. <span class="br">No obligation.</span></h2></div>
+      <p class="lede">The audit is genuinely free. Here’s exactly what happens once you request one.</p>
+    </div>
+    <div class="grid12 audit">
+      <figure class="audit-fig">
+        <div class="ph">
+          <img src="/lp/bdc-audit-consultation.webp" alt="A BDC Promotions consultant walking a dealer through a free marketing audit on screen" width="1248" height="832">
+          <span class="tag">Illustrative photograph</span>
+        </div>
+        <figcaption><p class="label plain">Inside a free audit consultation</p><p class="body">We walk your team through what we find — screen to screen, no pressure, no obligation.</p></figcaption>
+      </figure>
+      <div class="audit-steps">
+        <ol>
+          <li class="card"><span class="num">01</span><div><h3 class="h4">Review your current marketing</h3><p class="body">We audit your paid social, creative, and follow-up exactly as they run today — no guesswork, no assumptions.</p></div></li>
+          <li class="card"><span class="num">02</span><div><h3 class="h4">Identify the biggest conversion gaps</h3><p class="body">We pinpoint where attention is leaking before it ever becomes a conversation or a booked appointment.</p></div></li>
+          <li class="card"><span class="num">03</span><div><h3 class="h4">Deliver focused next-step recommendations</h3><p class="body">You get a clear, prioritized plan you can act on — free, with no obligation to work with us.</p></div></li>
+        </ol>
+        <div class="actions"><a class="btn btn-amber" href="/lp#get-started">Start My Free Audit <span class="arr" aria-hidden="true">→</span></a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · FAQ (who it's for and coverage folded in) -->
+<section class="sec" id="faq" aria-labelledby="faq-h">
+  <div class="wrap grid12 faq">
+    <div class="faq-head">
+      <p class="label">Questions &amp; Answers</p>
+      <h2 class="h2" id="faq-h">Frequently asked questions</h2>
+      <p class="body">The details dealership operators ask us most often. Still unsure? Call and we’ll answer directly.</p>
+      <div class="actions">
+        <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit</a>
+        <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
+      </div>
+    </div>
+    <div class="faq-list">
+        <details open><summary>Who is the free dealership audit for?<span class="pm" aria-hidden="true"></span></summary><p class="body ans">Franchise dealerships and established independent dealers running — or planning to run — paid social. If you sell cars and want more real showroom appointments, the audit is built for you.</p></details>
+        <details><summary>Do I need a certain inventory size to qualify?<span class="pm" aria-hidden="true"></span></summary><p class="body ans">The audit is open to any dealership. We ask your inventory size (fewer than 50, or 50 or more) so we can tailor the recommendations to your store — it doesn’t affect whether you can request the audit.</p></details>
+        <details><summary>Which states do you work with?<span class="pm" aria-hidden="true"></span></summary><p class="body ans">We partner with dealerships across multiple U.S. states. Share your details on the form or give us a call and we’ll confirm fit for your market.</p></details>
+        <details><summary>What kinds of creative can BDC Promotions produce?<span class="pm" aria-hidden="true"></span></summary><p class="body ans">The supplied work covers static, event, new-car, employee, luxury, viral, testimonial, inventory, and Google vehicle-listing advertising.</p></details>
+        <details><summary>What’s included in the free audit?<span class="pm" aria-hidden="true"></span></summary><p class="body ans">A review of your current paid social and creative, the biggest conversion gaps we find, and a prioritized set of next steps. There’s no cost and no obligation to work with us afterward.</p></details>
+        <details><summary>How do I get started?<span class="pm" aria-hidden="true"></span></summary><p class="body ans">Complete <a href="/lp#get-started">the short form</a> or call <a href="tel:+13522071074">(352) 207-1074</a>. Either way you reach the BDC Promotions team directly — no call center in between.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- 13 · Final CTA -->
+<section class="sec" id="contact" aria-labelledby="close-h" style="padding-top:0">
+  <div class="wrap">
+    <div class="close night">
+      <div class="close-copy">
+        <p class="label">Free audit</p>
+        <h2 class="h2" id="close-h">Ready to create more opportunities for your dealership?</h2>
+        <p class="lede">Tell us what your store needs, or call now to talk through the right mix of creative, media, follow-up, and appointment support.</p>
+        <div class="actions">
+          <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
+        </div>
+      </div>
+      <div class="recap">
+        <p class="body">Request your free dealership audit and consultation. Here’s what you’ll get back:</p>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>A full review of your current paid social and creative</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>The biggest conversion gaps between spend and appointments</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Prioritized next steps — free, with no obligation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="grid12 foot-top">
+      <div class="foot-brand">
+        <img src="bdc-logo-trim.png" alt="BDC Promotions — Automotive Marketing" width="1213" height="574">
+        <p class="small">BDC Promotions — Automotive Marketing</p>
+      </div>
+      <nav class="foot-col" aria-label="Footer">
+        <p class="label">Site</p>
+        <a href="#services">Services</a><a href="#work">Work</a><a href="#path">Process</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
+      </nav>
+      <div class="foot-col wide">
+        <p class="label">Contact</p>
+        <a href="tel:+13522071074" aria-label="Call BDC Promotions at (352) 207-1074">(352) 207-1074</a>
+        <a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com</a>
+      </div>
+      <div class="foot-col wide foot-cta">
+        <p class="label">Free audit</p>
+        <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit</a>
+      </div>
+    </div>
+    <div class="foot-legal">
+      <p class="small">© 2026 BDC Promotions Inc. All rights reserved.</p>
+      <nav aria-label="Legal"><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms</a><a href="/cookie-policy">Cookie Policy</a></nav>
+    </div>
+    <p class="small foot-disc">Photographs on this page are illustrative, AI-generated images. They do not show a BDC Promotions client or location.</p>
+  </div>
+</footer>
+
+<div class="mbar">
+  <a class="btn btn-amber" href="/lp#get-started">Free audit</a>
+  <a class="btn btn-line" href="tel:+13522071074" aria-label="Call BDC Promotions at (352) 207-1074">Call</a>
+</div>
+</body>
+</html>
