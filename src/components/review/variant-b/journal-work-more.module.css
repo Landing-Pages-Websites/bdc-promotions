@@ -1,0 +1,120 @@
+/* Work band "Explore the Work" disclosure and its panel of supplied creative (JournalWorkMore). */
+
+.explore {
+  position: absolute;
+  left: calc(649 * var(--u));
+  top: calc(708 * var(--u));
+  display: flex;
+  min-height: 44px;
+  height: calc(46 * var(--u));
+  align-items: center;
+  gap: calc(29 * var(--u));
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1f63ff;
+  cursor: pointer;
+  font-family: inherit;
+  /* 19px floor: #1f63ff on the band is 4.05:1, which passes AA only as large (>=18.66px bold) text. */
+  font-size: max(19px, var(--fs-strong));
+  font-weight: 700;
+}
+
+.explore span {
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: calc(15 * var(--u));
+}
+
+.explore:hover span {
+  color: #5c8dff;
+}
+
+.exploreArrow {
+  width: calc(25 * var(--u));
+  height: calc(21 * var(--u));
+  transition: rotate 160ms ease;
+}
+
+.explore[aria-expanded="true"] .exploreArrow {
+  rotate: 90deg;
+}
+
+/* Explore panel: whole supplied creatives, on the event/inventory columns below the composition. */
+.more {
+  display: flex;
+  margin-top: calc(806 * var(--u));
+  padding: 0 0 calc(96 * var(--u)) calc(639 * var(--u));
+  align-items: flex-start;
+  gap: calc(31 * var(--u));
+}
+
+.more[hidden] {
+  display: none;
+}
+
+.moreItem {
+  width: calc(368 * var(--u));
+}
+
+.moreFrame {
+  position: relative;
+}
+
+.moreFrame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.moreItem figcaption {
+  margin-top: calc(14 * var(--u));
+  color: var(--teal-on-navy);
+  font-size: max(12px, var(--fs-caption));
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.moreItem strong {
+  display: block;
+  color: #fff;
+  font-size: max(14px, var(--fs-copy));
+  font-weight: 600;
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 1179px) {
+  .explore {
+    position: static;
+    align-self: flex-start;
+    height: auto;
+    margin-top: 34px;
+    gap: 16px;
+    font-size: 21px;
+  }
+
+  .exploreArrow {
+    width: 22px;
+    height: 18px;
+  }
+
+  .more {
+    flex-direction: column;
+    margin-top: 34px;
+    padding: 0;
+    gap: 34px;
+  }
+
+  .moreItem {
+    width: 100%;
+  }
+
+  .moreItem figcaption {
+    margin-top: 14px;
+    font-size: 13px;
+  }
+
+  .moreItem strong {
+    font-size: 16px;
+  }
+}

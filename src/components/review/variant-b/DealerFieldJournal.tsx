@@ -1,16 +1,38 @@
-import Image from "next/image";
-import Link from "next/link";
 import type { ReactElement } from "react";
-import { auditHref, faqItems, growthSteps, phoneDisplay, phoneHref, serviceOptions } from "../content";
+import { Caveat, Cormorant_Garamond, EB_Garamond, Instrument_Serif, Libre_Caslon_Display, Roboto } from "next/font/google";
+import { JournalHeader, ShowroomMomentum } from "./JournalHero";
+import { GrowthLane, OperatingSignal } from "./JournalMethod";
+import { WorkInMotion } from "./JournalWork";
+import { ProofWithStandards, SupportedOptions } from "./JournalProof";
+import { ClearTheLane, JournalFooter } from "./JournalClose";
 import styles from "./dealer-field-journal.module.css";
-const B="/images/design/variant-b";
-function JournalHeader(){return <header className={styles.header}><Link href="/" aria-label="Return to homepage direction chooser"><Image src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} preload sizes="140px"/></Link><nav aria-label="Dealer Field Journal navigation"><a href="#growth-b">Our process</a><a href="#work-b">Case studies</a><a href="#standards-b">About</a><a href="#options-b">Services</a><a href="#contact-b">Contact</a></nav></header>}
-function ShowroomMomentum(){return <section className={styles.hero} aria-labelledby="b-hero-title"><div className={styles.heroCopy}><p className={styles.folio}>01 / Field note</p><h1 id="b-hero-title">Move More Shoppers Toward Your Showroom</h1><p>BDC Promotions combines automotive ad creative, campaign optimization, BDC follow-up, and AI-supported nurturing to create more qualified sales opportunities.</p><aside><strong>Proof note</strong> Real automotive creative. Real follow-up. A clearer path to appointments.</aside><div className={styles.actions}><a href={auditHref}>Get a Free Dealership Marketing Audit →</a><a href={phoneHref}>Call {phoneDisplay}</a></div></div><figure className={styles.heroPlate}><div><Image src={`${B}/hero-luxury-campaign.png`} alt="Customer-supplied luxury automotive campaign presented as a documentary source plate" width={1122} height={1402} preload sizes="(max-width: 700px) 72vw, 30vw"/></div><figcaption>Source plate / customer-supplied automotive creative</figcaption></figure><p className={styles.marginNote}>Real automotive creative.<br/>Real follow-up.<br/><b>A clearer path to appointments.</b></p></section>}
-function OperatingSignal(){const words=["Fast","Focused","Social","Results"];const items=["Automotive-specific strategy","Static + video creative","Human + AI-supported follow-up","Scheduled appointment focus"];return <section className={styles.signal} aria-labelledby="b-signal-title"><h2 id="b-signal-title">Fast / Focused / Social / Results</h2><div>{words.map((word,i)=><article key={word}><b>0{i+1}</b><h3>{word}</h3><p>{items[i]}</p></article>)}</div><small>No unverified dealership count, ad-spend total, client logos, or outcome statistics.</small></section>}
-function GrowthLane(){return <section className={styles.growth} id="growth-b" aria-labelledby="b-growth-title"><aside>Map the decision journey.<br/>Create relevant ad expression.<br/>Operate for qualified opportunity.<br/>Respond fast and build momentum.<br/>Convert interest with appointment.</aside><div><p className={styles.folio}>02 / Method</p><h2 id="b-growth-title">One Connected Path From Scroll to Showroom</h2><p>Choose the pieces your dealership needs or connect the full operating lane.</p><ol>{growthSteps.map(([number,title,copy])=><li key={number}><b>{number}</b><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol></div><figure><div><Image src={`${B}/growth-repo-sale.png`} alt="Customer-supplied repossession sale campaign creative in a navy source frame" width={1080} height={1080} sizes="(max-width: 700px) 76vw, 25vw"/></div><figcaption>Customer-supplied campaign creative · source pixels preserved</figcaption></figure></section>}
-function WorkInMotion(){return <section className={styles.work} id="work-b" aria-labelledby="b-work-title"><div className={styles.workIntro}><p className={styles.folio}>03 / Evidence</p><h2 id="b-work-title">Automotive Creative Built for the Real Feed</h2><p>Inspect the range: new-car lead generation, event advertising, testimonial videos, employee stories, luxury films, viral concepts, Meta inventory ads, and Google Vehicle Listing Ads.</p></div><div className={styles.contactSheet}><figure className={styles.story}><Image src={`${B}/work-luxury-storyboard.png`} alt="Customer-supplied luxury automotive video storyboard" width={426} height={640} sizes="(max-width: 700px) 70vw, 17vw"/><figcaption>Video creative / source sequence</figcaption></figure><figure className={styles.event}><Image src={`${B}/work-event-campaign.png`} alt="Customer-supplied automotive event campaign" width={1122} height={1402} sizes="(max-width: 700px) 70vw, 20vw"/><figcaption>New Car Lead Gen / Event campaigns</figcaption></figure><figure className={styles.inventory}><Image src={`${B}/work-inventory-ad.png`} alt="Customer-supplied Meta inventory advertising example" width={1090} height={596} sizes="(max-width: 700px) 80vw, 25vw"/><figcaption>Inventory advertising</figcaption></figure><figure className={styles.google}><Image src={`${B}/work-google-vla.png`} alt="Customer-supplied Google Vehicle Listing Ads example" width={963} height={509} sizes="(max-width: 700px) 80vw, 25vw"/><figcaption>Google Vehicle Listing Ads</figcaption></figure></div><a className={styles.blueAction} href="#options-b">Explore the Work →</a></section>}
-function ProofWithStandards(){const rules=["Show only customer-approved work and attribution","Use testimonial video only after transcript and publication approval","Never imply guaranteed lead volume, CPL, sales, ROAS, or show rate"];return <section className={styles.standards} id="standards-b" aria-labelledby="b-proof-title"><h2 id="b-proof-title">Proof You Can Inspect.<br/>Promises You Can Trust.</h2><p className={styles.annotation}>Automotive-specialist positioning</p><p>BDC Promotions is built around dealership creative, customer engagement, and the operating path from campaign response to showroom opportunity.</p><div>{rules.map((rule,i)=><article key={rule}><b>0{i+1}</b><p>{rule}</p></article>)}</div><a href="#growth-b">See How the Process Works →</a></section>}
-function SupportedOptions(){return <section className={styles.options} id="options-b" aria-labelledby="b-options-title"><p className={styles.annotation}>Select the Support Your Store Needs</p><h2 id="b-options-title">Start With One Service. Connect the Full Lane.</h2><div className={styles.ledger} role="table" aria-label="Supported service options"><div className={styles.ledgerHead} role="row"><b>Service</b><b>Investment</b><b>Term</b><b>Includes</b></div>{serviceOptions.map(([name,price,term,includes],i)=><div className={styles.ledgerRow} role="row" key={name}><h3><span>0{i+1}</span>{name}</h3><strong>{price}</strong><em>{term}</em><p>{includes}</p></div>)}</div><a className={styles.blueAction} href={auditHref}>Find the Right Mix →</a></section>}
-function ClearTheLane(){return <section className={styles.close} id="contact-b" aria-labelledby="b-close-title"><div className={styles.closeIntro}><p className={styles.folio}>07 / Commitment</p><h2 id="b-close-title">Ready to Create More Opportunities for Your Dealership?</h2><p>Tell us what your store needs, or call now to talk through the right mix of creative, media, follow-up, and appointment support.</p><small>We build the right mix.<br/>You create more opportunities.</small></div><div className={styles.faq}>{faqItems.map(([q,a],i)=><details key={q}><summary><b>0{i+1}</b>{q}</summary><p>{a}</p></details>)}</div><aside className={styles.auditCard}><p>Guided audit</p><h3>Let’s build the right mix for your store.</h3><ul><li>Clarify goals and audience</li><li>Review opportunities and gaps</li><li>Build a plan around stronger appointment opportunities</li></ul><a href={auditHref}>Get a Free Dealership Marketing Audit →</a><a href={phoneHref}>Call {phoneDisplay}</a></aside></section>}
-function JournalFooter(){return <footer className={styles.footer}><span>BDC Promotions — Automotive Marketing</span><a href={phoneHref}>{phoneDisplay}</a><a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com</a></footer>}
-export function DealerFieldJournal():ReactElement{return <div className={styles.page}><JournalHeader/><main><ShowroomMomentum/><OperatingSignal/><GrowthLane/><WorkInMotion/><ProofWithStandards/><SupportedOptions/><ClearTheLane/></main><JournalFooter/></div>}
+
+/* Faces chosen by glyph match against image 2 (see workflow/homepage/notes/B-build.md). */
+const garamond = EB_Garamond({ subsets: ["latin"], variable: "--b-garamond", weight: "variable" });
+const cormorant = Cormorant_Garamond({ subsets: ["latin"], variable: "--b-cormorant", weight: ["400", "500"], preload: false });
+const caslon = Libre_Caslon_Display({ subsets: ["latin"], variable: "--b-caslon", weight: "400", preload: false });
+const condensed = Instrument_Serif({ subsets: ["latin"], variable: "--b-condensed", weight: "400", preload: false });
+const hand = Caveat({ subsets: ["latin"], variable: "--b-hand", weight: "variable", preload: false });
+const sans = Roboto({ subsets: ["latin"], variable: "--b-sans", weight: "variable", axes: ["wdth"], style: ["normal", "italic"] });
+
+const fontVars = [garamond, cormorant, caslon, condensed, hand, sans].map((font) => font.variable).join(" ");
+
+export function DealerFieldJournal(): ReactElement {
+  return (
+    <div className={`${styles.page} ${fontVars}`}>
+      <div className={styles.frame}>
+        <JournalHeader />
+        <main>
+          <ShowroomMomentum />
+          <OperatingSignal />
+          <GrowthLane />
+          <WorkInMotion />
+          <ProofWithStandards />
+          <SupportedOptions />
+          <ClearTheLane />
+        </main>
+        <JournalFooter />
+      </div>
+    </div>
+  );
+}

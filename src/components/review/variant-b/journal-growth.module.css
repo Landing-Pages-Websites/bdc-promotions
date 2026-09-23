@@ -1,0 +1,401 @@
+/* Growth lane, image-2 y 1378–2240. */
+
+.growth {
+  background: var(--paper-growth);
+}
+
+.growthWrap {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(862 * var(--u));
+  margin: 0 auto;
+}
+
+.timeline {
+  position: absolute;
+  left: calc(125.5 * var(--u));
+  top: calc(20 * var(--u));
+  width: 2px;
+  height: calc(812 * var(--u));
+  background: repeating-linear-gradient(to bottom, var(--teal) 0 calc(8 * var(--u)), transparent 0 calc(15 * var(--u)));
+}
+
+.timeline::before,
+.timeline::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: calc(9 * var(--u));
+  height: calc(9 * var(--u));
+  border-radius: 50%;
+  background: var(--teal);
+  transform: translate(-50%, -50%);
+}
+
+.timeline::before {
+  top: calc(-3 * var(--u));
+}
+
+.timeline::after {
+  top: calc(814 * var(--u));
+}
+
+.step {
+  position: absolute;
+  left: 0;
+  width: calc(470 * var(--u));
+  height: calc(97 * var(--u));
+  --node: 30;
+  --note-x: 19;
+  --note-y: 3;
+}
+
+.step:nth-child(1) {
+  top: calc(88 * var(--u));
+  --note-x: 29;
+  --note-y: -35;
+}
+
+.step:nth-child(2) {
+  top: calc(225 * var(--u));
+  --node: 32;
+}
+
+.step:nth-child(3) {
+  top: calc(362 * var(--u));
+  --node: 29;
+  --note-x: 16;
+}
+
+.step:nth-child(4) {
+  top: calc(501 * var(--u));
+  --node: 25;
+  --note-y: 14;
+}
+
+.step:nth-child(5) {
+  top: calc(648 * var(--u));
+  --node: 31;
+  --note-x: 18;
+}
+
+.step::after {
+  content: "";
+  position: absolute;
+  left: calc(221 * var(--u));
+  top: 0;
+  width: 1.5px;
+  height: 100%;
+  background: var(--ink);
+}
+
+.node {
+  position: absolute;
+  left: calc(118.5 * var(--u));
+  top: calc((var(--node) - 7.5) * var(--u));
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+  margin-left: calc(-0.5 * var(--u));
+  border: calc(3 * var(--u)) solid var(--teal);
+  border-radius: 50%;
+  background: var(--paper-growth);
+}
+
+.node::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 2.5px;
+  height: calc(40 * var(--u));
+  background: var(--teal);
+  transform: translateX(-50%);
+}
+
+.note {
+  position: absolute;
+  left: calc(var(--note-x) * var(--u));
+  top: calc(var(--note-y) * var(--u));
+  color: var(--teal);
+  font-family: var(--b-hand), cursive;
+  font-size: var(--fs-meta);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: calc(21.5 * var(--u));
+  transform: rotate(-5deg);
+  transform-origin: 0 0;
+  white-space: nowrap;
+}
+
+.note span {
+  display: block;
+}
+
+.noteArrow {
+  display: block;
+  width: calc(50 * var(--u));
+  height: calc(14 * var(--u));
+  margin: calc(3 * var(--u)) 0 0 calc(34 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+}
+
+.stepNum,
+.stepCheck,
+.stepTitle,
+.stepCopy {
+  position: absolute;
+}
+
+.stepNum {
+  left: calc(160 * var(--u));
+  top: calc(18 * var(--u));
+  font-size: var(--fs-num);
+  font-weight: 700;
+  text-box: trim-both cap alphabetic;
+}
+
+.stepCheck {
+  left: calc(160 * var(--u));
+  top: calc(51 * var(--u));
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+  color: var(--blue);
+}
+
+.stepTitle {
+  left: calc(243 * var(--u));
+  top: calc(3 * var(--u));
+  font-family: var(--b-sans), Arial, sans-serif;
+  color: var(--blue);
+  font-size: calc(28.5 * var(--u));
+  font-weight: 600;
+  text-box: trim-both cap alphabetic;
+}
+
+.stepCopy {
+  left: calc(245 * var(--u));
+  top: calc(38 * var(--u));
+  font-size: var(--fs-copy);
+  font-stretch: 75%;
+  letter-spacing: -0.042em;
+  line-height: calc(21.7 * var(--u));
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.stepCopy span {
+  display: block;
+}
+
+/* Image 2 sets step 03 tighter; its first line shares a row with the intro copy. */
+@media (min-width: 1180px) {
+  .step:nth-child(3) .stepCopy {
+    letter-spacing: -0.05em;
+  }
+}
+
+.growthIntro {
+  position: absolute;
+  left: calc(473 * var(--u));
+  top: calc(230 * var(--u));
+}
+
+.growthTitle {
+  font-family: var(--b-condensed), Georgia, serif;
+  font-size: calc(61 * var(--u));
+  font-weight: 400;
+  line-height: calc(63 * var(--u));
+  text-box: trim-both cap alphabetic;
+  transform: scaleX(0.72);
+  transform-origin: 0 0;
+  white-space: nowrap;
+}
+
+.growthTitle span {
+  display: block;
+}
+
+/* Image 2 sets the first line looser than the second. */
+.growthTitle span:first-child {
+  letter-spacing: 0.06em;
+}
+
+.growthRule {
+  position: absolute;
+  left: calc(3 * var(--u));
+  top: calc(132 * var(--u));
+  width: calc(106 * var(--u));
+  height: 2px;
+  background: var(--teal);
+}
+
+.growthIntro p {
+  position: absolute;
+  left: calc(4 * var(--u));
+  top: calc(157 * var(--u));
+  color: #161919;
+  font-size: var(--fs-text);
+  font-stretch: 86%;
+  line-height: calc(32 * var(--u));
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.growthIntro p span {
+  display: block;
+}
+
+@supports not (text-box: trim-both cap alphabetic) {
+  @media (min-width: 1180px) {
+    .stepNum,
+    .stepTitle,
+    .stepCopy,
+    .growthIntro p {
+      translate: 0 calc(-1 * var(--trim-sans));
+    }
+
+    .growthTitle {
+      translate: 0 calc(-1 * var(--trim-condensed));
+    }
+  }
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 1179px) {
+  .growthWrap {
+    display: flex;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    padding: 48px 16px 44px;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding-left: 14px;
+    border-left: 1.5px dashed var(--teal);
+  }
+
+  .step,
+  .node,
+  .note,
+  .stepNum,
+  .stepCheck,
+  .stepTitle,
+  .stepCopy,
+  .growthIntro,
+  .growthIntro p,
+  .growthRule {
+    position: static;
+  }
+
+  .growthIntro {
+    order: -1;
+    margin-bottom: 36px;
+  }
+
+  /* Sized to the column: the unscaled line is 8.54em, drawn at 0.82 (7em), so it never clips at 320. */
+  .growthTitle {
+    font-size: min(58px, calc((100cqw - 32px) / 7.3));
+    line-height: 1;
+    transform: scaleX(0.82);
+    white-space: nowrap;
+  }
+
+  .growthRule {
+    display: block;
+    margin: 20px 0 18px;
+  }
+
+  .growthIntro p {
+    font-size: 17px;
+    line-height: 1.45;
+    white-space: normal;
+  }
+
+  .growthIntro p span {
+    display: inline;
+  }
+
+  .timeline {
+    display: none;
+  }
+
+  .step {
+    display: grid;
+    width: auto;
+    height: auto;
+    grid-template-columns: 52px 1fr;
+    column-gap: 14px;
+    row-gap: 6px;
+  }
+
+  .step::after {
+    display: none;
+  }
+
+  .node {
+    display: none;
+  }
+
+  .note {
+    grid-column: 2;
+    grid-row: 4;
+    font-size: 17px;
+    line-height: 1.25;
+    transform: none;
+    white-space: normal;
+  }
+
+  .note span {
+    display: inline;
+  }
+
+  .note span + span::before {
+    content: " ";
+  }
+
+  .noteArrow {
+    display: none;
+  }
+
+  .stepNum {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 28px;
+  }
+
+  .stepCheck {
+    grid-column: 1;
+    grid-row: 2 / span 2;
+    width: 28px;
+    height: 28px;
+  }
+
+  .stepTitle {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 23px;
+  }
+
+  .stepCopy {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 16px;
+    font-stretch: 90%;
+    letter-spacing: 0;
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  .stepCopy span {
+    display: inline;
+  }
+}

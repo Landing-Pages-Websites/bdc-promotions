@@ -1,0 +1,6 @@
+# Bulk review evidence stays local; reports (*.md), docs, scripts, refs and the
+# final curated screens/ are committed. Diff images are reproducible via scripts/.
+comparisons/
+reviews/**
+!reviews/**/
+!reviews/**/*.md

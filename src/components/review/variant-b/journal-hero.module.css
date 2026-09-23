@@ -1,0 +1,404 @@
+/* Hero, image-2 y 79–864 (section-relative coordinates in --u). */
+
+.hero {
+  background: var(--paper-hero);
+}
+
+/*
+ * Taller-than-16:9 folds (1440x900, 1280x800) would show the top of the signal H2 cut by the
+ * fold, so there the hero fills the fold (content stays pinned top). Only while the fold would
+ * show less than 180 units of the next section (the H2 ends ~170): at 16:9 this resolves to the
+ * hero's own 785 units, so 1536x864 is unchanged, and portrait tablets keep no empty band.
+ * Up to 1536px 1 unit = width/1536, so the test is an aspect ratio; above it, 1 unit = 1px.
+ */
+@media (1180px <= width <= 1536px) and (min-aspect-ratio: 1536 / 1044), (width > 1536px) and (height < 1044px) {
+  .hero {
+    min-height: calc(100svh - 79 * var(--u));
+  }
+}
+
+.wrap {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(785 * var(--u));
+  margin: 0 auto;
+}
+
+.title {
+  position: absolute;
+  left: calc(67 * var(--u));
+  top: calc(65 * var(--u));
+  font-family: var(--b-garamond), Georgia, serif;
+  font-size: calc(101 * var(--u));
+  font-weight: 450;
+  line-height: calc(93.5 * var(--u));
+  letter-spacing: -0.003em;
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.title span,
+.lede span,
+.proof span {
+  display: block;
+}
+
+.titleRule {
+  position: absolute;
+  left: calc(72 * var(--u));
+  top: calc(361 * var(--u));
+  width: calc(68 * var(--u));
+  height: 2px;
+  background: var(--teal);
+}
+
+.lede {
+  position: absolute;
+  left: calc(71 * var(--u));
+  top: calc(394 * var(--u));
+  font-size: calc(27.3 * var(--u));
+  line-height: calc(36.2 * var(--u));
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.proof {
+  position: absolute;
+  left: calc(72 * var(--u));
+  top: calc(564 * var(--u));
+  color: var(--teal);
+}
+
+.proofIcon {
+  display: block;
+  width: calc(50 * var(--u));
+  height: calc(50 * var(--u));
+}
+
+.proof p {
+  position: absolute;
+  left: calc(73 * var(--u));
+  top: 0;
+  font-size: var(--fs-text);
+  font-weight: 450;
+  line-height: calc(29 * var(--u));
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+/* Image 2 sets the third checklist line narrower than the first two. */
+@media (min-width: 1180px) {
+  .proof span:nth-child(3) {
+    font-stretch: 86%;
+  }
+}
+
+.actions {
+  position: absolute;
+  left: 0;
+  top: calc(689 * var(--u));
+  width: calc(910 * var(--u));
+  height: calc(66 * var(--u));
+}
+
+.folio {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  width: calc(174 * var(--u));
+  height: 100%;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  font-size: var(--fs-note);
+}
+
+.folio::before,
+.folio::after {
+  content: "";
+  height: 1px;
+  background: var(--ink);
+}
+
+.folio::before {
+  width: calc(52 * var(--u));
+}
+
+.folio::after {
+  flex: 1;
+}
+
+.primary,
+.phone {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  font-stretch: 90%;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.primary {
+  left: calc(187 * var(--u));
+  top: 0;
+  width: calc(444 * var(--u));
+  height: calc(66 * var(--u));
+  gap: calc(10 * var(--u));
+  padding-left: calc(34 * var(--u));
+  background: var(--blue);
+  color: #fff;
+  font-size: var(--fs-body);
+  font-stretch: 87%;
+}
+
+.primary:hover {
+  background: #0044c4;
+}
+
+.arrow {
+  width: calc(29 * var(--u));
+  height: calc(26 * var(--u));
+  flex: none;
+}
+
+.phone {
+  left: calc(658 * var(--u));
+  top: calc(2 * var(--u));
+  width: calc(250 * var(--u));
+  height: calc(64 * var(--u));
+  gap: calc(9 * var(--u));
+  padding-left: calc(12.5 * var(--u));
+  border: calc(1.5 * var(--u)) solid var(--blue-line);
+  color: var(--blue);
+  font-size: var(--fs-lead);
+  font-stretch: 86%;
+}
+
+.phone:hover {
+  background: var(--blue);
+  color: #fff;
+}
+
+.phoneIcon {
+  width: calc(35 * var(--u));
+  height: calc(35 * var(--u));
+  flex: none;
+}
+
+.plate {
+  position: absolute;
+  left: calc(868 * var(--u));
+  top: calc(32 * var(--u));
+  width: calc(601 * var(--u));
+}
+
+.plateImage {
+  position: relative;
+  height: calc(614 * var(--u));
+}
+
+.plateImage img {
+  object-fit: cover;
+}
+
+.markTL,
+.markTR,
+.markBL,
+.markBR {
+  position: absolute;
+  width: calc(17 * var(--u));
+  height: calc(17 * var(--u));
+  border: 0 solid var(--blue-line);
+}
+
+.markTL {
+  right: 100%;
+  bottom: 100%;
+  border-right-width: 1.5px;
+  border-bottom-width: 1.5px;
+}
+
+.markTR {
+  left: 100%;
+  bottom: 100%;
+  border-left-width: 1.5px;
+  border-bottom-width: 1.5px;
+}
+
+.markBL {
+  right: 100%;
+  top: 100%;
+  border-right-width: 1.5px;
+  border-top-width: 1.5px;
+}
+
+.markBR {
+  left: 100%;
+  top: 100%;
+  border-left-width: 1.5px;
+  border-top-width: 1.5px;
+}
+
+.plate figcaption {
+  margin-top: calc(24 * var(--u));
+  padding-left: calc(53 * var(--u));
+  color: var(--teal);
+  font-size: var(--fs-note);
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+@supports not (text-box: trim-both cap alphabetic) {
+  @media (min-width: 1180px) {
+    .title {
+      translate: 0 calc(-1 * var(--trim-garamond));
+    }
+
+    .lede,
+    .proof p,
+    .plate figcaption {
+      translate: 0 calc(-1 * var(--trim-sans));
+    }
+  }
+}
+
+/* ---------- mobile: single column in reading order ---------- */
+@media (max-width: 1179px) {
+  .wrap {
+    display: flex;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    padding: 36px 16px 48px;
+  }
+
+  .title,
+  .titleRule,
+  .lede,
+  .proof,
+  .proof p,
+  .actions,
+  .folio,
+  .primary,
+  .phone,
+  .plate {
+    position: static;
+  }
+
+  .title {
+    font-size: clamp(44px, 12.5vw, 56px);
+    line-height: 1.02;
+    white-space: normal;
+  }
+
+  .titleRule {
+    margin: 28px 0 24px;
+  }
+
+  .lede {
+    font-size: 18px;
+    line-height: 1.5;
+    white-space: normal;
+  }
+
+  .title span,
+  .lede span,
+  .proof span {
+    display: inline;
+  }
+
+  .proof {
+    display: flex;
+    margin-top: 24px;
+    gap: 14px;
+  }
+
+  .proofIcon {
+    width: 40px;
+    height: 40px;
+    flex: none;
+  }
+
+  .proof p {
+    font-size: 17px;
+    line-height: 1.45;
+    white-space: normal;
+  }
+
+  .proof span {
+    display: block;
+  }
+
+  .actions {
+    display: flex;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    margin-top: 28px;
+    gap: 14px;
+  }
+
+  .folio {
+    width: 100%;
+    height: 24px;
+    font-size: 14px;
+  }
+
+  .folio::before {
+    width: 40px;
+  }
+
+  .primary,
+  .phone {
+    width: 100%;
+    min-height: 56px;
+    height: auto;
+    justify-content: space-between;
+    padding: 12px 18px;
+    font-size: 17px;
+    white-space: normal;
+  }
+
+  .phone {
+    justify-content: flex-start;
+    border-width: 1.5px;
+  }
+
+  .arrow {
+    width: 22px;
+    height: 20px;
+  }
+
+  .phoneIcon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .plate {
+    width: 100%;
+    margin-top: 44px;
+    padding: 0 14px;
+  }
+
+  .plateImage {
+    height: auto;
+    aspect-ratio: 601 / 614;
+  }
+
+  .markTL,
+  .markTR,
+  .markBL,
+  .markBR {
+    width: 12px;
+    height: 12px;
+  }
+
+  .plate figcaption {
+    margin-top: 18px;
+    padding-left: 0;
+    font-size: 14px;
+    white-space: normal;
+  }
+}

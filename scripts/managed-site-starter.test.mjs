@@ -78,9 +78,10 @@ test("renders the approved review chooser while preserving managed-site plumbing
     readSource("src/components/home/LandingPage.tsx"),
   ]);
 
-  assert.deepEqual(routes, ["/", "/variant-a", "/variant-b"]);
+  assert.deepEqual(routes, ["/", "/variant-a", "/variant-b", "/variant-c"]);
   assert.match(page, /href="\/variant-a"/u);
   assert.match(page, /href="\/variant-b"/u);
+  assert.match(page, /href="\/variant-c"/u);
   assert.match(page, /Signal Lane/u);
   assert.match(page, /Dealer Field Journal/u);
   assert.match(landingPage, /export function LandingPage/u);

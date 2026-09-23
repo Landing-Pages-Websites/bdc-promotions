@@ -1,6 +1,7 @@
 export const phoneDisplay = "(352) 207-1074";
 export const phoneHref = "tel:+13522071074";
-export const auditHref = "/lp#lead-form";
+// The /lp form section is #get-started (#lead-form never existed there, so the fragment was ignored).
+export const auditHref = "/lp#get-started";
 
 export const growthSteps = [
   ["01", "Strategy", "Shape the campaign around your store, inventory, market, and sales priorities."],

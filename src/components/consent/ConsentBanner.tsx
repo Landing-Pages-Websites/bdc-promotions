@@ -40,7 +40,7 @@ export function ConsentBanner(): ReactElement | null {
             type="button"
             onClick={accept}
             aria-label="Accept analytics cookies"
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            className="min-h-11 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
           >
             {strict ? "Accept" : "Got it"}
           </button>
@@ -48,7 +48,7 @@ export function ConsentBanner(): ReactElement | null {
             type="button"
             onClick={decline}
             aria-label="Decline analytics cookies"
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+            className="min-h-11 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-100 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800"
           >
             Decline
           </button>

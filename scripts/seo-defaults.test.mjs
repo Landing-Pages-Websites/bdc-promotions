@@ -22,7 +22,7 @@ async function loadMetadataRoute(path, replacements) {
 test("sitemap gives every registered prelaunch route a weekly crawl default", async () => {
   const siteRoutes = [{ path: "/", priority: 1 }, { path: "/services" }];
   const { default: sitemap } = await loadMetadataRoute(sitemapPath, {
-    'const REVIEW_ROUTES = ["/", "/variant-a", "/variant-b"] as const;':
+    'const REVIEW_ROUTES = ["/", "/variant-a", "/variant-b", "/variant-c"] as const;':
       "const REVIEW_ROUTES = siteRoutes.map(({ path }) => path);",
     'import type { MetadataRoute } from "next";': "",
     'import { listPublishedPosts, publishedDate } from "@/lib/blog";':
@@ -62,7 +62,7 @@ test("a post's lastModified comes from publishedDate, and is omitted when it has
   // the test agree with itself rather than with the loader.
   const posts = [{ slug: "dated" }, { slug: "no-usable-date" }];
   const { default: sitemap } = await loadMetadataRoute(sitemapPath, {
-    'const REVIEW_ROUTES = ["/", "/variant-a", "/variant-b"] as const;': "const REVIEW_ROUTES = [];",
+    'const REVIEW_ROUTES = ["/", "/variant-a", "/variant-b", "/variant-c"] as const;': "const REVIEW_ROUTES = [];",
     'import type { MetadataRoute } from "next";': "",
     'import { listPublishedPosts, publishedDate } from "@/lib/blog";': `const listPublishedPosts = () => ${JSON.stringify(posts)};
        const publishedDate = (post) =>

@@ -1,0 +1,77 @@
+/* Direction C · Proof Wall — close + FAQ (C-BRIEF §8.7). Tokens come from .page in proof-wall.module.css. */
+
+/* ---------- close + FAQ: the FAQ is 1px-ruled rows on graphite, not a card (cards are for objects) ---------- */
+.close {
+  padding: var(--section) 0;
+  background: var(--c-graphite);
+}
+
+.split75 {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  align-items: start;
+  gap: 48px 72px;
+}
+
+.line {
+  display: block;
+}
+
+.closeLead {
+  max-width: 30em;
+  margin-top: 24px;
+}
+
+.auditSteps {
+  margin-top: 32px;
+}
+
+.auditSteps li {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--c-line-dark);
+  font-size: var(--t-lead);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.auditSteps li:last-child {
+  border-bottom: 1px solid var(--c-line-dark);
+}
+
+.faqList {
+  margin-top: 16px;
+}
+
+.faqList > div {
+  padding: 20px 0;
+  border-top: 1px solid var(--c-line-dark);
+}
+
+.faqList > div:last-child {
+  border-bottom: 1px solid var(--c-line-dark);
+}
+
+.faqQ {
+  font-size: var(--t-body);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.faqList p {
+  margin-top: 6px;
+  color: var(--c-fog);
+}
+
+@media (max-width: 760px) {
+  .split75 {
+    grid-template-columns: 1fr;
+  }
+
+  .line {
+    display: inline;
+  }
+}
