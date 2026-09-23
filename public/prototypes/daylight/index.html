@@ -12,12 +12,13 @@
 <style>
 /* ---------- tokens ---------- */
 :root{
-  --ground:#F5F4F0; --paper:#FFFFFF; --tint:#EFEDE8;
-  --ink:#0D0D0F; --ink-2:#3D3C40; --muted:#5F5E5A;
-  --line:rgba(13,13,15,.09); --line-2:rgba(13,13,15,.16);
-  --accent:#E8510F; --accent-ink:#B93D0B; --accent-soft:#FCE9DC; --accent-dark:#FF7A3D;
-  --dark:#0E0F12; --dark-2:#17181C; --dark-3:#24252B; --on-dark-2:#A1A1AA; --dark-line:rgba(255,255,255,.1);
-  --strike:#D92D20;
+  /* palette pass 2026-09-24: pure white + logo blue #0059FC; neutral cool greys */
+  --ground:#FFFFFF; --paper:#FFFFFF; --tint:#F5F7FA;
+  --ink:#0B1220; --ink-2:#4A5263; --muted:#6B7280;
+  --line:#E6E8EE; --line-2:#D5D9E1;
+  --accent:#0059FC; --accent-ink:#0059FC; --accent-hover:#0047CC; --accent-soft:#EEF3FF; --accent-dark:#6F9BFF;
+  --dark:#0E0F12; --dark-2:#17181C; --dark-3:#24252B; --on-dark-1:#D5DAE3; --on-dark-2:#B4BCCB; --dark-line:rgba(255,255,255,.1);
+  --strike:#0059FC;
 
   /* one container, one wide tier (gallery + final sheet only) */
   --container:1200px; --wide:1200px; --gutter:clamp(20px,5vw,32px);
@@ -75,14 +76,15 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 
 /* ---------- buttons ---------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:52px;padding:0 22px;border-radius:999px;font:500 var(--t6)/1.1 var(--font);text-decoration:none;white-space:nowrap;border:0;cursor:pointer}
-.btn .badge{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;flex:none;background:var(--accent);color:var(--ink)}
+.btn .badge{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;flex:none;background:var(--accent);color:#fff}
+.btn:hover .badge{background:var(--accent-hover)}
 .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .btn-primary{background:var(--ink);color:#fff;padding:0 8px 0 22px}
-.btn-primary:hover{background:#2A2A30}
+.btn-primary:hover{background:#1D2638}
 .btn-light{background:#fff;color:var(--ink);padding:0 8px 0 22px}
 .btn-light:hover{background:var(--tint)}
 .btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2)}
-.btn-ghost:hover{background:var(--paper)}
+.btn-ghost:hover{background:var(--tint)}
 .btn-ghost-dark{background:transparent;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.26)}
 .btn-ghost-dark:hover{background:rgba(255,255,255,.08)}
 .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
@@ -177,7 +179,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 .gap-col .label{margin-bottom:24px}
 .gap-col.good .label{color:var(--accent-ink);padding-left:40px}
 .funnel{display:grid;gap:12px;justify-items:center}
-.funnel li{display:flex;align-items:center;justify-content:center;height:60px;border-radius:14px;background:var(--tint);color:var(--muted);font-size:var(--t5);text-decoration:line-through;text-decoration-color:var(--strike);text-decoration-thickness:2px}
+.funnel li{display:flex;align-items:center;justify-content:center;height:60px;border-radius:14px;background:var(--tint);color:var(--ink-2);font-size:var(--t5);text-decoration:line-through;text-decoration-color:var(--strike);text-decoration-thickness:2px}
 .funnel li:nth-child(1){width:100%} .funnel li:nth-child(2){width:80%} .funnel li:nth-child(3){width:60%}
 .gap-arrow{display:grid;place-items:center}
 .gap-arrow svg{width:72px;height:32px;fill:none;stroke:var(--ink-2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -188,7 +190,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 
 /* ---------- 04 featured work ---------- */
 .feature{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;align-items:start}
-.plate{grid-column:1 / span 7;display:grid;justify-items:center;padding:64px 40px;border-radius:var(--r-l);background:radial-gradient(120% 80% at 50% 0%, #2A2320 0%, var(--dark-2) 55%);box-shadow:inset 0 0 0 1px var(--dark-line)}
+.plate{grid-column:1 / span 7;display:grid;justify-items:center;padding:64px 40px;border-radius:var(--r-l);background:radial-gradient(120% 80% at 50% 0%, #1E2533 0%, var(--dark-2) 55%);box-shadow:inset 0 0 0 1px var(--dark-line)}
 .plate img{width:min(100%, 440px);height:auto;border-radius:10px;box-shadow:var(--lift)}
 .spec{grid-column:9 / span 4;display:grid;gap:16px;padding-top:64px}
 .spec .lead{margin-top:4px}
@@ -272,7 +274,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 .combo{--nt:12px}
 .on-dark .lane .node{background:var(--dark);box-shadow:inset 0 0 0 2px var(--on-dark-2)}
 .on-dark .lane .node::after{background:var(--on-dark-2)}
-.on-dark .lane > li:last-child .node{background:var(--accent);box-shadow:0 0 0 5px rgba(232,81,15,.22)}
+.on-dark .lane > li:last-child .node{background:var(--accent);box-shadow:0 0 0 5px rgba(0,89,252,.22)}
 .on-dark .lane > li:last-child .node::after{background:var(--dark)}
 .combo .part{display:flex;align-items:center;min-height:48px;padding:0 16px;border-radius:14px;background:var(--dark-3);box-shadow:inset 0 0 0 1px var(--dark-line);font-weight:500}
 .inc{display:grid;gap:6px;padding-top:24px;border-top:1px dashed rgba(255,255,255,.18)}
@@ -318,7 +320,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 .a-step::before{content:"";position:absolute;left:23px;top:56px;bottom:8px;width:2px;background:var(--dark-line);border-radius:2px}
 .a-step:last-of-type::before{display:none}
 .a-step .c{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--dark-3);box-shadow:inset 0 0 0 1px var(--dark-line);color:#fff;font:500 var(--t7)/1 var(--font)}
-.a-step:last-of-type .c{background:var(--accent);color:var(--ink);box-shadow:0 0 0 5px rgba(232,81,15,.22)}
+.a-step:last-of-type .c{background:var(--accent);color:#fff;box-shadow:0 0 0 5px rgba(0,89,252,.22)}
 .a-step h3{margin:10px 0 8px}
 .a-step p{color:var(--on-dark-2)}
 .a-steps .cta-row{margin-top:40px;padding-left:68px}
@@ -360,8 +362,8 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 .final-in{position:relative;z-index:1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;row-gap:40px;align-items:end;padding-block:var(--pad-l) var(--pad-m)}
 .final-copy{grid-column:1 / span 7;display:grid;gap:24px}
 .final-copy h2{font-size:var(--t1);line-height:1.02;letter-spacing:-.03em;color:#fff}
-.final-copy .lead{color:#C9C9CF;max-width:560px}
-.final-copy .label{color:#D4D4D8}
+.final-copy .lead{color:#CDD3DE;max-width:560px}
+.final-copy .label{color:var(--on-dark-1)}
 .recap{grid-column:9 / span 4;padding:28px;border-radius:var(--r-l);background:#fff;color:var(--ink)}
 .recap p{color:var(--ink-2)}
 .recap .lane{--lg:16px;--nt:0px;margin-top:24px}
@@ -378,15 +380,15 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 .f-brand{grid-column:1 / span 4;display:grid;gap:4px;align-content:start}
 .f-brand img{width:120px;height:auto;margin-bottom:12px}
 .f-brand .brandline{color:#fff;font-weight:500;margin-bottom:4px}
-.f-brand a{color:#D4D4D8;text-decoration:none;min-height:44px;display:inline-flex;align-items:center;width:fit-content}
+.f-brand a{color:var(--on-dark-1);text-decoration:none;min-height:44px;display:inline-flex;align-items:center;width:fit-content}
 .f-col{grid-column:span 2;display:grid;align-content:start}
 .f-col.svc-col{grid-column:6 / span 3}
 .f-col .label{margin-bottom:8px}
-.f-col a{color:#D4D4D8;text-decoration:none;min-height:44px;min-width:44px;display:inline-flex;align-items:center;width:fit-content}
+.f-col a{color:var(--on-dark-1);text-decoration:none;min-height:44px;min-width:44px;display:inline-flex;align-items:center;width:fit-content}
 .f-col a:hover,.f-brand a:hover{color:#fff}
 .f-legal{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 32px;margin-top:56px;padding-top:24px;border-top:1px solid var(--dark-line);font-size:var(--t7);line-height:1.6}
 .f-legal nav{display:flex;gap:20px}
-.f-legal a{color:#D4D4D8;min-height:44px;min-width:44px;display:inline-flex;align-items:center}
+.f-legal a{color:var(--on-dark-1);min-height:44px;min-width:44px;display:inline-flex;align-items:center}
 
 .mbar{display:none}
 
@@ -489,7 +491,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
   .step .num{grid-row:span 2;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--paper);box-shadow:inset 0 0 0 1px var(--line-2);position:relative;z-index:1}
   .step::after{content:"";position:absolute;left:19px;top:40px;bottom:0;width:2px;background:var(--line-2)}
   .step:last-child::after{display:none}
-  .step:last-child .num{background:var(--accent);color:var(--ink);box-shadow:none}
+  .step:last-child .num{background:var(--accent);color:#fff;box-shadow:none}
   .step h3{font-size:var(--t5);margin-top:8px}
   .step p{grid-column:2}
   .thread{padding:20px}
@@ -544,7 +546,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 <!-- ============ header ============ -->
 <header class="nav-wrap">
   <nav class="nav wrap" aria-label="Primary">
-    <a class="brand" href="#top"><img src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions — Automotive Marketing" width="1254" height="749"></a>
+    <a class="brand" href="#top"><img src="shared/bdc-logo-2026.png" alt="BDC Promotions — Automotive Marketing" width="1254" height="749"></a>
     <ul class="nav-links">
       <li><a href="#services">Services</a></li>
       <li><a href="#work">Work</a></li>
@@ -589,7 +591,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
     </ul>
   </div>
   <figure class="hero-photo">
-    <img src="/images/design/shared/photo-night-showroom-retouched.jpg" alt="Illustrative night view of a glass-fronted dealership showroom" width="3840" height="1973" fetchpriority="high">
+    <img src="shared/photo-night-showroom-retouched.jpg" alt="Illustrative night view of a glass-fronted dealership showroom" width="3840" height="1973" fetchpriority="high">
     <figcaption class="photo-chip">Illustrative photograph</figcaption>
   </figure>
 </section>
@@ -688,7 +690,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
         <figcaption>Massive Used Car Sales Event</figcaption>
       </figure>
       <figure class="shot p">
-        <div class="well"><img src="/images/design/shared/work-wholesale-public.webp" alt="Event ad creative headlined “Wholesale to the Public”, showing four vehicles in front of a dealership at sunset" width="1122" height="1402"></div>
+        <div class="well"><img src="shared/work-wholesale-public.webp" alt="Event ad creative headlined “Wholesale to the Public”, showing four vehicles in front of a dealership at sunset" width="1122" height="1402"></div>
         <figcaption>Wholesale to the Public</figcaption>
       </figure>
       <figure class="shot l meta">
@@ -968,7 +970,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
 <div class="sheet sheet-dark on-dark">
  <div class="final">
   <div class="final-bg">
-    <img src="/images/design/shared/photo-night-showroom-retouched.jpg" alt="" width="3840" height="1973">
+    <img src="shared/photo-night-showroom-retouched.jpg" alt="" width="3840" height="1973">
   </div>
   <span class="photo-chip">Illustrative photograph</span>
   <section class="wrap-wide final-in" aria-labelledby="fin-h">
@@ -996,7 +998,7 @@ h3{font-size:var(--t4);line-height:1.25;letter-spacing:-.015em}
     <div class="wrap-wide">
       <div class="f-grid">
         <div class="f-brand">
-          <img src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions — Automotive Marketing" width="1254" height="749">
+          <img src="shared/bdc-logo-2026.png" alt="BDC Promotions — Automotive Marketing" width="1254" height="749">
           <p class="brandline">BDC Promotions — Automotive Marketing</p>
           <a href="tel:+13522071074">(352) 207-1074</a>
           <a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com</a>

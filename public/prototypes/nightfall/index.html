@@ -12,16 +12,16 @@
 <style>
 /* ================= Tokens ================= */
 :root{
-  /* light grounds: the page runs on warm paper; sections separate by ground, not hairlines */
-  --paper:#FAF9F7; --sand:#F2EFE9; --card:#FFFFFF;
-  --line:#E7E3DC; --line-2:#D6D0C6;
-  --ink:#171614; --ink-2:#5E5A53; --ink-3:#6B665E;
+  /* light grounds: pure white; structure comes from hairlines and one neutral tint surface */
+  --paper:#FFFFFF; --sand:#F5F7FA; --card:#FFFFFF;
+  --line:#E6E8EE; --line-2:#D3D8E1;
+  --ink:#0B1220; --ink-2:#4A5263; --ink-3:#6B7280;
   /* night: hero, the work band, the connected plan, the close, the footer */
-  --night:#0E0F12; --n1:#16181C; --n2:#1D2025;
-  --nline:rgba(242,238,230,.1); --nline-2:rgba(242,238,230,.2);
-  --ntx:#F3F0EA; --ntx-2:#B7B2A9; --ntx-3:#9A958D;
-  /* one accent: showroom amber */
-  --amber:#F4A83A; --amber-ink:#17100A; --amber-tx:#955509; --red:#C8373E;
+  --night:#0C0F15; --n1:#151920; --n2:#1C2029;
+  --nline:rgba(255,255,255,.1); --nline-2:rgba(255,255,255,.2);
+  --ntx:#FFFFFF; --ntx-2:#B4BCCB; --ntx-3:#8F98A8;
+  /* one accent: the logo blue. Fills and >=24px text use --blue; small blue text on night uses --blue-nt (~7:1) */
+  --blue:#0059FC; --blue-hover:#0047CC; --on-blue:#FFFFFF; --blue-tx:#0059FC; --blue-nt:#6F9BFF; --blue-tint:#EEF3FF;
   --f:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   /* type ramp: 7 sizes */
   --t-1:72px; --t-2:48px; --t-3:28px; --t-4:20px; --t-5:17px; --t-6:15px; --t-7:13px;
@@ -48,11 +48,11 @@ a{color:inherit}
 h1,h2,h3,h4,p,ul,ol,figure,dl,dd,dt{margin:0}
 ul,ol{padding:0;list-style:none}
 p{text-wrap:pretty}
-:focus-visible{outline:2px solid var(--amber-tx);outline-offset:3px;border-radius:8px}
-.night :focus-visible,.hero :focus-visible,.site-head :focus-visible,.foot :focus-visible{outline-color:var(--amber)}
+:focus-visible{outline:2px solid var(--blue-tx);outline-offset:3px;border-radius:8px}
+.night :focus-visible,.hero :focus-visible,.site-head :focus-visible,.foot :focus-visible{outline-color:var(--blue-nt)}
 .wrap{width:min(100% - 2*var(--gutter), var(--container));margin-inline:auto}
 .sr-only{font:inherit;position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.skip{position:absolute;left:16px;top:-80px;z-index:100;background:var(--amber);color:var(--amber-ink);padding:12px 16px;border-radius:var(--r-sm);font-weight:500;text-decoration:none}
+.skip{position:absolute;left:16px;top:-80px;z-index:100;background:var(--blue);color:var(--on-blue);padding:12px 16px;border-radius:var(--r-sm);font-weight:500;text-decoration:none}
 .skip:focus{top:16px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 
@@ -64,35 +64,35 @@ p{text-wrap:pretty}
 .lede{font-size:var(--t-4);line-height:1.55;color:var(--ink-2);letter-spacing:-.006em}
 .body{font-size:var(--t-5);line-height:1.62;color:var(--ink-2)}
 .small{font-size:var(--t-6);line-height:1.55;color:var(--ink-2)}
-/* labels: Geist 500 13 caps +.06em, led by the amber signal tick (the page's one recurring mark) */
+/* labels: Geist 500 13 caps +.06em, led by the blue signal tick (the page's one recurring mark) */
 .label{display:inline-flex;align-items:center;gap:10px;font-size:var(--t-7);font-weight:500;letter-spacing:.06em;text-transform:uppercase;line-height:1.3;color:var(--ink-2)}
-.label::before{content:"";flex:none;width:16px;height:2px;border-radius:2px;background:var(--amber)}
+.label::before{content:"";flex:none;width:16px;height:2px;border-radius:2px;background:var(--blue)}
 .label.plain::before{display:none}
-.num{font-size:var(--t-6);font-weight:500;font-feature-settings:"tnum";letter-spacing:0;color:var(--amber-tx);line-height:1.4}
-.accent{color:var(--amber)}
+.num{font-size:var(--t-6);font-weight:500;font-feature-settings:"tnum";letter-spacing:0;color:var(--blue-tx);line-height:1.4}
+.accent{color:var(--blue-nt)}
 @media (min-width:721px){ .br{display:block} }
 .night,.hero{color:var(--ntx)}
 .night .lede,.night .body,.night .small{color:var(--ntx-2)}
 .night .label{color:var(--ntx-2)}
-.night .num{color:var(--amber)}
+.night .num{color:var(--blue-nt)}
 
 /* ================= Controls ================= */
 .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border-radius:var(--r-sm);font:500 var(--t-5)/1.2 var(--f);letter-spacing:-.01em;text-decoration:none;text-align:center;transition:background-color .2s,border-color .2s,color .2s}
-.btn-amber{background:var(--amber);color:var(--amber-ink)}
-.btn-amber:hover{background:#FFB852}
+.btn-blue{background:var(--blue);color:var(--on-blue)}
+.btn-blue:hover{background:var(--blue-hover)}
 .btn-line{border:1px solid var(--line-2);color:var(--ink);background:var(--card)}
-.btn-line:hover{border-color:#A9A298}
-.night .btn-line,.hero .btn-line{border-color:rgba(242,238,230,.32);color:var(--ntx);background:transparent}
-.night .btn-line:hover,.hero .btn-line:hover{border-color:rgba(242,238,230,.6)}
+.btn-line:hover{border-color:#9AA2B1}
+.night .btn-line,.hero .btn-line{border-color:rgba(255,255,255,.32);color:var(--ntx);background:transparent}
+.night .btn-line:hover,.hero .btn-line:hover{border-color:rgba(255,255,255,.6)}
 .btn .arr{transition:transform .2s}
 .btn:hover .arr{transform:translateX(3px)}
 .link{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--ink);text-decoration:none;font-weight:500}
-.link span{color:var(--amber-tx);transition:transform .2s}
+.link span{color:var(--blue-tx);transition:transform .2s}
 .link:hover span{transform:translateX(3px)}
-.night .link{color:var(--ntx)} .night .link span{color:var(--amber)}
+.night .link{color:var(--ntx)} .night .link span{color:var(--blue-nt)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg)}
-.tag{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:rgba(8,9,11,.88);border:1px solid rgba(242,238,230,.16);font-size:var(--t-7);font-weight:500;color:#E4DFD6;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:rgba(8,9,11,.88);border:1px solid rgba(255,255,255,.16);font-size:var(--t-7);font-weight:500;color:#E3E8F0;white-space:nowrap}
 
 /* ================= Header ================= */
 .site-head{position:fixed;inset:0 0 auto;z-index:50;background:var(--night);border-bottom:1px solid var(--nline);color:var(--ntx)}
@@ -101,10 +101,10 @@ p{text-wrap:pretty}
 .brand img{width:136px}
 .nav{display:flex;gap:4px}
 .nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:10px;font-size:var(--t-6);color:var(--ntx-2);text-decoration:none;transition:color .2s,background-color .2s}
-.nav a:hover{color:var(--ntx);background:rgba(242,238,230,.06)}
+.nav a:hover{color:var(--ntx);background:rgba(255,255,255,.06)}
 .head-cta{display:flex;align-items:center;gap:8px;justify-self:end}
 .tel{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;font-size:var(--t-6);color:var(--ntx);text-decoration:none;font-feature-settings:"tnum"}
-.tel svg{color:var(--amber)}
+.tel svg{color:var(--blue-nt)}
 .head-cta .btn{min-height:44px;padding:0 18px;font-size:var(--t-6)}
 .menu{display:none;position:relative;justify-self:end}
 .menu summary{list-style:none;display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 14px;border:1px solid var(--nline-2);border-radius:var(--r-sm);font-size:var(--t-6);cursor:pointer}
@@ -112,7 +112,7 @@ p{text-wrap:pretty}
 .menu summary i{display:block;width:14px;height:1.5px;background:currentColor;box-shadow:0 5px 0 currentColor,0 -5px 0 currentColor}
 .menu nav{position:absolute;right:0;top:calc(100% + 10px);width:240px;padding:8px;border-radius:var(--r-md);background:var(--n2);border:1px solid var(--nline-2);display:grid}
 .menu nav a{display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:10px;text-decoration:none;color:var(--ntx)}
-.menu nav a:hover{background:rgba(242,238,230,.06)}
+.menu nav a:hover{background:rgba(255,255,255,.06)}
 
 /* ================= Sections ================= */
 main{display:block}
@@ -142,19 +142,19 @@ main{display:block}
   linear-gradient(90deg,rgba(8,9,11,.94) 0%,rgba(8,9,11,.86) 30%,rgba(8,9,11,.55) 50%,rgba(8,9,11,.08) 70%,rgba(8,9,11,0) 82%),
   linear-gradient(180deg,rgba(8,9,11,.5) 0%,rgba(8,9,11,0) 26%,rgba(8,9,11,0) 56%,rgba(8,9,11,.92) 100%)}
 .hero-inner{padding-block:48px 56px}
-.hero .label{color:#D4CFC6}
+.hero .label{color:#D0D6E0}
 .hero .h1{max-width:11.6em;margin-top:22px}
-.hero .lede{max-width:600px;margin-top:26px;color:#CFCAC1}
+.hero .lede{max-width:600px;margin-top:26px;color:#CDD3DD}
 .hero .actions{margin-top:36px}
-.hero .offer{margin-top:18px;font-size:var(--t-6);color:#CFCAC1}
+.hero .offer{margin-top:18px;font-size:var(--t-6);color:#CDD3DD}
 .hero-tag{position:absolute;top:calc(var(--head-h) + 20px);right:max(var(--gutter),calc((100% - var(--container))/2))}
-.hero-rail{border-top:1px solid rgba(242,238,230,.16);padding-block:28px 34px}
+.hero-rail{border-top:1px solid rgba(255,255,255,.16);padding-block:28px 34px}
 .pillars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .pillars li{display:grid;align-content:start;gap:6px;padding-inline:24px}
 .pillars li:first-child{padding-left:0}
-.pillars li + li{border-left:1px solid rgba(242,238,230,.14)}
+.pillars li + li{border-left:1px solid rgba(255,255,255,.14)}
 .pillars b{font-size:var(--t-5);font-weight:500;color:var(--ntx);letter-spacing:-.01em}
-.pillars span{font-size:var(--t-6);line-height:1.5;color:#BDB8AF}
+.pillars span{font-size:var(--t-6);line-height:1.5;color:var(--ntx-2)}
 @media (min-width:1800px){ .hero{min-height:clamp(760px,100svh,1080px)} .hero .lede{max-width:640px} }
 /* short laptop screens (1280×800): keep the pillar rail inside the fold */
 @media (min-width:721px) and (max-height:820px){ .hero{min-height:clamp(700px,100svh,960px)} .hero-inner{padding-block:24px 36px} .hero .h1{margin-top:18px} .hero .lede{margin-top:20px} .hero .actions{margin-top:28px} .hero-rail{padding-block:22px 26px} }
@@ -162,11 +162,11 @@ main{display:block}
 /* ================= 2 · Positioning ================= */
 .pos .label{margin-bottom:28px}
 .pos-h{grid-column:1 / span 11;font-size:var(--t-2);line-height:1.12;letter-spacing:-.03em;font-weight:500;color:var(--ink);text-wrap:balance}
-.pos-h .dim{color:#8A857D}
+.pos-h .dim{color:#848B98}
 .pos-foot{grid-column:1 / -1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap);align-items:center;margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
 .proof3{grid-column:1 / span 9;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:var(--col-gap)}
 .proof3 li{display:flex;align-items:center;gap:12px;font-size:var(--t-5);font-weight:500;letter-spacing:-.01em}
-.proof3 svg{flex:none;color:var(--amber-tx)}
+.proof3 svg{flex:none;color:var(--blue-tx)}
 .pos-foot .link{grid-column:10 / -1;justify-self:end}
 
 /* ================= 3 · The gap (funnel) ================= */
@@ -175,16 +175,16 @@ main{display:block}
 .fn-caps,.fn-row{display:grid;grid-template-columns:minmax(0,1fr) var(--fh) var(--fh) minmax(0,1fr)}
 .fn-caps{padding-bottom:28px;font-size:var(--t-7);font-weight:500;letter-spacing:.06em;text-transform:uppercase;line-height:1.3}
 .fn-caps .l{grid-column:1 / 3;text-align:right;padding-right:28px;color:var(--ink-2)}
-.fn-caps .r{grid-column:3 / 5;padding-left:28px;color:var(--amber-tx)}
+.fn-caps .r{grid-column:3 / 5;padding-left:28px;color:var(--blue-tx)}
 .fn-rows{position:relative;display:grid;gap:8px}
 .fn-row{height:88px;align-items:center}
 .fn-b{position:relative;height:100%}
 .fn-b i{position:absolute;inset:0}
 .fn-b.l i{background:var(--g);clip-path:polygon(var(--t) 0,100% 0,100% 100%,var(--b) 100%)}
 .fn-b.r i{background:var(--a);clip-path:polygon(0 0,calc(100% - var(--t)) 0,calc(100% - var(--b)) 100%,0 100%)}
-.r1{--t:0%;--b:20%;--m:10%;--g:#DCD7CF;--a:#F9D6A2}
-.r2{--t:20%;--b:40%;--m:30%;--g:#CFC9C0;--a:#F7C173}
-.r3{--t:40%;--b:60%;--m:50%;--g:#C2BBB1;--a:#F4A83A}
+.r1{--t:0%;--b:20%;--m:10%;--g:#E1E5EC;--a:#C4D6FE}
+.r2{--t:20%;--b:40%;--m:30%;--g:#CFD5DF;--a:#7EA6FE}
+.r3{--t:40%;--b:60%;--m:50%;--g:#BDC4D1;--a:var(--blue)}
 /* leaders: label → 48px rule → band edge */
 .fn-b.l::before,.fn-b.r::before{content:"";position:absolute;top:50%;width:var(--m);height:1px;background:var(--line-2)}
 .fn-b.l::before{left:0} .fn-b.r::before{right:0}
@@ -192,7 +192,7 @@ main{display:block}
 .fn-b.l::after{content:"";position:absolute;left:calc(var(--m) - 20px);top:74%;width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:-10px 12px 0 -1px var(--g)}
 .fn-l,.fn-r{display:flex;align-items:center;gap:14px;font-size:var(--t-6);line-height:1.35}
 .fn-l{justify-content:flex-end;text-align:right;color:var(--ink-3)}
-.fn-l s{text-decoration-color:var(--red);text-decoration-thickness:1.5px}
+.fn-l s{text-decoration-color:var(--blue);text-decoration-thickness:1.5px}
 .fn-r{color:var(--ink);font-weight:500}
 .fn-l::after,.fn-r::before{content:"";flex:0 0 48px;height:1px;background:var(--line-2)}
 .fn-axis{position:absolute;left:50%;top:-20px;bottom:-30px;width:2px;margin-left:-1px;background:var(--ink)}
@@ -207,18 +207,18 @@ main{display:block}
 .work-b{padding-bottom:var(--s-loud)}
 .plate{border-radius:var(--r-lg);background:var(--n1);border:1px solid var(--nline)}
 /* the feed frame: 1px chrome drawn around each portrait ad so it reads as it runs */
-.post{width:min(100%,var(--w,400px));background:#1A1C21;border:1px solid rgba(242,238,230,.14);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-work)}
+.post{width:min(100%,var(--w,400px));background:#191C23;border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-work)}
 .post img{width:100%}
 .post-top,.post-cta{display:flex;align-items:center;gap:10px;padding:12px 14px}
-.post-top .av{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid rgba(242,238,230,.26);background:#24272D}
+.post-top .av{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.26);background:#232730}
 .post-top .who{flex:1;display:grid;gap:6px}
-.sk{display:block;height:8px;width:96px;border-radius:4px;background:rgba(242,238,230,.16)}
-.sk.s2{width:64px;background:rgba(242,238,230,.1)}
+.sk{display:block;height:8px;width:96px;border-radius:4px;background:rgba(255,255,255,.16)}
+.sk.s2{width:64px;background:rgba(255,255,255,.1)}
 .post-top .sp{font-size:var(--t-7);line-height:1;color:var(--ntx-3)}
 .post-top svg{color:var(--ntx-3)}
-.post-cta{justify-content:space-between;border-top:1px solid rgba(242,238,230,.1);background:#1E2126}
+.post-cta{justify-content:space-between;border-top:1px solid rgba(255,255,255,.1);background:#1D2129}
 .post-cta .who{display:grid;gap:6px}
-.post-cta .pill{flex:none;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:8px;border:1px solid rgba(242,238,230,.24);font-size:var(--t-7);font-weight:500;color:var(--ntx)}
+.post-cta .pill{flex:none;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:8px;border:1px solid rgba(255,255,255,.24);font-size:var(--t-7);font-weight:500;color:var(--ntx)}
 
 .feat{grid-template-rows:1fr auto auto 1fr}
 .feat-plate{grid-column:1 / span 6;grid-row:1 / 5;display:grid;place-items:center;padding:36px 40px}
@@ -265,11 +265,11 @@ main{display:block}
 .steps{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:32px}
 .steps::before,.steps::after{content:"";position:absolute;top:6px;height:2px;border-radius:2px}
 .steps::before{left:0;right:calc((100% - 128px) / 5 - 14px);background:var(--line-2)}
-/* only the last segment lights: optimization → nurture is grey, nurture → appointment is amber */
-.steps::after{left:calc(3 * (100% + 32px) / 5);width:calc((100% + 32px) / 5 + 2px);background:var(--amber)}
-.node{position:relative;z-index:1;display:block;width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid #A9A298}
-.step:nth-child(4) .node{border-color:var(--amber)}
-.step:last-child .node{background:var(--amber);border-color:var(--amber)}
+/* only the last segment lights: optimization → nurture is grey, nurture → appointment is blue */
+.steps::after{left:calc(3 * (100% + 32px) / 5);width:calc((100% + 32px) / 5 + 2px);background:var(--blue)}
+.node{position:relative;z-index:1;display:block;width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid #9AA2B1}
+.step:nth-child(4) .node{border-color:var(--blue)}
+.step:last-child .node{background:var(--blue);border-color:var(--blue)}
 .step .num{display:block;margin-top:28px}
 .step .h4{margin-top:6px}
 .step p{margin-top:10px}
@@ -277,7 +277,7 @@ main{display:block}
 .bracket a{grid-column:4 / span 2;display:grid;justify-items:center;text-decoration:none;color:var(--ink);font-size:var(--t-6);font-weight:500}
 .bracket a::before{content:"";justify-self:stretch;height:12px;border:1px solid var(--line-2);border-top:0;border-radius:0 0 8px 8px}
 .bracket span{display:inline-flex;align-items:center;gap:8px;min-height:44px}
-.bracket span i{font-style:normal;color:var(--amber-tx)}
+.bracket span i{font-style:normal;color:var(--blue-tx)}
 
 /* ================= 8 · Follow-up diagram ================= */
 .flow{padding:48px}
@@ -298,19 +298,19 @@ main{display:block}
 .nd svg{grid-row:1 / span 2;color:var(--ink)}
 .nd b{font-size:var(--t-5);font-weight:500;letter-spacing:-.01em;line-height:1.3}
 .nd span{grid-column:2;font-size:var(--t-6);line-height:1.45;color:var(--ink-2)}
-.nd.in::before,.nd.out::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--card);border:1.5px solid #8B857C}
+.nd.in::before,.nd.out::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--card);border:1.5px solid #8A93A3}
 .nd.in::before{left:-5px} .nd.out::after{right:-5px}
-.fd-z .nd{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
-.fd-z .nd span{color:#3A2A12}
-.fd-z .nd svg{color:var(--amber-ink)}
-.fd-z .nd.in::before{border-color:var(--amber-tx)}
+.fd-z .nd{background:var(--blue);border-color:var(--blue);color:var(--on-blue)}
+.fd-z .nd span{color:#E8EEFF}
+.fd-z .nd svg{color:var(--on-blue)}
+.fd-z .nd.in::before{border-color:var(--blue-tx)}
 
 /* ================= 9 · Pricing ================= */
 .price-grid{align-items:stretch;row-gap:var(--col-gap)}
 .plan-big{grid-column:1 / span 6;padding:48px;border-radius:var(--r-lg);display:flex;flex-direction:column}
 .plan-sum{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:20px}
 .chip{display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--nline-2);font-size:var(--t-7);font-weight:500;color:var(--ntx)}
-.plan-sum .plus{color:var(--amber);font-size:var(--t-4);line-height:1}
+.plan-sum .plus{color:var(--blue-nt);font-size:var(--t-4);line-height:1}
 .price{display:flex;align-items:baseline;gap:12px;margin-top:44px;font-feature-settings:"tnum"}
 .price b{font-size:var(--t-1);font-weight:400;letter-spacing:-.04em;line-height:1}
 .price span{font-size:var(--t-4);color:var(--ntx-2)}
@@ -326,7 +326,7 @@ main{display:block}
 .plan-row .t{grid-column:1 / -1;font-size:var(--t-6);color:var(--ink-3)}
 .plan-row .small{grid-column:1 / -1;margin-top:10px;color:var(--ink)}
 .assure{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--col-gap);margin-top:var(--col-gap)}
-.assure > div{padding:28px 32px;border-radius:var(--r-lg);border:1px dashed #C9C2B7}
+.assure > div{padding:28px 32px;border-radius:var(--r-lg);border:1px dashed #C6CCD7}
 .assure .body{margin-top:8px}
 
 /* ================= 10 · Proof ================= */
@@ -367,16 +367,16 @@ main{display:block}
 .faq-head .actions{margin-top:28px;flex-direction:column;align-items:stretch}
 .faq-list{grid-column:6 / -1;display:grid;gap:10px}
 .faq-list details{border-radius:var(--r-md);background:var(--card);border:1px solid var(--line);transition:border-color .2s}
-.faq-list details[open]{border-color:#E9CFA6}
+.faq-list details[open]{border-color:#BFD2FF}
 .faq-list summary{display:flex;justify-content:space-between;align-items:center;gap:24px;min-height:64px;padding:12px 20px 12px 24px;cursor:pointer;list-style:none;font-size:var(--t-4);font-weight:500;letter-spacing:-.012em;line-height:1.35}
 .faq-list summary::-webkit-details-marker{display:none}
 .pm{flex:none;position:relative;width:32px;height:32px;border-radius:50%;background:var(--sand)}
 .pm::before,.pm::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:1.5px;background:var(--ink);transform:translate(-50%,-50%);transition:transform .25s}
 .pm::after{transform:translate(-50%,-50%) rotate(90deg)}
-details[open] .pm{background:#FBE9CE}
+details[open] .pm{background:var(--blue-tint)}
 details[open] .pm::after{transform:translate(-50%,-50%) rotate(0deg)}
 .faq-list .ans{padding:0 72px 26px 24px;max-width:760px}
-.faq-list .ans a{color:var(--ink);text-decoration-color:var(--amber-tx);text-underline-offset:3px}
+.faq-list .ans a{color:var(--ink);text-decoration-color:var(--blue-tx);text-underline-offset:3px}
 
 /* ================= 13 · Close ================= */
 .close{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap);align-items:center;padding:64px 72px;border-radius:var(--r-xl)}
@@ -389,7 +389,7 @@ details[open] .pm::after{transform:translate(-50%,-50%) rotate(0deg)}
 .recap ul{margin-top:18px;border-top:1px solid var(--nline)}
 .recap li{display:grid;grid-template-columns:20px 1fr;gap:14px;padding-block:14px;border-bottom:1px solid var(--nline);font-size:var(--t-6);color:var(--ntx)}
 .recap li:last-child{border-bottom:0;padding-bottom:0}
-.recap li svg{margin-top:3px;color:var(--amber)}
+.recap li svg{margin-top:3px;color:var(--blue-nt)}
 
 /* ================= Footer ================= */
 .foot{padding-block:72px 36px;background:var(--night);color:var(--ntx)}
@@ -405,7 +405,7 @@ nav.foot-col .label{grid-column:1 / -1}
 .foot-col .label::before{display:none}
 .foot-col a{display:flex;align-items:center;min-height:44px;min-width:44px;color:var(--ntx-2);text-decoration:none;font-size:var(--t-6)}
 .foot-col a:hover{color:var(--ntx)}
-.foot-col .btn{color:var(--amber-ink);margin-top:6px;min-height:48px;display:inline-flex}
+.foot-col .btn{color:var(--on-blue);margin-top:6px;min-height:48px;display:inline-flex}
 .foot-legal{margin-top:48px;padding-top:24px;border-top:1px solid var(--nline);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 32px;align-items:center}
 .foot-legal nav{display:flex;flex-wrap:wrap;gap:4px 24px}
 .foot-legal a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;color:var(--ntx-2);text-decoration:none;font-size:var(--t-6)}
@@ -413,7 +413,7 @@ nav.foot-col .label{grid-column:1 / -1}
 .foot .small{color:var(--ntx-2)}
 .foot-disc{margin-top:12px;max-width:760px}
 .mbar{display:none}
-.mbar .btn-line{border-color:rgba(242,238,230,.32);color:var(--ntx);background:transparent}
+.mbar .btn-line{border-color:rgba(255,255,255,.32);color:var(--ntx);background:transparent}
 
 /* ================= ≥1800 (the owner's 2560 screen) ================= */
 @media (min-width:1800px){
@@ -435,7 +435,7 @@ nav.foot-col .label{grid-column:1 / -1}
   .steps::before{top:6px;bottom:6px;left:6px;right:auto;width:2px;height:auto}
   .steps::after{display:none}
   .step{display:grid;grid-template-columns:14px 1fr;column-gap:28px;padding-bottom:32px}
-  .step:nth-child(4){background:linear-gradient(var(--amber),var(--amber)) 6px 7px / 2px 100% no-repeat}
+  .step:nth-child(4){background:linear-gradient(var(--blue),var(--blue)) 6px 7px / 2px 100% no-repeat}
   .step:last-child{padding-bottom:0}
   .step .node{grid-row:1 / span 3;margin-top:4px}
   .step .num{margin-top:0}
@@ -512,7 +512,7 @@ nav.foot-col .label{grid-column:1 / -1}
   .hero .actions{margin-top:28px}
   .hero-rail{position:relative;z-index:2;padding-block:24px 32px}
   .pillars{grid-template-columns:1fr}
-  .pillars li{grid-template-columns:76px 1fr;column-gap:12px;align-items:baseline;padding:12px 0;border-left:0!important;border-top:1px solid rgba(242,238,230,.1)}
+  .pillars li{grid-template-columns:76px 1fr;column-gap:12px;align-items:baseline;padding:12px 0;border-left:0!important;border-top:1px solid rgba(255,255,255,.1)}
   .pillars li:first-child{border-top:0;padding-top:0}
   .pillars li:last-child{padding-bottom:0}
   /* the fixed bar carries Free audit + Call on mobile, so mid-page call duplicates drop */
@@ -611,7 +611,7 @@ nav.foot-col .label{grid-column:1 / -1}
     </nav>
     <div class="head-cta">
       <a class="tel" href="tel:+13522071074" aria-label="Call BDC Promotions at (352) 207-1074"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>(352) 207-1074</a>
-      <a class="btn btn-amber" href="/lp#get-started">Free audit</a>
+      <a class="btn btn-blue" href="/lp#get-started">Free audit</a>
     </div>
     <details class="menu">
       <summary><i aria-hidden="true"></i>Menu</summary>
@@ -634,7 +634,7 @@ nav.foot-col .label{grid-column:1 / -1}
     <h1 class="h1" id="h1">Turn paid social into more <span class="accent">qualified showroom appointments</span></h1>
     <p class="lede">BDC Promotions combines automotive ad creative, campaign optimization, BDC follow-up, and AI-supported nurturing to create more qualified sales opportunities.</p>
     <div class="actions">
-      <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
+      <a class="btn btn-blue" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
       <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
     </div>
     <p class="offer">Free dealership marketing audit and consultation — no cost, no obligation.</p>
@@ -695,7 +695,7 @@ nav.foot-col .label{grid-column:1 / -1}
       <p class="body" style="color:var(--ink)">BDC Promotions is built to close that gap — converting paid attention into real conversations, booked appointments, and showroom opportunities, then measuring the work on what your CRM actually records.</p>
     </div>
     <div class="actions">
-      <a class="btn btn-amber" href="/lp#get-started">Request My Free Consultation <span class="arr" aria-hidden="true">→</span></a>
+      <a class="btn btn-blue" href="/lp#get-started">Request My Free Consultation <span class="arr" aria-hidden="true">→</span></a>
       <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
     </div>
   </div>
@@ -779,7 +779,7 @@ nav.foot-col .label{grid-column:1 / -1}
           <h3 class="h3">New-car lead generation</h3>
           <p class="body">Paid social campaigns built to put your new-car inventory in front of in-market shoppers and start real conversations your BDC team can follow up on.</p>
           <div class="actions">
-            <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
+            <a class="btn btn-blue" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
             <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
           </div>
         </div>
@@ -829,12 +829,12 @@ nav.foot-col .label{grid-column:1 / -1}
       <div class="fd">
         <div class="fd-hd"><b>Nurture</b><span>Keep conversations moving.</span></div>
         <div class="fd-a"><div class="nd out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11h-9l-5 4v-4H4z"/></svg><b>Lead</b></div></div>
-        <svg class="c c1" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C45 50 55 25 100 25 M0 50 C45 50 55 75 100 75" fill="none" stroke="#8B857C" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
-        <svg class="v v1" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 C50 50 25 50 25 100 M50 0 C50 50 75 50 75 100" fill="none" stroke="#8B857C" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="c c1" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C45 50 55 25 100 25 M0 50 C45 50 55 75 100 75" fill="none" stroke="#8A93A3" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="v v1" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M50 0 C50 50 25 50 25 100 M50 0 C50 50 75 50 75 100" fill="none" stroke="#8A93A3" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>
         <div class="fd-b1"><div class="nd in out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19c0 1.4-1.8 2.3-4.5 2.3"/></svg><b>BDC staff</b><span>Live BDC Agent Team</span></div></div>
         <div class="fd-b2"><div class="nd in out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c.7 4.4 2.6 6.5 6.5 7.2-3.9.7-5.8 2.8-6.5 7.2-.7-4.4-2.6-6.5-6.5-7.2 3.9-.7 5.8-2.8 6.5-7.2z"/><path d="M19 16.5v4M17 18.5h4"/></svg><b>AI-supported tools</b></div></div>
-        <svg class="c c2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25 C45 25 55 50 100 50 M0 75 C45 75 55 50 100 50" fill="none" stroke="#D08A1E" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
-        <svg class="v v2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M25 0 C25 50 50 50 50 100 M75 0 C75 50 50 50 50 100" fill="none" stroke="#D08A1E" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="c c2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25 C45 25 55 50 100 50 M0 75 C45 75 55 50 100 50" fill="none" stroke="#0059FC" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+        <svg class="v v2" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M25 0 C25 50 50 50 50 100 M75 0 C75 50 50 50 50 100" fill="none" stroke="#0059FC" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
         <div class="fd-z"><div class="nd in"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3"/></svg><b>Appointment</b><span>Scheduled dealership visit with a day and time.</span></div></div>
       </div>
     </div>
@@ -856,7 +856,7 @@ nav.foot-col .label{grid-column:1 / -1}
         <p class="term">3-month commitment</p>
         <dl class="plan-inc"><dt>Includes</dt><dd>Connected campaign and follow-up support</dd></dl>
         <div class="actions">
-          <a class="btn btn-amber" href="/lp#get-started">Find the right mix <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn btn-blue" href="/lp#get-started">Find the right mix <span class="arr" aria-hidden="true">→</span></a>
           <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
         </div>
       </article>
@@ -922,7 +922,7 @@ nav.foot-col .label{grid-column:1 / -1}
           <li class="card"><span class="num">02</span><div><h3 class="h4">Identify the biggest conversion gaps</h3><p class="body">We pinpoint where attention is leaking before it ever becomes a conversation or a booked appointment.</p></div></li>
           <li class="card"><span class="num">03</span><div><h3 class="h4">Deliver focused next-step recommendations</h3><p class="body">You get a clear, prioritized plan you can act on — free, with no obligation to work with us.</p></div></li>
         </ol>
-        <div class="actions"><a class="btn btn-amber" href="/lp#get-started">Start My Free Audit <span class="arr" aria-hidden="true">→</span></a></div>
+        <div class="actions"><a class="btn btn-blue" href="/lp#get-started">Start My Free Audit <span class="arr" aria-hidden="true">→</span></a></div>
       </div>
     </div>
   </div>
@@ -936,7 +936,7 @@ nav.foot-col .label{grid-column:1 / -1}
       <h2 class="h2" id="faq-h">Frequently asked questions</h2>
       <p class="body">The details dealership operators ask us most often. Still unsure? Call and we’ll answer directly.</p>
       <div class="actions">
-        <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit</a>
+        <a class="btn btn-blue" href="/lp#get-started">Get My Free Dealership Audit</a>
         <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
       </div>
     </div>
@@ -960,7 +960,7 @@ nav.foot-col .label{grid-column:1 / -1}
         <h2 class="h2" id="close-h">Ready to create more opportunities for your dealership?</h2>
         <p class="lede">Tell us what your store needs, or call now to talk through the right mix of creative, media, follow-up, and appointment support.</p>
         <div class="actions">
-          <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
+          <a class="btn btn-blue" href="/lp#get-started">Get My Free Dealership Audit <span class="arr" aria-hidden="true">→</span></a>
           <a class="btn btn-line" href="tel:+13522071074">Call (352) 207-1074</a>
         </div>
       </div>
@@ -996,7 +996,7 @@ nav.foot-col .label{grid-column:1 / -1}
       </div>
       <div class="foot-col wide foot-cta">
         <p class="label">Free audit</p>
-        <a class="btn btn-amber" href="/lp#get-started">Get My Free Dealership Audit</a>
+        <a class="btn btn-blue" href="/lp#get-started">Get My Free Dealership Audit</a>
       </div>
     </div>
     <div class="foot-legal">
@@ -1008,7 +1008,7 @@ nav.foot-col .label{grid-column:1 / -1}
 </footer>
 
 <div class="mbar">
-  <a class="btn btn-amber" href="/lp#get-started">Free audit</a>
+  <a class="btn btn-blue" href="/lp#get-started">Free audit</a>
   <a class="btn btn-line" href="tel:+13522071074" aria-label="Call BDC Promotions at (352) 207-1074">Call</a>
 </div>
 </body>
