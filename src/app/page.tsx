@@ -6,7 +6,7 @@ import styles from "./review-chooser.module.css";
 
 export const metadata: Metadata = {
   title: "BDC Promotions Homepage Review",
-  description: "Choose between three BDC Promotions homepage directions.",
+  description: "Choose between five BDC Promotions homepage directions.",
   robots: { index: false, follow: false },
 };
 
@@ -19,8 +19,8 @@ export default function HomePage(): ReactElement {
       </header>
       <div className={styles.intro}>
         <p className={styles.kicker}>Choose a direction</p>
-        <h1>Three distinct paths to the showroom.</h1>
-        <p>Review each complete responsive homepage. All three directions use the same verified content and customer-supplied work.</p>
+        <h1>Five distinct paths to the showroom.</h1>
+        <p>Review each complete responsive homepage. All five directions use the same verified content and customer-supplied work.</p>
       </div>
       <section className={styles.grid} aria-label="Homepage directions">
         <Link className={`${styles.card} ${styles.signal}`} href="/variant-a">
@@ -33,10 +33,20 @@ export default function HomePage(): ReactElement {
           <p>Editorial, documentary, assured. A warm folio organizes decisions, method, evidence, and commitment.</p>
           <b>View Dealer Field Journal <i aria-hidden="true">→</i></b>
         </Link>
-        <Link className={`${styles.card} ${styles.wall}`} href="/variant-c">
-          <span>Direction C</span><strong>Proof Wall</strong>
-          <p>Bright concrete and tail-light red. Every real ad and all four published prices sit on one wall above the fold; below it the work is shown whole and priced like a window sticker.</p>
-          <b>View Proof Wall <i aria-hidden="true">→</i></b>
+        <Link className={`${styles.card} ${styles.daylight}`} href="/variant-c">
+          <span>Direction C</span><strong>Daylight</strong>
+          <p>White and logo blue, polished and modern. Fifteen sections take a dealership from the work to the published prices to a free audit.</p>
+          <b>View Daylight <i aria-hidden="true">→</i></b>
+        </Link>
+        <Link className={`${styles.card} ${styles.nightfall}`} href="/variant-d">
+          <span>Direction D</span><strong>Nightfall</strong>
+          <p>Cinematic and dark, lit like the showroom at night. The work, the path and the prices sit on quiet panels under one blue accent.</p>
+          <b>View Nightfall <i aria-hidden="true">→</i></b>
+        </Link>
+        <Link className={`${styles.card} ${styles.contrast}`} href="/variant-e">
+          <span>Direction E</span><strong>Contrast</strong>
+          <p>Bold dealer-retail energy on a strict grid. Dark work bands alternate with bright white ones, set in oversized type.</p>
+          <b>View Contrast <i aria-hidden="true">→</i></b>
         </Link>
       </section>
     </main>
