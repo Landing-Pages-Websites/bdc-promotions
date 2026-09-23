@@ -1,0 +1,442 @@
+/* Staggered options ledger, image-2 y 3920–4830. */
+
+.options {
+  background: var(--paper-close);
+}
+
+.optionsWrap {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(910 * var(--u));
+  margin: 0 auto;
+}
+
+.stub {
+  position: absolute;
+  left: 0;
+  top: calc(129 * var(--u));
+  width: calc(133 * var(--u));
+  height: 1px;
+  background: var(--ink);
+}
+
+.optionsLabel {
+  position: absolute;
+  left: calc(162 * var(--u));
+  top: calc(121 * var(--u));
+  font-size: var(--fs-body);
+  font-weight: 600;
+  letter-spacing: 0.118em;
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.optionsTitle {
+  position: absolute;
+  left: calc(160 * var(--u));
+  top: calc(170 * var(--u));
+  font-family: var(--b-caslon), Georgia, serif;
+  font-size: calc(73.6 * var(--u));
+  font-weight: 400;
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+/*
+ * Ledger rows: each row's top rule, bottom rule, blue edge and dividers are deliberately
+ * offset from the next row's (the image's hand-set, staggered look). Coordinates per row:
+ * --t top rule y, --h row height, --l box left, --r top-rule end, --b bottom-rule end,
+ * --d1..3 divider x, --x1..4 cell text x, --rt/--rb rule tilt.
+ */
+.row {
+  position: absolute;
+  left: 0;
+  top: calc(var(--t) * var(--u));
+  width: 100%;
+  height: calc(var(--h) * var(--u));
+  --rt: 0deg;
+  --rb: 0deg;
+}
+
+.row:nth-child(1) {
+  --t: 262;
+  --h: 86;
+  --l: 166;
+  --r: 1443;
+  --b: 1443;
+  --d1: 560;
+  --d2: 815;
+  --d3: 1104;
+  --x1: 205;
+  --x2: 588;
+  --x3: 846;
+  --x4: 1140;
+}
+
+.row:nth-child(2) {
+  --t: 387;
+  --h: 88;
+  --l: 176;
+  --r: 1456;
+  --b: 1455;
+  --d1: 587;
+  --d2: 832;
+  --d3: 1110;
+  --x1: 206;
+  --x2: 609;
+  --x3: 857;
+  --x4: 1142;
+  --rt: -0.09deg;
+}
+
+.row:nth-child(3) {
+  --t: 514;
+  --h: 88;
+  --l: 178;
+  --r: 1359;
+  --b: 1243;
+  --d1: 547;
+  --d2: 767;
+  --d3: 1073;
+  --x1: 207;
+  --x2: 574;
+  --x3: 797;
+  --x4: 1109;
+  --rt: -0.15deg;
+  --rb: -0.09deg;
+}
+
+.row:nth-child(4) {
+  --t: 642;
+  --h: 86;
+  --l: 180;
+  --r: 1336;
+  --b: 1313;
+  --d1: 579;
+  --d2: 819;
+  --d3: 1075;
+  --x1: 206;
+  --x2: 600;
+  --x3: 842;
+  --x4: 1111;
+  --rt: -0.14deg;
+  --rb: -0.19deg;
+}
+
+.row::before,
+.row::after {
+  content: "";
+  position: absolute;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: 0 50%;
+}
+
+.row::before {
+  left: calc(var(--l) * var(--u));
+  top: 0;
+  width: calc((var(--r) - var(--l)) * var(--u));
+  transform: rotate(var(--rt));
+}
+
+.row::after {
+  left: calc(82 * var(--u));
+  top: 100%;
+  width: calc((var(--b) - 82) * var(--u));
+  transform: rotate(var(--rb));
+}
+
+.rowNum {
+  position: absolute;
+  left: calc(81 * var(--u));
+  top: calc(19 * var(--u));
+  font-family: var(--b-caslon), Georgia, serif;
+  font-size: calc(52 * var(--u));
+  text-box: trim-both cap alphabetic;
+}
+
+.edge {
+  position: absolute;
+  left: calc(var(--l) * var(--u));
+  top: 2px;
+  width: 2px;
+  height: calc((var(--h) - 8) * var(--u));
+  background: var(--blue-line);
+}
+
+.endCap {
+  display: none;
+}
+
+.row:nth-child(1) .endCap {
+  position: absolute;
+  left: calc(1441 * var(--u));
+  top: 0;
+  display: block;
+  width: 2px;
+  height: 100%;
+  background: var(--ink);
+}
+
+.divider {
+  position: absolute;
+  top: calc(8 * var(--u));
+  width: 1.5px;
+  height: calc((var(--h) - 14) * var(--u));
+  background: var(--ink);
+}
+
+.d1 {
+  left: calc(var(--d1) * var(--u));
+}
+
+.d2 {
+  left: calc(var(--d2) * var(--u));
+}
+
+.d3 {
+  left: calc(var(--d3) * var(--u));
+}
+
+.name,
+.price,
+.term,
+.includes {
+  position: absolute;
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.name {
+  left: calc(var(--x1) * var(--u));
+  top: calc(29 * var(--u));
+  font-family: var(--b-sans), Arial, sans-serif;
+  font-size: var(--fs-num);
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+/* Image 2 sets "/ month" narrower than the amount. */
+.price {
+  left: calc(var(--x2) * var(--u));
+  top: calc(33 * var(--u));
+  font-size: calc(26 * var(--u));
+  font-stretch: 88%;
+}
+
+.price strong {
+  font-size: calc(33 * var(--u));
+  font-stretch: 100%;
+  font-weight: 700;
+}
+
+.term,
+.includes {
+  font-size: var(--fs-body);
+  line-height: calc(28 * var(--u));
+}
+
+.term {
+  left: calc(var(--x3) * var(--u));
+  top: calc(37 * var(--u));
+}
+
+.row:nth-child(3) .term {
+  top: calc(22 * var(--u));
+}
+
+.includes {
+  left: calc(var(--x4) * var(--u));
+  top: calc(22 * var(--u));
+  font-stretch: 92%;
+}
+
+.term span,
+.includes span {
+  display: block;
+}
+
+.mix {
+  position: absolute;
+  left: calc(982 * var(--u));
+  top: calc(750 * var(--u));
+  display: flex;
+  width: calc(452 * var(--u));
+  height: calc(89 * var(--u));
+  align-items: center;
+  justify-content: center;
+  padding-left: calc(6 * var(--u));
+  background: #0256f8;
+  color: #fff;
+  font-size: calc(38 * var(--u));
+  font-stretch: 88%;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.mix:hover {
+  background: #0044c4;
+}
+
+.elbow {
+  position: absolute;
+  left: calc(1434 * var(--u));
+  top: calc(837 * var(--u));
+  width: calc(68 * var(--u));
+  height: calc(50 * var(--u));
+  border-top: 2px solid var(--blue);
+  border-right: 2px solid var(--blue);
+}
+
+.elbow::after {
+  content: "";
+  position: absolute;
+  right: calc(-8 * var(--u) - 1px);
+  bottom: calc(-4 * var(--u));
+  border-top: calc(12 * var(--u)) solid var(--blue);
+  border-right: calc(8 * var(--u)) solid transparent;
+  border-left: calc(8 * var(--u)) solid transparent;
+}
+
+@supports not (text-box: trim-both cap alphabetic) {
+  @media (min-width: 1180px) {
+    .optionsTitle,
+    .rowNum {
+      translate: 0 calc(-1 * var(--trim-caslon));
+    }
+
+    .optionsLabel,
+    .name,
+    .price,
+    .term,
+    .includes {
+      translate: 0 calc(-1 * var(--trim-sans));
+    }
+
+    /* Keep the larger amount from growing the line box, so the trim is the price's own. */
+    .price strong {
+      line-height: 0;
+    }
+  }
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 1179px) {
+  .optionsWrap {
+    display: flex;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    padding: 56px 16px;
+  }
+
+  .stub,
+  .optionsLabel,
+  .optionsTitle,
+  .row,
+  .rowNum,
+  .edge,
+  .divider,
+  .name,
+  .price,
+  .term,
+  .includes,
+  .mix,
+  .elbow {
+    position: static;
+  }
+
+  .stub {
+    display: block;
+    width: 60px;
+    margin-left: -16px;
+  }
+
+  .optionsLabel {
+    margin-top: 14px;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    white-space: normal;
+  }
+
+  .optionsTitle {
+    margin-top: 14px;
+    font-size: clamp(32px, 9.4vw, 42px);
+    line-height: 1.08;
+    white-space: normal;
+  }
+
+  .row {
+    display: grid;
+    width: auto;
+    height: auto;
+    grid-template-columns: 46px 1fr;
+    gap: 4px 12px;
+    padding: 18px 0;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  /* One rule between rows: each row draws its bottom rule, only the first draws a top one. */
+  .row:first-child {
+    border-top: 2px solid var(--ink);
+  }
+
+  .row::before,
+  .row::after,
+  .edge,
+  .endCap,
+  .row:nth-child(1) .endCap,
+  .divider {
+    display: none;
+  }
+
+  .rowNum {
+    grid-row: 1 / span 4;
+    font-size: 36px;
+  }
+
+  .name,
+  .price,
+  .term,
+  .includes {
+    text-box: none;
+  }
+
+  .name {
+    font-size: 21px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .price {
+    font-size: 17px;
+  }
+
+  .price strong {
+    font-size: 21px;
+  }
+
+  .term,
+  .includes {
+    font-size: 15px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  .term span,
+  .includes span {
+    display: inline;
+  }
+
+  .mix {
+    width: 100%;
+    height: 64px;
+    margin-top: 28px;
+    font-size: 23px;
+  }
+
+  .elbow {
+    display: none;
+  }
+}

@@ -1,0 +1,266 @@
+/* Proof statement, image-2 y 3114–3920. */
+
+.proof {
+  background: var(--paper-growth);
+}
+
+.proofWrap {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(806 * var(--u));
+  margin: 0 auto;
+}
+
+/* The image's centred block sits ~9px right of page centre; padding-left reproduces that. */
+.proofTitle,
+.kicker,
+.statement {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding-left: calc(19 * var(--u));
+  text-align: center;
+  text-box: trim-both cap alphabetic;
+}
+
+.proofTitle {
+  top: calc(188 * var(--u));
+  font-family: var(--b-cormorant), Georgia, serif;
+  font-size: calc(67.2 * var(--u));
+  font-weight: 500;
+  line-height: calc(73 * var(--u));
+}
+
+.proofTitle span,
+.statement span,
+.standards p span {
+  display: block;
+}
+
+.kicker {
+  top: calc(384 * var(--u));
+  font-size: max(12px, var(--fs-label));
+  font-weight: 500;
+  letter-spacing: 0.085em;
+}
+
+.statement {
+  top: calc(421 * var(--u));
+  font-size: var(--fs-body);
+  font-stretch: 78%;
+  line-height: calc(35 * var(--u));
+  padding-left: calc(22 * var(--u));
+}
+
+.processLink {
+  position: absolute;
+  left: calc(623 * var(--u));
+  top: calc(570 * var(--u) - 14px);
+  padding: 14px 0;
+  color: var(--blue);
+  font-size: var(--fs-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.processLink span {
+  display: block;
+  padding-bottom: calc(10 * var(--u));
+  border-bottom: 1px solid var(--blue);
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.processLink:hover span {
+  border-bottom-width: 2px;
+}
+
+.processArrow {
+  display: inline-block;
+  width: calc(21 * var(--u));
+  height: calc(16 * var(--u));
+  margin-left: calc(10 * var(--u));
+  vertical-align: calc(-1 * var(--u));
+}
+
+.standards li {
+  position: absolute;
+  top: calc(659 * var(--u));
+  height: calc(85 * var(--u));
+}
+
+.standards li:nth-child(1) {
+  left: calc(122 * var(--u));
+}
+
+.standards li:nth-child(2) {
+  left: calc(570 * var(--u));
+}
+
+.standards li:nth-child(3) {
+  left: calc(1037 * var(--u));
+}
+
+.standards li:nth-child(n + 2)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(-57 * var(--u));
+  width: 1.5px;
+  height: 100%;
+  background: #2a2a2a;
+}
+
+.standards li:nth-child(3)::before {
+  left: calc(-58 * var(--u));
+}
+
+.standardNum,
+.standards p {
+  position: absolute;
+  top: calc(17 * var(--u));
+  font-size: var(--fs-lead);
+  font-stretch: 92%;
+  line-height: calc(30 * var(--u));
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.standardNum {
+  color: var(--teal);
+}
+
+.standards p {
+  left: calc(59 * var(--u));
+}
+
+.hairline {
+  position: absolute;
+  left: calc(58 * var(--u));
+  top: calc(790 * var(--u));
+  width: calc(1418 * var(--u));
+  height: 1.5px;
+  background: #696a6a;
+}
+
+@supports not (text-box: trim-both cap alphabetic) {
+  @media (min-width: 1180px) {
+    .proofTitle {
+      translate: 0 calc(-1 * var(--trim-cormorant));
+    }
+
+    .kicker,
+    .statement,
+    .processLink span,
+    .standardNum,
+    .standards p {
+      translate: 0 calc(-1 * var(--trim-sans));
+    }
+
+    /* The underline sits on the padding edge, so the untrimmed descent comes out of the padding. */
+    .processLink span {
+      padding-bottom: calc(10 * var(--u) - var(--trim-sans-end));
+    }
+  }
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 1179px) {
+  .proofWrap {
+    display: flex;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    padding: 56px 16px;
+  }
+
+  .proofTitle,
+  .kicker,
+  .statement,
+  .processLink,
+  .standards li,
+  .standardNum,
+  .standards p,
+  .hairline {
+    position: static;
+  }
+
+  .proofTitle,
+  .kicker,
+  .statement {
+    padding-left: 0;
+  }
+
+  .proofTitle {
+    font-size: clamp(34px, 10vw, 44px);
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+
+  .kicker {
+    margin-top: 32px;
+    font-size: 13px;
+  }
+
+  .statement {
+    margin-top: 14px;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .statement span {
+    display: inline;
+  }
+
+  .processLink {
+    align-self: center;
+    margin-top: 16px;
+    font-size: 17px;
+  }
+
+  .processArrow {
+    width: 18px;
+    height: 14px;
+  }
+
+  .standards {
+    display: flex;
+    margin-top: 28px;
+    flex-direction: column;
+  }
+
+  .standards li {
+    display: flex;
+    height: auto;
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid #2a2a2a;
+  }
+
+  .standards li::before {
+    display: none;
+  }
+
+  .standardNum,
+  .standards p {
+    font-size: 16px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  .standards p span {
+    display: inline;
+  }
+
+  .hairline {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .ledger {
+    display: flex;
+    margin-top: 28px;
+    flex-direction: column;
+  }
+}

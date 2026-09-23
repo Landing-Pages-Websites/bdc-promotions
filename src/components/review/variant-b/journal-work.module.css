@@ -1,0 +1,426 @@
+/* Navy work band, y 2240–3114 of image 2. */
+
+.work {
+  --focus: #ffffff;
+  --crop: rgb(255 255 255 / 0.82);
+  background: var(--band);
+  color: #fff;
+}
+
+/* flow-root: the only in-flow child is the Explore panel, which opens below the 874-unit composition. */
+.wrap {
+  position: relative;
+  display: flow-root;
+  width: calc(1536 * var(--u));
+  min-height: calc(874 * var(--u));
+  margin: 0 auto;
+  /* Body size: image 2's 13.3 units, with a 13px legibility floor from 1280 up (scales below that). */
+  --body-fs: max(var(--fs-caption), min(13px, calc(15.6 * var(--u))));
+}
+
+/* Cream margin strip: pinned to the viewport's left edge even when the 1536 frame is centred. */
+.strip {
+  position: absolute;
+  left: calc((1536 * var(--u) - 100cqw) / 2);
+  top: 0;
+  width: calc(46 * var(--u));
+  height: calc(100% - 10 * var(--u));
+  background: #f0ebe3;
+  color: var(--ink);
+}
+
+.strip span {
+  position: absolute;
+  right: calc(14 * var(--u));
+  top: calc(26 * var(--u));
+  font-size: var(--fs-lead);
+  text-box: trim-both cap alphabetic;
+}
+
+.strip span::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(22 * var(--u));
+  height: 2px;
+  background: var(--ink);
+}
+
+.label {
+  position: absolute;
+  left: calc(89 * var(--u));
+  top: calc(26 * var(--u));
+  color: var(--teal-on-navy);
+  font-size: var(--fs-small);
+  font-stretch: 97%;
+  font-weight: 500;
+  text-box: trim-both cap alphabetic;
+}
+
+.title {
+  position: absolute;
+  left: calc(86 * var(--u));
+  top: calc(56 * var(--u));
+  font-family: var(--b-garamond), Georgia, serif;
+  font-size: calc(57.8 * var(--u));
+  font-weight: 500;
+  line-height: calc(54 * var(--u));
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+.title span,
+.body span,
+.tabs span {
+  display: block;
+}
+
+.body {
+  position: absolute;
+  left: calc(89 * var(--u));
+  top: calc(164 * var(--u));
+  color: #e5e7e2;
+  font-size: var(--body-fs);
+  font-stretch: 97%;
+  /* Image 2's leading ratio (15.6 / 13.3), so it holds when the 13px floor applies. */
+  line-height: 1.173;
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+/* Category labels: real links to their plates. 9px padding makes a >=44px target without moving the text. */
+.tabs a {
+  position: absolute;
+  top: calc(82 * var(--u) - 9px);
+  min-height: 44px;
+  padding: 9px 0;
+  color: #fff;
+  font-size: var(--fs-copy);
+  font-weight: 600;
+  line-height: calc(20 * var(--u));
+  text-box: trim-both cap alphabetic;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabs a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(9px + 47 * var(--u));
+  height: 2px;
+  background: var(--tab-line);
+  transition: background-color 160ms ease;
+}
+
+.tabs a:hover::after {
+  background: #fff;
+}
+
+.tabs li:nth-child(n + 2) a::before {
+  content: "";
+  position: absolute;
+  top: calc(9px - 6 * var(--u));
+  width: 1px;
+  height: calc(47 * var(--u));
+  background: rgb(255 255 255 / 0.78);
+}
+
+.tabs li:nth-child(1) a {
+  left: calc(719 * var(--u));
+}
+
+.tabs li:nth-child(2) a {
+  left: calc(922 * var(--u));
+}
+
+.tabs li:nth-child(2) a::before {
+  left: calc(-62 * var(--u));
+}
+
+.tabs li:nth-child(3) a {
+  left: calc(1140 * var(--u));
+}
+
+.tabs li:nth-child(3) a::before {
+  left: calc(-70 * var(--u));
+}
+
+.tabs li:nth-child(4) a {
+  left: calc(1337 * var(--u));
+}
+
+.tabs li:nth-child(4) a::before {
+  left: calc(-72 * var(--u));
+}
+
+.plate {
+  position: absolute;
+  scroll-margin-top: 24px;
+}
+
+.frame {
+  position: relative;
+  background: #020716;
+}
+
+.frame img {
+  object-fit: contain;
+}
+
+/* Thin crop lines that overshoot every corner, as on a contact sheet. */
+.crop {
+  position: absolute;
+  inset: calc(-10 * var(--u));
+  pointer-events: none;
+  background:
+    linear-gradient(var(--crop), var(--crop)) 0 calc(10 * var(--u)) / 100% 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) 0 calc(100% - 10 * var(--u)) / 100% 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) calc(10 * var(--u)) 0 / 1px 100% no-repeat,
+    linear-gradient(var(--crop), var(--crop)) calc(100% - 10 * var(--u)) 0 / 1px 100% no-repeat;
+}
+
+.plate figcaption {
+  color: var(--teal-on-navy);
+  font-size: max(12px, var(--fs-caption));
+  font-weight: 500;
+  text-box: trim-both cap alphabetic;
+  white-space: nowrap;
+}
+
+/*
+ * Below 1536 the body's 13px floor makes its three lines taller than image 2's. Two lines cannot
+ * fit left of the event plate (~1000px of copy at 13px), so instead the storyboard drops by
+ * exactly that excess (body ink = 2 x 1.173em + 0.711em cap + ~0.21em descender = 3.267em) and
+ * image 2's H2-to-body and body-to-frame gaps both hold. The term is 0 at 1536 and above.
+ */
+.story {
+  left: calc(86 * var(--u));
+  top: calc(221 * var(--u) + 3.267 * (var(--body-fs) - 13.3 * var(--u)));
+}
+
+/* Image 2 frames the storyboard with a top and a left line on the plate edge, no overshoot. */
+.story .crop {
+  inset: 0;
+  background:
+    linear-gradient(var(--crop), var(--crop)) 0 0 / 100% 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) 0 0 / 1px 100% no-repeat;
+}
+
+.story .frame {
+  width: calc(459 * var(--u));
+  height: calc(549 * var(--u));
+}
+
+.story figcaption {
+  margin: calc(8 * var(--u)) 0 0 calc(1 * var(--u));
+}
+
+.event {
+  left: calc(639 * var(--u));
+  top: calc(167 * var(--u));
+}
+
+.event .frame {
+  width: calc(368 * var(--u));
+  height: calc(422 * var(--u));
+}
+
+.event figcaption {
+  margin: calc(12 * var(--u)) 0 0 calc(2 * var(--u));
+}
+
+.inventory {
+  left: calc(1038 * var(--u));
+  top: calc(168 * var(--u));
+}
+
+.inventory .frame {
+  width: calc(438 * var(--u));
+  height: calc(227 * var(--u));
+}
+
+.inventory figcaption {
+  margin: calc(12 * var(--u)) 0 0 calc(2 * var(--u));
+}
+
+.google {
+  left: calc(1037 * var(--u));
+  top: calc(447 * var(--u));
+}
+
+.google .frame {
+  width: calc(443 * var(--u));
+  height: calc(290 * var(--u));
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--crop);
+}
+
+.googleShot {
+  position: absolute;
+  left: calc(2 * var(--u));
+  top: calc(31 * var(--u));
+  width: calc(435 * var(--u));
+  height: calc(230 * var(--u));
+}
+
+.google figcaption {
+  margin: calc(20 * var(--u)) 0 0 calc(4 * var(--u));
+}
+
+@supports not (text-box: trim-both cap alphabetic) {
+  @media (min-width: 1180px) {
+    .title {
+      translate: 0 calc(-1 * var(--trim-garamond));
+    }
+
+    .strip span,
+    .label,
+    .body,
+    .tabs a,
+    .plate figcaption {
+      translate: 0 calc(-1 * var(--trim-sans));
+    }
+
+    /* Rules drawn from the label box stay where the trimmed box would put them. */
+    .strip span::after,
+    .tabs a::before,
+    .tabs a::after {
+      translate: 0 var(--trim-sans);
+    }
+  }
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 1179px) {
+  .wrap {
+    display: flex;
+    width: auto;
+    height: auto;
+    flex-direction: column;
+    padding: 36px 16px 48px 44px;
+  }
+
+  .strip {
+    left: 0;
+    width: 28px;
+    height: 100%;
+  }
+
+  .strip span {
+    right: 6px;
+    top: 38px;
+    font-size: 13px;
+  }
+
+  .strip span::after {
+    top: 14px;
+  }
+
+  .label,
+  .title,
+  .body,
+  .tabs a,
+  .plate {
+    position: static;
+  }
+
+  .label {
+    font-size: 14px;
+  }
+
+  .title {
+    margin-top: 14px;
+    font-size: clamp(34px, 10vw, 44px);
+    line-height: 1.04;
+    text-wrap: balance;
+    white-space: normal;
+  }
+
+  .body {
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 1.45;
+    white-space: normal;
+  }
+
+  .title span,
+  .body span {
+    display: inline;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 26px;
+    gap: 18px 16px;
+  }
+
+  .tabs a {
+    display: block;
+    min-height: 44px;
+    padding: 4px 0 8px;
+    border-bottom: 2px solid var(--tab-line);
+    font-size: 15px;
+    line-height: 1.2;
+    text-box: none;
+  }
+
+  .tabs a::before,
+  .tabs a::after {
+    display: none;
+  }
+
+  .plate {
+    margin-top: 34px;
+  }
+
+  .plate .frame {
+    width: 100%;
+    height: auto;
+  }
+
+  .story .frame {
+    aspect-ratio: 459 / 549;
+  }
+
+  .event .frame {
+    aspect-ratio: 368 / 422;
+  }
+
+  .inventory .frame {
+    aspect-ratio: 438 / 227;
+  }
+
+  .google .frame {
+    aspect-ratio: 443 / 290;
+  }
+
+  .googleShot {
+    left: 0.5%;
+    top: 10.7%;
+    width: 98.2%;
+    height: 79.3%;
+  }
+
+  .crop {
+    inset: -6px;
+    background-size:
+      100% 1px,
+      100% 1px,
+      1px 100%,
+      1px 100%;
+    background-position:
+      0 6px,
+      0 calc(100% - 6px),
+      6px 0,
+      calc(100% - 6px) 0;
+  }
+
+  .plate figcaption {
+    margin: 14px 0 0;
+    font-size: 13px;
+  }
+}

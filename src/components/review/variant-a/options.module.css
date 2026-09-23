@@ -1,0 +1,476 @@
+/* Options band (image 1: y 3968–4832, blue). Values are reference px × var(--u). */
+.options {
+  border-block: calc(10 * var(--u)) solid #045cfd;
+  background: #004be1;
+}
+
+.frame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(844 * var(--u));
+  margin-inline: auto;
+}
+
+.routes {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.eyebrow {
+  position: absolute;
+  top: calc(63 * var(--u));
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding-left: calc(12 * var(--u));
+  font-family: var(--semi);
+  font-size: var(--fs-20-5);
+  font-weight: 600;
+  line-height: calc(24 * var(--u));
+  letter-spacing: 0.144em;
+  color: var(--mint);
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.title {
+  position: absolute;
+  top: calc(97.5 * var(--u));
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding-left: calc(33 * var(--u));
+  font-family: var(--display);
+  font-size: var(--fs-124);
+  font-variation-settings: "wdth" 58;
+  font-weight: 800;
+  line-height: calc(100 * var(--u));
+  color: #f4f6fb;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* per-line widths solved against image 1 (904 / 900px at 1536) */
+.title > span:first-child {
+  font-variation-settings: "wdth" 57.65;
+}
+
+.title > span:last-child {
+  font-variation-settings: "wdth" 61.75;
+}
+
+.cards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  position: absolute;
+  top: calc(340 * var(--u));
+  height: calc(389 * var(--u));
+  background: var(--panel);
+  --pad: calc(28 * var(--u));
+}
+
+.card:nth-child(1) { left: calc(45 * var(--u)); width: calc(576 * var(--u)); --pad: calc(32 * var(--u)); }
+.card:nth-child(2) { left: calc(632 * var(--u)); width: calc(290 * var(--u)); }
+.card:nth-child(3) { left: calc(932 * var(--u)); width: calc(292 * var(--u)); }
+.card:nth-child(4) { left: calc(1235 * var(--u)); width: calc(255 * var(--u)); --pad: calc(23 * var(--u)); }
+
+.card::before,
+.card::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--pad) - 1 * var(--u));
+  right: calc(29 * var(--u));
+  height: 1px;
+  background: #0343c4;
+}
+
+.card::before { top: calc(107 * var(--u)); }
+.card::after { top: calc(248 * var(--u)); }
+.card:nth-child(1)::before { top: calc(105 * var(--u)); height: 2px; right: calc(34 * var(--u)); }
+.card:nth-child(1)::after { top: calc(260 * var(--u)); right: calc(34 * var(--u)); }
+.card:nth-child(4)::before,
+.card:nth-child(4)::after { right: calc(37 * var(--u)); }
+.card:nth-child(4)::after { top: calc(249 * var(--u)); }
+
+.number {
+  position: absolute;
+  top: calc(26 * var(--u));
+  left: var(--pad);
+  display: grid;
+  place-items: center;
+  width: calc(53 * var(--u));
+  height: calc(60 * var(--u));
+  border: 2px solid #0267ef;
+  font-family: var(--display);
+  font-size: var(--fs-51);
+  font-variation-settings: "wdth" 56;
+  font-weight: 500;
+  line-height: 1;
+  color: #0563fc;
+}
+
+.card:nth-child(1) .number {
+  width: calc(49 * var(--u));
+  height: calc(60 * var(--u));
+}
+
+.name {
+  position: absolute;
+  top: calc(26.5 * var(--u));
+  left: calc(var(--pad) + 71 * var(--u));
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-38-5);
+  font-variation-settings: "wdth" 62;
+  font-weight: 700;
+  line-height: calc(35 * var(--u));
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+.card:nth-child(1) .name {
+  top: calc(26.9 * var(--u));
+  left: calc(100 * var(--u));
+  font-size: var(--fs-57);
+  font-variation-settings: "wdth" 63;
+  line-height: calc(58 * var(--u));
+}
+
+.price {
+  position: absolute;
+  top: calc(124.4 * var(--u));
+  left: calc(var(--pad) - 2 * var(--u));
+  display: flex;
+  align-items: baseline;
+  gap: calc(8 * var(--u));
+  margin: 0;
+  font-family: var(--semi);
+  font-size: var(--fs-20-5);
+  line-height: calc(70 * var(--u));
+  white-space: nowrap;
+}
+
+/* digits sized to image 1's measured height (62px at 1536) and width */
+.price strong {
+  font-family: var(--display);
+  font-size: var(--fs-88);
+  font-variation-settings: "wdth" 52;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* image 1 sets "$" smaller than the digits and raised off the baseline (relative offset,
+   so the digits' line box and baseline do not move) */
+.currency {
+  position: relative;
+  top: -0.065em;
+  margin-right: 0.02em;
+  font-size: 0.87em;
+  font-variation-settings: "wdth" 50;
+}
+
+.card:nth-child(1) .currency {
+  top: -0.114em;
+  font-size: 0.82em;
+}
+
+.card:nth-child(1) .price {
+  top: calc(118.4 * var(--u));
+  left: calc(33 * var(--u));
+  gap: calc(12 * var(--u));
+  font-size: var(--fs-25-5);
+  line-height: calc(100 * var(--u));
+}
+
+.card:nth-child(1) .price strong {
+  font-size: var(--fs-118);
+  font-variation-settings: "wdth" 50;
+}
+
+.terms {
+  position: absolute;
+  top: calc(205.7 * var(--u));
+  left: var(--pad);
+  margin: 0;
+  font-family: var(--semi);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: calc(18 * var(--u));
+  letter-spacing: 0.135em;
+  color: var(--mint);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.card:nth-child(1) .terms {
+  top: calc(221.6 * var(--u));
+  left: calc(35 * var(--u));
+  font-size: var(--fs-18-5);
+  line-height: calc(24 * var(--u));
+  letter-spacing: 0.146em;
+}
+
+.card:nth-child(4) .terms {
+  top: calc(202.7 * var(--u));
+}
+
+/* min-height (not height): at the 16px text floor the rule grows with the copy */
+.includes {
+  position: absolute;
+  top: calc(268 * var(--u));
+  left: var(--pad);
+  min-height: calc(95 * var(--u));
+  padding-left: calc(17 * var(--u));
+  border-left: calc(4 * var(--u)) solid #025af0;
+}
+
+.card:nth-child(1) .includes {
+  top: calc(282 * var(--u));
+  min-height: calc(90 * var(--u));
+  padding-left: calc(18 * var(--u));
+}
+
+.card:nth-child(4) .includes {
+  min-height: calc(72 * var(--u));
+}
+
+.includesLabel {
+  margin: calc(-1.5 * var(--u)) 0 0;
+  font-family: var(--semi);
+  font-size: var(--fs-18-5);
+  font-weight: 600;
+  line-height: calc(22 * var(--u));
+  letter-spacing: 0.1em;
+  color: #1e73fc;
+  text-transform: uppercase;
+}
+
+/* reading floor: never below 16px once the poster scales down */
+.includesText {
+  margin: calc(2 * var(--u)) 0 0;
+  font-family: var(--semi);
+  font-size: max(16px, var(--fs-18-5));
+  line-height: max(calc(24 * var(--u)), 1.29em);
+  color: var(--white);
+  white-space: nowrap;
+}
+
+.card:nth-child(1) .includesLabel {
+  margin-top: calc(0.3 * var(--u));
+  font-size: var(--fs-20-5);
+  line-height: calc(26 * var(--u));
+}
+
+.card:nth-child(1) .includesText {
+  margin-top: calc(3.1 * var(--u));
+  font-size: max(16px, var(--fs-22-5));
+  line-height: max(calc(29 * var(--u)), 1.28em);
+}
+
+.mix {
+  position: absolute;
+  top: calc(752 * var(--u));
+  left: calc(986 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: calc(502 * var(--u));
+  height: calc(70 * var(--u));
+  padding: 0 calc(40 * var(--u)) 0 calc(59 * var(--u));
+  border: 1px solid rgb(122 244 235 / 0.75);
+  background: var(--panel);
+  font-family: var(--display);
+  font-size: var(--fs-44);
+  font-variation-settings: "wdth" 56;
+  font-weight: 800;
+  letter-spacing: 0.113em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: box-shadow 160ms ease;
+}
+
+.mix:hover {
+  box-shadow: var(--hover-ring);
+}
+
+.mix svg {
+  flex-shrink: 0;
+  width: calc(42 * var(--u));
+  height: calc(28 * var(--u));
+  color: var(--mint);
+}
+
+.mix svg path {
+  stroke-width: 3.4;
+}
+
+@media (max-width: 1179px) {
+  .frame {
+    max-width: 760px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    padding: 52px 20px 56px;
+  }
+
+  .routes {
+    display: none;
+  }
+
+  .eyebrow,
+  .title,
+  .card,
+  .card:nth-child(n),
+  .number,
+  .name,
+  .card:nth-child(1) .name,
+  .price,
+  .card:nth-child(n) .price,
+  .terms,
+  .card:nth-child(n) .terms,
+  .includes,
+  .card:nth-child(n) .includes,
+  .mix {
+    position: relative;
+    inset: auto;
+  }
+
+  .eyebrow {
+    padding: 0;
+    font-size: 14px;
+    line-height: 20px;
+    white-space: normal;
+  }
+
+  /* one sentence per line, sized so the longer sentence fits the column */
+  .title {
+    margin-top: 12px;
+    padding: 0;
+    font-size: min(80px, calc((min(100cqw, 760px) - 40px) / 7.45));
+    line-height: 0.9;
+  }
+
+  .title > span:first-child,
+  .title > span:last-child {
+    display: block;
+    font-variation-settings: "wdth" 58;
+  }
+
+  .cards {
+    display: grid;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .card,
+  .card:nth-child(n) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0 14px;
+    width: auto;
+    height: auto;
+    padding: 20px 18px 22px;
+    --pad: 18px;
+  }
+
+  .card::before,
+  .card::after,
+  .card:nth-child(n)::before,
+  .card:nth-child(n)::after {
+    display: none;
+  }
+
+  .number,
+  .card:nth-child(1) .number {
+    width: 46px;
+    height: 54px;
+    font-size: 40px;
+  }
+
+  .name,
+  .card:nth-child(1) .name {
+    font-size: 30px;
+    line-height: 30px;
+  }
+
+  .price,
+  .card:nth-child(n) .price {
+    grid-column: 1 / -1;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #0343c4;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .price strong,
+  .card:nth-child(1) .price strong {
+    font-size: 56px;
+  }
+
+  .terms,
+  .card:nth-child(n) .terms {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  .includes,
+  .card:nth-child(n) .includes {
+    grid-column: 1 / -1;
+    min-height: 0;
+    margin-top: 16px;
+    padding-left: 14px;
+  }
+
+  .includesLabel,
+  .card:nth-child(1) .includesLabel {
+    margin: 0;
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  .includesText,
+  .card:nth-child(1) .includesText {
+    margin-top: 4px;
+    font-size: 17px;
+    line-height: 1.4;
+    white-space: normal;
+  }
+
+  .mix {
+    width: 100%;
+    height: 64px;
+    margin-top: 28px;
+    padding: 0 18px 0 22px;
+    font-size: 28px;
+  }
+
+  .mix svg {
+    width: 34px;
+    height: 24px;
+  }
+}
+
+/* 320-359px: the tracked label needs the room its arrow keeps */
+@media (max-width: 359px) {
+  .mix {
+    font-size: 24px;
+    letter-spacing: 0.08em;
+  }
+}

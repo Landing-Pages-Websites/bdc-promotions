@@ -1,0 +1,98 @@
+/* Direction C · Proof Wall — path lane on concrete (C-BRIEF §8.6, round-1 revision). Tokens come from .page in proof-wall.module.css. */
+
+/* Close follows straight on (48px, not 96): process and offer read as one move. */
+.path {
+  padding: var(--section) 0 48px;
+}
+
+.lane {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.lane li {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.laneNumber {
+  font-size: var(--t-price);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-variation-settings: "wdth" 125;
+}
+
+/* The rules run into the gap so the five join as one line. */
+.laneRule {
+  position: relative;
+  height: 2px;
+  margin: 8px -24px 8px 0;
+  background: var(--c-ink);
+}
+
+.lane li:last-child .laneRule {
+  margin-right: 0;
+}
+
+.laneRule::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  background: var(--c-ink);
+}
+
+.laneCopy {
+  color: var(--c-steel);
+}
+
+.pathEnd {
+  margin-top: 72px;
+  padding-top: 32px;
+  border-top: 2px solid var(--c-ink);
+  font-size: var(--t-price);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variation-settings: "wdth" 125;
+  text-wrap: balance;
+}
+
+@media (max-width: 1199px) {
+  .lane {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .lane li {
+    grid-template-columns: 48px 1fr;
+    gap: 8px 16px;
+    padding: 24px 0;
+    border-top: 1px solid var(--c-ink);
+  }
+
+  .laneNumber {
+    grid-row: span 2;
+  }
+
+  .laneRule {
+    display: none;
+  }
+
+  .pathEnd {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .laneNumber {
+    font-size: var(--t-h3);
+  }
+}

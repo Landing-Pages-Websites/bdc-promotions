@@ -1,0 +1,96 @@
+/* Direction C · Proof Wall — the work (C-BRIEF §8.3, §12, §13). Tokens come from .page in proof-wall.module.css. */
+
+.work {
+  padding: var(--section) 0;
+}
+
+.sheet {
+  display: grid;
+  gap: 56px;
+}
+
+.sheetRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.group {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.groupLabel {
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--c-ink);
+}
+
+.groupItems {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.piece {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.piece img {
+  width: 100%;
+  border-radius: 10px;
+  background: var(--c-frame);
+}
+
+.piece figcaption {
+  margin-top: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.spec {
+  display: block;
+  margin-top: 4px;
+}
+
+/* A lone landscape screenshot runs at its own pixel width (never upscaled), captioned beside it. */
+.beside .piece {
+  display: grid;
+  grid-template-columns: minmax(0, var(--native)) minmax(200px, 1fr);
+  align-items: end;
+  gap: 24px;
+}
+
+.beside .piece figcaption {
+  margin-top: 0;
+}
+
+/* Phones: rows stack; within a group pieces wrap two-up, and flex-basis ∝ aspect ratio with
+   flex-grow ∝ aspect ratio gives every piece in a line one height. A lone piece runs full width. */
+@media (max-width: 760px) {
+  .sheet {
+    gap: 48px;
+  }
+
+  .sheetRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 48px;
+  }
+
+  .groupItems {
+    flex-wrap: wrap;
+    gap: 24px 12px;
+  }
+
+  .piece {
+    flex-basis: calc(var(--r) * 150px);
+  }
+
+  .beside .piece {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

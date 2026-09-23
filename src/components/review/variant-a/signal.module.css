@@ -1,0 +1,137 @@
+/* Signal band (image 1: y 862–1376). Values are reference px × var(--u). */
+.routes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.signal {
+  background: var(--ink);
+}
+
+.signalFrame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(514 * var(--u));
+  margin-inline: auto;
+}
+
+.signalTitle {
+  position: absolute;
+  top: calc(118 * var(--u));
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding-left: calc(42 * var(--u));
+  font-family: var(--display);
+  font-size: var(--fs-135);
+  font-variation-settings: "wdth" 50;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #edf2fb;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* image 1's slash: thinner stroke, steeper slant, sitting on the baseline (not below it) */
+.slash {
+  display: inline-block;
+  margin-inline: var(--gap-l, 0.1em) var(--gap-r, 0.1em);
+  font-weight: 500;
+  color: var(--route);
+  transform: translateY(-0.037em) skewX(-7.5deg) scaleY(0.925);
+  transform-origin: 50% 88%;
+}
+
+/* per-slash spacing solved against the image's word positions */
+.pair:first-child > .slash:first-child { --gap-l: 0.056em; --gap-r: 0.152em; }
+.pair:first-child > .slash:last-child { --gap-l: 0.019em; --gap-r: 0.144em; }
+.pair:last-child > .slash { --gap-l: -0.004em; --gap-r: 0.063em; }
+
+.signalList {
+  position: absolute;
+  top: calc(307 * var(--u));
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--label);
+  font-size: var(--fs-20-5);
+  font-weight: 600;
+  line-height: calc(28 * var(--u));
+  color: var(--white);
+}
+
+.signalList li {
+  position: absolute;
+  width: calc(320 * var(--u));
+  text-align: center;
+  white-space: nowrap;
+}
+
+.signalList li:nth-child(1) { left: calc(176 * var(--u)); }
+.signalList li:nth-child(2) { left: calc(450 * var(--u)); }
+.signalList li:nth-child(3) { left: calc(775 * var(--u)); }
+.signalList li:nth-child(4) { left: calc(1075 * var(--u)); }
+
+@media (max-width: 1179px) {
+  .routes {
+    display: none;
+  }
+
+  .signalFrame {
+    max-width: 760px;
+    width: 100%;
+    height: auto;
+    padding: 56px 20px 64px;
+  }
+
+  .signalTitle {
+    position: static;
+    padding: 0;
+    font-size: clamp(44px, 14vw, 72px);
+    line-height: 1.02;
+    letter-spacing: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .pair {
+    display: block;
+  }
+
+  .signalList {
+    position: static;
+    display: grid;
+    gap: 18px;
+    margin-top: 30px;
+    padding-left: 26px;
+    border-left: 4px solid var(--route);
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  .signalList li,
+  .signalList li:nth-child(n) {
+    position: relative;
+    left: auto;
+    width: auto;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .signalList li::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: -35px;
+    width: 14px;
+    height: 14px;
+    background: var(--cyan);
+  }
+}

@@ -1,0 +1,350 @@
+/* Proof with standards (image 1: y 3105–3967). Values are reference px × var(--u). */
+.proof {
+  border-bottom: 1px solid #0b1533;
+  background: #010a1b;
+}
+
+.frame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(862 * var(--u));
+  margin-inline: auto;
+}
+
+.routes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.eyebrow {
+  position: absolute;
+  top: calc(48.6 * var(--u));
+  left: calc(172 * var(--u));
+  display: flex;
+  gap: calc(18 * var(--u));
+  margin: 0;
+  font-family: var(--label);
+  font-size: var(--fs-18-5);
+  font-weight: 500;
+  line-height: calc(24 * var(--u));
+  letter-spacing: 0.125em;
+  color: #ecebed;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eyebrowNum {
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--cyan);
+}
+
+.title {
+  position: absolute;
+  top: calc(120.9 * var(--u));
+  left: calc(113 * var(--u));
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-135);
+  font-variation-settings: "wdth" 50;
+  font-weight: 600;
+  line-height: calc(111 * var(--u));
+  color: var(--white);
+  text-transform: uppercase;
+  transform: scaleX(0.76);
+  transform-origin: 0 0;
+}
+
+/* image 1 sets line 1 about 5% wider than line 2 (655 vs 678px at 1536) */
+.title > span:first-child {
+  transform: scaleX(1.05);
+  transform-origin: 0 0;
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  top: calc(246 * var(--u));
+  left: 0;
+  width: calc(895 * var(--u));
+  height: 2px;
+  background: #0353bd;
+}
+
+.rules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* reading floor: never below 16px once the poster scales down */
+.rules li {
+  position: absolute;
+  top: calc(392 * var(--u));
+  font-family: var(--semi);
+  font-size: max(16px, var(--fs-17-5));
+  font-weight: 600;
+  line-height: max(calc(24 * var(--u)), 1.37em);
+  color: var(--white);
+}
+
+.rules li:nth-child(1) { left: calc(114 * var(--u)); }
+.rules li:nth-child(2) { left: calc(343 * var(--u)); }
+/* at the 16px floor, column 3 steps right so its rule clears column 2's longest line */
+.rules li:nth-child(3) { left: max(calc(582 * var(--u)), calc(387 * var(--u) + 166px)); }
+
+.rules li:nth-child(2)::before,
+.rules li:nth-child(3)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: calc(122 * var(--u));
+  background: #0342a2;
+}
+
+.rules li:nth-child(2)::before { left: calc(-35 * var(--u)); }
+.rules li:nth-child(3)::before { left: calc(-44 * var(--u)); }
+
+.ruleIcon {
+  display: block;
+  height: calc(62 * var(--u));
+  color: #0267ef;
+}
+
+.rules li:nth-child(1) .ruleIcon { width: calc(48 * var(--u)); margin-left: calc(42 * var(--u)); }
+.rules li:nth-child(2) .ruleIcon { width: calc(50 * var(--u)); margin-left: calc(52 * var(--u)); }
+.rules li:nth-child(3) .ruleIcon { width: calc(58 * var(--u)); margin-left: calc(64 * var(--u)); }
+
+.rules p {
+  margin: calc(6 * var(--u)) 0 0;
+  white-space: nowrap;
+}
+
+.positionLabel {
+  position: absolute;
+  top: calc(582.6 * var(--u));
+  left: calc(116 * var(--u));
+  margin: 0;
+  padding-top: 0;
+  font-family: var(--label);
+  font-size: var(--fs-18-5);
+  font-weight: 600;
+  line-height: calc(22 * var(--u));
+  letter-spacing: 0.128em;
+  color: #2b76e1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.positionLabel::before {
+  content: "";
+  position: absolute;
+  top: calc(-11 * var(--u));
+  left: calc(-1 * var(--u));
+  width: calc(640 * var(--u));
+  height: 1px;
+  background: #0353bd;
+}
+
+.positionBody {
+  position: absolute;
+  top: calc(612.7 * var(--u));
+  left: calc(117 * var(--u));
+  margin: 0;
+  font-size: max(16px, var(--fs-17-5));
+  font-variation-settings: "wdth" 92;
+  line-height: max(calc(23 * var(--u)), 1.3em);
+  letter-spacing: -0.005em;
+  color: #f4f2f4;
+}
+
+.photo {
+  position: absolute;
+  top: calc(124 * var(--u));
+  left: calc(834 * var(--u));
+  width: calc(633 * var(--u));
+  height: calc(554 * var(--u));
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid #798293;
+}
+
+/* tighter crop (1.2x) so the headlamp is the focal point, as in image 1 */
+.photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.2);
+  transform-origin: 0 24.5%;
+}
+
+.process {
+  position: absolute;
+  top: calc(746 * var(--u));
+  left: calc(578 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: calc(404 * var(--u));
+  height: max(44px, calc(54 * var(--u)));
+  padding: 0 calc(30 * var(--u)) 0 calc(37 * var(--u));
+  background: #0154ea;
+  font-family: var(--label);
+  font-size: var(--fs-20-5);
+  font-weight: 500;
+  letter-spacing: 0.151em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: box-shadow 160ms ease;
+}
+
+.process:hover {
+  box-shadow: var(--hover-ring);
+}
+
+.process svg {
+  flex-shrink: 0;
+  width: calc(27 * var(--u));
+  height: calc(18 * var(--u));
+}
+
+@media (max-width: 1179px) {
+  .frame {
+    max-width: 760px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    padding: 56px 20px 60px;
+  }
+
+  .routes {
+    display: none;
+  }
+
+  .eyebrow,
+  .title,
+  .rules li,
+  .rules li:nth-child(n),
+  .positionLabel,
+  .positionBody,
+  .photo,
+  .process {
+    position: relative;
+    inset: auto;
+  }
+
+  .eyebrow {
+    gap: 12px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .title {
+    margin-top: 18px;
+    padding-bottom: 22px;
+    /* one sentence per line, sized so the longer sentence fits the column */
+    font-size: min(96px, calc((min(100cqw, 760px) - 40px) / 6.8));
+    line-height: 0.9;
+    transform: none;
+    font-variation-settings: "wdth" 50;
+  }
+
+  .title > span,
+  .title > span:first-child {
+    display: block;
+    transform: none;
+  }
+
+  .title::after {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+  }
+
+  .rules {
+    display: grid;
+    gap: 22px;
+    margin-top: 26px;
+  }
+
+  .rules li {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    align-items: center;
+    gap: 16px;
+    font-size: 17px;
+    line-height: 1.35;
+  }
+
+  .rules li:nth-child(2)::before,
+  .rules li:nth-child(3)::before {
+    display: none;
+  }
+
+  .ruleIcon,
+  .rules li:nth-child(n) .ruleIcon {
+    width: 44px;
+    height: 52px;
+    margin: 0;
+  }
+
+  .rules p {
+    margin: 0;
+    white-space: normal;
+  }
+
+  .positionLabel {
+    margin-top: 40px;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    white-space: normal;
+  }
+
+  .positionLabel::before {
+    top: -16px;
+    width: 100%;
+  }
+
+  .positionBody {
+    margin-top: 8px;
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  .photo {
+    width: 100%;
+    height: auto;
+    margin-top: 30px;
+    aspect-ratio: 633 / 554;
+  }
+
+  .process {
+    width: 100%;
+    height: 56px;
+    margin-top: 28px;
+    padding: 0 18px 0 20px;
+    font-size: 16px;
+    letter-spacing: 0.16em;
+  }
+
+  .process svg {
+    width: 27px;
+    height: 18px;
+  }
+}
+
+/* 320-359px: the tracked label needs the room its arrow keeps */
+@media (max-width: 359px) {
+  .process {
+    letter-spacing: 0.08em;
+  }
+}

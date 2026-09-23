@@ -1,0 +1,476 @@
+/* Work collage (image 1: y 2240–3103). Values are reference px × var(--u). */
+.work {
+  position: relative;
+  border-top: 1px solid #0b1533;
+  border-bottom: 2px solid #0b1533;
+  background: #01060f;
+}
+
+.frame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(862 * var(--u));
+  margin-inline: auto;
+}
+
+.routes {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.eyebrow {
+  position: absolute;
+  top: calc(30.7 * var(--u));
+  left: calc(75 * var(--u));
+  display: flex;
+  align-items: flex-start;
+  gap: calc(28 * var(--u));
+  margin: 0;
+  font-family: var(--label);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: calc(26 * var(--u));
+  letter-spacing: 0.172em;
+  color: #38f4e7;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eyebrowNum {
+  margin-top: calc(3 * var(--u));
+  font-size: var(--fs-25-5);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.title {
+  position: absolute;
+  top: calc(61.4 * var(--u));
+  left: calc(118 * var(--u));
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-70);
+  font-variation-settings: "wdth" 54;
+  font-weight: 500;
+  line-height: calc(61 * var(--u));
+  letter-spacing: 0.018em;
+  color: #ecebed;
+  text-transform: uppercase;
+}
+
+/* reading floor: never below 16px once the poster scales down */
+.body {
+  position: absolute;
+  top: calc(189 * var(--u));
+  left: calc(120 * var(--u));
+  margin: 0;
+  font-family: var(--semi);
+  font-size: max(16px, var(--fs-17-5));
+  font-weight: 400;
+  line-height: max(calc(23.5 * var(--u)), 1.3em);
+  letter-spacing: -0.006em;
+  color: #eceef3;
+}
+
+.story,
+.event,
+.inventory,
+.google {
+  position: absolute;
+  margin: 0;
+}
+
+.label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.labelTitle {
+  font-size: max(12px, var(--fs-13));
+  font-weight: 700;
+  line-height: max(calc(13.5 * var(--u)), 1.04em);
+  letter-spacing: 0.12em;
+  color: var(--white);
+}
+
+.labelKind {
+  font-size: max(12px, var(--fs-12));
+  font-weight: 500;
+  line-height: max(calc(14 * var(--u)), 1.17em);
+  letter-spacing: 0.085em;
+  color: #c4c7ce;
+}
+
+.media {
+  position: absolute;
+  overflow: hidden;
+}
+
+.media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.story {
+  top: calc(278 * var(--u));
+  left: calc(152 * var(--u));
+  width: calc(386 * var(--u));
+  height: calc(570 * var(--u));
+  border: 1px solid #1e2334;
+  background: #050a16;
+}
+
+.story .label {
+  top: calc(0.9 * var(--u));
+  left: calc(21 * var(--u));
+}
+
+.story .media {
+  top: calc(37 * var(--u));
+  left: calc(5 * var(--u));
+  right: calc(5 * var(--u));
+  bottom: calc(4 * var(--u));
+}
+
+/* derived crop starts at the JOB NO row, so no storyboard text line is sliced */
+.story .media img {
+  object-position: 50% 0;
+}
+
+/*
+ * Below ~1257px the 16px intro floor needs more room than the poster gives it, so the event
+ * plate's left edge steps right (its right edge, label and box height stay put) and the
+ * creative is cropped a little more at the sides. At 1536 this is exactly 621.
+ */
+.event {
+  --event-left: max(calc(621 * var(--u)), calc(120 * var(--u) + 412px));
+  top: calc(112.9 * var(--u));
+  left: var(--event-left);
+  width: calc(1033 * var(--u) - var(--event-left));
+  height: calc(563 * var(--u));
+}
+
+.event .label {
+  top: 0;
+  left: calc(687 * var(--u) - var(--event-left));
+}
+
+.event .media {
+  top: calc(39.1 * var(--u));
+  left: 0;
+  width: 100%;
+  height: calc(524 * var(--u));
+  border: 1px solid #8a7560;
+}
+
+.inventory {
+  top: calc(112.9 * var(--u));
+  left: calc(1070 * var(--u));
+  width: calc(411 * var(--u));
+  height: calc(325 * var(--u));
+}
+
+.inventory .label {
+  top: 0;
+  left: calc(61 * var(--u));
+}
+
+/*
+ * 1.07x the fitted creative, grown about its centre, so the carousel spans ~1070-1482.
+ * The 27px floor is the label's height at its 12px type floor (below ~1480px wide), so the
+ * navy creative never covers "META INVENTORY AD".
+ */
+.inventory .media {
+  top: max(calc(28 * var(--u)), 27px);
+  left: calc(-14 * var(--u));
+  width: calc(439 * var(--u));
+  height: calc(308 * var(--u));
+}
+
+.google {
+  top: calc(458.9 * var(--u));
+  left: calc(1068 * var(--u));
+  width: calc(422 * var(--u));
+  height: calc(258 * var(--u));
+}
+
+.google .label {
+  top: 0;
+  left: calc(14 * var(--u));
+}
+
+.google .media {
+  top: calc(36.1 * var(--u));
+  left: 0;
+  width: 100%;
+  height: calc(220 * var(--u));
+  background: #fff;
+}
+
+/* derived crop (matte and markup arrows cropped out); anchored left so the Google header reads */
+.google .media img {
+  object-position: 0 0;
+}
+
+/* positioned against the section (it sits outside the frame, before the disclosed panel) */
+.explore {
+  position: absolute;
+  top: calc(756 * var(--u));
+  left: calc(var(--bleed) + 1135 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(343 * var(--u));
+  height: calc(66 * var(--u));
+  gap: 12px;
+  padding: 0 calc(24 * var(--u)) 0 calc(39 * var(--u));
+  border: 1px solid #53a2d6;
+  background: #0145e2;
+  font-family: var(--display);
+  font-size: var(--fs-32-5);
+  font-variation-settings: "wdth" 56;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.102em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: box-shadow 160ms ease;
+}
+
+.explore:hover {
+  box-shadow: var(--hover-ring);
+}
+
+.explore svg {
+  flex-shrink: 0;
+  width: calc(32 * var(--u));
+  height: calc(32 * var(--u));
+  transition: transform 160ms ease;
+}
+
+.explore[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+/* disclosed panel: the other supplied creatives, whole, under the collage */
+.more {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: calc(40 * var(--u));
+  width: calc(1386 * var(--u));
+  margin: 0 auto;
+  padding: calc(56 * var(--u)) 0 calc(72 * var(--u));
+  border-top: 1px solid #1e2334;
+}
+
+.more[hidden] {
+  display: none;
+}
+
+.moreItem {
+  margin: 0;
+}
+
+.moreItem img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #1e2334;
+}
+
+.moreLabel {
+  margin-top: calc(14 * var(--u));
+  font-family: var(--label);
+  font-size: max(12px, var(--fs-16));
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+@media (max-width: 1179px) {
+  .frame {
+    max-width: 760px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    padding: 56px 20px 0;
+  }
+
+  .work {
+    padding-bottom: 60px;
+  }
+
+  .routes {
+    display: none;
+  }
+
+  .eyebrow,
+  .title,
+  .body,
+  .story,
+  .event,
+  .inventory,
+  .google,
+  .explore,
+  .label,
+  .media,
+  .story .label,
+  .story .media,
+  .event .label,
+  .event .media,
+  .inventory .label,
+  .inventory .media,
+  .google .label,
+  .google .media {
+    position: relative;
+    inset: auto;
+  }
+
+  .eyebrow {
+    gap: 14px;
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .eyebrowNum {
+    font-size: 18px;
+  }
+
+  .title {
+    margin-top: 12px;
+    font-size: clamp(40px, 12vw, 60px);
+    line-height: 0.92;
+  }
+
+  .body {
+    margin-top: 16px;
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  .story,
+  .event,
+  .inventory,
+  .google {
+    width: 100%;
+    height: auto;
+    margin-top: 34px;
+  }
+
+  .labelTitle {
+    font-size: 15px;
+    line-height: 18px;
+  }
+
+  .labelKind {
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .label {
+    margin-bottom: 10px;
+    padding-left: 20px;
+  }
+
+  .label::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 0;
+    width: 11px;
+    height: 11px;
+    background: var(--cyan);
+  }
+
+  .story {
+    order: 2;
+    padding-top: 8px;
+  }
+
+  .story .label {
+    margin-left: 12px;
+  }
+
+  /* the derived file's own ratio (426x592): no storyboard line is cropped */
+  .story .media {
+    aspect-ratio: 426 / 592;
+    width: 100%;
+    height: auto;
+  }
+
+  .event {
+    --event-left: 0px;
+    order: 1;
+  }
+
+  .event .media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1122 / 1402;
+  }
+
+  .inventory {
+    order: 3;
+  }
+
+  .inventory .media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 411 / 288;
+  }
+
+  .google {
+    order: 4;
+  }
+
+  .google .media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 422 / 220;
+  }
+
+  .explore {
+    width: calc(100% - 40px);
+    max-width: 720px;
+    height: 60px;
+    margin: 32px auto 0;
+    padding: 0 18px 0 22px;
+    font-size: 24px;
+  }
+
+  .more {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    width: auto;
+    max-width: 760px;
+    padding: 32px 20px 0;
+    border-top: 0;
+  }
+
+  .moreLabel {
+    margin-top: 10px;
+    font-size: 15px;
+  }
+
+  .explore svg {
+    width: 26px;
+    height: 26px;
+  }
+}
