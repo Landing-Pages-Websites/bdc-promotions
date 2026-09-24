@@ -1,0 +1,66 @@
+/* 11 free audit (dark panel: steps + the deliverable card) · 12 FAQ (5/7, sticky side with "Who it's for") */
+.auditPanel { padding: 80px 64px; border-radius: var(--r-xl); background: var(--dark); color: #fff; }
+.auditPanel h2 { color: #fff; }
+.audit { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 40px; align-items: start; }
+.aSteps { grid-column: 1 / span 7; min-width: 0; }
+.aStep { position: relative; display: grid; grid-template-columns: 48px 1fr; gap: 20px; padding-bottom: 32px; }
+.aStep:last-of-type { padding-bottom: 0; }
+.aStep::before { content: ""; position: absolute; left: 23px; top: 56px; bottom: 8px; width: 2px; background: var(--dark-line); border-radius: 2px; }
+.aStep:last-of-type::before { display: none; }
+.aStep .c { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--dark-3); box-shadow: inset 0 0 0 1px var(--dark-line); color: #fff; font: 500 var(--t7) / 1 var(--font); }
+.aStep:last-of-type .c { background: var(--accent); color: #fff; box-shadow: 0 0 0 5px rgba(0, 89, 252, 0.22); }
+.aStep h3 { margin: 10px 0 8px; }
+.aStep p { color: var(--on-dark-2); max-width: 520px; }
+/* the deliverable: a white card on the panel's right line, with the one action */
+.deliver { grid-column: 8 / span 5; display: grid; gap: 20px; padding: 28px; border-radius: var(--r-l); background: #fff; color: var(--ink); }
+.deliver > p { color: var(--ink-2); }
+.recapList { border-top: 1px solid var(--line); }
+.recapList li { padding: 14px 0; border-bottom: 1px solid var(--line); font-weight: 500; line-height: 1.45; }
+.deliver .deliverBtn { justify-self: start; margin-top: 4px; }
+.deliver :focus-visible { outline-color: var(--accent-ink); }
+
+/* ---------- 12 faq: sticky side (cols 1–5) beside the list (cols 6–12) ---------- */
+.faqGrid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: start; }
+.faqSide { grid-column: 1 / span 5; position: sticky; top: 120px; display: grid; gap: 40px; }
+.faqHead { display: grid; gap: 16px; }
+.faqNote { color: var(--ink-2); max-width: 440px; }
+.contacts { display: flex; flex-wrap: wrap; column-gap: 24px; margin-top: -4px; }
+.faqHead .mail { font-weight: 400; color: var(--ink-2); }
+.who { display: grid; gap: 16px; justify-items: start; padding-top: 32px; border-top: 1px solid var(--line-2); }
+.who .whoLabel { font: 500 var(--tl) / 1.2 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.statement { font-size: var(--t4); line-height: 1.4; letter-spacing: -0.01em; font-weight: 500; color: var(--ink); text-wrap: pretty; }
+.who > a { margin-top: 8px; }
+.faq { grid-column: 6 / span 7; border-top: 1px solid var(--line-2); }
+.faq details { border-bottom: 1px solid var(--line-2); }
+.faq summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 76px; padding: 16px 0; cursor: pointer; font-weight: 500; font-size: var(--t5); line-height: 1.4; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary:hover { color: var(--accent-ink); }
+.faq .pm { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1px var(--line-2); color: var(--ink); }
+.faq .pm svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.faq details[open] .pm .v { display: none; }
+.faq .ans { padding: 0 64px 28px 0; color: var(--ink-2); max-width: 680px; }
+/* inline links keep the sentence's line box but get a 44px hit area (fix r2) */
+.faq .ans a { display: inline-block; padding-block: 11px; margin-block: -11px; color: var(--accent-ink); font-weight: 500; text-decoration: underline; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .faq summary { transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+}
+@media (max-width: 1100px) {
+  .auditPanel { padding: 56px 40px; }
+  .aSteps, .deliver { grid-column: 1 / -1; }
+  .deliver { max-width: 560px; }
+  /* stacked: head → list → who. The side column dissolves so "Who it's for" can follow the questions */
+  .faqSide { display: contents; }
+  .faqHead, .faq, .who { grid-column: 1 / -1; }
+  .faq { order: 1; margin-top: var(--half); }
+  .who { order: 2; margin-top: var(--half); }
+}
+@media (max-width: 720px) {
+  .auditSec .auditPanel { padding: 40px 20px; border-radius: 24px; }
+  .deliver { padding: 20px; }
+  .deliver .deliverBtn { width: 100%; justify-content: space-between; }
+  .statement { font-size: var(--t5); }
+  .faq { margin-top: 32px; }
+  .faq summary { font-size: 16px; min-height: 64px; }
+  .faq .ans { padding-right: 0; }
+}

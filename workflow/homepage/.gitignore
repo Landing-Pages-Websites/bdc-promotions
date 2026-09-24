@@ -4,3 +4,5 @@ comparisons/
 reviews/**
 !reviews/**/
 !reviews/**/*.md
+c3/shots/*
+!c3/shots/final/

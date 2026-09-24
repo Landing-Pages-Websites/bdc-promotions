@@ -1,4 +1,57 @@
-# Homepage review — BDC Promotions (A · B · C)
+# Homepage review — BDC Promotions (A · B · C · D · E)
+
+## C3 update — 2026-09-24 (branch `review/homepage-c3-2026-09-24`, PR #29 → `awb-home-build`)
+
+**Why.** The owner rejected C2 "Lot Lines" on proportion, spacing and fonts, and asked for 12–15 well-designed sections (V210). They then asked for all three new prototype directions on the chooser, in **pure white + the logo blue `#0059FC`** (V211). That makes five homepage mockups.
+
+| Route | Direction | Sections |
+|---|---|---|
+| `/` | Chooser (five cards) | — |
+| `/variant-a` | A · Signal Lane (locked, unchanged) | — |
+| `/variant-b` | B · Dealer Field Journal (locked, unchanged) | — |
+| `/variant-c` | **C · Daylight**: floating pill nav, full-bleed night photo with an overlapping value card, rounded light/dark sheets | 13 |
+| `/variant-d` | **D · Nightfall**: full-bleed night hero, a funnel diagram, ads framed as "Sponsored" feed posts, a dark bundle card | 13 |
+| `/variant-e` | **E · Contrast**: strict editorial grid, a strike-through gap table, a pricing bracket that joins two plans into the bundle | 13 |
+
+**Process (design-psyche + homepage-workflow, via three workflows):**
+- **Copy.** A verified copy deck (`content.ts`, the A/B decks, `/lp` components, `content-sources.json`). It excludes tenure claims, financing terms, dealer names and third-party marks.
+- **References.** Live research across 6 SERP competitors and about 29 excellence sites (service agencies and automotive/creative portfolios).
+- **Prototypes.** Three full-page prototypes, each built → critic → revised, then judged blind.
+- **Port.** Ported to Next with a band-by-band diff against each prototype, followed by **three** critic → fix rounds per route.
+
+**Final evidence:**
+- **Blind full-page owner-lens judge.** The five routes were judged against hvacfound (the owner's own reference), Collective and Designjoy. The ranking was **E 1st, D 2nd, C 3rd**, then hvacfound, Collective, Designjoy, A and B. **E and D were "approved on sight"**, and C was not. C's stated blockers: dark bands, a second AI-looking photo, and an empty column in the featured card.
+- **Final design-critic:**
+  - C: **PASS** (7/8/8/8/7/8/7).
+  - E: **PASS** (7/7/8/7/7/8/7).
+  - D: FAIL on one correctness issue, since fixed by the coordinator. The Work plates hugged their ads, leaving ragged edges at 2560 (V210). Now every plate fills its column, the edges align at 1280, 1440, 1920 and 2560, and Meta/VLA are capped at 460/420.
+- **Blind fold rank against the frozen v2 set** (car-brand photo heroes: Singer, Lucid, Genesis …): C, D and E finished **11th–13th of 15, in the bottom third**. That set was frozen for C2's photo-led thesis, and the three folds share the one approved AI night-showroom photo. It is reported rather than re-picked. Every judge named the same remaining risk: **that hero car is a badgeless AI render**. A real vehicle photograph would lift all three.
+- **Production** (`next start`), all five routes:
+  - hydrate at 1440 and 390;
+  - 0 broken images, 0 overflow, one h1 each;
+  - density gate **0 soft** for C, D and E (DPR 2 at 1536/1440/1280/390);
+  - mobile menus open, close on a link tap and close on Escape.
+- **Checks:**
+  - `tsc` 0 errors;
+  - `npm run lint` 0 errors (2 pre-existing warnings);
+  - src tests 170/170;
+  - scripts 64/71 locally. The 7 are the known path-with-spaces `src-propagation` failures; CI runs 71/71.
+  - `npm run build` passes.
+- **Bugs found and fixed:**
+  - E's mobile bar (z-60) covered the consent banner's "Got it". It is now z-40.
+  - D's menu ignored Escape.
+  - Published prototypes had broken image paths. The prototypes have since been removed.
+
+**Curated screens:** `workflow/homepage/c3/shots/final/`, with {c,d,e}-1440-fold.png and -1440-full.png. Bulk captures stay local.
+**Notes:** `workflow/homepage/c3/notes/{c,d,e}-port.md`. **Contract:** `workflow/homepage/c3/PORT.md`.
+
+**Open owner questions:**
+1. Replace the AI hero car with a real photograph. The Codex image quota resets Sep 29; client photos are the alternative.
+2. The email domain is `bdc-promotions.com` while the site is `bdcpromotions.com`. Please confirm.
+3. Are the dealer names visible inside the ads (Gen X Motors, Hub City Ford, Valley River) customer-approved to show?
+
+---
+
 
 Date: 2026-09-23 · Base: `origin/awb-home-build` @ `31e2b47` · Branch: `review/homepage-abc-2026-09-23`
 

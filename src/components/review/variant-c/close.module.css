@@ -1,77 +1,43 @@
-/* Direction C · Proof Wall — close + FAQ (C-BRIEF §8.7). Tokens come from .page in proof-wall.module.css. */
+/* 13 final CTA (a flat dark sheet, no photo: the showroom already carries the hero) + footer.
+   .onDark is set on the final section and on the footer. */
+.final { position: relative; }
+.finalIn { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; padding-block: var(--pad-l) var(--pad-m); }
+.finalIn > * { grid-column: 1 / -1; min-width: 0; }
+.finalIn .finalLabel { font: 500 var(--tl) / 1.2 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-1); }
+.finalIn h2 { grid-column: 1 / -1; margin-top: 24px; font-size: var(--t1); line-height: 1.02; letter-spacing: -0.03em; color: #fff; }
+.finalRow { display: grid; grid-template-columns: subgrid; row-gap: 24px; align-items: center; margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--dark-line); }
+.finalRow .finalLead { grid-column: 1 / span 6; font-size: var(--t5); line-height: 1.6; text-wrap: pretty; color: #cdd3de; max-width: 560px; }
+.finalRow .finalCtas { grid-column: 7 / span 6; justify-content: flex-end; }
 
-/* ---------- close + FAQ: the FAQ is 1px-ruled rows on graphite, not a card (cards are for objects) ---------- */
-.close {
-  padding: var(--section) 0;
-  background: var(--c-graphite);
+/* ---------- footer ---------- */
+.footer { position: relative; border-top: 1px solid var(--dark-line); padding-block: 64px 40px; color: var(--on-dark-2); }
+.fGrid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 40px; }
+.fBrand { grid-column: 1 / span 4; display: grid; gap: 4px; align-content: start; }
+.fBrand img { width: 120px; height: auto; aspect-ratio: 1254 / 749; margin-bottom: 12px; }
+.fBrand .brandline { color: #fff; font-weight: 500; margin-bottom: 4px; }
+.fBrand a { color: var(--on-dark-1); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; width: fit-content; }
+.fCol { grid-column: span 2; display: grid; align-content: start; }
+.fCol.svcCol { grid-column: 6 / span 3; }
+.fCol .fLabel { margin-bottom: 8px; }
+.fCol a { color: var(--on-dark-1); text-decoration: none; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; width: fit-content; }
+.fCol a:hover, .fBrand a:hover { color: #fff; }
+.fLegal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--dark-line); font-size: var(--t7); line-height: 1.6; }
+.fLegal nav { display: flex; gap: 20px; }
+.fLegal a { color: var(--on-dark-1); min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; text-decoration: underline; }
+
+@media (max-width: 1100px) {
+  .finalIn h2, .finalRow .finalLead, .finalRow .finalCtas { grid-column: 1 / -1; }
+  .finalRow .finalCtas { justify-content: flex-start; }
+  .fBrand { grid-column: 1 / -1; }
+  .fCol, .fCol.svcCol { grid-column: span 4; }
 }
-
-.split75 {
-  display: grid;
-  grid-template-columns: 7fr 5fr;
-  align-items: start;
-  gap: 48px 72px;
-}
-
-.line {
-  display: block;
-}
-
-.closeLead {
-  max-width: 30em;
-  margin-top: 24px;
-}
-
-.auditSteps {
-  margin-top: 32px;
-}
-
-.auditSteps li {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  align-items: baseline;
-  gap: 16px;
-  padding: 16px 0;
-  border-top: 1px solid var(--c-line-dark);
-  font-size: var(--t-lead);
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.auditSteps li:last-child {
-  border-bottom: 1px solid var(--c-line-dark);
-}
-
-.faqList {
-  margin-top: 16px;
-}
-
-.faqList > div {
-  padding: 20px 0;
-  border-top: 1px solid var(--c-line-dark);
-}
-
-.faqList > div:last-child {
-  border-bottom: 1px solid var(--c-line-dark);
-}
-
-.faqQ {
-  font-size: var(--t-body);
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.faqList p {
-  margin-top: 6px;
-  color: var(--c-fog);
-}
-
-@media (max-width: 760px) {
-  .split75 {
-    grid-template-columns: 1fr;
-  }
-
-  .line {
-    display: inline;
-  }
+@media (max-width: 720px) {
+  .footer { padding-bottom: 124px; }
+  .finalIn h2 { font-size: var(--t2); margin-top: 20px; }
+  .finalRow { margin-top: 32px; padding-top: 24px; }
+  .finalRow .finalCtas a { width: 100%; justify-content: space-between; }
+  .finalRow .finalCtas .finalCall { justify-content: center; }
+  .fCol.svcCol { grid-column: 1 / -1; }
+  .fCol { grid-column: span 6; }
+  .fLegal { flex-direction: column; }
 }

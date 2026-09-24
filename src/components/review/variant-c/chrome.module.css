@@ -1,0 +1,54 @@
+/* Header pill nav, its ≤1100 menu, and the ≤720 fixed action bar. */
+.navWrap { position: sticky; top: 0; z-index: 50; padding-top: 24px; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 24px; height: 72px; padding: 0 12px; border-radius: 999px; background: rgba(14, 15, 18, 0.95); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); color: #fff; }
+/* symmetric bar padding (so the grid centre is the bar centre); the logo keeps its 20px inset by margin */
+.brand { display: block; flex: none; margin-left: 8px; border-radius: 8px; justify-self: start; }
+/* aspect-ratio pinned: the optimizer's 128w/256w renditions round the height and would shift the bar by 0.4px */
+.brand img { width: 120px; height: auto; aspect-ratio: 1254 / 749; }
+.navLinks { display: flex; gap: 2px; }
+.navLinks a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 999px; text-decoration: none; color: rgba(255, 255, 255, 0.84); font-weight: 500; }
+.navLinks a:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.navCta { display: flex; align-items: center; gap: 8px; }
+.navCall { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; color: #fff; text-decoration: none; font-weight: 500; white-space: nowrap; }
+.navCall svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; opacity: 0.8; }
+.navCall:hover { background: rgba(255, 255, 255, 0.08); }
+.nav .navBtn { min-height: 48px; padding: 0 6px 0 20px; }
+/* ≤1100 menu (fix r2, V212): a full-width sheet anchored under the bar, not a floating card. It is absolute in the
+   sticky/relative header (so it travels with the bar and its Close button), z-index −1 inside the header's stacking
+   context: above the page, below the bar's own logo and summary. The spread shadow is the scrim. */
+.menu { display: none; }
+.menu summary { list-style: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 76px; padding: 0 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: #fff; font-weight: 500; cursor: pointer; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu[open] summary { background: #fff; color: var(--ink); }
+.menu .whenOpen, .menu[open] .whenShut { display: none; }
+.menu[open] .whenOpen { display: inline; }
+.menuPanel { position: absolute; z-index: -1; top: 0; left: 0; right: 0; display: grid; padding: 112px var(--gutter) 24px; border-radius: 0 0 24px 24px; background: var(--dark); box-shadow: 0 0 0 100vmax rgba(11, 18, 32, 0.5); }
+.menuPanel a { display: flex; align-items: center; min-height: 56px; border-top: 1px solid var(--dark-line); color: #fff; text-decoration: none; font-size: var(--t5); font-weight: 500; }
+.menuPanel a:last-child { border-bottom: 1px solid var(--dark-line); }
+.menuPanel a:hover { color: var(--accent-dark); }
+.mbar { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .navLinks a { transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+}
+/* the links sit on the bar's true centre; the two sides take the rest (fix r2: they were 96px left of centre) */
+@media (min-width: 1101px) {
+  .nav { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .navCta { justify-self: end; }
+}
+@media (max-width: 1100px) {
+  .navLinks { display: none; }
+  .menu { display: block; }
+}
+@media (max-width: 720px) {
+  .navWrap { position: relative; padding-top: 12px; }
+  .nav { height: 64px; padding: 0 8px; }
+  .brand { margin-left: 8px; }
+  .brand img { width: 104px; }
+  .menuPanel { padding-top: 88px; }
+  .navCta .navCall, .navCta .navBtn { display: none; }
+  /* z-index 40: under the site consent banner (z-50), so its buttons are never covered */
+  .mbar { position: fixed; z-index: 40; left: 8px; right: 8px; bottom: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; border-radius: 22px; background: rgba(14, 15, 18, 0.95); }
+  .mbar .mBtn { min-height: 52px; width: 100%; padding: 0 6px 0 18px; justify-content: space-between; }
+  .mbar .mCall { justify-content: center; padding: 0 16px; }
+}

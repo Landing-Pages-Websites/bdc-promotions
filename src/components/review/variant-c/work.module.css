@@ -1,96 +1,55 @@
-/* Direction C · Proof Wall — the work (C-BRIEF §8.3, §12, §13). Tokens come from .page in proof-wall.module.css. */
+/* 04 featured work · 05 gallery (both on the dark work sheet). Creatives never render wider than native ÷ 2. */
+.feature { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: stretch; }
+.plate { grid-column: 1 / span 7; min-width: 0; display: grid; justify-items: center; padding: 48px 40px; border-radius: var(--r-l); background: radial-gradient(120% 80% at 50% 0%, #1e2533 0%, var(--dark-2) 55%); box-shadow: inset 0 0 0 1px var(--dark-line); }
+.plate img { width: min(100%, 440px); height: auto; border-radius: 10px; box-shadow: var(--lift); }
+/* col 8 = the page's one right-column line (x=834 at 1440); the title on the plate's top edge, the dl on its bottom */
+.spec { grid-column: 8 / span 5; display: grid; gap: 32px; align-content: space-between; }
+.specTop { display: grid; gap: 16px; }
+.spec dl { margin: 0; display: grid; border-top: 1px solid var(--dark-line); }
+.spec dl div { display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--dark-line); }
+.spec dt { font: 500 var(--tl) / 1.9 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-2); }
+.spec dd { margin: 0; color: #fff; }
 
-.work {
-  padding: var(--section) 0;
+/* ---------- 05 gallery ---------- */
+.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.shot { display: flex; flex-direction: column; min-width: 0; border-radius: var(--r-l); background: var(--dark-2); box-shadow: inset 0 0 0 1px var(--dark-line); overflow: hidden; }
+.shot .well { flex: 1; display: grid; justify-items: center; align-items: start; padding: 48px 40px; }
+.shot .well img { height: auto; border-radius: 8px; box-shadow: var(--lift); }
+.shot.p .well img { width: min(100%, 400px); }
+/* the 3:4 used-car ad at 0.9375 × the 4:5 wholesale width: both portraits share one height at every width */
+.shot.uc .well img { width: min(93.75%, 375px); }
+.shot.l .well { padding-block: 56px; align-items: center; }
+/* soft sources (1090 and 963 px wide): held at ~3× density so the in-ad text stays sharp */
+.shot.meta .well img { width: min(100%, 340px); }
+.shot.vla .well img { width: min(100%, 320px); }
+.pair { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: var(--r-l); background: var(--dark-2); box-shadow: inset 0 0 0 1px var(--dark-line); overflow: hidden; }
+.pair .shot { border-radius: 0; background: none; box-shadow: none; }
+.pair .shot + .shot { border-left: 1px solid var(--dark-line); }
+.shot figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; padding: 18px 24px 20px; border-top: 1px solid var(--dark-line); }
+.capT { font-weight: 500; color: #fff; }
+.capM { font-size: var(--t7); color: var(--on-dark-2); }
+
+@media (min-width: 1800px) {
+  .shot.p .well img { width: min(100%, 480px); }
+  .shot.uc .well img { width: min(93.75%, 450px); }
+  .shot .well { padding: 64px 56px; }
+  .shot.l .well { padding-block: 64px; }
 }
-
-.sheet {
-  display: grid;
-  gap: 56px;
+@media (max-width: 1100px) {
+  .plate { grid-column: 1 / -1; }
+  .spec { grid-column: 1 / -1; padding-top: 40px; }
 }
-
-.sheetRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 24px;
-}
-
-.group {
-  flex: 1 1 0%;
-  min-width: 0;
-}
-
-.groupLabel {
-  padding-bottom: 12px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--c-ink);
-}
-
-.groupItems {
-  display: flex;
-  align-items: flex-start;
-  gap: 24px;
-}
-
-.piece {
-  flex: 1 1 0%;
-  min-width: 0;
-}
-
-.piece img {
-  width: 100%;
-  border-radius: 10px;
-  background: var(--c-frame);
-}
-
-.piece figcaption {
-  margin-top: 12px;
-  font-weight: 600;
-  line-height: 1.35;
-  text-wrap: pretty;
-}
-
-.spec {
-  display: block;
-  margin-top: 4px;
-}
-
-/* A lone landscape screenshot runs at its own pixel width (never upscaled), captioned beside it. */
-.beside .piece {
-  display: grid;
-  grid-template-columns: minmax(0, var(--native)) minmax(200px, 1fr);
-  align-items: end;
-  gap: 24px;
-}
-
-.beside .piece figcaption {
-  margin-top: 0;
-}
-
-/* Phones: rows stack; within a group pieces wrap two-up, and flex-basis ∝ aspect ratio with
-   flex-grow ∝ aspect ratio gives every piece in a line one height. A lone piece runs full width. */
-@media (max-width: 760px) {
-  .sheet {
-    gap: 48px;
-  }
-
-  .sheetRow {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 48px;
-  }
-
-  .groupItems {
-    flex-wrap: wrap;
-    gap: 24px 12px;
-  }
-
-  .piece {
-    flex-basis: calc(var(--r) * 150px);
-  }
-
-  .beside .piece {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
+@media (max-width: 720px) {
+  .plate { padding: 40px 20px; border-radius: 20px; }
+  .plate img { width: min(100%, 300px); }
+  .spec { padding-top: 32px; }
+  .spec dl div { grid-template-columns: 88px 1fr; }
+  .gallery { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: calc(-1 * var(--gutter)); padding: 0 var(--gutter) 8px; scroll-padding-inline: var(--gutter); scrollbar-width: none; }
+  .gallery::-webkit-scrollbar { display: none; }
+  .gallery .shot { flex: 0 0 84%; scroll-snap-align: start; }
+  /* the pair card dissolves into two slides of the carousel */
+  .pair { display: contents; }
+  .pair .shot { border-radius: var(--r-l); background: var(--dark-2); box-shadow: inset 0 0 0 1px var(--dark-line); }
+  .pair .shot + .shot { border-left: 0; }
+  .shot .well, .shot.l .well { padding: 24px 20px; }
 }

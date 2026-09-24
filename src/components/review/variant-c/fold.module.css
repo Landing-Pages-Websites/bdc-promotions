@@ -1,288 +1,115 @@
-/* Direction C · Proof Wall — fold (C-BRIEF §8.1, §12 and §13 round-2 revisions). Tokens come from .page in
-   proof-wall.module.css. Desktop: copy block left; the wall right = the lead piece, sized to the frame and
-   shown whole, plus a narrow side column (portrait window sticker over an ad stack that runs off the fold). */
+/* 01 hero · 02 pillars (docked on the photo) · 03 the appointment gap */
+/* fix r3: ≥721 the photograph owns the fold. It runs full-bleed behind the header and the headline (the hero is
+   pulled up under the 96px header), ends inside the fold with rounded bottom corners, and the pillars dock on its
+   bottom edge. Height tracks the viewport but never exceeds 64vw, so 2560 stays ~1.9:1 (the photo is 1.946:1).
+   ≤720 keeps the rounded photo card above the text on white. */
+.heroGrid { display: grid; justify-items: stretch; }
+.heroMain, .heroSide { min-width: 0; }
+.pillEyebrow { display: inline-flex; align-items: center; min-height: 32px; padding: 0 14px; border-radius: 999px; background: var(--paper); box-shadow: var(--ring); font: 500 var(--tl) / 1.2 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.pillEyebrow .short { display: none; }
+.hero h1 { margin-top: 24px; }
+.hl { white-space: nowrap; }
+.heroSide { display: grid; gap: 32px; margin-top: 28px; }
+.heroSide .heroLead { color: var(--ink-2); }
+.heroSide .heroCtas { gap: 8px; }
+.heroSide .heroCall { padding: 0 18px; }
+.heroPhoto { position: relative; overflow: hidden; background: #0b1024; }
+.heroPhoto img { width: 100%; height: 100%; object-fit: cover; object-position: 70% 62%; }
 
-.fold {
-  /* The copy column is sized off the H1: its longest line, "toward your", renders at ≈7.1em (V192). */
-  --copy: calc(var(--t-h1) * 7.25);
-  /* The side column: the sticker's longest name ("Live BDC Agent Team", 169px) and "$2,500 / month"
-     each fit on one line at this width. */
-  --side: 204px;
-
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: max(640px, calc(100svh - var(--header)));
-  padding: 48px 0;
-  overflow: hidden;
+@media (min-width: 721px) {
+  .hero { position: relative; isolation: isolate; display: grid; align-content: center; margin-top: -96px; min-height: clamp(600px, min(100svh - 64px, 64vw), 1600px); padding: 152px 0 144px; color: #fff; }
+  .heroPhoto { position: absolute; inset: 0; z-index: -1; border-radius: 0 0 var(--r-xl) var(--r-xl); }
+  /* scrim: a solid night field under the text column (anchored to the container's left edge, so 2560 matches
+     1440), fading out before the lit showroom and the cars; plus a short top shade under the nav pill. ≥0.83 alpha
+     under every line keeps even a pure-white photo pixel at ≥4.5:1 for the #6F9BFF accent (the text ends ≤ +742px). */
+  .heroPhoto::after { content: ""; position: absolute; inset: 0; background:
+      linear-gradient(180deg, rgba(8, 12, 22, 0.5) 0, rgba(8, 12, 22, 0) 200px),
+      linear-gradient(90deg, rgba(8, 12, 22, 0.88) 0, rgba(8, 12, 22, 0.86) calc(max(var(--gutter), (100% - var(--container)) / 2) + 760px), rgba(8, 12, 22, 0) calc(max(var(--gutter), (100% - var(--container)) / 2) + 1140px)); }
+  .hero h1 { color: #fff; }
+  /* small-size blue on a dark ground is the tint (≈7:1); the logo blue itself stays on fills */
+  .hero .hl { color: var(--accent-dark); }
+  .heroSide { max-width: 560px; }
+  .heroSide .heroLead { color: var(--on-dark-1); }
+  .heroSide .heroCall { color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42); }
+  .heroSide .heroCall:hover { background: rgba(255, 255, 255, 0.1); }
+  .hero :focus-visible { outline-color: var(--accent-dark); }
+}
+@media (min-width: 721px) and (max-width: 1100px) {
+  .hero h1 { font-size: min(var(--t1), 8.6vw); }
+}
+/* portrait tablets: the text column is as wide as the viewport, so a photo behind it would sit wholly under the
+   scrim. The text sits on the night ground and the whole photo runs as a band beneath it, fading up into it. */
+@media (min-width: 721px) and (max-width: 1100px) and (orientation: portrait) {
+  .hero { align-content: start; padding-bottom: 428px; background: #080c16; border-radius: 0 0 var(--r-xl) var(--r-xl); }
+  .heroPhoto { top: auto; height: 460px; }
+  .heroPhoto::after { background: linear-gradient(180deg, #080c16 0, rgba(8, 12, 22, 0) 160px); }
 }
 
-.foldCopy {
-  position: relative;
-  z-index: 1;
-  width: var(--copy);
-  min-width: 0;
-  margin-left: var(--gutter);
+/* ---------- 02 pillars (docked) ---------- */
+.pillars { position: relative; z-index: 3; margin-top: -88px; }
+.pillarsCard { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px; margin-inline: 40px; }
+/* a spec strip, not a card row (fix r2): the pillar name is the key, its line the value */
+.pillar { position: relative; display: grid; gap: 10px; align-content: start; padding: 26px 28px 28px; }
+.pillar + .pillar::before { content: ""; position: absolute; left: 0; top: 26px; bottom: 26px; width: 1px; background: var(--line); }
+.pillar h3 { font: 600 var(--t7) / 1.2 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pillar p { font-weight: 500; line-height: 1.5; color: var(--ink); text-wrap: pretty; }
+
+/* ---------- 03 gap ---------- */
+section.gap { padding-top: var(--pad-m); }
+.gapCard { padding: 48px 48px 0; }
+.gapGrid { display: grid; grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr); align-items: center; }
+.gapCol .colLabel { margin-bottom: 24px; }
+.gapCol.good .colLabel { color: var(--accent-ink); padding-left: 40px; }
+.funnel { display: grid; gap: 12px; justify-items: center; }
+.funnel li { display: flex; align-items: center; justify-content: center; height: 60px; border-radius: 14px; background: var(--tint); color: var(--ink-2); font-size: var(--t5); text-decoration: line-through; text-decoration-color: var(--ink-2); text-decoration-thickness: 1.5px; }
+.funnel li:nth-child(1) { width: 100%; }
+.funnel li:nth-child(2) { width: 80%; }
+.funnel li:nth-child(3) { width: 60%; }
+.gapArrow { display: grid; place-items: center; }
+.gapArrow svg { width: 72px; height: 32px; fill: none; stroke: var(--ink-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.convo .say { display: flex; align-items: center; min-height: 60px; padding: 0 20px; border-radius: 16px 16px 16px 6px; background: var(--ground); box-shadow: var(--ring); font-size: var(--t5); font-weight: 500; line-height: 1.3; }
+.convo li:last-child .say { background: var(--ink); color: #fff; box-shadow: none; }
+.gapFoot { margin-top: 48px; padding: 28px 0 32px; border-top: 1px solid var(--line); }
+.gapFoot p { max-width: 720px; }
+
+@media (max-width: 1100px) {
+  .pillarsCard { margin-inline: 24px; }
+  .pillarsCard { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pillar:nth-child(3)::before { display: none; }
+  .pillar:nth-child(n + 3) { border-top: 1px solid var(--line); }
 }
-
-.foldTitle {
-  margin-top: 20px;
+@media (max-width: 720px) {
+  .hero { display: flex; flex-direction: column; padding-top: 12px; }
+  .heroPhoto { order: -1; }
+  .heroGrid { margin-top: 28px; }
+  .pillEyebrow { min-height: 28px; padding: 0 12px; letter-spacing: 0.04em; }
+  .hero h1 { margin-top: 20px; }
+  .heroSide { gap: 24px; margin-top: 20px; }
+  .heroSide .heroCtas a { width: 100%; justify-content: space-between; }
+  .heroSide .heroCtas .heroCall { justify-content: center; }
+  .heroPhoto { width: min(var(--container), 100% - 2 * var(--gutter)); margin: 0 auto; height: 240px; border-radius: 20px; }
+  .heroPhoto img { object-position: 72% 60%; }
+  .pillarsCard { margin-inline: 0; }
+  .pillars { margin-top: 32px; }
+  .pillarsCard { padding: 4px; }
+  .pillar { padding: 18px 16px 20px; gap: 4px; }
+  .pillar h3 { font-size: var(--tl); }
+  .pillar p { font-size: 15px; }
+  .pillar::before { display: none; }
+  .pillar:nth-child(even) { border-left: 1px solid var(--line); }
+  .gapCard { padding: 24px 20px 0; }
+  .gapGrid { grid-template-columns: 1fr; }
+  .gapCol.good .colLabel { padding-left: 0; }
+  .gapArrow { padding: 20px 0; }
+  .gapArrow svg { transform: rotate(90deg); width: 48px; }
+  .funnel li, .convo .say { font-size: 16px; height: 52px; min-height: 52px; }
+  .good .convo { --nt: 14px; }
+  .gapFoot { margin-top: 32px; padding: 20px 0 24px; }
 }
-
-.foldLead {
-  max-width: 30em;
-  margin-top: 24px;
-  font-size: var(--t-lead);
-  line-height: 1.5;
-  text-wrap: pretty;
-}
-
-.foldActions {
-  margin-top: 32px;
-}
-
-/* ---------- the wall ---------- */
-.wall {
-  position: absolute;
-  top: 16px;
-  right: 12px;
-  bottom: 0;
-  left: calc(var(--gutter) + var(--copy) + 24px);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wall-gap);
-  max-width: 1000px;
-  margin-left: auto;
-  /* The lead is sized in the wall's own units: as wide as the side column allows, and never taller
-     than the wall minus its caption (so the caption always sits whole above the fold's bottom edge). */
-  container-type: size;
-}
-
-.lead {
-  flex: none;
-  width: min(100cqw - var(--side) - var(--wall-gap), (100cqh - 48px) * 1122 / 1402);
-}
-
-.lead img,
-.stack img {
-  width: 100%;
-  border-radius: 10px;
-  background: var(--c-frame);
-}
-
-.lead figcaption {
-  margin-top: 8px;
-}
-
-.side {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  gap: var(--wall-gap);
-  align-self: stretch;
-  min-width: var(--side);
-}
-
-/* Images only: this is the one masked element on the page, and it holds no text. A 64px fade (not 96)
-   lets the last tile's printed headline read before it fades at 1440 and 1536. */
-.stack {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  gap: var(--wall-gap);
-  min-height: 0;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(#000 calc(100% - 64px), transparent);
-  mask-image: linear-gradient(#000 calc(100% - 64px), transparent);
-}
-
-.stack > li {
-  flex: none;
-}
-
-/* ---------- the window sticker: portrait like a real one (same band + ruled rows as the ledger) ---------- */
-.sticker {
-  flex: none;
-  padding: 6px;
-  border: 2px solid var(--c-ink);
-  border-radius: 10px;
-  background: var(--c-paper);
-  color: var(--c-ink);
-}
-
-.stickerBand {
-  display: flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 5px 5px 0 0;
-  background: var(--c-graphite);
-  color: #ffffff;
-  font-size: var(--t-label);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.stickerRows li {
-  display: grid;
-  gap: 2px;
-  padding: 7px 6px;
-  border-bottom: 1px solid var(--c-ink);
-}
-
-.stickerName {
-  min-width: 0;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.stickerPrice {
-  font-size: var(--t-h3);
-}
-
-.stickerNote {
-  padding: 8px 6px 2px;
-  color: var(--c-steel);
-  font-size: var(--t-label);
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-/* ---------- tablet: copy, then the wall in flow ---------- */
-@media (max-width: 1199px) {
-  .fold {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 48px;
-    min-height: 0;
-    padding: 56px 0 0;
-  }
-
-  .foldCopy {
-    width: auto;
-    max-width: 720px;
-    margin-right: var(--gutter);
-  }
-
-  .wall {
-    position: relative;
-    inset: auto;
-    width: auto;
-    height: 720px;
-    margin: 0 var(--gutter);
-  }
-}
-
-/* ---------- phone: eyebrow → H1 → strip (lead ad + sticker) → CTA → lead paragraph ---------- */
-@media (max-width: 760px) {
-  .fold {
-    gap: 0;
-    padding: 24px var(--gutter) 40px;
-  }
-
-  .foldCopy {
-    display: contents;
-  }
-
-  .foldCopy > :first-child {
-    order: 1;
-  }
-
-  .foldTitle {
-    order: 2;
-  }
-
-  .wall {
-    order: 3;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-    gap: 12px;
-    height: auto;
-    margin: 24px 0 0;
-    container-type: normal;
-  }
-
-  .lead {
-    width: auto;
-  }
-
-  .foldActions {
-    order: 4;
-    margin-top: 24px;
-  }
-
-  /* The phone is already in the header and the fixed call bar at this width, so the fold's call link
-     would be a third copy sitting on the bar's edge. */
-  .foldActions > :last-child {
-    display: none;
-  }
-
-  .foldLead {
-    order: 5;
-  }
-
-  .side {
-    min-width: 0;
-  }
-
-  .stack {
-    display: none;
-  }
-
-  .sticker {
-    padding: 4px;
-  }
-
-  .stickerBand {
-    min-height: 30px;
-    padding: 0 8px;
-    letter-spacing: 0.02em;
-  }
-
-  .stickerRows li {
-    padding: 5px 4px;
-  }
-
-  .stickerName {
-    font-size: var(--t-label);
-    font-weight: 700;
-  }
-
-  .stickerPrice {
-    font-size: 22px;
-  }
-
-  .stickerNote {
-    padding: 7px 4px 2px;
-  }
-}
-
-/* On short phones the strip would push the pill under the fixed bar (at 320×700 its top arc peeked
-   above it): the pill comes before the strip, so the bar never sits on it. The bar's own audit cell
-   stays the persistent action. */
-@media (max-width: 760px) and (max-height: 800px) {
-  .foldActions {
-    order: 3;
-  }
-
-  .wall {
-    order: 4;
-  }
-}
-
-/* The eyebrow breaks after the slash, never inside "creative to appointment". */
-@media (max-width: 480px) {
-  .eyebrowTail {
-    display: block;
-  }
-}
-
-/* Under 375px a half-width sticker cannot hold "$5,000 / month": the sticker takes 60% of the strip. */
-@media (max-width: 374px) {
-  .wall {
-    grid-template-columns: 2fr 3fr;
-  }
+@media (max-width: 360px) {
+  .pillEyebrow .full { display: none; }
+  .pillEyebrow .short { display: inline; }
+  .pillarsCard { grid-template-columns: 1fr; }
+  .pillar:nth-child(even) { border-left: 0; }
+  .pillar + .pillar { border-top: 1px solid var(--line); }
 }

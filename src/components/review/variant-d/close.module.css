@@ -1,0 +1,79 @@
+/* 11 · Free audit, 12 · Who it's for, 13 · FAQ and 14 · Close */
+
+/* ================= 11 · Free audit: 5/7, head left, numbered steps right ================= */
+.audit { align-items: start; }
+.aHead { grid-column: 1 / span 5; }
+.aHead .aH2 { margin-top: 18px; }
+.aHead .aLede { margin-top: 20px; max-width: 480px; }
+.aHead .aActions { margin-top: 32px; }
+.aSteps { grid-column: 7 / -1; }
+.aSteps li { display: grid; grid-template-columns: 96px 1fr; column-gap: var(--col-gap); padding-block: 28px; border-top: 1px solid var(--line-2); }
+.aNum { font-size: var(--t-2); font-weight: 500; line-height: 1; letter-spacing: -.03em; font-feature-settings: "tnum"; color: var(--blue-tx); }
+.aSteps .stepBody { margin-top: 6px; }
+
+/* ================= 12 · Who it's for ================= */
+.fit { row-gap: 32px; }
+.fit li { grid-column: span 4; padding-top: 24px; border-top: 2px solid var(--ink); }
+.fit .fitBody { margin-top: 10px; max-width: 400px; }
+
+/* ================= 13 · FAQ ================= */
+.faq { align-items: start; }
+.faqHead { grid-column: 1 / span 4; position: sticky; top: calc(var(--head-h) + 32px); }
+.faqHead .fH2 { margin-top: 18px; }
+.faqHead .fBody { margin-top: 20px; }
+.list { grid-column: 6 / -1; display: grid; gap: 10px; }
+.list details { border-radius: var(--r-md); background: var(--card); border: 1px solid var(--line); transition: border-color .2s; }
+.list details[open] { border-color: #bfd2ff; }
+.list summary { display: flex; justify-content: space-between; align-items: center; gap: 24px; min-height: 64px; padding: 12px 20px 12px 24px; cursor: pointer; list-style: none; font-size: var(--t-4); font-weight: 500; letter-spacing: -.012em; line-height: 1.35; }
+.list summary::-webkit-details-marker { display: none; }
+.pm { flex: none; position: relative; width: 32px; height: 32px; border-radius: 50%; background: var(--sand); }
+.pm::before, .pm::after { content: ""; position: absolute; left: 50%; top: 50%; width: 11px; height: 1.5px; background: var(--ink); transform: translate(-50%, -50%); transition: transform .25s; }
+.pm::after { transform: translate(-50%, -50%) rotate(90deg); }
+details[open] .pm { background: var(--blue-tint); }
+details[open] .pm::after { transform: translate(-50%, -50%) rotate(0deg); }
+.list .ans { padding: 0 72px 26px 24px; max-width: 760px; }
+.list .ans a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--blue-tx); text-underline-offset: 3px; }
+
+/* ================= 14 · Close ================= */
+.close { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--col-gap); align-items: center; padding: 64px 72px; border-radius: var(--r-xl); }
+.copy { grid-column: 1 / span 7; }
+.copy .cH2 { margin-top: 18px; max-width: 13em; }
+.copy .cLede { margin-top: 22px; max-width: 600px; }
+.copy .cActions { margin-top: 36px; }
+/* the recap sits straight on the night card, set off by one rule (no card in a card) */
+.recap { grid-column: 8 / -1; padding-left: 32px; border-left: 1px solid var(--nline-2); }
+.recap ul { margin-top: 18px; border-top: 1px solid var(--nline); }
+.recap li { padding-block: 14px; border-bottom: 1px solid var(--nline); font-size: var(--t-6); color: var(--ntx); }
+.recap li:last-child { border-bottom: 0; padding-bottom: 0; }
+
+/* the 1440 container widens the copy column: the lede's measure follows, so no strip opens before the recap rule */
+@media (min-width: 1800px) { .copy .cLede { max-width: 700px; } }
+@media (max-width: 1024px) {
+  .faqHead { grid-column: 1 / span 5; }
+  .close { padding: 64px 48px; }
+  .copy, .recap { grid-column: 1 / -1; }
+  .recap { margin-top: 40px; max-width: 560px; padding-left: 0; padding-top: 32px; border-left: 0; border-top: 1px solid var(--nline-2); }
+}
+@media (max-width: 900px) {
+  .aHead, .aSteps { grid-column: 1 / -1; }
+  .aSteps { margin-top: 40px; }
+  .fit li { grid-column: 1 / -1; }
+  .faqHead, .list { grid-column: 1 / -1; position: static; }
+  .faqHead { max-width: 640px; }
+  .list { margin-top: 40px; }
+}
+@media (max-width: 720px) {
+  /* the fixed bar (Free audit · Call) is always on screen here: no second copy of either in the sections */
+  .aHead .aActions, .copy .cCall { display: none; }
+  .aSteps li { grid-template-columns: 44px 1fr; column-gap: 8px; padding-block: 18px; }
+  .aNum { font-size: var(--t-3); }
+  .aSteps { margin-top: 24px; }
+  .fit { row-gap: 20px; }
+  .fit li { padding-top: 16px; }
+  .recap { margin-top: 28px; padding-top: 20px; }
+  .recap li { padding-block: 12px; }
+  .list summary { min-height: 64px; padding: 14px 16px 14px 18px; }
+  .list .ans { padding: 0 18px 22px; }
+  .list { margin-top: 24px; }
+  .close { padding: 32px 20px; border-radius: var(--r-lg); }
+}

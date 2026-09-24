@@ -1,0 +1,64 @@
+/* 9 · Pricing and 10 · Proof standard */
+
+/* ================= 9 · Pricing ================= */
+.priceGrid { align-items: stretch; row-gap: var(--col-gap); }
+.big { grid-column: 1 / span 6; padding: 48px; border-radius: var(--r-lg); display: flex; flex-direction: column; }
+.sum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px; }
+.chip { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--nline-2); font-size: var(--t-7); font-weight: 500; color: var(--ntx); }
+/* "+" travels with the second chip, so a wrap never leaves it dangling at a line end */
+.sumPair { display: inline-flex; align-items: center; gap: inherit; }
+.plus { color: var(--blue-nt); font-size: var(--t-4); line-height: 1; }
+.price { display: flex; align-items: baseline; gap: 12px; margin-top: 44px; font-feature-settings: "tnum"; }
+.price b { font-size: var(--t-1); font-weight: 400; letter-spacing: -.04em; line-height: 1; }
+.price span { font-size: var(--t-4); color: var(--ntx-2); }
+.term { margin-top: 12px; font-size: var(--t-6); color: var(--ntx-2); }
+.inc { margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--nline); display: grid; grid-template-columns: 112px 1fr; gap: 16px; align-items: baseline; }
+.inc dt { font-size: var(--t-7); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ntx-3); }
+.inc dd { font-size: var(--t-5); color: var(--ntx); }
+.big .bigActions { margin-top: auto; padding-top: 40px; }
+.list { grid-column: 7 / -1; display: grid; grid-template-rows: repeat(3, 1fr); }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 4px 20px; align-content: center; padding: 28px 32px; }
+.row + .row { border-top: 1px solid var(--line); }
+.rowPrice { font-size: var(--t-4); font-weight: 500; letter-spacing: -.01em; font-feature-settings: "tnum"; white-space: nowrap; text-align: right; }
+.t { grid-column: 1 / -1; font-size: var(--t-6); color: var(--ink-3); }
+.row .rowSmall { grid-column: 1 / -1; margin-top: 10px; color: var(--ink); }
+.assure { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--col-gap); margin-top: 40px; }
+/* the two answers read as notes beside the prices: a blue rule, no box */
+.assure > div { padding: 4px 0 4px 24px; border-left: 2px solid var(--blue); }
+.assure .assureBody { margin-top: 8px; }
+
+/* ================= 10 · Proof ================= */
+.proof { align-items: start; }
+.proofHead { grid-column: 1 / span 5; }
+.proofHead .pH2 { margin-top: 18px; }
+.proofHead .pLede { margin-top: 24px; }
+.proofHead .pBody { margin-top: 16px; }
+.ev { grid-column: 7 / -1; }
+.ev li { display: grid; grid-template-columns: 72px 1fr; padding-block: 24px; border-top: 1px solid var(--line); }
+.ev li:first-child { border-top: 0; padding-top: 4px; }
+.ev .evBody { margin-top: 6px; }
+
+@media (max-width: 1024px) {
+  .big { padding: 40px 36px; }
+  .row { padding: 24px 28px; }
+}
+@media (max-width: 900px) {
+  .big, .list { grid-column: 1 / -1; }
+  .list { grid-template-rows: none; }
+  .proofHead, .ev { grid-column: 1 / -1; }
+  .ev { margin-top: 40px; }
+}
+@media (max-width: 720px) {
+  /* the fixed bar carries Free audit and Call on mobile */
+  .big .bigActions { display: none; }
+  .big { padding: 24px 20px; }
+  .price { margin-top: 22px; }
+  .inc { margin-top: 18px; padding-top: 14px; grid-template-columns: 1fr; gap: 4px; }
+  .sum { gap: 8px; margin-top: 16px; }
+  .chip { padding: 0 10px; }
+  .row { padding: 18px 20px; }
+  .assure { grid-template-columns: 1fr; gap: 22px; margin-top: 28px; }
+  .assure > div { padding-left: 20px; }
+  .ev { margin-top: 24px; }
+  .ev li { grid-template-columns: 40px 1fr; padding-block: 16px; }
+}

@@ -1,0 +1,78 @@
+/* 09 pricing, on white — a bracket joins the two $2,500 plans into the bundle at every width
+   (horizontal above 720px, a vertical rail in a 16px gutter below). Plans are mist cards; the
+   bundle is the page's one blue card (tint with a 2px blue edge); the terms are an outline. */
+/* row 2 is the bracket's fixed 40px, so when the Terms card (rows 2–3) is taller than bracket +
+   bundle, the surplus goes to the bundle's row: the stem always meets the bundle, and the bundle
+   bottom-aligns with Terms */
+.plans { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto 40px auto; column-gap: var(--gap); row-gap: var(--gap); }
+.plan { background: var(--mist); border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s6); display: flex; flex-direction: column; }
+.p1 { grid-column: 1 / span 4; grid-row: 1; }
+.p2 { grid-column: 5 / span 4; grid-row: 1; }
+.p3 { grid-column: 9 / span 4; grid-row: 1; }
+.planN { font-size: var(--t-h3); line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
+.price { display: flex; align-items: baseline; gap: 8px; margin-top: var(--s5); }
+.amt { font-size: var(--t-d3); font-weight: 600; letter-spacing: -0.025em; line-height: 1; font-variant-numeric: tabular-nums; }
+.per { color: var(--mu); font-weight: 500; }
+.term { margin-top: var(--s3); font-size: var(--t-small); font-weight: 500; color: var(--mu); }
+.inc { margin-top: var(--s5); padding-top: var(--s5); border-top: 1px solid var(--line-2); }
+.merge { grid-column: 1 / span 8; grid-row: 2; position: relative; }
+.merge::before { content: ""; position: absolute; top: calc(-1 * var(--gap)); height: calc(50% + var(--gap));
+  left: calc((100% - 7 * var(--gap)) / 8 * 2 + 1.5 * var(--gap)); right: calc((100% - 7 * var(--gap)) / 8 * 2 + 1.5 * var(--gap));
+  border: 2px solid var(--accent); border-top: 0; border-radius: 0 0 16px 16px; }
+.merge::after { content: ""; position: absolute; left: 50%; margin-left: -1px; width: 2px; top: 50%; bottom: calc(-1 * var(--gap)); background: var(--accent); }
+/* each half is packed top-down and the pair is centred, so a stretched card grows evenly above
+   and below, never between lines */
+.lane { grid-column: 1 / span 8; grid-row: 3; background: var(--tint); border: 2px solid var(--accent); display: grid; grid-template-columns: minmax(min-content, 1fr) minmax(min-content, 1fr); column-gap: var(--s7); align-content: center; padding: var(--s7); }
+/* ^ min-content floor: with minmax(0,1fr) the nowrap button overran its column at 721–800 and 1180–1280 */
+.lane .amt { font-size: var(--t-d1); }
+.lane .inc { margin-top: 0; padding-top: 0; border-top: 0; font-weight: 600; font-size: var(--t-lead); line-height: 1.4; }
+.laneL { display: flex; flex-direction: column; gap: var(--s4); }
+.laneL .price { margin-top: var(--s2); }
+.laneL .term { margin-top: 0; }
+.laneR { display: flex; flex-direction: column; gap: var(--s4); padding-left: var(--s7); border-left: 1px solid var(--line-2); }
+.lane .laneBtn { align-self: flex-start; margin-top: var(--s5); }
+/* the terms read as fine print (lead-size questions, small answers), which also keeps the card
+   close to bracket + bundle height, so the stretched bundle gains little empty space */
+.guar { grid-column: 9 / span 4; grid-row: 2 / span 2; border: 1px solid var(--line-2); border-radius: var(--r-m); padding: var(--s5) var(--s6); display: flex; flex-direction: column; gap: var(--s2); }
+.plans .guar .guarLabel { color: var(--mu); margin-bottom: var(--s2); }
+.plans .guar h3 { font-size: var(--t-lead); line-height: 1.3; }
+.guar p { color: var(--mu); font-size: var(--t-small); line-height: 1.55; }
+.guar hr { border: 0; border-top: 1px solid var(--line); margin: var(--s3) 0; width: 100%; }
+
+@media (max-width: 1080px) {
+  .p1 { grid-column: 1 / span 6; }
+  .p2 { grid-column: 7 / span 6; }
+  .merge { grid-column: 1 / -1; }
+  /* centres of two half-width cards */
+  .merge::before { left: calc((100% - var(--gap)) / 4); right: calc((100% - var(--gap)) / 4); }
+  .lane { grid-column: 1 / -1; }
+  .p3 { grid-column: 1 / span 6; grid-row: 4; }
+  .guar { grid-column: 7 / span 6; grid-row: 4; }
+}
+@media (max-width: 720px) {
+  .plans { display: flex; flex-direction: column; gap: var(--s3); }
+  .merge { display: none; }
+  /* the bracket as a rail: a 2px line in a 16px gutter from plan 1 through plan 2 into the bundle.
+     Every card keeps the gutter, so the column has one left edge */
+  .plan, .guar { margin-left: 16px; }
+  .p1, .p2, .lane { position: relative; }
+  .p1::before, .p2::before, .lane::before,
+  .p1::after, .p2::after, .lane::after { content: ""; position: absolute; background: var(--accent); }
+  .p1::before, .p2::before { left: -10px; width: 2px; bottom: calc(-1 * var(--s3) - 1px); }
+  .p1::before { top: 50%; }
+  .p2::before { top: -1px; }
+  .lane::before { left: -11px; width: 2px; top: -2px; height: calc(50% + 2px); }
+  .p1::after, .p2::after { left: -10px; width: 9px; top: 50%; height: 2px; margin-top: -1px; }
+  .lane::after { left: -11px; width: 9px; top: 50%; height: 2px; margin-top: -1px; }
+  .lane { grid-template-columns: 1fr; padding: var(--s5); row-gap: var(--s5); }
+  .laneR { padding-left: 0; border-left: 0; padding-top: var(--s4); border-top: 1px solid var(--line-2); }
+  .lane .laneBtn { align-self: stretch; margin-top: var(--s2); white-space: normal; text-align: center; }
+  .plan:not(.lane) { display: grid; grid-template-columns: 1fr auto; column-gap: var(--s4); row-gap: 2px; padding: var(--s4) var(--s5); }
+  .plan:not(.lane) .planN { font-size: 17px; grid-column: 1; grid-row: 1; }
+  .plan:not(.lane) .price { margin: 0; grid-column: 2; grid-row: 1 / span 2; flex-direction: column; align-items: flex-end; gap: 0; }
+  .plan:not(.lane) .amt { font-size: var(--t-h3); }
+  .plan:not(.lane) .per { font-size: var(--t-small); }
+  .plan:not(.lane) .term { margin: 0; grid-column: 1; grid-row: 2; font-size: var(--t-small); }
+  .plan:not(.lane) .inc { grid-column: 1 / -1; margin-top: var(--s3); padding-top: var(--s3); font-size: var(--t-small); }
+  .guar { padding: var(--s5); }
+}

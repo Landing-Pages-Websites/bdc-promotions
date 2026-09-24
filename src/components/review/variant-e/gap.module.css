@@ -1,0 +1,38 @@
+/* 03 the gap: struck items → arrows → the "build toward" column. The struck column is set
+   flush right so each word sits against its arrow, mirrored on the arrow's axis. */
+.gapd { background: var(--card); border-radius: var(--r-m); border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr); overflow: hidden; }
+.gapd .colH { padding: var(--s6) var(--s6) var(--s4); }
+.gapd .to { background: var(--tint); }
+.gapd .fromLabel { color: var(--mu); }
+.gapd .fromH { text-align: right; }
+.gapd .row { display: flex; align-items: center; min-height: 84px; padding: 0 var(--s6); border-top: 1px solid var(--line); font-size: var(--t-h3); line-height: 1.25; letter-spacing: -0.01em; }
+.gapd .from.row { justify-content: flex-end; color: var(--dim); font-weight: 500; }
+.gapd .from s { text-decoration: line-through; text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.gapd .to.row { font-weight: 600; gap: 14px; border-top-color: rgba(0, 89, 252, 0.16); text-wrap: balance; }
+.gapd .to.row::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.gapd .arr { position: relative; border-top: 1px solid var(--line); }
+.gapd .arr::before { content: ""; position: absolute; left: 0; right: 14px; top: 50%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, rgba(11, 18, 32, 0.14), var(--accent)); }
+.gapd .arr::after { content: ""; position: absolute; right: 4px; top: 50%; width: 11px; height: 11px; margin-top: -6px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); transform: rotate(45deg); }
+.gapd .arrH { border-top: 0; }
+.gapd .arrH::before, .gapd .arrH::after { display: none; }
+.gapBody { margin-top: var(--s6); max-width: 44em; color: var(--mu); }
+
+@media (max-width: 960px) {
+  .gapd { grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr); }
+  .gapd .colH, .gapd .row { padding-inline: var(--s5); }
+}
+@media (max-width: 720px) {
+  .gapd { grid-template-columns: 1fr; }
+  .gapd .arr { display: none; }
+  .gapd .from.row { justify-content: flex-start; }
+  .gapd .colH { padding: var(--s5) var(--s5) var(--s3); }
+  .gapd .row { min-height: 56px; font-size: var(--t-body); }
+  .gapd .fromH { order: 1; text-align: left; }
+  .gapd .r1.from { order: 2; }
+  .gapd .r2.from { order: 3; }
+  .gapd .r3.from { order: 4; }
+  .gapd .toH { order: 5; border-top: 1px solid rgba(0, 89, 252, 0.2); }
+  .gapd .r1.to { order: 6; }
+  .gapd .r2.to { order: 7; }
+  .gapd .r3.to { order: 8; padding-bottom: var(--s3); min-height: 64px; }
+}

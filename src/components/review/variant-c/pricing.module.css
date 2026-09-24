@@ -1,0 +1,52 @@
+/* 09 pricing (combined plan + three rows; the two buyer questions beside the head) · 10 proof (a ruled strip) */
+.qa { display: grid; gap: 20px; }
+.qa dt { font-weight: 600; font-size: var(--t5); line-height: 1.4; }
+.qa dd { margin: 4px 0 0; color: var(--ink-2); text-wrap: pretty; }
+/* fix r2: packed from the top (no space-between voids), no shadow on white. The card is 30–40px shorter than the
+   three rows, so it still stretches to share their bottom edge and only the button takes that slack. */
+.pricing { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
+.planFeature { grid-column: 1 / span 5; display: flex; flex-direction: column; justify-content: flex-start; gap: 28px; padding: 40px; border-radius: var(--r-l); background: var(--dark); color: #fff; }
+.planFeature .top { display: grid; gap: 6px; }
+.term { font-size: var(--t7); line-height: 1.4; color: var(--muted); }
+.planFeature .term { color: var(--on-dark-2); }
+.price { display: flex; align-items: baseline; gap: 8px; font-size: var(--t2); line-height: 1; letter-spacing: -0.035em; font-weight: 600; }
+.price small, .amt small { font-size: var(--t6); letter-spacing: 0; font-weight: 400; }
+.price small { color: var(--on-dark-2); }
+.inc { display: grid; gap: 6px; padding-top: 24px; border-top: 1px dashed rgba(255, 255, 255, 0.18); }
+.pfCtas { margin-top: auto; }
+.planList { grid-column: 6 / span 7; display: grid; grid-auto-rows: 1fr; gap: 16px; }
+.planRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; padding: 24px 28px; border-radius: 20px; background: var(--paper); box-shadow: var(--ring); }
+.planRow .nm { display: grid; gap: 6px; }
+.planRow .nm p { color: var(--ink-2); }
+.planRow .pr { display: grid; gap: 6px; justify-items: end; text-align: right; }
+.amt { font-size: var(--t3); line-height: 1; font-weight: 600; letter-spacing: -0.03em; white-space: nowrap; }
+.amt small { color: var(--muted); }
+.planRow .term { white-space: nowrap; }
+
+/* ---------- 10 proof: 32px head, two standards across one ruled strip, then positioning | audit link ---------- */
+.pHead { display: grid; gap: 16px; max-width: 760px; }
+.pHead h2 { margin-top: 0; }
+.strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 48px; border-block: 1px solid var(--line-2); }
+.strip li { display: grid; gap: 10px; align-content: start; padding: 32px 32px 36px; }
+.strip li:first-child { padding-left: 0; }
+.strip li:last-child { padding-right: 0; }
+.strip li + li { border-left: 1px solid var(--line-2); }
+.strip p { color: var(--ink-2); }
+.pFoot { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 24px; align-items: start; padding-top: 32px; }
+.position { grid-column: 1 / span 6; font-size: var(--t5); line-height: 1.55; font-weight: 500; color: var(--ink); text-wrap: pretty; }
+.pAudit { grid-column: 8 / span 5; display: grid; gap: 8px; }
+
+@media (max-width: 1100px) {
+  .planFeature, .planList { grid-column: 1 / -1; }
+  .position, .pAudit { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .planFeature { padding: 24px; gap: 20px; }
+  .planFeature .pfCtas a { width: 100%; justify-content: space-between; }
+  .planList { grid-auto-rows: auto; gap: 12px; }
+  .planRow { grid-template-columns: 1fr; gap: 14px; padding: 20px; }
+  .planRow .pr { justify-items: start; text-align: left; }
+  .strip { grid-template-columns: 1fr; margin-top: 32px; }
+  .strip li, .strip li:first-child, .strip li:last-child { padding: 22px 0 24px; }
+  .strip li + li { border-left: 0; border-top: 1px solid var(--line-2); }
+}

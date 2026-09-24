@@ -1,91 +1,142 @@
 import Image from "next/image";
-import type { CSSProperties, ReactElement } from "react";
-import { ads, type AdKey } from "./ads";
-import { Eyebrow } from "./Bits";
-import ui from "./proof-wall.module.css";
+import type { ReactElement } from "react";
+import b from "./base.module.css";
 import s from "./work.module.css";
 
-/* Justified contact sheet, grouped by category: the category is printed once per group, and each ad is
-   captioned with its own printed headline over a format fact. flex-grow = aspect ratio, so every image in
-   a row shares one height and every piece is shown whole (no crop, no mat). The sheet opens on the pieces
-   the fold does not show and closes on the event posters at 2–3× their fold size, so the repeat reads as
-   a close look rather than a rerun. The lead luxury ad is not repeated: the fold shows it whole at 530px+. */
-type Group = { label: string; items: readonly AdKey[] };
+const dir = "/images/design/shared";
 
-const rows: readonly (readonly Group[])[] = [
-  [
-    { label: "Video creative", items: ["storyboard"] },
-    { label: "Inventory advertising", items: ["inventory"] },
-  ],
-  [{ label: "New car lead gen", items: ["vla"] }],
-  [{ label: "Event campaigns · Promotional ad creative", items: ["usedCar", "wholesale", "repo"] }],
-];
+/* Client creatives: unoptimized (served as supplied), each capped in CSS at or below native ÷ 2.
+   Captions: the ad's own headline (or its verified format name) + the verified category · a format fact. */
+const gallery = [
+  {
+    kind: `${s.p} ${s.uc}`,
+    src: `${dir}/work-used-car-event.webp`,
+    w: 1086,
+    h: 1448,
+    alt: "Event ad creative headlined “Massive Used Car Sales Event”, showing a line of SUVs and a sedan on a red background",
+    title: "Massive Used Car Sales Event",
+    meta: "Event campaigns · 3:4",
+  },
+  {
+    kind: s.p,
+    src: `${dir}/work-wholesale-public.webp`,
+    w: 1122,
+    h: 1402,
+    alt: "Event ad creative headlined “Wholesale to the Public”, showing four vehicles in front of a dealership at sunset",
+    title: "Wholesale to the Public",
+    meta: "Event campaigns · 4:5",
+  },
+  {
+    kind: `${s.l} ${s.meta}`,
+    src: `${dir}/work-meta-inventory.webp`,
+    w: 1090,
+    h: 596,
+    alt: "Meta inventory carousel ad showing pre-owned pickup trucks in a phone feed",
+    title: "Meta inventory ad",
+    meta: "Inventory advertising · Carousel",
+  },
+  {
+    kind: `${s.l} ${s.vla}`,
+    src: `${dir}/work-google-vla.webp`,
+    w: 963,
+    h: 509,
+    alt: "Google Vehicle Listing Ads showing new pickup trucks in a sponsored search carousel",
+    title: "Google Vehicle Listing Ads",
+    meta: "New-car lead generation · Search listing",
+  },
+] as const;
 
-const ratio = (id: AdKey): number => ads[id].width / ads[id].height;
+/* the ad's own printed headline (VERIFIED-COPY §4), its verified category and type, and a format fact */
+const specRows = [
+  ["Headline", "We Make Luxury Affordable"],
+  ["Category", "Event campaigns"],
+  ["Type", "Promotional ad creative"],
+  ["Format", "4:5"],
+] as const;
 
-/* Widest render in px (1440 container, never above the file's own width) and the phone width, for `sizes` (V190). */
-function sizesFor(group: Group, row: readonly Group[]): string {
-  const total = row.reduce((sum, g) => sum + g.items.reduce((a, id) => a + ratio(id), 0), 0);
-  const gaps = 24 * (row.reduce((n, g) => n + g.items.length, 0) - 1);
-  const height = (1440 - gaps) / total;
-  const widest = Math.ceil(Math.max(...group.items.map((id) => Math.min(ads[id].width, ratio(id) * height))));
-  // ponytail: one phone width for every piece; a justified two-up piece is ~170px but a wrapped one runs 350px.
-  return `(max-width: 760px) 350px, ${widest}px`;
-}
+type Shot = (typeof gallery)[number];
 
-/* A lone piece must grow by 1: a flex-grow below 1 would leave it short of its group's width.
-   `--r` sets the phone flex-basis, so two-up rows justify to one height there too. */
-function Piece({ id, sizes, solo }: { id: AdKey; sizes: string; solo: boolean }): ReactElement {
-  const ad = ads[id];
-  const style = { flexGrow: solo ? 1 : ratio(id), "--r": ratio(id), "--native": `${ad.width}px` } as CSSProperties;
+function Plate({ g }: { g: Shot }): ReactElement {
   return (
-    <figure className={s.piece} style={style}>
-      <Image src={ad.src} width={ad.width} height={ad.height} alt={ad.alt} sizes={sizes} />
+    <figure className={`${s.shot} ${g.kind}`}>
+      <div className={s.well}>
+        <Image src={g.src} alt={g.alt} width={g.w} height={g.h} unoptimized />
+      </div>
       <figcaption>
-        {ad.headline}
-        <span className={`${ui.label} ${s.spec}`}>{ad.spec}</span>
+        <span className={s.capT}>{g.title}</span>
+        <span className={s.capM}>{g.meta}</span>
       </figcaption>
     </figure>
   );
 }
 
-export function Work(): ReactElement {
+export function FeaturedWork(): ReactElement {
   return (
-    <section className={s.work} id="work" aria-labelledby="c-work-title">
-      <div className={ui.container}>
-        <div className={ui.headRow}>
-          <div className={ui.headMain}>
-            <Eyebrow>The work is the proof</Eyebrow>
-            <h2 id="c-work-title" className={ui.h2}>
-              Automotive creative built for the real feed.
-            </h2>
+    <section className={b.section} id="work" aria-labelledby="work-h">
+      <div className={b.wrap}>
+        <div className={b.head}>
+          <div className={b.hMain}>
+            <p className={b.label}>The work is the proof</p>
+            <h2 id="work-h">Automotive creative built for the real feed</h2>
           </div>
-          <div className={ui.headSide}>
-            <p className={ui.lead}>
+          <div className={b.hSide}>
+            <p className={b.lead}>
               Inspect the range: new-car lead generation, event advertising, testimonial videos, employee stories,
               luxury films, viral concepts, Meta inventory ads, and Google Vehicle Listing Ads.
             </p>
           </div>
         </div>
-        <div className={s.sheet}>
-          {rows.map((row) => (
-            <div key={row[0].label} className={s.sheetRow}>
-              {row.map((group) => (
-                <div
-                  key={group.label}
-                  className={`${s.group} ${row.length === 1 && group.items.length === 1 ? s.beside : ""}`}
-                  style={{ flexGrow: group.items.reduce((a, id) => a + ratio(id), 0) }}
-                >
-                  <p className={`${ui.label} ${s.groupLabel}`}>{group.label}</p>
-                  <div className={s.groupItems}>
-                    {group.items.map((id) => (
-                      <Piece key={id} id={id} sizes={sizesFor(group, row)} solo={group.items.length === 1} />
-                    ))}
-                  </div>
+        <div className={s.feature}>
+          <figure className={s.plate}>
+            <Image
+              src={`${dir}/work-luxury-campaign.webp`}
+              alt="Luxury campaign ad creative headlined “We Make Luxury Affordable”, showing three luxury vehicles in front of a dealership at sunset"
+              width={1122}
+              height={1402}
+              unoptimized
+            />
+          </figure>
+          {/* spec sheet (fix r2): the title on the plate's top edge, the facts on its bottom edge */}
+          <div className={s.spec}>
+            <div className={s.specTop}>
+              <h3 className={b.t3}>Luxury campaign</h3>
+              <p className={b.lead}>
+                Campaign style, offer messaging, and luxury positioning used to drive attention and start conversations.
+              </p>
+            </div>
+            <dl>
+              {specRows.map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function Gallery(): ReactElement {
+  return (
+    <section className={`${b.section} ${b.ruled} ${b.sheetEnd}`} id="gallery" aria-labelledby="gal-h">
+      {/* one visible head for the whole Work area (fix r1): the grid follows the featured case under the rule */}
+      <h3 id="gal-h" className={b.sr}>
+        More automotive ad creative
+      </h3>
+      <div className={b.wrap}>
+        <div className={s.gallery}>
+          {gallery.slice(0, 2).map((g) => (
+            <Plate key={g.src} g={g} />
           ))}
+          {/* the two landscape placements share one full-width card, each at a crisp small size (fix r2) */}
+          <div className={s.pair}>
+            {gallery.slice(2).map((g) => (
+              <Plate key={g.src} g={g} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

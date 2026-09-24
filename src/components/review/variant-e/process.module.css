@@ -1,0 +1,70 @@
+/* 06 services · 07 path · 08 follow-up — three white sections, the last two ruled off as a pair.
+   Three different compositions: a full-width ruled index, five ruled columns, one centred diagram. */
+.svcHead { max-width: 44em; margin-bottom: var(--head-gap); }
+.svcHead .svcLabel { margin-bottom: var(--s4); }
+.svcIntro { margin-top: var(--s5); color: var(--mu); max-width: 36em; }
+.svcList { border-top: 1px solid var(--line-2); }
+.svcList li { row-gap: var(--s2); align-items: baseline; padding: var(--s5) 0; border-bottom: 1px solid var(--line); }
+.svcList h3 { grid-column: 1 / span 4; }
+.svcList p { grid-column: 5 / span 7; color: var(--mu); }
+
+.pathEnds { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: var(--s6); margin-bottom: var(--s3); }
+.pathEnds span { font-size: var(--t-small); font-weight: 600; color: var(--mu); }
+.pathEnds span:last-child { grid-column: 5; color: var(--accent-ink); }
+.path { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: var(--s6); }
+.path li { border-top: 2px solid var(--line-2); padding-top: var(--s5); }
+.path li:last-child { border-top-color: var(--accent); }
+.num { display: block; margin-bottom: var(--s5); font-size: var(--t-d2); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--dim); font-variant-numeric: tabular-nums; }
+.path h3 { margin-bottom: var(--s2); }
+.path p { color: var(--mu); font-size: var(--t-small); line-height: 1.55; }
+
+.fuHead { max-width: 760px; margin-inline: auto; text-align: center; }
+.fuHead .fuLabel { margin-bottom: var(--s4); }
+.fuHead .fuLead { margin: var(--s5) auto 0; max-width: 36em; color: var(--mu); }
+.fdp { max-width: 800px; margin: var(--head-gap) auto 0; }
+.fd { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.25fr) minmax(0, 1fr); column-gap: var(--s7); align-items: center; }
+/* one border weight across the diagram; the outcome carries the colour */
+.fdN { position: relative; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r-m); padding: var(--s4) var(--s5); min-height: 132px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+.fdN svg { width: 24px; height: 24px; }
+.fdN b { font-weight: 600; font-size: var(--t-body); letter-spacing: -0.01em; line-height: 1.25; }
+.fdN small { font-size: var(--t-small); line-height: 1.45; color: var(--mu); }
+.fdEnd { border-color: var(--accent); background: var(--tint); }
+.fdEnd svg { color: var(--accent-ink); }
+.fdStart::after, .fdMid::after { content: ""; position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--accent); }
+.fdStart::after { left: 100%; width: calc(var(--s7) / 2 + 1px); }
+.fdMid { position: relative; display: grid; gap: var(--s3); }
+.fdMid::before { content: ""; position: absolute; left: calc(-1 * var(--s7) / 2); top: 28px; bottom: 28px; width: 0; border-left: 2px solid var(--accent); }
+.fdMid::after { left: calc(100% + var(--s7) / 2); width: calc(var(--s7) / 2); }
+.fdCap { position: absolute; left: 0; right: 0; bottom: calc(100% + 10px); font-size: var(--t-label); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mu); text-align: center; }
+.fdLane { position: relative; display: flex; align-items: center; gap: 10px; min-height: 56px; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r-pill); padding: 0 18px; font-weight: 600; font-size: var(--t-small); line-height: 1.3; }
+.fdLane svg { width: 20px; height: 20px; flex: none; color: var(--accent-ink); }
+.fdLane::before, .fdLane::after { content: ""; position: absolute; top: 50%; width: calc(var(--s7) / 2); height: 2px; margin-top: -1px; background: var(--accent); }
+.fdLane::before { right: 100%; }
+.fdLane::after { left: 100%; }
+.fdRbar { position: absolute; right: calc(-1 * var(--s7) / 2 - 2px); top: 28px; bottom: 28px; border-left: 2px solid var(--accent); }
+.fdCaption { display: block; margin-top: var(--s6); text-align: center; font-size: var(--t-small); font-weight: 600; color: var(--mu); }
+
+@media (max-width: 1080px) {
+  .svcList h3 { grid-column: 1 / span 5; }
+  .svcList p { grid-column: 6 / -1; }
+  .pathEnds { display: none; }
+  .path { grid-template-columns: 1fr; }
+  .path li { display: grid; grid-template-columns: 72px 1fr; column-gap: var(--s5); padding: var(--s5) 0; }
+  .num { margin-bottom: 0; }
+}
+@media (max-width: 960px) {
+  .fd { grid-template-columns: 1fr; row-gap: var(--s7); }
+  .fdN { min-height: 0; }
+  .fdStart::after { left: 50%; top: 100%; width: 2px; height: var(--s7); margin: 0; }
+  .fdMid::before, .fdRbar, .fdLane::before, .fdLane::after { display: none; }
+  .fdMid { grid-template-columns: 1fr 1fr; column-gap: var(--s3); }
+  .fdCap { position: static; grid-column: 1 / -1; margin-bottom: -4px; }
+  .fdMid::after { left: 50%; top: 100%; width: 2px; height: var(--s7); margin: 0; }
+}
+@media (max-width: 720px) {
+  .svcList li { padding: var(--s4) 0; }
+  .svcList h3, .svcList p { grid-column: 1 / -1; }
+  .path li { grid-template-columns: 52px 1fr; column-gap: var(--s4); padding: var(--s4) 0; }
+  .fuHead, .fuHead .fuLead { text-align: left; }
+  .fdMid { grid-template-columns: 1fr; }
+}

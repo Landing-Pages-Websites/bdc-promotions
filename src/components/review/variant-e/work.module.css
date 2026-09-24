@@ -1,0 +1,55 @@
+/* 04 featured work · 05 gallery, the page's one ink band. Every piece sits centred on one plate
+   (ink-2, 16px radius, the same padding on every side) at or below the image's crisp width.
+   The plate grows, the image does not. */
+.well, .plate { display: flex; justify-content: center; align-items: flex-start; min-width: 0; background: var(--ink-2); border-radius: var(--r-m); padding: var(--s7); }
+.well img, .piece img { border-radius: 3px; }
+
+/* the featured plate takes the gallery's left column (1–6) and its copy starts on the gallery's
+   right column (7), so every edge in the band lines up with the 2-up grid below */
+.feat { row-gap: var(--s6); }
+.feat .well { grid-column: 1 / span 6; }
+.feat .well img { width: min(100%, 440px); }
+.featCopy { grid-column: 7 / -1; align-self: center; }
+.featCopy .kicker { font-weight: 600; color: var(--mu-l); margin-bottom: var(--s3); }
+.featCopy .featLead { margin-top: var(--s5); color: var(--mu-l); }
+.spec { margin-top: var(--s6); border-top: 1px solid var(--line-d); }
+.spec div { display: grid; grid-template-columns: 112px 1fr; gap: var(--s4); padding: 14px 0; border-bottom: 1px solid var(--line-d); align-items: baseline; }
+.spec dt { font-size: var(--t-small); color: var(--mu-l); }
+.spec dd { font-weight: 500; }
+
+/* 2×2 plates. The figure is as wide as its ad (--w, under the crisp cap), so the caption sits
+   under the ad on its left edge. Each row's ads share a height: portraits 440 (330 + 352 wide),
+   landscapes 222 (406 + 420 wide), so the two plates in a row fill the same way. When a plate is
+   narrower than the wider ad, the narrower ad keeps the same share (93.7%, 96.6%) so the heights
+   still match. */
+.galSec { margin-top: var(--gap); }
+.tray { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.piece { width: min(100%, var(--w)); }
+.piece img { display: block; width: 100%; height: auto; }
+.piece figcaption { margin-top: var(--s4); }
+.fEvent { --w: min(93.7%, 330px); }
+.fWhole { --w: 352px; }
+.fMeta { --w: min(96.6%, 406px); }
+.fVla { --w: 420px; }
+.capK { display: block; font-size: var(--t-small); color: var(--mu-l); }
+.capT { display: block; font-weight: 600; font-size: var(--t-body); letter-spacing: -0.01em; line-height: 1.35; }
+
+/* the 648px plates at ≥1920 take the portraits 480 tall (360/384 wide, under the 540/560 caps) */
+@media (min-width: 1920px) {
+  .fEvent { --w: min(93.7%, 360px); }
+  .fWhole { --w: 384px; }
+}
+@media (max-width: 1080px) {
+  .well, .plate { padding: var(--s6); }
+  .feat .well, .featCopy { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .well, .plate { padding: var(--s5); }
+  .feat .well img { width: min(100%, 300px); }
+  .spec div { grid-template-columns: 72px 1fr; }
+  /* one column: each ad in its own plate, portraits at the featured ad's 300px */
+  .tray { grid-template-columns: 1fr; gap: var(--s4); }
+  .fEvent, .fWhole { --w: 300px; }
+  .fMeta { --w: 406px; }  /* one per row here: no height to match */
+  .piece figcaption { margin-top: var(--s3); }
+}

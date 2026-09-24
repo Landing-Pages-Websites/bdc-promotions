@@ -1,0 +1,79 @@
+/* 7 · Path and 8 · Follow-up diagram, both straight on the tint band (no cards) */
+
+/* ================= 7 · Path ================= */
+.steps { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 32px; }
+.steps::before, .steps::after { content: ""; position: absolute; top: 6px; height: 2px; border-radius: 2px; }
+/* the rail runs the full container; it lights blue from nurture onward */
+.steps::before { left: 0; right: 0; background: var(--line-2); }
+.steps::after { left: calc(3 * (100% + 32px) / 5); right: 0; background: var(--blue); }
+.node { position: relative; z-index: 1; display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--card); border: 2px solid #9aa2b1; }
+.step:nth-child(4) .node { border-color: var(--blue); }
+.step:last-child .node { background: var(--blue); border-color: var(--blue); }
+.step .stepNum { display: block; margin-top: 28px; }
+.step .stepH4 { margin-top: 6px; }
+.step p { margin-top: 10px; max-width: 260px; }
+
+/* ================= 8 · Follow-up: 5/7 split ================= */
+.fu { align-items: center; }
+.fuHead { grid-column: 1 / span 5; align-self: start; position: sticky; top: calc(var(--head-h) + 32px); }
+.fuHead .fuH2 { margin-top: 18px; }
+.fuHead .fuLede { margin-top: 20px; max-width: 460px; }
+.fd { grid-column: 6 / -1; display: grid; grid-template-columns: 120px minmax(40px, 1fr) 220px minmax(40px, 1fr) 240px; grid-template-rows: auto 1fr 1fr; align-items: center; }
+.fdHd { grid-column: 3; grid-row: 1; display: grid; justify-items: center; gap: 2px; padding-bottom: 16px; text-align: center; }
+.fdHd b { font-size: var(--t-5); font-weight: 500; }
+.fdHd span { font-size: var(--t-6); color: var(--ink-2); }
+.fdA { grid-column: 1; grid-row: 2 / 4; }
+.fdB1 { grid-column: 3; grid-row: 2; margin-bottom: 8px; }
+.fdB2 { grid-column: 3; grid-row: 3; margin-top: 8px; }
+.fdZ { grid-column: 5; grid-row: 2 / 4; }
+.fd svg.c { width: 100%; height: 100%; align-self: stretch; overflow: visible; }
+.fd .c1 { grid-column: 2; grid-row: 2 / 4; }
+.fd .c2 { grid-column: 4; grid-row: 2 / 4; }
+.fd .v { display: none; }
+.nd { display: grid; row-gap: 2px; padding: 18px 20px; border-radius: var(--r-md); background: var(--paper); border: 1px solid var(--line-2); }
+.nd b { font-size: var(--t-5); font-weight: 500; letter-spacing: -.01em; line-height: 1.3; }
+.nd span { font-size: var(--t-6); line-height: 1.45; color: var(--ink-2); }
+.fdZ .nd { background: var(--blue); border-color: var(--blue); color: var(--on-blue); }
+.fdZ .nd span { color: #e8eeff; }
+.nowrap { white-space: nowrap; }
+
+@media (min-width: 1800px) {
+  .fd { grid-template-columns: 150px minmax(48px, 1fr) 250px minmax(48px, 1fr) 270px; }
+}
+/* below 1241 the 7 columns are too narrow for the diagram: head above, diagram full width */
+@media (max-width: 1240px) {
+  .fuHead { grid-column: 1 / -1; position: static; max-width: 820px; }
+  .fd { grid-column: 1 / -1; margin-top: var(--head-gap); grid-template-columns: 170px minmax(32px, 1fr) 240px minmax(32px, 1fr) 200px; }
+}
+@media (max-width: 1100px) {
+  .steps { grid-template-columns: 1fr; gap: 0; }
+  .steps::before { top: 6px; bottom: 6px; left: 6px; right: auto; width: 2px; height: auto; }
+  .steps::after { display: none; }
+  .step { display: grid; grid-template-columns: 14px 1fr; column-gap: 28px; padding-bottom: 32px; }
+  /* as on desktop, the rail is blue from nurture onward */
+  .step:nth-child(n+4) { background: linear-gradient(var(--blue), var(--blue)) 6px 7px / 2px 100% no-repeat; }
+  .step:last-child { padding-bottom: 0; }
+  .step .node { grid-row: 1 / span 3; margin-top: 4px; }
+  .step .stepNum { margin-top: 0; }
+  .step .stepH4, .step p, .step .stepNum { grid-column: 2; }
+  .step p { max-width: 560px; }
+}
+@media (max-width: 720px) {
+  /* the step number shares the title's line */
+  .step { grid-template-columns: 14px auto 1fr; column-gap: 0; align-items: baseline; padding-bottom: 22px; }
+  .step .node { align-self: start; }
+  .step .stepNum { grid-column: 2; margin-left: 20px; }
+  .step .stepH4 { grid-column: 3; margin: 0 0 0 10px; }
+  .step p { grid-column: 2 / -1; margin: 6px 0 0 20px; }
+  .fd { grid-template-columns: 1fr 1fr; grid-template-rows: auto 40px auto 40px auto; column-gap: 12px; }
+  .fdHd, .fd .c1, .fd .c2 { display: none; }
+  .fd .v { display: block; width: 100%; height: 100%; }
+  .fd .v1 { grid-column: 1 / -1; grid-row: 2; }
+  .fd .v2 { grid-column: 1 / -1; grid-row: 4; }
+  .fdA { grid-column: 1 / -1; grid-row: 1; justify-self: center; width: min(100%, 240px); text-align: center; }
+  .fdB1 { grid-column: 1; grid-row: 3; margin: 0; }
+  .fdB2 { grid-column: 2; grid-row: 3; margin: 0; }
+  .fdZ { grid-column: 1 / -1; grid-row: 5; }
+  .fdB1, .fdB2 { align-self: stretch; }
+  .fdB1 .nd, .fdB2 .nd { height: 100%; align-content: start; padding: 16px; }
+}
