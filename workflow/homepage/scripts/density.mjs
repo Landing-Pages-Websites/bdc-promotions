@@ -3,7 +3,7 @@
 // Handles next/image (reads w= from currentSrc; caps at the source file width) and unoptimized files.
 import { createRequire } from 'node:module'; import os from 'node:os'; import path from 'node:path'; import fs from 'node:fs';
 const require = createRequire(path.join(os.homedir(), '.claude/design-psyche/package.json'));
-const { chromium } = require('playwright'); const { PNG } = require('pngjs');
+const { chromium } = require('playwright');
 const root = process.cwd() + '/public';
 const srcW = (u) => { const f = root + u; if (!fs.existsSync(f)) return null; const buf = fs.readFileSync(f); if (f.endsWith('.png')) return buf.readUInt32BE(16); if (f.endsWith('.webp')) { const k = buf.toString('ascii', 12, 16); if (k === 'VP8X') return 1 + buf.readUIntLE(24, 3); if (k === 'VP8L') return 1 + (buf.readUInt16LE(21) & 0x3fff); return buf.readUInt16LE(26) & 0x3fff; } if (/\.jpe?g$/.test(f)) { let i = 2; while (i < buf.length) { const m = buf[i+1]; const len = buf.readUInt16BE(i+2); if (m >= 0xC0 && m <= 0xC3) return buf.readUInt16BE(i+7); i += 2 + len; } } return null; };
 const b = await chromium.launch();

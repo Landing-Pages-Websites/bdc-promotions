@@ -1,0 +1,75 @@
+/* header, footer, fixed mobile bar. A resized logo file rounds its height, so the logo pins
+   its true aspect ratio (1254/749) and cannot shift the footer by a fraction of a pixel.
+   The logo is 120px wide so its "Automotive marketing" tagline stays legible. */
+.hdr { position: sticky; top: 0; z-index: 50; background: var(--ink); color: #fff; border-bottom: 1px solid var(--line-d); }
+.hdrIn { height: var(--hdr); display: flex; align-items: center; gap: var(--s6); }
+.logo { display: block; flex: none; }
+.logo img { width: 120px; height: auto; aspect-ratio: 1254 / 749; }
+.nav { margin-left: auto; }
+.nav ul { display: flex; gap: 2px; }
+.nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; text-decoration: none; font-weight: 500; font-size: var(--t-small); color: var(--mid-l); border-radius: var(--r-pill); }
+.nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+.hdrCta { display: flex; align-items: center; gap: var(--s4); }
+.hdrPhone { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 44px; text-decoration: none; font-weight: 500; font-size: var(--t-small); color: var(--hi-l); }
+.hdrPhone svg { width: 16px; height: 16px; }
+.hdrPhone:hover { color: #fff; }
+.menu { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .nav a { transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
+}
+
+/* the footer continues the final CTA's ink ground; one hairline joins them */
+.ftr { background: var(--ink); color: #fff; padding-bottom: var(--s6); }
+.ftrTop { row-gap: var(--s7); padding-block: var(--sp-1) var(--s7); border-top: 1px solid var(--line-d); border-bottom: 1px solid var(--line-d); }
+.ftrBrand { grid-column: 1 / span 6; }
+.ftrBrand img { width: 120px; height: auto; aspect-ratio: 1254 / 749; margin-bottom: var(--s5); }
+.ftrBrand p { color: var(--mu-l); }
+.ftrCol { grid-column: span 3; }
+.ftrCol .ftrLabel { color: var(--mu-l); margin-bottom: var(--s3); }
+.ftrCol a { display: flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--hi-l); }
+.ftrCol a:hover { color: var(--accent-d); }
+.ftrBot { padding-top: var(--s5); display: grid; gap: var(--s3); color: var(--mu-l); font-size: var(--t-small); }
+.ftrBot .disclose { font-size: var(--t-label); }
+.ftrBot .legal { display: flex; flex-wrap: wrap; gap: var(--s5); align-items: center; }
+.ftrBot .legal a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; color: var(--mu-l); text-decoration: underline; }
+.mbar { display: none; }
+
+@media (max-width: 1180px) {
+  .nav a { padding: 0 10px; }
+  .hdrPhone span { display: none; }
+}
+@media (max-width: 1080px) {
+  .ftrBrand { grid-column: 1 / -1; }
+  .ftrCol { grid-column: span 6; }
+}
+/* ≤960: "Menu" opens a full-width sheet under the header (V212: never a floating card), the
+   label turns to "Close", the page behind stops scrolling, and the audit button sits at the foot */
+@media (max-width: 960px) {
+  .nav, .hdrPhone { display: none; }
+  .hdrCta { margin-left: auto; }
+  .menu { display: block; }
+  .menu summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 88px; padding: 0 18px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--r-pill); font-weight: 500; font-size: var(--t-small); }
+  .menu summary::-webkit-details-marker { display: none; }
+  .menu[open] summary { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.5); }
+  .mClose, .menu[open] .mOpen { display: none; }
+  .menu[open] .mClose { display: inline; }
+  .sheet { position: fixed; inset: calc(var(--hdr) + 1px) 0 0 0; display: flex; flex-direction: column; padding: var(--s3) var(--gut) calc(var(--s6) + env(safe-area-inset-bottom)); background: var(--ink); overflow-y: auto; overscroll-behavior: contain; }
+  .sheet li { border-bottom: 1px solid var(--line-d); }
+  .sheet li a { display: flex; align-items: center; min-height: 56px; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; text-decoration: none; color: #fff; }
+  .sheet li a:hover { color: var(--accent-d); }
+  .sheet .sheetBtn { margin-top: var(--s6); min-height: 56px; width: 100%; }
+  html:has(.menu[open]) { overflow: hidden; }
+}
+@media (max-width: 720px) {
+  .hdr { position: relative; }
+  /* opened a little way down the page, the header pins so "Close" and the sheet stay together */
+  .hdr:has(.menu[open]) { position: sticky; }
+  .hdr:has(.menu[open]) ~ .mbar { display: none; }
+  .logo img { width: 104px; }
+  .ftr { padding-bottom: calc(var(--s6) + 76px); }
+  .hdrCta .hdrBtn { display: none; }
+  .ftrCol { grid-column: 1 / -1; }
+  .mbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); background: var(--ink); border-top: 1px solid var(--line-d); }
+  .mbar .mbarBtn { min-height: 52px; }
+  .mbar .btnCall { background: var(--ink-2); color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+}

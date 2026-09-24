@@ -1,0 +1,57 @@
+/* 3 · The Appointment Gap: a funnel drawn in HTML/CSS */
+.gap .gapHead { margin-bottom: 48px; }
+.funnel { --fh: 220px; max-width: 1200px; margin-inline: auto; }
+.caps, .row { display: grid; grid-template-columns: minmax(0, 1fr) var(--fh) var(--fh) minmax(0, 1fr); }
+.caps { padding-bottom: 28px; font-size: var(--t-7); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; line-height: 1.3; }
+.caps .cl { grid-column: 1 / 3; text-align: right; padding-right: 28px; color: var(--ink-2); }
+.caps .cr { grid-column: 3 / 5; padding-left: 28px; color: var(--blue-tx); }
+.rows { display: grid; gap: 8px; }
+.row { height: 88px; align-items: center; }
+.band { position: relative; height: 100%; }
+.band i { position: absolute; inset: 0; }
+.bl i { background: var(--g); clip-path: polygon(var(--t) 0, 100% 0, 100% 100%, var(--b) 100%); }
+.br i { background: var(--a); clip-path: polygon(0 0, calc(100% - var(--t)) 0, calc(100% - var(--b)) 100%, 0 100%); }
+.r1 { --t: 0%; --b: 20%; --m: 10%; --g: #e1e5ec; --a: #c4d6fe; }
+.r2 { --t: 20%; --b: 40%; --m: 30%; --g: #cfd5df; --a: #7ea6fe; }
+.r3 { --t: 40%; --b: 60%; --m: 50%; --g: #bdc4d1; --a: var(--blue); }
+/* leaders: label → 48px rule → band edge */
+.bl::before, .br::before { content: ""; position: absolute; top: 50%; width: var(--m); height: 1px; background: var(--line-2); }
+.bl::before { left: 0; }
+.br::before { right: 0; }
+.fl, .fr { display: flex; align-items: center; gap: 14px; font-size: var(--t-5); line-height: 1.35; text-wrap: balance; }
+/* struck items stay legible: body size, secondary ink, a quiet grey strike (not the accent) */
+.fl { justify-content: flex-end; text-align: right; color: var(--ink-2); }
+.fl s { text-decoration-color: #9aa2b1; text-decoration-thickness: 1px; }
+.fr { color: var(--ink); font-weight: 500; }
+.fl::after, .fr::before { content: ""; flex: 0 0 48px; height: 1px; background: var(--line-2); }
+/* two notes mirrored about the funnel's centre line, both left-aligned */
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: center; column-gap: 56px; margin-top: 56px; }
+.notes .strong { color: var(--ink); }
+
+@media (min-width: 1800px) {
+  .funnel { --fh: 250px; max-width: 1320px; }
+  .notes { grid-template-columns: repeat(2, minmax(0, 480px)); }
+}
+@media (max-width: 1100px) { .funnel { --fh: 200px; } }
+/* ≤900 the four-column funnel has no room for its outer labels (it scrolled sideways at 721–744): stack it */
+@media (max-width: 900px) {
+  /* funnel: bands stay one shape; labels sit under each pair */
+  .funnel { --fh: auto; }
+  .caps { grid-template-columns: 1fr 1fr; padding-bottom: 20px; }
+  .caps .cl { grid-column: 1; padding-right: 16px; }
+  .caps .cr { grid-column: 2; padding-left: 16px; }
+  .rows { gap: 14px; }
+  .row { grid-template-columns: 1fr 1fr; grid-template-areas: "bl br" "tl tr"; height: auto; row-gap: 10px; align-items: start; }
+  .band { height: 48px; }
+  .bl { grid-area: bl; }
+  .br { grid-area: br; }
+  .fl { grid-area: tl; padding-right: 16px; }
+  .fr { grid-area: tr; padding-left: 16px; }
+  .fl::after, .fr::before, .band::before { display: none; }
+}
+@media (max-width: 720px) {
+  .gap .gapHead { margin-bottom: 28px; }
+  .rows { gap: 12px; }
+  .band { height: 40px; }
+  .notes { grid-template-columns: 1fr; row-gap: 16px; margin-top: 32px; }
+}

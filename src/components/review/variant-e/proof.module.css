@@ -1,0 +1,32 @@
+/* 10 proof standard · 11 free audit (both white) — rules and type, no cards, and neither uses
+   the label + H2 / aside split the other section heads use. Blue marks the evidence rules. */
+.stmt { align-items: end; row-gap: var(--s5); }
+.stmtH { grid-column: 1 / span 6; }
+.stmtH .stmtLabel { margin-bottom: var(--s4); }
+.posLine { grid-column: 7 / -1; font-size: var(--t-h3); font-weight: 600; line-height: 1.35; letter-spacing: -0.01em; text-wrap: pretty; }
+.evid { margin-top: var(--head-gap); row-gap: var(--s6); }
+.evid li { grid-column: span 6; border-top: 2px solid var(--accent); padding-top: var(--s5); }
+.evid h3 { margin-bottom: var(--s2); }
+.evid p { color: var(--mu); max-width: 34em; }
+
+.auditHead { max-width: 40em; margin-bottom: var(--head-gap); }
+.auditHead .auditLabel { margin-bottom: var(--s4); }
+.auditSub { margin-top: var(--s4); color: var(--mu); }
+.steps { row-gap: var(--s6); }
+.steps li { grid-column: span 4; }
+/* the numeral runs into a hairline to the next step */
+.stepN { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s5); font-size: var(--t-d2); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.stepN::after { content: ""; flex: 1; border-top: 1px solid var(--line-2); }
+.steps h3 { margin-bottom: var(--s2); }
+.steps p { color: var(--mu); max-width: 30em; }
+
+@media (max-width: 1080px) {
+  .stmtH, .posLine { grid-column: 1 / -1; }
+  .posLine { max-width: 34em; }
+}
+@media (max-width: 800px) {
+  .evid li, .steps li { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .stepN { margin-bottom: var(--s4); }
+}

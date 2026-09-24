@@ -1,0 +1,89 @@
+/* 1 · Hero and 2 · Positioning */
+
+/* ================= 1 · Hero ================= */
+.hero { position: relative; min-height: clamp(760px, 100svh, 960px); display: flex; flex-direction: column; justify-content: flex-end; padding-top: var(--head-h); overflow: hidden; background: #07080a; isolation: isolate; }
+.hero .heroImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% 46%; z-index: -2; }
+.scrim { position: absolute; inset: 0; z-index: -1; background:
+  linear-gradient(90deg, rgba(8, 9, 11, .94) 0%, rgba(8, 9, 11, .86) 30%, rgba(8, 9, 11, .55) 50%, rgba(8, 9, 11, .08) 70%, rgba(8, 9, 11, 0) 82%),
+  linear-gradient(180deg, rgba(8, 9, 11, .5) 0%, rgba(8, 9, 11, 0) 26%, rgba(8, 9, 11, 0) 56%, rgba(8, 9, 11, .92) 100%); }
+.inner { padding-block: 48px 40px; }
+.hero .kicker { color: #d0d6e0; }
+.hero .title { max-width: 11.6em; margin-top: 22px; }
+/* the logo blue itself measures p5 2.88:1 on the photo at 2560 (fails 3:1 for large text); this is the most
+   saturated step of the same hue that holds p5 ≥ 4.1:1 at 390–2560 (glyph-pixel probe, fix round 2) */
+.accent { color: #3d7bff; }
+.hero .heroLede { max-width: 600px; margin-top: 22px; color: #cdd3dd; }
+.hero .heroActions { margin-top: 32px; }
+.offer { margin-top: 18px; font-size: var(--t-6); color: #cdd3dd; }
+/* The rail ends 96px above the fold: the layout's consent bar (77px, fixed to the viewport bottom) greets
+   every first visit and would otherwise cover the four descriptors (round 3). */
+.rail { border-top: 1px solid rgba(255, 255, 255, .16); padding-block: 24px 96px; }
+.pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pillars li { display: grid; align-content: start; gap: 6px; padding-inline: 24px; }
+.pillars li:first-child { padding-left: 0; }
+.pillars li + li { border-left: 1px solid rgba(255, 255, 255, .14); }
+.pillars b { font-size: var(--t-5); font-weight: 500; color: var(--ntx); letter-spacing: -.01em; }
+.pillars span { font-size: var(--t-6); line-height: 1.5; color: var(--ntx-2); }
+/* the owner views at 2560×1440: the photographic fold owns the whole viewport (V187) */
+@media (min-width: 1800px) {
+  .hero { min-height: clamp(760px, 100svh, 1440px); }
+  .hero .heroLede { max-width: 640px; }
+  /* the copy block centres in the space above the pillar rail, which stays on the bottom edge */
+  .inner { margin-block: auto; }
+  /* a lighter left veil, so the left 40% reads as photograph, not a black column */
+  .scrim { background:
+    linear-gradient(90deg, rgba(8, 9, 11, .82) 0%, rgba(8, 9, 11, .7) 30%, rgba(8, 9, 11, .45) 50%, rgba(8, 9, 11, .06) 70%, rgba(8, 9, 11, 0) 82%),
+    linear-gradient(180deg, rgba(8, 9, 11, .5) 0%, rgba(8, 9, 11, 0) 26%, rgba(8, 9, 11, 0) 56%, rgba(8, 9, 11, .92) 100%); }
+}
+/* laptop screens (1280×800, 1536×864): keep the whole pillar rail inside the fold, above the consent bar */
+@media (min-width: 721px) and (max-height: 880px) {
+  .hero { min-height: clamp(700px, 100svh, 960px); }
+  .inner { padding-block: 24px 36px; }
+  .hero .title { margin-top: 18px; font-size: min(var(--t-1), 64px); }
+  .hero .heroLede { margin-top: 20px; }
+  .hero .heroActions { margin-top: 28px; }
+  .rail { padding-block: 20px 84px; }
+}
+/* 1366×768 */
+@media (min-width: 721px) and (max-height: 780px) {
+  .inner { padding-top: 16px; }
+  .hero .title { font-size: min(var(--t-1), 56px); }
+  .hero .heroActions { margin-top: 24px; }
+}
+
+/* ================= 2 · Positioning: 8/4 ================= */
+.pos { padding-block: calc(var(--s-tight) + 8px) 0; }
+.posMain { grid-column: 1 / span 8; }
+.posH { margin-top: 24px; font-size: 36px; line-height: 1.2; letter-spacing: -.026em; font-weight: 500; color: var(--ink); text-wrap: balance; }
+.posSide { grid-column: 9 / -1; align-self: start; }
+.proof3 li { padding-block: 14px; border-top: 1px solid var(--line-2); font-size: var(--t-5); font-weight: 500; letter-spacing: -.01em; line-height: 1.4; }
+.proof3 li:last-child { border-bottom: 1px solid var(--line-2); }
+.posSide .posLink { margin-top: 12px; }
+@media (min-width: 1800px) { .posH { font-size: 40px; } }
+
+@media (max-width: 1024px) {
+  .scrim { background: linear-gradient(90deg, rgba(8, 9, 11, .93) 0%, rgba(8, 9, 11, .86) 50%, rgba(8, 9, 11, .66) 80%, rgba(8, 9, 11, .5) 100%), linear-gradient(180deg, rgba(8, 9, 11, .5) 0%, rgba(8, 9, 11, 0) 26%, rgba(8, 9, 11, 0) 56%, rgba(8, 9, 11, .92) 100%); }
+}
+@media (max-width: 900px) {
+  .posMain, .posSide { grid-column: 1 / -1; }
+  .posSide { margin-top: 32px; }
+}
+@media (max-width: 720px) {
+  /* hero: photo band on top, copy on the dark ground below */
+  .hero { min-height: 0; padding-top: var(--head-h); justify-content: flex-start; }
+  .hero .heroImg { position: relative; inset: auto; height: auto; aspect-ratio: 4 / 3.2; object-position: 74% 50%; z-index: 0; }
+  .scrim { bottom: auto; height: calc(var(--head-h) + 80vw); background: linear-gradient(180deg, rgba(8, 9, 11, .35) 0%, rgba(8, 9, 11, 0) 30%, rgba(8, 9, 11, 0) 58%, rgba(8, 9, 11, 1) 100%); z-index: 1; }
+  .inner { position: relative; z-index: 2; margin-top: -48px; padding-block: 0 36px; }
+  .hero .title { margin-top: 16px; }
+  .hero .heroLede { margin-top: 18px; font-size: var(--t-5); }
+  .hero .heroActions { margin-top: 28px; }
+  .rail { position: relative; z-index: 2; padding-block: 24px 32px; }
+  .pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
+  .pillars li { gap: 4px; padding: 0; border-left: 0 !important; }
+  .pillars li:nth-child(n+3) { padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .1); }
+  .hero .heroCall { display: none; }
+  .pos { padding-block: var(--s) 0; }
+  .posH { margin-top: 18px; font-size: 24px; line-height: 1.24; letter-spacing: -.02em; }
+  .posSide { margin-top: 24px; }
+  .proof3 li { padding-block: 12px; }
+}

@@ -1,0 +1,72 @@
+/* 01 hero · 02 pillar strip. The hero fills the fold under the header and the strip sits wholly
+   below it on white (round 3: docked over the hero's edge, the strip was cut by a 1440×900 fold).
+   The hero is capped at 1000px so a 1440-tall screen does not open on empty ceiling; at 2560×1440
+   the fold then ends in the white under the strip. */
+.hero { position: relative; background: var(--ink); color: #fff; min-height: min(max(600px, calc(100svh - var(--hdr))), 1000px); display: flex; align-items: flex-end; overflow: hidden; }
+.media { position: absolute; inset: 0; }
+.media img { object-fit: cover; object-position: 62% 50%; }
+/* two scrims. ::before carries the copy: a radial from the bottom-left plus a left-to-right layer
+   that is gone by 70% (it is ≤0.1 from col 9), so the H1 clears the lit ceiling strip (≥3:1 at 1280–1440) while
+   the car keeps its light. ::after is the floor scrim, masked to the left 60% for the same reason. */
+.media::before, .media::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.media::before { background:
+  linear-gradient(90deg, rgba(7, 11, 20, 0.7) 0%, rgba(7, 11, 20, 0.5) 50%, rgba(7, 11, 20, 0) 70%),
+  radial-gradient(110% 120% at 0% 100%, rgba(7, 11, 20, 0.9) 0%, rgba(7, 11, 20, 0.76) 45%, rgba(7, 11, 20, 0.34) 75%, rgba(7, 11, 20, 0) 100%); }
+.media::after { background: linear-gradient(0deg, rgba(7, 11, 20, 0.9) 0%, rgba(7, 11, 20, 0.64) 36%, rgba(7, 11, 20, 0) 70%);
+  -webkit-mask-image: linear-gradient(90deg, #000 60%, transparent 80%); mask-image: linear-gradient(90deg, #000 60%, transparent 80%); }
+.in { position: relative; z-index: 1; padding-top: clamp(56px, 7vw, 112px); padding-bottom: clamp(64px, 8vw, 112px); align-items: end; width: 100%; }
+/* the H1 row spans the container so it stays two lines at 72px on wide screens */
+.top { grid-column: 1 / -1; }
+.copy { grid-column: 1 / span 8; }
+.eyebrow { display: inline-flex; align-items: center; font-size: var(--t-small); font-weight: 500; color: var(--hi-l); background: rgba(11, 18, 32, 0.7); border: 1px solid rgba(255, 255, 255, 0.14); padding: 7px 14px 7px 10px; border-radius: var(--r-pill); margin-bottom: var(--s5); }
+.eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 10px; flex: none; }
+.hero h1 { max-width: 13em; }
+.hero .heroLead { max-width: 34em; margin-top: var(--s5); color: var(--hi-l); }
+.hero .heroActions { margin-top: var(--s6); }
+.offer { margin-top: var(--s4); font-size: var(--t-small); color: var(--mid-l); }
+.proof { display: flex; flex-wrap: wrap; column-gap: 12px; margin-top: var(--s5); padding-top: var(--s4); border-top: 1px solid rgba(255, 255, 255, 0.18); max-width: 44em; font-weight: 600; letter-spacing: -0.01em; }
+.proof li + li::before { content: "·"; margin-right: 12px; color: var(--accent-d); }
+
+/* 2.1fr gives the heading ~357px at 1440 (its natural width is 620px at 22px), so it balances
+   onto two lines: "Built for booked appointments," / "not vanity impressions" */
+.strip { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(0, 4fr); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-m); padding: var(--s5) 0; }
+.stripH { padding: 4px var(--s5) 4px var(--s6); font-size: var(--t-h3); line-height: 1.25; letter-spacing: -0.01em; font-weight: 600; align-self: center; text-wrap: balance; }
+.stripList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.strip li { padding: 4px var(--s5); border-left: 1px solid var(--line); }
+/* a definition row, not a feature card: no dots, the title one step over the line, both in ink */
+.strip h3 { font-size: var(--t-lead); line-height: 1.3; letter-spacing: -0.01em; font-weight: 600; margin-bottom: 4px; }
+.strip p { font-size: var(--t-small); line-height: 1.5; color: var(--tx); }
+
+/* below 1180 the H1 runs into the lit ceiling strip: a left-to-right layer carries it (≥4.5:1) */
+@media (max-width: 1180px) {
+  .media::after { -webkit-mask-image: none; mask-image: none; background:
+    linear-gradient(90deg, rgba(7, 11, 20, 0.85) 0%, rgba(7, 11, 20, 0.6) 55%, rgba(7, 11, 20, 0) 80%),
+    linear-gradient(0deg, rgba(7, 11, 20, 0.9) 0%, rgba(7, 11, 20, 0.64) 36%, rgba(7, 11, 20, 0) 70%); }
+}
+@media (max-width: 1080px) {
+  .copy { grid-column: 1 / -1; }
+  .strip { grid-template-columns: 1fr; row-gap: var(--s4); }
+  .stripH { padding: 0 var(--s5); }
+  .strip li:first-child { border-left: 0; }
+}
+@media (max-width: 720px) {
+  .hero { display: block; min-height: 0; }
+  .media { position: relative; height: clamp(260px, 64vw, 420px); }
+  .media::before { display: none; }
+  .media::after { background: linear-gradient(0deg, var(--ink) 0%, rgba(11, 18, 32, 0.55) 30%, rgba(11, 18, 32, 0) 62%); }
+  .in { padding-top: 0; margin-top: -56px; padding-bottom: var(--s7); }
+  /* the 46-character tagline cannot sit in the pill on one line below ~400px, and a cut-down
+     version misquotes it: the eyebrow is dropped on phones */
+  .eyebrow { display: none; }
+  .hero .heroActions { flex-direction: column; align-items: stretch; }
+  .heroActions .heroBtn { white-space: normal; text-align: center; }
+  .proof { display: block; padding-top: 0; border-top: 2px solid var(--accent); }
+  .proof li { padding: var(--s3) 0; border-bottom: 1px solid rgba(255, 255, 255, 0.22); }
+  .proof li + li::before { display: none; }
+  .strip { padding: var(--s5) 0 var(--s2); row-gap: var(--s3); }
+  .stripList { grid-template-columns: 1fr 1fr; }
+  .stripH { padding: 0 var(--s5) var(--s2); font-size: var(--t-body); }
+  .strip li { border-left: 0; border-top: 1px solid var(--line); padding: var(--s4) var(--s5); }
+  .strip li:nth-child(odd) { border-right: 1px solid var(--line); }
+  .strip h3 { font-size: var(--t-body); }
+}

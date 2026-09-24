@@ -75,12 +75,12 @@ This Next is newer than your training data. Before writing code, read `node_modu
     | `work-meta-inventory.webp` | 1090×596 | ≤ 460 |
     | `work-google-vla.webp` | 963×509 | ≤ 420 |
 
-  - **/lp photos:** `/lp/bdc-audit-consultation.webp` and `/lp/bdc-inventory-production.webp`, 1248×832, ≤ 620 CSS. Caption them "Illustrative photograph".
+  - **/lp photos:** `/lp/bdc-audit-consultation.webp` and `/lp/bdc-inventory-production.webp`, 1248×832, ≤ 620 CSS. They get no per-photo caption (see §4).
   - **Logo:** `/images/design/shared/bdc-logo-2026.png`, 1254×749, dark ground only.
 - **Copy** is exactly the prototype's, since it was drawn from `scratchpad/c3/VERIFIED-COPY.md`.
   - Import `auditHref`, `phoneHref` and `phoneDisplay` from `../content`, and use `serviceOptions`, `growthSteps` and `faqItems` wherever the prototype prints those lists.
   - No new claims.
-  - The footer carries the illustrative-photo disclosure.
+  - The footer carries the one-line photo disclosure given in §4.
 - **Accessibility.**
   - Exactly one `h1`, with headings in order.
   - Targets ≥ 44px and a visible `:focus-visible`.
@@ -112,3 +112,43 @@ This Next is newer than your training data. Before writing code, read `node_modu
   - the gate outputs, verbatim;
   - the screenshot paths;
   - the differences left, with reasons.
+
+## 4. Blind-judge findings: fix these in every review round
+
+Three independent blind judges ranked the three prototypes against hvacfound, Collective, Stripe Atlas and Designjoy, 2026-09-24.
+- **Owner lens:** Daylight 1st of 7 (above hvacfound), Nightfall 3rd, Contrast 4th.
+- **Dealership-GM lens:** Daylight, then Nightfall, then Contrast. Only Stripe Atlas and Collective ranked above them, on real third-party proof.
+- **Craft lens:** Nightfall 3rd, Contrast 4th, Daylight 5th.
+
+The findings the judges agreed on override anything above that conflicts with them.
+
+**All three routes:**
+1. **Remove every per-photo "Illustrative photograph" chip or caption.** All three judges said the chips and the "AI-generated" footer make the page read as having nothing real to show, which is the owner's V207 reflex.
+   - Honesty stays in one quiet line in the footer legal row: `Photographs are illustrative and do not show a BDC Promotions client or location.`
+   - Alt text must describe the scene, never call it BDC's own.
+2. **Remove internal guardrail lines printed as public copy.**
+   - Delete B's design note `No unverified dealership count, ad-spend total, client logos, or outcome statistics.` everywhere.
+   - Delete the three "standards rules": `Show only customer-approved work and attribution`, `Use testimonial video only after transcript and publication approval` and `Never imply guaranteed lead volume, CPL, sales, ROAS, or show rate`.
+   - The proof section keeps its heading, the positioning line and the /lp proof-standard items.
+   - The non-guarantee Q&A beside Pricing stays, because it is the customer-facing version.
+   - The route must still have **at least 13 sections**. If one section is emptied, merge it into a neighbour and do not pad.
+3. **Buttons and links use sentence case** (`Get my free dealership audit`). There is no Title Case anywhere.
+4. **At 2560 nothing breaks the content column** unless it is a deliberate full-bleed ground or photo. Work grids and CTA bands stay on the container.
+5. **The accent marks one idea per headline**, at most one phrase, never most of a headline.
+
+**C · Daylight:**
+- Remove the hand-drawn swash under the headline accent.
+- At 1440×900 the fold is 466px of text on the ground and the photo is cut by the fold. Tighten the hero so the photograph starts higher and owns more of the fold. The photo card must sit on the container or the page gutter consistently, not 16px from the edge while all content sits at 1200.
+- Section labels alone do not separate sections. Keep the rounded dark/light containers and make each section's structure visibly different.
+
+**D · Nightfall:**
+- The Work area has two stacked section titles ("Automotive creative built for the real feed", then "Our work" about 500px lower). Merge them into one head.
+- Simplify the gap graphic: no drip dots or pendulum line, and make the struck items legible (≥ 15px).
+- The two-tone grey/black statement paragraph becomes one colour.
+- **Keep** the ads framed as "Sponsored" feed posts; it was judged the best work framing of the three.
+
+**E · Contrast:**
+- **Mobile bug.** The "Source work example" eyebrow overlaps the luxury ad, and the 4:5 ad overruns its inner panel by about 110px. Fix both at 390 and 320.
+- Remove the card nested inside a card in Work, which doubles every border.
+- The ground flips dark/light 7 times. Group the sections so the page alternates at most 4–5 times.
+- The full-accent $5,000 slab is harsh. Keep the bracket connector from the two $2,500 plans into the bundle; it was judged the most distinctive module. Make the bundle card calmer: a blue outline or tint, or dark with a blue accent.

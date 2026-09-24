@@ -1,7 +1,9 @@
 # Homepage workflow state — BDC Promotions
 
-**Status:** READY_TO_PUSH — all review rounds complete; commit/PR/merge in progress
-**Updated:** 2026-09-23
+**Status:** READY_TO_MERGE — C3: C Daylight, D Nightfall and E Contrast ported and verified (3 review rounds + coordinator fixes); PR #29 → `awb-home-build`
+**Updated:** 2026-09-24
+
+> **Resume here (C3, 2026-09-24):** see the section "C3 — five directions" at the bottom. Everything above it is the history of the A/B/C round merged in PR #28.
 
 ## Source
 - Remote: https://github.com/Landing-Pages-Websites/bdc-promotions.git
@@ -89,5 +91,89 @@ Verified copy: `src/components/review/content.ts`, `content-sources.json`, `task
 - Final verification: build ✓, tsc 0, lint 0 errors, src 170/170, scripts 64/71 locally (7 fail only because of spaces in the local path — 71/71 from a space-free copy), smoke 62/62 (prod).
 - `workflow/homepage/REPORT.md` written; curated evidence `workflow/homepage/screens/final/` (8.3MB).
 
+## C3 — five directions (2026-09-23 → 24)
+
+**Owner reactions (verdicts V210/V211 in design-psyche):**
+- C2 "Lot Lines" rejected: "proportionality, placing, spacing, overall design still off"; they asked for **12–15 nicely designed sections**. They view on a **2560×1440 DPR-1** monitor.
+- "Change the colour from off-white and yellow to **pure white and the logo blue**" (sampled `#0059FC`, 5.48:1 with white text).
+- "Add all of these mockups to the homepage", which makes five: A, B + **C Daylight, D Nightfall, E Contrast**.
+- "Create a PR and merge": PR #29 is opened into `awb-home-build`. Merge once C/D/E are ported and verified. Never merge into `main`.
+
+**Isolation:**
+- Session bdc-promotions-56 owned C2 in the original folder (uncommitted, idle since 23:58). Two pause requests expired unapproved.
+- C3 therefore lives in its own worktree: `../BDC promotions c3`, branch `review/homepage-c3-2026-09-24`, based on `origin/awb-home-build` 2b6fe9a.
+- The original folder is untouched.
+
+**Environment:**
+- Worktree dev: `ALLOW_TODO=1 npx next dev -p 3419`.
+- The workspace package must be built once per worktree: `npm --workspace @landing-pages-websites/managed-site-contract run build`. Otherwise tsc shows 60 false errors.
+- Prototypes are served at `http://127.0.0.1:4455/proto-<key>/` (static server, session scratchpad `c3/`).
+
+**Exploration workflow `wf_2d4897bd-f38`** (scratchpad `c3/`):
+- `VERIFIED-COPY.md` (the copy deck, with exclusions).
+- Research: `REFERENCES-{niche,service,work}.md`, covering 6 niche competitors and about 29 excellence sites.
+- Three full-page prototypes (13–14 sections each), each built → critic → revise.
+- The weekly limit interrupted it at the revise step; it was resumed at 01:46.
+
+**Port workflow `wf_25060125-90b`:**
+- The contract is `workflow/homepage/c3/PORT.md`.
+- Per route: palette pass → port → band diff vs prototype → density/tsc/eslint/overflow → critic → fix → critic → fix.
+- Then a blind fold rank (15 = 5 routes + the frozen v2 set; mapping in scratchpad `rank-private/`) and a full-page owner-lens judge (5 routes + hvacfound, Collective, Designjoy).
+- Notes go in `workflow/homepage/c3/notes/`, shots in `workflow/homepage/c3/shots/<x>/`.
+
+**Committed:**
+- `8296b5b`: `/variant-d` and `/variant-e` routes (placeholders), a five-card chooser, review-routes.json, sitemap and contract tests.
+- The shared HD assets in `public/images/design/shared/`: retouched night photo 3840w, native WebP creatives including the wholesale ad.
+- PORT.md and provenance.
+- Checks: tsc 0, lint 0 errors, src 170/170, scripts 64/71 (the known path-with-spaces 7), build ✓.
+
+**Pushed so far (PR #29):**
+- `8296b5b` plumbing.
+- `becc35b`, `8a4b999` and `43a8624` put the static prototypes live at `/prototypes/<name>/index.html`: first as-is, then white and blue, then with the broken image paths fixed. These are temporary and are removed before the merge.
+- Preview: https://bdc-promotions-automated-build-git-review-0db8ff-mega-websites.vercel.app. The `bdc-promotions-git-…` alias is behind Vercel SSO.
+
+**Exploration judges (prototypes, blind; P1 Contrast, P2 Nightfall, P3 Daylight):**
+- Owner lens: Daylight 1st of 7, above hvacfound.
+- GM lens: Daylight, then Nightfall, then Contrast.
+- Craft lens: Nightfall 3rd, Contrast 4th, Daylight 5th.
+- Every judge flagged the per-photo "Illustrative photograph" chips and the guardrail copy. Both are now banned in PORT.md §4.
+
+**Port workflow `wf_25060125-90b`** (port → critic → fix → critic → fix):
+- Critic round 2 returned FAIL for all three (scores 5–8); fix round 2 applied.
+- Blind full-page owner judge, routes against hvacfound, Collective and Designjoy: **D 1st of 8 and the only page "approved on sight"**, E 3rd, C 5th, A 7th, B 8th.
+- C's "empty images" came from the capture tool (screenshot.mjs scrolls too fast). Production loads every image.
+- Blind fold rank against the frozen v2 set (car-brand photo heroes): C, D and E finished 11th–13th of 15, all in the bottom third. That set was frozen for C2's photo-led thesis; this is reported, not re-picked.
+
+**Production probe** (`next start -p 3420`, scratchpad `c3/probe.mjs`):
+- All five routes hydrate.
+- 0 console errors and 0 broken images at 1440 and 390.
+- 0 overflow, and one h1 on each route.
+- E's mobile bar at z-60 covered the consent banner's "Got it", so the banner could not be dismissed. The coordinator set it to z-40.
+- Headless Chromium does not hydrate on the **dev** server. That is an environment quirk only.
+
+**Checks after round 2:** tsc 0, lint 0 errors (density.mjs unused import removed), build passing.
+
+**Round 3 (final) `wf_ae6ff1bc-dc8`:**
+- Required fixes for the owner judge's findings: no testimonial promise, pure-white grounds, C hero photo scale and blue primary CTAs, D pillar descriptors, fold, work tiles and mobile length, E dark share, no AI services photo, work captions and fold card.
+- Then fresh final critics and a re-run of the page judge.
+
+**Round 3 + coordinator (2026-09-24 05:3x):**
+- Final critics: C PASS, E PASS. D failed on its Work plates hugging their ads (V210); the coordinator fixed it and measured aligned edges at 1280/1440/1920/2560, with Meta/VLA capped at 460/420.
+- Blind page judge re-run: E 1st and D 2nd (both approved on sight), C 3rd, then hvacfound, Collective, Designjoy, A, B.
+- The coordinator also added Escape handling to D's menu and removed `public/prototypes/`.
+- Production: all 5 routes hydrate, 0 broken images, 0 overflow, 1 h1, density 0 soft (c/d/e), and the menus close on a link tap and on Escape.
+- Checks: tsc 0, lint 0 errors, src 170/170, scripts 64/71 (the known 7), build passes.
+- The review-bridge script (app.gomega.ai) can hit CORS on localhost origins. It sits in the shared root layout, is untouched, and must be verified on the Vercel preview.
+- REPORT.md now has a C3 section, and seo/JOURNAL.md has an entry.
+
 ## Next action
-Squash local WIP into one commit (author Hyder Shah) → push `review/homepage-abc-2026-09-23` → `gh pr create --base awb-home-build` → wait for CI → merge → record result here.
+1. Commit and push to PR #29.
+2. Wait for CI and the 3 Vercel checks.
+3. Verify the preview routes (200, review bridge loads).
+4. Merge PR #29 into `awb-home-build`; the owner said "create a PR and merge".
+5. Post the links.
+
+Open owner questions:
+- a real hero vehicle photo instead of the AI render;
+- the email domain `bdc-promotions.com` vs `bdcpromotions.com`;
+- whether the dealer names inside the ads are approved.

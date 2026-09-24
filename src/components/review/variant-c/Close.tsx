@@ -1,66 +1,84 @@
+import Image from "next/image";
 import type { ReactElement } from "react";
-import { faqItems } from "../content";
-import { Actions, Eyebrow } from "./Bits";
-import ui from "./proof-wall.module.css";
+import { auditHref, phoneDisplay, phoneHref } from "../content";
+import b from "./base.module.css";
 import s from "./close.module.css";
+import { ArrowBadge, email } from "./ui";
 
-const auditSteps = [
-  "Review your current marketing",
-  "Identify the biggest conversion gaps",
-  "Deliver focused next-step recommendations",
-] as const;
-
-/* The two questions already answered in the pricing ledger footer ("Do we have to buy every service?",
-   "Are results guaranteed?") are not repeated here. The states answer is content-sources record
-   target-states-faq; the question is its pairing in src/components/lp/LpFaq.tsx. */
-const printedInLedger = new Set(["Do we have to buy every service?", "Are results guaranteed?"]);
-/* "The supplied work covers…" is the asset manifest's word, not a buyer's (V167): C prints "The work covers…". */
-const faq: readonly (readonly [string, string])[] = [
-  ...faqItems
-    .filter(([question]) => !printedInLedger.has(question))
-    .map(([question, answer]) => [question, answer.replace(/^The supplied work/, "The work")] as const),
-  [
-    "Which states do you work with?",
-    "We partner with dealerships across multiple U.S. states. Share your details on the form or give us a call and we’ll confirm fit for your market.",
-  ],
-];
-
-export function Close(): ReactElement {
+/* A closing band (fix r2): the headline across ten columns, then one ruled row of lead | actions.
+   The audit recap card moved into the audit panel as its deliverable. */
+export function Final(): ReactElement {
   return (
-    <section className={`${s.close} ${ui.onDark}`} id="faq" aria-labelledby="c-close-title">
-      <div className={`${ui.container} ${s.split75}`}>
-        <div>
-          <Eyebrow tone="fog">Your next move</Eyebrow>
-          {/* The verified /lp offer: "Free dealership marketing audit and consultation — no cost, no obligation." */}
-          <h2 id="c-close-title" className={ui.h2}>
-            <span className={s.line}>Start with a free audit.</span> <span className={s.line}>No obligation.</span>
-          </h2>
-          <p className={`${ui.lead} ${ui.fogText} ${s.closeLead}`}>
+    <div className={s.final}>
+      <section className={`${b.wrap} ${s.finalIn} ${b.onDark}`} aria-labelledby="fin-h">
+        <p className={s.finalLabel}>Free dealership marketing audit</p>
+        <h2 id="fin-h">Ready to create more opportunities for your dealership?</h2>
+        <div className={s.finalRow}>
+          <p className={s.finalLead}>
             Tell us what your store needs, or call now to talk through the right mix of creative, media, follow-up, and
             appointment support.
           </p>
-          <ol className={s.auditSteps}>
-            {auditSteps.map((step, i) => (
-              <li key={step}>
-                <span className={`${ui.label} ${ui.fogText}`}>{`0${i + 1}`}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-          <Actions />
-        </div>
-        <div>
-          <h3 className={ui.h3}>Frequently asked questions</h3>
-          <div className={s.faqList}>
-            {faq.map(([question, answer]) => (
-              <div key={question}>
-                <h4 className={s.faqQ}>{question}</h4>
-                <p>{answer}</p>
-              </div>
-            ))}
+          <div className={`${b.ctaRow} ${s.finalCtas}`}>
+            <a className={`${b.btn} ${b.btnPrimary}`} href={auditHref}>
+              Get my free dealership audit
+              <ArrowBadge />
+            </a>
+            <a className={`${b.btn} ${b.btnGhostDark} ${s.finalCall}`} href={phoneHref}>
+              Call {phoneDisplay}
+            </a>
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
+
+export function Footer(): ReactElement {
+  return (
+    <footer className={`${s.footer} ${b.onDark}`}>
+      <div className={b.wrap}>
+        <div className={s.fGrid}>
+          <div className={s.fBrand}>
+            <Image src="/images/design/shared/bdc-logo-2026.png" alt="BDC Promotions — Automotive Marketing" width={1254} height={749} sizes="120px" />
+            <p className={s.brandline}>BDC Promotions — Automotive Marketing</p>
+            <a href={phoneHref}>{phoneDisplay}</a>
+            <a href={`mailto:${email}`}>{email}</a>
+          </div>
+          <nav className={`${s.fCol} ${s.svcCol}`} aria-label="Services">
+            <p className={`${b.label} ${s.fLabel}`}>Services</p>
+            <a href="#services">New-car lead generation</a>
+            <a href="#services">Inventory ads</a>
+            <a href="#services">Event ads</a>
+            <a href="#services">Reels &amp; value-proposition videos</a>
+            <a href="#services">Testimonial videos</a>
+          </nav>
+          <nav className={s.fCol} aria-label="Page">
+            <p className={`${b.label} ${s.fLabel}`}>Page</p>
+            <a href="#work">Work</a>
+            <a href="#path">Process</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <nav className={s.fCol} aria-label="Contact">
+            <p className={`${b.label} ${s.fLabel}`}>Contact</p>
+            <a href={auditHref}>Free audit</a>
+            <a href={phoneHref}>Call</a>
+            <a href={`mailto:${email}`}>Email</a>
+          </nav>
+        </div>
+        <div className={s.fLegal}>
+          <p>
+            © {new Date().getFullYear()} BDC Promotions Inc. All rights reserved.
+            <br />
+            Photographs are illustrative and do not show a BDC Promotions client or location.
+          </p>
+          <nav aria-label="Legal">
+            <a href="/privacy-policy">Privacy policy</a>
+            <a href="/terms">Terms</a>
+            <a href="/cookie-policy">Cookie policy</a>
+          </nav>
+        </div>
       </div>
-    </section>
+    </footer>
   );
 }
