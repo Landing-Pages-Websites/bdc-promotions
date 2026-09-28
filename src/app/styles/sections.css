@@ -481,36 +481,126 @@ h3 {
   flex-direction: column;
 }
 
-.contact-card > p {
+.contact-card__heading > p {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.72rem;
+  color: var(--text);
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.55rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  line-height: 1;
   text-transform: uppercase;
 }
 
-.contact-card > a {
-  margin-top: 0.6rem;
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(2.5rem, 5vw, 4.2rem);
-  font-weight: 700;
-  line-height: 1;
-}
-
-.contact-card > span {
-  margin-top: 1.2rem;
+.contact-card__heading > span {
+  display: block;
+  margin-top: 0.7rem;
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.6;
+}
+
+.contact-card__form {
+  margin-top: 1.5rem;
+}
+
+.homepage-lead-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+.homepage-lead-form > div,
+.homepage-lead-form > fieldset,
+.homepage-lead-form > p,
+.homepage-lead-form > button {
+  grid-column: 1 / -1;
+}
+
+.homepage-lead-form > div:first-child,
+.homepage-lead-form > div:nth-child(2) {
+  grid-column: auto;
+}
+
+.homepage-lead-form__label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.homepage-lead-form__input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(174, 197, 229, 0.26);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(8, 11, 18, 0.76);
+  color: var(--text);
+  font: inherit;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.homepage-lead-form__input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(25, 200, 255, 0.12);
+}
+
+.homepage-lead-form__input::placeholder {
+  color: rgba(169, 181, 200, 0.55);
+}
+
+.homepage-lead-form__submit {
+  width: 100%;
+  cursor: pointer;
+}
+
+.homepage-lead-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.contact-card__divider {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.contact-card__divider::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--line);
+  content: "";
+}
+
+.contact-card__divider span {
+  position: relative;
+  padding-inline: 0.75rem;
+  background: #09111d;
 }
 
 .contact-card__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: auto;
-  padding-top: 2rem;
+  margin-top: 1rem;
+}
+
+.contact-card__actions .button {
+  flex: 1 1 180px;
 }
 
 .site-footer {
