@@ -8,7 +8,8 @@ const DEFAULT_CHANGE_FREQUENCY = "weekly" as const;
 
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = siteRoutes.map((route) => ({
+  const sitemapRoutes = siteRoutes.filter((route) => route.path !== "/thank-you");
+  const pages = sitemapRoutes.map((route) => ({
     url: absoluteUrl(route.path),
     lastModified: new Date(),
     changeFrequency: DEFAULT_CHANGE_FREQUENCY,
