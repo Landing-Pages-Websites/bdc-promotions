@@ -8,6 +8,7 @@ export const metadata: Metadata = buildMetadata({
   title: "Thank You",
   description: `Thanks for contacting ${siteConfig.businessName}.`,
   path: "/thank-you",
+  robots: { index: false, follow: true },
 });
 
 export default function ThankYouPage(): ReactElement {
