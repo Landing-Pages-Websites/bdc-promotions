@@ -30,7 +30,7 @@ import {
 
 const SIGNING_TOKEN_TIMEOUT_MS = 6000;
 
-const inputClasses =
+const defaultInputClasses =
   "w-full rounded-md border-2 border-neutral-300 bg-white px-3 py-2.5 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100";
 
 const SUBMIT_ERROR_MESSAGE =
@@ -72,7 +72,17 @@ function trackFormSubmission(): void {
  * name attributes the Mega optimizer reads. Redirects to
  * siteConfig.thankYouPath after submit.
  */
-export function LeadForm(): ReactElement {
+interface LeadFormProps {
+  className?: string;
+  submitLabel?: string;
+  variant?: "default" | "homepage";
+}
+
+export function LeadForm({
+  className = "",
+  submitLabel = "Get My Free Quote",
+  variant = "default",
+}: LeadFormProps = {}): ReactElement {
   const router = useRouter();
   const idPrefix = useId();
   const { submit } = useMegaLeadForm();
@@ -101,6 +111,13 @@ export function LeadForm(): ReactElement {
 
   const { budgetQualifier } = siteConfig;
   const budgetAnswered = budgetQualifier === null || budget !== "";
+  const homepageVariant = variant === "homepage";
+  const inputClasses = homepageVariant
+    ? "homepage-lead-form__input"
+    : defaultInputClasses;
+  const labelClasses = homepageVariant
+    ? "homepage-lead-form__label"
+    : "text-sm font-medium";
   const canSubmit =
     firstName.trim() !== "" &&
     lastName.trim() !== "" &&
@@ -220,12 +237,16 @@ export function LeadForm(): ReactElement {
       action="/api/lead"
       onSubmit={handleSubmit}
       data-lead-protection="turnstile"
-      className="flex w-full max-w-md flex-col gap-4"
+      className={`${
+        homepageVariant
+          ? "homepage-lead-form"
+          : "flex w-full max-w-md flex-col gap-4"
+      } ${className}`.trim()}
     >
       <div className="flex flex-col gap-1">
         <label
           htmlFor={`${idPrefix}-first-name`}
-          className="text-sm font-medium"
+          className={labelClasses}
         >
           First Name
         </label>
@@ -243,7 +264,7 @@ export function LeadForm(): ReactElement {
       <div className="flex flex-col gap-1">
         <label
           htmlFor={`${idPrefix}-last-name`}
-          className="text-sm font-medium"
+          className={labelClasses}
         >
           Last Name
         </label>
@@ -259,7 +280,7 @@ export function LeadForm(): ReactElement {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`${idPrefix}-email`} className="text-sm font-medium">
+        <label htmlFor={`${idPrefix}-email`} className={labelClasses}>
           Email
         </label>
         <input
@@ -276,7 +297,7 @@ export function LeadForm(): ReactElement {
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor={`${idPrefix}-phone`} className="text-sm font-medium">
+        <label htmlFor={`${idPrefix}-phone`} className={labelClasses}>
           Phone
         </label>
         <input
@@ -376,9 +397,13 @@ export function LeadForm(): ReactElement {
         type="button"
         onClick={handleClick}
         disabled={submitting || submitted}
-        className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        className={
+          homepageVariant
+            ? "button homepage-lead-form__submit"
+            : "rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-60 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        }
       >
-        {submitting ? "Sending…" : "Get My Free Quote"}
+        {submitting ? "Sending…" : submitLabel}
       </button>
     </form>
   );

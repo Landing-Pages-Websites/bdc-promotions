@@ -1,4 +1,9 @@
 import siteContent from "./content/site.json";
+import {
+  LP_CUSTOMER_ID,
+  LP_SITE_ID,
+  LP_SITE_KEY,
+} from "./components/lp/constants";
 
 /**
  * Layer 2 — site configuration.
@@ -142,9 +147,12 @@ export const siteConfig: SiteConfig = {
   })),
   logoPath: "/logo.png",
   ogImagePath: "/og-image.png",
-  megaCustomerId: "unprovisioned",
-  megaSiteId: "unprovisioned",
-  megaSiteKey: "unprovisioned",
+  // Reuse the repository's provisioned BDC Promotions MEGA identity. The
+  // homepage keeps its own sourceProvider below so website enquiries remain
+  // distinguishable from paid-LP leads.
+  megaCustomerId: LP_CUSTOMER_ID,
+  megaSiteId: LP_SITE_ID,
+  megaSiteKey: LP_SITE_KEY,
   sourceProvider: "website-bdc-promotions",
   uploadsEnabled: false,
   budgetQualifier: null,
