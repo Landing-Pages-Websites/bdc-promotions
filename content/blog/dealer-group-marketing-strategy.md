@@ -1,9 +1,7 @@
 ---
 title: Dealer Group Marketing Strategy for Consistent Growth
 metaTitle: Dealer Group Marketing Strategy for Consistent Growth
-description: >-
-  Build a dealer group marketing strategy that aligns shared standards, rooftop
-  execution, lead response, reporting, and appointment generation.
+description: Build a dealer group marketing strategy that aligns shared standards, rooftop execution, lead response, reporting, and appointment generation.
 excerpt: >-
   Build a dealer group marketing strategy that aligns shared standards, rooftop
   execution, lead response, reporting, and appointment generation.
@@ -12,11 +10,8 @@ subtitle: >-
   execution, lead response, reporting, and appointment generation.
 slug: dealer-group-marketing-strategy
 date: 2026-09-30
-image: >-
-  https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/dealer-group-marketing-strategy-for-consistent-growth-655948.webp
-imageAlt: >-
-  Automotive dealership marketing team planning campaigns across multiple
-  rooftops
+image: https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/dealer-group-marketing-strategy-for-consistent-growth-655948.webp
+imageAlt: Automotive dealership marketing team planning campaigns across multiple rooftops
 targetKeyword: dealer group marketing strategy
 ---
 When several rooftops share a name, budget, or marketing team, consistency can become a strength or a constraint. A campaign may be centrally approved yet still miss the inventory, offers, and shopper expectations that matter at one store.
