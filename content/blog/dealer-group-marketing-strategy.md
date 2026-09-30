@@ -11,6 +11,7 @@ subtitle: >-
   Build a dealer group marketing strategy that aligns shared standards, rooftop
   execution, lead response, reporting, and appointment generation.
 slug: dealer-group-marketing-strategy
+date: 2026-09-30
 image: >-
   https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/dealer-group-marketing-strategy-for-consistent-growth-655948.webp
 imageAlt: >-
