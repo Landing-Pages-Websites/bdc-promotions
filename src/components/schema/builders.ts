@@ -30,6 +30,12 @@ export interface BusinessSchemaIdentity {
   readonly sameAs: readonly string[];
 }
 
+export interface BlogIndexPostInput {
+  readonly title: string;
+  /** Site-relative path of the article page. */
+  readonly path: string;
+}
+
 export interface ArticleInput {
   headline: string;
   description: string;
@@ -101,6 +107,50 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]): SchemaObject {
       name: item.name,
       item: absoluteUrl(item.path),
     })),
+  };
+}
+
+export function buildBlogIndexSchema(
+  posts: readonly BlogIndexPostInput[],
+): SchemaObject {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        url: absoluteUrl("/blog"),
+        name: "Blog",
+        description: `Articles and updates from ${siteConfig.businessName}.`,
+        mainEntity: {
+          "@type": "ItemList",
+          itemListOrder: "https://schema.org/ItemListOrderDescending",
+          numberOfItems: posts.length,
+          itemListElement: posts.map((post, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: post.title,
+            item: absoluteUrl(post.path),
+          })),
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: absoluteUrl("/blog"),
+          },
+        ],
+      },
+    ],
   };
 }
 
