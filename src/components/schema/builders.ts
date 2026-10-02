@@ -42,6 +42,58 @@ export interface ArticleInput {
   imagePath?: string;
 }
 
+export interface BlogIndexItem {
+  readonly name: string;
+  /** Site-relative path of the published article. */
+  readonly path: string;
+}
+
+export function buildBlogIndexSchema(
+  items: readonly BlogIndexItem[],
+): SchemaObject {
+  const blogUrl = absoluteUrl("/blog");
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        url: blogUrl,
+        name: "Blog",
+        description: `Articles and updates from ${siteConfig.businessName}.`,
+        mainEntity: {
+          "@type": "ItemList",
+          itemListOrder: "https://schema.org/ItemListOrderDescending",
+          numberOfItems: items.length,
+          itemListElement: items.map((item, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: item.name,
+            item: absoluteUrl(item.path),
+          })),
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: absoluteUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Blog",
+            item: blogUrl,
+          },
+        ],
+      },
+    ],
+  };
+}
+
 function businessSchemaBase(identity?: BusinessSchemaIdentity): SchemaObject {
   const { contact } = siteConfig;
   const address = identity?.postalAddress ?? {
