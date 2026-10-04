@@ -16,16 +16,19 @@ const aboutPageId = "https://bdcpromotions.com/about/#about";
 const publicPhone = "352-207-1074";
 const publicPhoneHref = phoneHref(publicPhone);
 
-export const metadata: Metadata = buildMetadata({
-  title: pageTitle,
-  description: pageDescription,
-  siteName: siteConfig.businessName,
-  path: "/about/",
-  robots: {
-    index: true,
-    follow: true,
-  },
-});
+export const metadata: Metadata = {
+  ...buildMetadata({
+    title: pageTitle,
+    description: pageDescription,
+    siteName: siteConfig.businessName,
+    path: "/about/",
+    robots: {
+      index: true,
+      follow: true,
+    },
+  }),
+  title: { absolute: pageTitle },
+};
 
 const aboutSchema = {
   "@context": "https://schema.org",
