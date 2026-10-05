@@ -8,6 +8,7 @@ import { ProcessSection } from "./ProcessSection";
 import { ServicesSection } from "./ServicesSection";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
+import { TestimonialSection } from "./TestimonialSection";
 import { ValueGrid } from "./ValueGrid";
 
 export interface ManagedTextContent {
@@ -45,6 +46,12 @@ export interface LandingPageContent {
   focus: ContentSection;
   process: ContentSection;
   insights: Omit<ContentSection, "description">;
+  testimonial: {
+    eyebrow: ManagedTextContent;
+    heading: ManagedTextContent;
+    description: ManagedTextContent;
+    videoLabels: readonly ManagedTextContent[];
+  };
   contact: {
     eyebrow: ManagedTextContent;
     heading: ManagedTextContent;
@@ -81,6 +88,7 @@ export function LandingPage({
         <FocusSection content={content.focus} />
         <ProcessSection content={content.process} />
         <InsightsSection content={content.insights} />
+        <TestimonialSection content={content.testimonial} />
         <ContactSection content={content.contact} identity={identity} />
       </main>
       <SiteFooter identity={identity} />

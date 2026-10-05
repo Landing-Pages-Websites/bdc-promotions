@@ -59,6 +59,7 @@ const landingContent: LandingPageContent = {
       description: item.answer,
     })),
   },
+  testimonial: managedHome.testimonial,
   contact: managedHome.contact,
 };
 
