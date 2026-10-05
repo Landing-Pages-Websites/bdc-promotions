@@ -73,6 +73,8 @@ export interface SiteConfig {
   socialLinks: SocialLink[];
   /** Path under /public, e.g. "/logo.png". */
   logoPath: string;
+  /** Approved testimonial video assets, in playback order. */
+  testimonialVideos: readonly { src: string; poster: string }[];
   /** Path under /public, 1200x630, e.g. "/og-image.png". */
   ogImagePath: string;
   /** Customer UUID from MEGA Admin. */
@@ -146,6 +148,16 @@ export const siteConfig: SiteConfig = {
     url,
   })),
   logoPath: "/logo.png",
+  testimonialVideos: [
+    {
+      src: "/videos/curt-testimonial-part-1.mp4",
+      poster: "/videos/curt-testimonial-part-1.jpg",
+    },
+    {
+      src: "/videos/curt-testimonial-part-2.mp4",
+      poster: "/videos/curt-testimonial-part-2.jpg",
+    },
+  ],
   ogImagePath: "/og-image.png",
   // Reuse the repository's provisioned BDC Promotions MEGA identity. The
   // homepage keeps its own sourceProvider below so website enquiries remain
