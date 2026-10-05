@@ -2,7 +2,7 @@
   "hero": {
     "eyebrow": "Full Service Automotive Marketing",
     "title": "We Help Dealerships Generate More Appointments And Sell More Cars.",
-    "description": "BDC Promotions helps dealers turn Facebook traffic, paid social campaigns, and online conversations into real showroom opportunities. We focus on fast lead response, stronger customer engagement, and more booked appointments for your sales team.",
+    "description": "BDC Promotions helps franchise and established independent dealerships turn Facebook, paid social, and online conversations into more customer appointments. We combine fast lead response with customer engagement that helps your sales team move shoppers toward the showroom.",
     "image": {
       "path": "public/images/bdc-night-showroom.webp",
       "sha256": "cd4503b4e2b4bff501e530fee7bb14d9566111e6b8e43ca768e2385720845530",
@@ -18,7 +18,7 @@
   "values": {
     "eyebrow": "Why Dealers Choose Us",
     "heading": "More conversations with real shoppers. Less wasted opportunity.",
-    "description": "Our approach is simple. We help your dealership respond faster, engage better, and create more opportunities for your team to get customers in the door.",
+    "description": "We help franchise and established independent dealerships create more customer conversations, respond faster, and turn online interest into booked appointments for the sales team.",
     "order": {
       "orderedItemIds": [
         "item_0pnxn0y38tffb1wn4pp5hzmz20",
@@ -53,7 +53,7 @@
   "services": {
     "eyebrow": "Built To Move Shoppers",
     "heading": "What We Do",
-    "description": "BDC Promotions provides automotive marketing and customer engagement services built to help dealerships create more conversations, more appointments, and more sales opportunities.",
+    "description": "BDC Promotions connects paid social campaigns and lead engagement around a clear dealership goal: more conversations, more appointments, and more opportunities for your sales team.",
     "order": {
       "orderedItemIds": [
         "item_jm8sy0qfyxwhdfy63hgpqfnxpc",
@@ -82,7 +82,7 @@
   "focus": {
     "eyebrow": "Built For Dealerships",
     "heading": "Automotive marketing that stays focused on what matters.",
-    "description": "Every dealership wants more quality opportunities. We help create those opportunities by combining attention-grabbing social media, better customer communication, and a process that moves shoppers toward your showroom.",
+    "description": "For franchise and established independent dealerships, the goal is practical: reach more active shoppers, respond while interest is high, and create more opportunities for a showroom appointment.",
     "order": {
       "orderedItemIds": [
         "item_mnb466hfgs7jnkz9kpdt2yz728",
@@ -117,7 +117,7 @@
   "process": {
     "eyebrow": "From Message To Showroom",
     "heading": "How It Works",
-    "description": "We keep the process straightforward so your dealership can get moving quickly and start creating more opportunities.",
+    "description": "We keep the process focused on your dealership, your shoppers, and the steps that move online interest toward a real appointment.",
     "order": {
       "orderedItemIds": [
         "item_kvtaz0jhyjtqhr7sp572ytsemr",
@@ -180,11 +180,11 @@
   "contact": {
     "eyebrow": "Contact BDC Promotions",
     "heading": "Ready to create more appointments for your dealership?",
-    "description": "Let’s talk about how BDC Promotions can help your store improve customer engagement, strengthen lead response, and generate more opportunities."
+    "description": "Let's talk about how BDC Promotions can help your dealership improve customer engagement, strengthen lead response, and create more appointment opportunities."
   },
   "seo": {
     "title": "Automotive Marketing Agency for Dealerships | BDC Promotions",
-    "description": "BDC Promotions helps automotive dealerships generate more qualified leads and appointments through paid social, fast lead response, and customer engagement.",
+    "description": "BDC Promotions helps automotive dealerships generate conversations and appointments through paid social, fast lead response, and customer engagement.",
     "canonical": "https://bdcpromotions.com/",
     "indexing": {
       "index": true,
