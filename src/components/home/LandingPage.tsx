@@ -85,11 +85,11 @@ export function LandingPage({
         />
         <ValueGrid content={content.values} />
         <ServicesSection content={content.services} />
+        <ContactSection content={content.contact} identity={identity} />
         <FocusSection content={content.focus} />
         <ProcessSection content={content.process} />
         <InsightsSection content={content.insights} />
         <TestimonialSection content={content.testimonial} />
-        <ContactSection content={content.contact} identity={identity} />
       </main>
       <SiteFooter identity={identity} />
     </div>

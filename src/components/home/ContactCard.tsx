@@ -9,7 +9,7 @@ interface ContactCardProps {
   identity: BrandIdentity;
 }
 
-const DEMO_BOOKING_URL =
+const STRATEGY_CALL_BOOKING_URL =
   "https://calendly.com/justins-bdc-promotions/bdc-promotions-strategy-call";
 
 export function ContactCard({ identity }: ContactCardProps): ReactElement {
@@ -19,7 +19,8 @@ export function ContactCard({ identity }: ContactCardProps): ReactElement {
       <div className="contact-card__heading">
         <p>Tell us how to reach you</p>
         <span>
-          Complete the form and our team will follow up about your dealership.
+          Share your details so we can discuss your dealership’s goals, or book
+          a strategy call with Justin below.
         </span>
       </div>
       <LeadForm
@@ -33,11 +34,11 @@ export function ContactCard({ identity }: ContactCardProps): ReactElement {
       <div className="contact-card__actions">
         <a
           className="button"
-          href={DEMO_BOOKING_URL}
+          href={STRATEGY_CALL_BOOKING_URL}
           target="_blank"
           rel="noopener noreferrer"
         >
-          Book a Demo
+          Book a Strategy Call with Justin
         </a>
         <a
           className="button button--ghost"
