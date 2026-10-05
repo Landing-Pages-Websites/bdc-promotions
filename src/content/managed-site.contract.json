@@ -340,8 +340,116 @@
           ]
         },
         {
+          "id": "section_m94r4bvkaampx9cmfqyx2gqs4w",
+          "presentation": { "name": "Testimonial", "description": null, "group": "Home", "order": 7, "example": null },
+          "fields": [
+            {
+              "id": "field_s7njamy9v33j3bq2yj7hnbb70w",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/testimonial/eyebrow" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Testimonial eyebrow", "description": null, "group": "Testimonial", "order": 1, "example": null },
+              "semantic": "label",
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_3q97zjh8kh59x2gsaqba9wpjcr",
+              "scope": "page",
+              "type": "heading_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/testimonial/heading" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Testimonial heading", "description": null, "group": "Testimonial", "order": 2, "example": null },
+              "semanticLevel": 2,
+              "constraints": { "minLength": 1, "maxLength": 100, "newlines": "forbid" }
+            },
+            {
+              "id": "field_bcxyqn2v3bantewchcc6yqg3f8",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": ["text.edit"],
+              "resolver": { "kind": "json_pointer", "path": "src/content/pages/home.json", "pointer": "/testimonial/description" },
+              "usages": [{ "pageId": "page_00000000000000000000000020", "itemId": null }],
+              "presentation": { "name": "Testimonial description", "description": null, "group": "Testimonial", "order": 3, "example": null },
+              "semantic": "body",
+              "constraints": { "minLength": 1, "maxLength": 400, "newlines": "allow" }
+            },
+            {
+              "id": "field_nv8m9js5hg6ma85gwepsc8pf84",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": [
+                "text.edit"
+              ],
+              "resolver": {
+                "kind": "json_pointer",
+                "path": "src/content/pages/home.json",
+                "pointer": "/testimonial/partOneLabel"
+              },
+              "usages": [
+                {
+                  "pageId": "page_00000000000000000000000020",
+                  "itemId": null
+                }
+              ],
+              "presentation": {
+                "name": "Part 1 label",
+                "description": null,
+                "group": "Testimonial",
+                "order": 4,
+                "example": null
+              },
+              "semantic": "label",
+              "constraints": {
+                "minLength": 1,
+                "maxLength": 100,
+                "newlines": "forbid"
+              }
+            },
+            {
+              "id": "field_8rq9ncte5te8mknhqg7kgsdxbc",
+              "scope": "page",
+              "type": "plain_text",
+              "classification": "customer_editable",
+              "capabilities": [
+                "text.edit"
+              ],
+              "resolver": {
+                "kind": "json_pointer",
+                "path": "src/content/pages/home.json",
+                "pointer": "/testimonial/partTwoLabel"
+              },
+              "usages": [
+                {
+                  "pageId": "page_00000000000000000000000020",
+                  "itemId": null
+                }
+              ],
+              "presentation": {
+                "name": "Part 2 label",
+                "description": null,
+                "group": "Testimonial",
+                "order": 5,
+                "example": null
+              },
+              "semantic": "label",
+              "constraints": {
+                "minLength": 1,
+                "maxLength": 100,
+                "newlines": "forbid"
+              }
+            }
+          ]
+        },
+        {
           "id": "section_00000000000000000000000050",
-          "presentation": { "name": "Contact", "description": null, "group": "Home", "order": 7, "example": null },
+          "presentation": { "name": "Contact", "description": null, "group": "Home", "order": 8, "example": null },
           "fields": [
             {
               "id": "field_w4gr22jkbbd5yvbqb31dyrcezr",

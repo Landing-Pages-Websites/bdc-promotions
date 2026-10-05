@@ -321,6 +321,15 @@ export const managedHome = Object.freeze({
     fieldId: faq.fieldId,
     items: faq.items,
   }),
+  testimonial: Object.freeze({
+    eyebrow: text("/testimonial/eyebrow", "plain_text"),
+    heading: text("/testimonial/heading", "heading_text"),
+    description: text("/testimonial/description", "plain_text"),
+    videoLabels: Object.freeze([
+      text("/testimonial/partOneLabel", "plain_text"),
+      text("/testimonial/partTwoLabel", "plain_text"),
+    ]),
+  }),
   contact: Object.freeze({
     eyebrow: text("/contact/eyebrow", "plain_text"),
     heading: text("/contact/heading", "heading_text"),
