@@ -177,6 +177,13 @@
       }
     ]
   },
+  "testimonial": {
+    "eyebrow": "Customer Testimonial",
+    "heading": "Hear From Curt",
+    "description": "Watch Curt share his experience with BDC Promotions in this two-part customer testimonial.",
+    "partOneLabel": "Curt’s Testimonial — Part 1",
+    "partTwoLabel": "Curt’s Testimonial — Part 2"
+  },
   "contact": {
     "eyebrow": "Contact BDC Promotions",
     "heading": "Ready to create more appointments for your dealership?",
