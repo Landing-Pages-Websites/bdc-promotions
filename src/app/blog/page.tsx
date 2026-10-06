@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import PostCard from "@/components/blog/PostCard";
@@ -27,8 +28,50 @@ export default function BlogIndexPage(): ReactElement {
       <JsonLd data={blogIndexSchema} />
       <article className="mx-auto w-full max-w-2xl px-6 py-16">
         <h1 className="text-3xl font-bold">Blog</h1>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-          Tips, updates, and practical advice from {siteConfig.businessName}.
+        <p className="mt-2 text-[color:var(--muted)]">
+          Explore practical guides for dealership marketing, lead response, CRM workflows, customer retention, and paid social. Start with the{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="/blog/lead-response-optimization-automotive-dealerships"
+          >
+            lead response
+          </Link>{" "}
+          or{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="/blog/dealership-messenger-lead-workflow"
+          >
+            Messenger workflow
+          </Link>{" "}
+          guides when you are reviewing follow-up, choose the{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="/blog/automotive-dealership-crm-buyer-guide"
+          >
+            CRM
+          </Link>{" "}
+          or{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="/blog/automotive-dealership-customer-retention"
+          >
+            retention
+          </Link>{" "}
+          guides when you are reviewing customer handoffs, or use{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="/blog/car-dealership-marketing-agency"
+          >
+            dealership marketing
+          </Link>{" "}
+          and{" "}
+          <Link
+            className="underline underline-offset-4"
+            href="/blog/paid-social-advertising-roi-automotive-dealerships"
+          >
+            paid social
+          </Link>{" "}
+          resources when you are evaluating broader campaign strategy.
         </p>
         <section aria-label="Articles" className="mt-10">
           {posts.map((post) => (
