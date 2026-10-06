@@ -28,7 +28,7 @@ export default function BlogIndexPage(): ReactElement {
       <JsonLd data={blogIndexSchema} />
       <article className="mx-auto w-full max-w-2xl px-6 py-16">
         <h1 className="text-3xl font-bold">Blog</h1>
-        <p className="mt-2 text-[13px] leading-4 text-[color:var(--muted)] sm:text-sm sm:leading-5">
+        <p className="mt-2 text-xs leading-3 text-[color:var(--muted)] sm:text-sm sm:leading-5">
           Explore practical guides for dealership marketing, lead response, CRM workflows, customer retention, and paid social. Start with the{" "}
           <Link
             className="underline underline-offset-4"
