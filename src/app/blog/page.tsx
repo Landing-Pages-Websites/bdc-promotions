@@ -28,7 +28,7 @@ export default function BlogIndexPage(): ReactElement {
       <JsonLd data={blogIndexSchema} />
       <article className="mx-auto w-full max-w-2xl px-6 py-16">
         <h1 className="text-3xl font-bold">Blog</h1>
-        <p className="mt-2 text-[color:var(--muted)]">
+        <p className="mt-2 text-[13px] leading-4 text-[color:var(--muted)] sm:text-sm sm:leading-5">
           Explore practical guides for dealership marketing, lead response, CRM workflows, customer retention, and paid social. Start with the{" "}
           <Link
             className="underline underline-offset-4"
@@ -73,7 +73,7 @@ export default function BlogIndexPage(): ReactElement {
           </Link>{" "}
           resources when you are evaluating broader campaign strategy.
         </p>
-        <section aria-label="Articles" className="mt-10">
+        <section aria-label="Articles" className="mt-6 sm:mt-8">
           {posts.map((post) => (
             <PostCard key={post.slug} post={post} />
           ))}
