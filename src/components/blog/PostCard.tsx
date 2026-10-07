@@ -11,7 +11,7 @@ export default function PostCard({ post }: PostCardProps): ReactElement {
   // The text the author wrote is still shown either way: a date we cannot
   // encode is a reason to drop the attribute, not to hide the date.
   const publishedIso = publishedDate(post)?.toISOString() ?? null;
-  const dateClassName = "text-sm text-neutral-500";
+  const dateClassName = "text-sm text-[color:var(--muted)]";
   return (
     <article className="border-b border-neutral-200 py-8 last:border-b-0">
       {post.date && publishedIso ? (
@@ -28,7 +28,7 @@ export default function PostCard({ post }: PostCardProps): ReactElement {
         </Link>
       </h2>
       {post.description ? (
-        <p className="mt-2 leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="mt-2 leading-relaxed text-[color:var(--muted)]">
           {post.description}
         </p>
       ) : null}

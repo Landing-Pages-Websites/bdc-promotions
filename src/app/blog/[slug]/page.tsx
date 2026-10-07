@@ -59,6 +59,12 @@ export default async function BlogArticlePage({
   // datePublished, and an invalid dateTime attribute is worse than no <time>.
   // The date the author wrote is still shown either way.
   const publishedIso = publishedDate(post)?.toISOString() ?? null;
+  const isContrastTarget =
+    post.slug === "automotive-dealership-customer-retention" ||
+    post.slug === "facebook-advertising-for-car-dealerships";
+  const metadataTextClassName = isContrastTarget
+    ? "text-sm text-[color:var(--muted)]"
+    : "text-sm text-neutral-500";
   return (
     <article className="mx-auto w-full max-w-2xl px-6 py-16">
       {publishedIso ? (
@@ -72,7 +78,7 @@ export default async function BlogArticlePage({
           })}
         />
       ) : null}
-      <p className="text-sm text-neutral-500">
+      <p className={metadataTextClassName}>
         <Link href="/blog" className="underline">
           ← All articles
         </Link>
@@ -89,7 +95,7 @@ export default async function BlogArticlePage({
       </p>
       <h1 className="mt-6 text-3xl font-bold">{post.title}</h1>
       {post.author ? (
-        <p className="mt-2 text-sm text-neutral-500">By {post.author}</p>
+        <p className={`mt-2 ${metadataTextClassName}`}>By {post.author}</p>
       ) : null}
       {post.image ? (
         <div className="mt-8">
