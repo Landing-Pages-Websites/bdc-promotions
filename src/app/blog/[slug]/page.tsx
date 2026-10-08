@@ -5,13 +5,17 @@ import type { ReactElement } from "react";
 import MarkdownBody from "@/components/blog/MarkdownBody";
 import BlogImage from "@/components/blog/BlogImage";
 import { JsonLd } from "@/components/schema/JsonLd";
-import { buildArticleSchema } from "@/components/schema/builders";
+import {
+  buildArticleSchema,
+  buildFaqSchema,
+} from "@/components/schema/builders";
 import {
   formatPublishedDate,
   getPublishedPost,
   listPublishedPosts,
   publishedDate,
 } from "@/lib/blog";
+import { blogFaqs } from "@/lib/blog-faq";
 import { buildMetadata } from "@/lib/seo";
 
 interface ArticleParams {
@@ -53,6 +57,9 @@ export default async function BlogArticlePage({
   const post = getPublishedPost(slug);
   if (!post) notFound();
   const path = `/blog/${post.slug}`;
+  const faqItems = Object.prototype.hasOwnProperty.call(blogFaqs, post.slug)
+    ? blogFaqs[post.slug as keyof typeof blogFaqs]
+    : undefined;
   // The Article schema and the <time> element are both machine-readable, so
   // both need a date that actually parses rather than whatever text the
   // frontmatter carried: Google rejects a rich result with a bad
@@ -68,15 +75,18 @@ export default async function BlogArticlePage({
   return (
     <article className="mx-auto w-full max-w-2xl px-6 py-16">
       {publishedIso ? (
-        <JsonLd
-          data={buildArticleSchema({
-            headline: post.title,
-            description: post.description || post.title,
-            path,
-            datePublished: publishedIso,
-            imagePath: post.image ?? undefined,
-          })}
-        />
+        <>
+          <JsonLd
+            data={buildArticleSchema({
+              headline: post.title,
+              description: post.description || post.title,
+              path,
+              datePublished: publishedIso,
+              imagePath: post.image ?? undefined,
+            })}
+          />
+          {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
+        </>
       ) : null}
       <p className={metadataTextClassName}>
         <Link href="/blog" className="underline">
