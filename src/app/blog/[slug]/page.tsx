@@ -5,13 +5,17 @@ import type { ReactElement } from "react";
 import MarkdownBody from "@/components/blog/MarkdownBody";
 import BlogImage from "@/components/blog/BlogImage";
 import { JsonLd } from "@/components/schema/JsonLd";
-import { buildArticleSchema } from "@/components/schema/builders";
+import {
+  buildArticleSchema,
+  buildFaqSchema,
+} from "@/components/schema/builders";
 import {
   formatPublishedDate,
   getPublishedPost,
   listPublishedPosts,
   publishedDate,
 } from "@/lib/blog";
+import { blogFaqBySlug } from "@/lib/blog-faq";
 import { buildMetadata } from "@/lib/seo";
 
 interface ArticleParams {
@@ -59,6 +63,7 @@ export default async function BlogArticlePage({
   // datePublished, and an invalid dateTime attribute is worse than no <time>.
   // The date the author wrote is still shown either way.
   const publishedIso = publishedDate(post)?.toISOString() ?? null;
+  const faqItems = blogFaqBySlug[post.slug];
   const isContrastTarget =
     post.slug === "automotive-dealership-customer-retention" ||
     post.slug === "facebook-advertising-for-car-dealerships";
@@ -78,6 +83,7 @@ export default async function BlogArticlePage({
           })}
         />
       ) : null}
+      {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
       <p className={metadataTextClassName}>
         <Link href="/blog" className="underline">
           ← All articles
