@@ -1,0 +1,407 @@
+.page {
+  --navy: #020716;
+  --panel: #0a1633;
+  --blue: #0059fc;
+  --paper: #f4f7fc;
+  --muted: #a9b3c7;
+  --mint: #00f5c8;
+  background: var(--navy);
+  color: var(--paper);
+  font-family: var(--services-body), Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  font-synthesis: none;
+  line-height: 1.6;
+}
+
+.page h1,
+.page h2,
+.page h3 {
+  margin: 0;
+  font-family: var(--services-heading), "Arial Narrow", sans-serif;
+  font-weight: 700;
+  line-height: 1.08;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.page p,
+.page dl,
+.page dd {
+  margin: 0;
+}
+
+.page a {
+  text-underline-offset: 5px;
+}
+
+.page a:focus-visible {
+  outline: 3px solid var(--mint);
+  outline-offset: 5px;
+}
+
+.page [id] {
+  scroll-margin-top: 24px;
+}
+
+.container {
+  width: min(1376px, calc(100% - 64px));
+  margin-inline: auto;
+}
+
+.header {
+  min-height: 124px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--panel);
+}
+
+.brand {
+  display: block;
+  width: 180px;
+}
+
+.brand img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.navigation {
+  display: flex;
+  gap: 32px;
+  font-size: 16px;
+}
+
+.navigation a,
+.headerCall {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+.navigation a[aria-current="page"] {
+  color: var(--mint);
+  text-decoration: underline;
+}
+
+.navigation a:hover,
+.headerCall:hover,
+.contactDetails a:hover {
+  color: var(--mint);
+  text-decoration: underline;
+}
+
+.headerCall {
+  justify-self: end;
+  padding: 10px 18px;
+  border: 1px solid var(--muted);
+  font-size: 16px;
+}
+
+.selector {
+  padding-top: 56px;
+}
+
+.page .eyebrow {
+  margin-bottom: 16px;
+  color: var(--mint);
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.selector h1 {
+  max-width: 1000px;
+  font-size: clamp(44px, 5.5vw, 80px);
+}
+
+.page .support {
+  margin-top: 24px;
+}
+
+.page .overview {
+  max-width: 810px;
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.compareLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  margin-top: 12px;
+  font-size: 16px;
+  text-decoration: underline;
+}
+
+.compareLink span,
+.selectorLinks a > span:last-child,
+.primary span,
+.secondary span {
+  color: var(--mint);
+}
+
+.compareLink:hover {
+  color: var(--mint);
+}
+
+.selectorLinks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px;
+  margin-top: 32px;
+  padding-block: 24px;
+  border-top: 1px solid var(--muted);
+}
+
+.selectorLinks a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  font-size: 16px;
+}
+
+.selectorLinks a:hover span:first-child {
+  text-decoration: underline;
+}
+
+.directory {
+  padding-block: 56px;
+  background: var(--paper);
+  color: var(--navy);
+}
+
+.directory h2 {
+  font-size: clamp(36px, 3.2vw, 48px);
+}
+
+.entries {
+  margin-top: 32px;
+  border-top: 2px solid var(--blue);
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 48px;
+  align-items: start;
+  padding-block: 28px;
+  border-bottom: 1px solid var(--muted);
+}
+
+.entry h3 {
+  max-width: 440px;
+  font-size: clamp(28px, 2.5vw, 36px);
+  text-wrap: pretty;
+}
+
+.entry p {
+  max-width: 650px;
+  color: var(--panel);
+}
+
+.comparison {
+  padding-block: 40px;
+  background: var(--paper);
+  color: var(--navy);
+  border-top: 1px solid var(--muted);
+}
+
+.compareLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.6fr) minmax(0, 1.4fr);
+  gap: 48px;
+}
+
+.comparison h2 {
+  font-size: 32px;
+}
+
+.comparison p {
+  margin-top: 12px;
+  font-size: 16px;
+}
+
+.compareRows > div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 24px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--muted);
+  font-size: 16px;
+}
+
+.compareRows > div:first-child {
+  padding-top: 0;
+}
+
+.compareRows > div:last-child {
+  border-bottom: 0;
+}
+
+.compareRows dt {
+  color: var(--blue);
+}
+
+.contact {
+  padding-block: 64px;
+}
+
+.contactLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 80px;
+  align-items: center;
+}
+
+.contact h2 {
+  max-width: 650px;
+  font-size: clamp(36px, 4vw, 56px);
+}
+
+.contact p {
+  max-width: 590px;
+  margin-top: 20px;
+  color: var(--muted);
+}
+
+.contactActions {
+  display: grid;
+  gap: 12px;
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 14px 18px;
+  font-size: 16px;
+}
+
+.primary {
+  background: var(--blue);
+}
+
+.secondary {
+  border: 1px solid var(--muted);
+}
+
+.primary:hover,
+.secondary:hover {
+  text-decoration: underline;
+}
+
+.contactDetails {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  font-size: 16px;
+}
+
+.contactDetails a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .selectorLinks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 32px;
+  }
+
+  .compareLayout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .contactLayout {
+    gap: 32px;
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    font-size: 16px;
+  }
+
+  .container {
+    width: calc(100% - 40px);
+  }
+
+  .header {
+    grid-template-columns: 1fr auto;
+    gap: 0 16px;
+    padding-block: 8px;
+  }
+
+  .brand {
+    width: 160px;
+  }
+
+  .navigation {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .headerCall {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .selector {
+    padding-top: 40px;
+  }
+
+  .selector h1 {
+    font-size: clamp(40px, 10.8vw, 64px);
+  }
+
+  .selectorLinks {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: 24px;
+    padding-block: 12px;
+  }
+
+  .selectorLinks a {
+    min-height: 56px;
+    padding-block: 10px;
+  }
+
+  .directory,
+  .contact {
+    padding-block: 40px;
+  }
+
+  .entry,
+  .contactLayout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .entry {
+    padding-block: 24px;
+  }
+
+  .contactLayout {
+    gap: 28px;
+  }
+
+  .compareRows > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
