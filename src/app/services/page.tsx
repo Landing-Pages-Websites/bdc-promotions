@@ -5,6 +5,10 @@ import Link from "next/link";
 import type { ReactElement } from "react";
 
 import { buildMetadata } from "@/lib/seo";
+import OpeningSection from "./sections/OpeningSection";
+import DirectorySection from "./sections/DirectorySection";
+import CompareSection from "./sections/CompareSection";
+import ContactSection from "./sections/ContactSection";
 import styles from "./services.module.css";
 
 const barlow = localFont({
@@ -95,68 +99,13 @@ export default function ServicesPage(): ReactElement {
       </header>
 
       <main>
-        <section className={`${styles.container} ${styles.selector}`} aria-labelledby="services-title">
-          <p className={styles.eyebrow}>Automotive marketing</p>
-          <h1 id="services-title">Services for the path from scroll to showroom</h1>
-          <p className={styles.support}>Choose the pieces your dealership needs or connect the full operating lane.</p>
-          <p className={styles.overview}>{overview}</p>
-          <a className={styles.compareLink} href="#compare">Compare the services <span aria-hidden="true">↓</span></a>
-          <nav className={styles.selectorLinks} aria-label="Explore services">
-            {services.map((service) => (
-              <a key={service.id} href={`#${service.id}`}>
-                <span>{service.name}</span><span aria-hidden="true">↓</span>
-              </a>
-            ))}
-          </nav>
-        </section>
+        <OpeningSection services={services} overview={overview} />
 
-        <section className={styles.directory} aria-labelledby="directory-title">
-          <div className={styles.container}>
-            <h2 id="directory-title">Choose your support</h2>
-            <div className={styles.entries}>
-              {services.map((service) => (
-                <article className={styles.entry} key={service.id} id={service.id} aria-labelledby={`${service.id}-title`}>
-                  <h3 id={`${service.id}-title`}>{service.name}</h3>
-                  <p>{service.description}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+        <DirectorySection services={services} />
 
-        <section className={styles.comparison} id="compare" aria-labelledby="compare-title">
-          <div className={`${styles.container} ${styles.compareLayout}`}>
-            <div>
-              <h2 id="compare-title">Compare the services</h2>
-              <p>See where each service fits.</p>
-            </div>
-            <dl className={styles.compareRows}>
-              {services.map((service) => (
-                <div key={service.id}>
-                  <dt>{service.name}</dt>
-                  <dd>{service.role}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
+        <CompareSection services={services} />
 
-        <section className={styles.contact} aria-labelledby="contact-title">
-          <div className={`${styles.container} ${styles.contactLayout}`}>
-            <div>
-              <h2 id="contact-title">Find the right mix for your dealership</h2>
-              <p>Talk through the creative, media, follow-up and appointment support your store needs.</p>
-            </div>
-            <div className={styles.contactActions}>
-              <Link className={styles.primary} href="/contact">Contact us about your dealership <span aria-hidden="true">→</span></Link>
-              <a className={styles.secondary} href="https://calendly.com/justins-bdc-promotions/bdc-promotions-strategy-call">Book a Strategy Call <span aria-hidden="true">↗</span></a>
-              <div className={styles.contactDetails}>
-                <a href={phoneHref}>{phone}</a>
-                <a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com</a>
-              </div>
-            </div>
-          </div>
-        </section>
+        <ContactSection phone={phone} phoneHref={phoneHref} />
       </main>
     </div>
   );

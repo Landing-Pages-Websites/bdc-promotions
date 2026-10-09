@@ -6,6 +6,7 @@ import { formatPublishedDate, getPublishedPost, type BlogPost } from "@/lib/blog
 import { InteriorLinks, InteriorPage } from "./InteriorPage";
 import SelectedArticleBody from "./SelectedArticleBody";
 import styles from "./selected-article.module.css";
+import { selectedArticleImageSrc } from "./selected-article-images";
 
 const readingSlugs = [
   "welcome",
@@ -52,7 +53,7 @@ export default function SelectedArticlePage({ post, publishedIso, children }: {
             </div>
             {post.image ? (
               <div className={styles.image}>
-                <BlogImage src={post.image} alt={post.imageAlt ?? post.title} variant="banner" priority />
+                <BlogImage src={selectedArticleImageSrc(post.slug, post.image)} alt={post.imageAlt ?? post.title} variant="banner" priority />
               </div>
             ) : null}
             <div className={styles.body} data-article-body>

@@ -103,6 +103,7 @@
 
 .selector {
   padding-top: 56px;
+  padding-bottom: 16px;
 }
 
 .page .eyebrow {
@@ -172,7 +173,7 @@
 }
 
 .directory {
-  padding-block: 56px;
+  padding-block: 56px 48px;
   background: var(--paper);
   color: var(--navy);
 }
@@ -363,6 +364,7 @@
 
   .selector {
     padding-top: 40px;
+    padding-bottom: 12px;
   }
 
   .selector h1 {
@@ -384,6 +386,10 @@
   .directory,
   .contact {
     padding-block: 40px;
+  }
+
+  .directory {
+    padding-bottom: 24px;
   }
 
   .entry,
