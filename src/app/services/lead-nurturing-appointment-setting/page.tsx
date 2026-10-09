@@ -30,6 +30,7 @@ export default function LeadNurturingPage(): ReactElement {
         <div className={styles.split}>
           <div className={styles.stack}>
             <p>A missed message or inconsistent follow-up can leave a shopper’s interest unanswered. Nurturing connects that first response with a conversation about the next step.</p>
+            <p>Facebook Messenger response, BDC staff and AI-supported nurturing help continue shopper conversations.</p>
             <p>BDC Promotions combines BDC staff with AI-supported tools. The service centers on shopper conversations and appointment scheduling, with the human and tool responsibilities defined around your dealership’s needs.</p>
             <Link className={styles.textLink} href="/blog/welcome">Read why speed to lead matters <span aria-hidden="true">→</span></Link>
           </div>
@@ -66,6 +67,8 @@ export default function LeadNurturingPage(): ReactElement {
       <RelatedLinks title="Connect campaigns and follow-up" links={[
         { href: "/services/lead-generation", label: "Lead generation" },
         { href: "/services/automotive-ad-creative", label: "Automotive ad creative" },
+        { href: "/process", label: "Process" },
+        { href: "/pricing", label: "Service Options" },
       ]} />
     </ServicePage>
   );

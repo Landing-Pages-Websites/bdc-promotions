@@ -78,6 +78,7 @@ export default function InventoryAdvertisingPage(): ReactElement {
       <RelatedLinks title="Build around your inventory" links={[
         { href: "/services/automotive-ad-creative", label: "Automotive ad creative" },
         { href: "/services/lead-generation", label: "Lead generation" },
+        { href: "/pricing", label: "Service Options" },
       ]} />
     </ServicePage>
   );

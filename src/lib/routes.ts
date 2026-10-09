@@ -30,4 +30,14 @@ export const siteRoutes: RouteEntry[] = [
   { path: "/blog", title: "Blog", priority: 0.7 },
   { path: "/about/", title: "About BDC Promotions", priority: 0.5 },
   // Builders: append new pages below this line.
+  { path: "/services", title: "Automotive Marketing Services" },
+  { path: "/services/automotive-ad-creative", title: "Automotive Ad Creative for Car Dealerships" },
+  { path: "/services/lead-generation", title: "Automotive Dealership Lead Generation" },
+  { path: "/services/lead-nurturing-appointment-setting", title: "Dealership Lead Nurturing & Appointment Setting" },
+  { path: "/services/inventory-advertising", title: "Automotive Inventory Ads & Google Vehicle Listing Ads" },
+  { path: "/process", title: "How BDC Promotions Moves Leads Toward the Showroom" },
+  { path: "/work", title: "Automotive Advertising Work" },
+  { path: "/testimonials", title: "Dealership Testimonials" },
+  { path: "/pricing", title: "Service Options" },
+  { path: "/contact", title: "Contact BDC Promotions" },
 ];

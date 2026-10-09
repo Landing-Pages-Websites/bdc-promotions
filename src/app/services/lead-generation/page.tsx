@@ -71,6 +71,8 @@ export default function LeadGenerationPage(): ReactElement {
       <RelatedLinks title="Connect the next step" links={[
         { href: "/services/lead-nurturing-appointment-setting", label: "Lead nurturing & appointment setting" },
         { href: "/services/inventory-advertising", label: "Inventory advertising" },
+        { href: "/process", label: "Process" },
+        { href: "/pricing", label: "Service Options" },
       ]} />
     </ServicePage>
   );

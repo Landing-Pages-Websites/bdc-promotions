@@ -89,7 +89,7 @@ export function ServicePage({
           <Link href="/work">Work</Link>
           <Link href="/about">About</Link>
           <Link href="/blog">Insights</Link>
-          <Link href="/pricing">Packages</Link>
+          <Link href="/pricing">Service Options</Link>
           <Link href="/testimonials">Testimonials</Link>
           <Link href="/contact">Contact</Link>
         </nav>
