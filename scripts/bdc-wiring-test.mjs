@@ -14,8 +14,10 @@ import { reviewRoutes } from "./bdc-review-routes.mjs";
 
 const approved = "1f24ca2fbebd14dedbaf3cd6b56fdc660a22b02f";
 const home = "d061433edbfd72e99c9896b05142e2238b4601e2";
+const r1 = "bc1b3dff3e1dad9f058f76000409bf102b72c67f";
 const article = "src/app/blog/[slug]/page.tsx";
 const legal = "src/components/legal/LegalPageLayout.tsx";
+const navigation = "src/components/navigation/PrimarySiteNavigation.tsx";
 const read = (path) => readFileSync(path, "utf8");
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 const original = (path, ref = approved) => git("show", `${ref}:${path}`);
@@ -24,9 +26,11 @@ const routes = reviewRoutes();
 
 // Compare all tracked app/content/assets/package bytes, not just handpicked UI.
 test("approved source is untouched outside the exact wiring scope", () => {
-  const allowed = new Set([article, legal, "src/lib/routes.ts", "src/app/sitemap.ts", "src/components/navigation/PrimarySiteNavigation.tsx"]);
-  const changed = git("diff", "--name-only", approved, "--", "src", "content", "public", "packages", "package.json", "package-lock.json", "next.config.ts").trim().split("\n").filter(Boolean);
+  const allowed = new Set([article, legal, navigation, "src/lib/routes.ts", "scripts/bdc-review-routes.mjs", "scripts/bdc-wiring-test.mjs"]);
+  const changed = git("diff", "--name-only", approved).trim().split("\n").filter(Boolean);
   assert.deepEqual(changed.filter((path) => !allowed.has(path)), []);
+  const r2Allowed = new Set([article, legal, navigation, "scripts/bdc-wiring-test.mjs"]);
+  assert.deepEqual(git("diff", "--name-only", r1).trim().split("\n").filter((path) => path && !r2Allowed.has(path)), []);
   const homePaths = ["src/app/page.tsx", "src/app/layout.tsx", "src/components/home", "src/content", "src/site.config.ts", "src/app/globals.css", "src/app/styles"];
   assert.equal(git("diff", home, "--", ...homePaths), "");
 });
@@ -40,9 +44,40 @@ test("all 14 published Markdown records retain their exact SHA-256 bytes", () =>
 
 test("selected article rendering, params, imports and legacy/legal prose are preserved", () => {
   const stripNavigationImport = (source) => source.replace(/^import \{ PrimarySiteNavigation \}.*\n/m, "");
-  assert.equal(stripNavigationImport(read(article)).split("  const isContrastTarget =")[0], original(article).split("  const isContrastTarget =")[0]);
-  const articleMarkup = (source) => source.match(/<article[\s\S]*<\/article>/)[0];
-  for (const path of [article, legal]) assert.equal(articleMarkup(read(path)), articleMarkup(original(path)), path);
+  const stripNavigation = (source) => stripNavigationImport(source)
+    .replace("    <PrimarySiteNavigation>\n", "")
+    .replace("    </PrimarySiteNavigation>\n", "");
+  // Construct the ONLY authorized contrast changes from the approved source.
+  // Compare whole modules: prose, metadata, authorship, body/image expressions,
+  // selected branches, and every non-color class remain strict byte comparisons.
+  const replaceOnce = (source, before, after) => {
+    assert.equal(source.split(before).length, 2, `expected one occurrence: ${before}`);
+    return source.replace(before, after);
+  };
+  const originalMetadata = `  const isContrastTarget =
+    post.slug === "automotive-dealership-customer-retention" ||
+    post.slug === "facebook-advertising-for-car-dealerships";
+  const metadataTextClassName = isContrastTarget
+    ? "text-sm text-[color:var(--muted)]"
+    : "text-sm text-neutral-500";`;
+  const expectedArticle = replaceOnce(original(article), originalMetadata,
+    '  const metadataTextClassName = "text-sm text-[color:var(--muted)]";');
+  let expectedLegal = replaceOnce(original(legal),
+    'className="mt-2 text-sm text-neutral-500"',
+    'className="mt-2 text-sm text-[color:var(--muted)]"');
+  expectedLegal = replaceOnce(expectedLegal,
+    'className="mt-2 leading-relaxed text-neutral-700 dark:text-neutral-300"',
+    'className="mt-2 leading-relaxed text-[color:var(--muted)]"');
+  assert.equal(stripNavigation(read(article)), expectedArticle);
+  assert.equal(stripNavigation(read(legal)), expectedLegal);
+  assert.equal(stripNavigationImport(read(article)).split("  const metadataTextClassName =")[0], original(article).split("  const isContrastTarget =")[0]);
+  const shell = read(navigation);
+  assert.match(shell, /<a href="#page-content" className="skip-link">Skip page navigation<\/a>/);
+  assert.match(shell, /<main id="page-content" tabIndex=\{-1\}>\{children\}<\/main>/);
+  assert.ok(shell.indexOf('href="#page-content"') < shell.indexOf("<header"));
+  assert.ok(shell.indexOf("</header>") < shell.indexOf('<main id="page-content"'));
+  assert.ok(!shell.includes('id="main-content"'));
+  assert.doesNotMatch(shell, /use client|tabIndex=\{?["']?[1-9]/);
 });
 
 test("registry, review routes and sitemap agree on 31 unique canonical paths", () => {
@@ -82,11 +117,23 @@ test("production HTML: routes, bridge, sitemap, legal/article links and retired 
   const selected = ["welcome", "car-dealership-marketing-agency", "automotive-dealership-crm-buyer-guide"];
   const wired = ["/privacy-policy", "/terms", "/cookie-policy", ...listPublishedPosts().filter(({ slug }) => !selected.includes(slug)).map(({ slug }) => `/blog/${slug}`)];
   for (const path of wired) {
-    assert.equal((pages.get(path).match(/<main(?:\s|>)/g) ?? []).length, 1, path);
-    assert.ok(pages.get(path).includes('aria-label="Primary site pages"'), path);
-    assert.ok(hrefs(pages.get(path)).includes("/"), path);
+    const html = pages.get(path);
+    assert.equal((html.match(/<main(?:\s|>)/g) ?? []).length, 1, path);
+    assert.equal((html.match(/\bid="main-content"/g) ?? []).length, 1, path);
+    assert.equal((html.match(/\bid="page-content"/g) ?? []).length, 1, path);
+    assert.match(html, /<main id="page-content" tabindex="-1">/);
+    assert.match(html, /<a href="#page-content" class="skip-link">Skip page navigation<\/a>/);
+    assert.ok(html.indexOf('href="#page-content"') < html.indexOf('<nav aria-label="Home and articles"'), path);
+    assert.ok(html.indexOf("</header>") < html.indexOf('<main id="page-content"'), path);
+    assert.doesNotMatch(html, /\btabindex="[1-9]\d*"/);
+    assert.ok(html.includes('aria-label="Primary site pages"'), path);
+    assert.ok(hrefs(html).includes("/"), path);
   }
-  for (const path of ["/", ...selected.map((slug) => `/blog/${slug}`)]) assert.ok(!pages.get(path).includes('aria-label="Primary site pages"'), path);
+  for (const path of ["/", ...selected.map((slug) => `/blog/${slug}`)]) {
+    assert.ok(!pages.get(path).includes('aria-label="Primary site pages"'), path);
+    assert.ok(!pages.get(path).includes('id="page-content"'), path);
+    assert.ok(!hrefs(pages.get(path)).includes("#page-content"), path);
+  }
   const lp = await (await fetch(new URL("/lp", base))).text();
   assert.ok(!lp.includes('aria-label="Primary site pages"'));
   for (const path of ["/variant-a", "/variant-b", "/variant-c"]) {

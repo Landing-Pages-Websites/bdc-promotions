@@ -88,12 +88,7 @@ export default async function BlogArticlePage({
       </SelectedArticlePage>
     );
   }
-  const isContrastTarget =
-    post.slug === "automotive-dealership-customer-retention" ||
-    post.slug === "facebook-advertising-for-car-dealerships";
-  const metadataTextClassName = isContrastTarget
-    ? "text-sm text-[color:var(--muted)]"
-    : "text-sm text-neutral-500";
+  const metadataTextClassName = "text-sm text-[color:var(--muted)]";
   return (
     <PrimarySiteNavigation>
     <article className="mx-auto w-full max-w-2xl px-6 py-16">
