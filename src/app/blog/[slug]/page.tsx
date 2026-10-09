@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
 import MarkdownBody from "@/components/blog/MarkdownBody";
+import SelectedArticlePage from "@/components/signal-lane/SelectedArticlePage";
 import BlogImage from "@/components/blog/BlogImage";
 import { JsonLd } from "@/components/schema/JsonLd";
 import {
@@ -64,6 +65,28 @@ export default async function BlogArticlePage({
   // The date the author wrote is still shown either way.
   const publishedIso = publishedDate(post)?.toISOString() ?? null;
   const faqItems = blogFaqBySlug[post.slug];
+  if (
+    post.slug === "welcome" ||
+    post.slug === "car-dealership-marketing-agency" ||
+    post.slug === "automotive-dealership-crm-buyer-guide"
+  ) {
+    return (
+      <SelectedArticlePage post={post} publishedIso={publishedIso}>
+        {publishedIso ? (
+          <JsonLd
+            data={buildArticleSchema({
+              headline: post.title,
+              description: post.description || post.title,
+              path,
+              datePublished: publishedIso,
+              imagePath: post.image ?? undefined,
+            })}
+          />
+        ) : null}
+        {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
+      </SelectedArticlePage>
+    );
+  }
   const isContrastTarget =
     post.slug === "automotive-dealership-customer-retention" ||
     post.slug === "facebook-advertising-for-car-dealerships";
