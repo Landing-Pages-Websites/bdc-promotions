@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { PrimarySiteNavigation } from "@/components/navigation/PrimarySiteNavigation";
 import { siteConfig } from "@/site.config";
 
 export interface LegalSection {
@@ -14,6 +15,7 @@ export interface LegalPageLayoutProps {
 /** Shared shell for the scaffolded legal pages (privacy/terms/cookies). */
 export function LegalPageLayout({ title, sections }: LegalPageLayoutProps): ReactElement {
   return (
+    <PrimarySiteNavigation>
     <article className="mx-auto w-full max-w-2xl px-6 py-16">
       <h1 className="text-3xl font-bold">{title}</h1>
       <p className="mt-2 text-sm text-neutral-500">
@@ -28,5 +30,6 @@ export function LegalPageLayout({ title, sections }: LegalPageLayoutProps): Reac
         </section>
       ))}
     </article>
+    </PrimarySiteNavigation>
   );
 }

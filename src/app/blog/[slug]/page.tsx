@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import MarkdownBody from "@/components/blog/MarkdownBody";
 import SelectedArticlePage from "@/components/signal-lane/SelectedArticlePage";
 import BlogImage from "@/components/blog/BlogImage";
+import { PrimarySiteNavigation } from "@/components/navigation/PrimarySiteNavigation";
 import { JsonLd } from "@/components/schema/JsonLd";
 import {
   buildArticleSchema,
@@ -94,6 +95,7 @@ export default async function BlogArticlePage({
     ? "text-sm text-[color:var(--muted)]"
     : "text-sm text-neutral-500";
   return (
+    <PrimarySiteNavigation>
     <article className="mx-auto w-full max-w-2xl px-6 py-16">
       {publishedIso ? (
         <JsonLd
@@ -140,5 +142,6 @@ export default async function BlogArticlePage({
         <MarkdownBody source={post.body} />
       </div>
     </article>
+    </PrimarySiteNavigation>
   );
 }
