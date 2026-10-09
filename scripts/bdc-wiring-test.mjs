@@ -39,11 +39,12 @@ const frames = ["01-opening", "02-section", "03-compare", "04-section"];
 const originals = [
   ["automotive-dealership-crm-buyer-guide", "automotive-dealership-crm-buyer-guide-333230.webp", "ae020709c53e6504285754c66cff55adf0c60491c1811158a2013e92d37c2eba"],
   ["car-dealership-marketing-agency", "car-dealership-marketing-agency-how-to-choose-919633.webp", "90b2d1fefbd1fec838b6f80abae79df9556ad16b5d6e780d4122129d2700a9cc"],
-].map(([slug, file, sha256]) => ({ slug, sourceUrl: `https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/${file}`, localPath: `/images/design/blog__${slug}/02-article-original.webp`, sha256 }));
+].map(([slug, file, sha256]) => ({ slug, sourceUrl: `https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/${file}`, localPath: `/images/design/blog__${slug}/assets/02-article-original.webp`, sha256 }));
 const r4Paths = ["scripts/bdc-wiring-test.mjs", servicesPage, servicesCss, selectedArticle, imageLookup,
   ...owners.map((owner) => `src/app/services/sections/${owner}.tsx`), "src/app/services/sections/types.ts",
-  ...originals.map((entry) => `public${entry.localPath}`)];
-const changedSince = (ref) => [...new Set([...git("diff", "--name-only", ref).trim().split("\n"), ...git("ls-files", "--others", "--exclude-standard").trim().split("\n")].filter(Boolean))].sort();
+  ...originals.map((entry) => `public${entry.localPath}`),
+  ...originals.map((entry) => `public/design/pages/blog__${entry.slug}/design_assets.json`)];
+const changedSince = (ref) => [...new Set([...git("diff", "--no-renames", "--name-only", ref).trim().split("\n"), ...git("ls-files", "--others", "--exclude-standard").trim().split("\n")].filter(Boolean))].sort();
 
 
 
@@ -153,6 +154,21 @@ function assertServicesPreserved() {
 // Compare all tracked app/content/assets/package bytes, not just handpicked UI.
 test("approved source is untouched outside the exact wiring scope", () => {
   const allowed = new Set([...r4Paths, article, legal, navigation, "src/lib/routes.ts", "scripts/bdc-review-routes.mjs", "scripts/bdc-wiring-test.mjs", thankYou, markdownBody, correctedPost]);
+  const r5 = "2669c9d889f6d4686d8f12e0c3361ba536228e38";
+  const renamedAssets = originals.map((entry) => ({
+    before: `public${entry.localPath.replace("/assets/02-article-original.webp", "/02-article-original.webp")}`,
+    after: `public${entry.localPath}`,
+    sha256: entry.sha256,
+  }));
+  assert.deepEqual(changedSince(r5), [imageLookup, "scripts/bdc-wiring-test.mjs",
+    ...renamedAssets.flatMap(({ before, after }) => [before, after]),
+    ...originals.map((entry) => `public/design/pages/blog__${entry.slug}/design_assets.json`),
+  ].sort());
+  for (const { before, after, sha256 } of renamedAssets) {
+    assert.equal(existsSync(before), false, `old asset must not remain: ${before}`);
+    assert.equal(digest(execFileSync("git", ["show", `${r5}:${before}`])), sha256);
+    assert.equal(digest(readFileSync(after)), sha256);
+  }
   const changed = changedSince(approved);
   assert.deepEqual(changedSince(start), [...r4Paths].sort());
   assert.deepEqual(changed.filter((path) => !allowed.has(path)), []);
