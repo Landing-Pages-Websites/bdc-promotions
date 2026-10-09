@@ -1,0 +1,25 @@
+.surface header nav a { min-width: 44px; }
+.directChoices { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 32px; margin-top: 32px; }
+.directChoices p { color: var(--muted); font-size: 16px; }
+.directChoices a { display: inline-flex; align-items: center; gap: 16px; min-height: 48px; overflow-wrap: anywhere; }
+.directChoices span { color: var(--mint); }
+.requestLayout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 80px; margin-top: 28px; }
+.requestLayout .form { width: 100%; max-width: 640px; gap: 16px; }
+.form > div:not([aria-hidden]) > label { display: flex; align-items: center; min-height: 44px; font-size: 16px; font-weight: 400; color: var(--navy); }
+.form input[name="firstName"], .form input[name="lastName"], .form input[name="email"], .form input[name="phone"] { min-height: 52px; border: 1px solid #59657a; border-radius: 0; background: var(--paper); color: var(--navy); font: inherit; padding: 10px 14px; }
+.form input::placeholder { color: #59657a; opacity: 1; }
+.form > button { min-height: 56px; border-radius: 0; background: var(--blue); color: var(--paper); font: inherit; font-size: 16px; cursor: pointer; }
+.form > button:hover { background: var(--panel); }
+.form > button:disabled { cursor: wait; }
+.form input:focus-visible, .form > button:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; }
+.form > p[role="alert"] { max-width: 100%; border-radius: 0; border-color: #9f1239; background: #fff1f2; color: #881337; font-size: 16px; }
+.preparation { margin-top: 28px; border-top: 2px solid var(--blue); }
+.preparation > div { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 12px 64px; padding-block: 24px; border-bottom: 1px solid var(--muted); }
+.preparation a { grid-column: 2; justify-self: start; }
+.preparation > div:last-child { border-bottom: 0; padding-bottom: 0; }
+@media (max-width: 1050px) { .directChoices { grid-template-columns: 1fr; gap: 16px; } .requestLayout { gap: 40px; } }
+@media (max-width: 700px) {
+  .requestLayout, .preparation > div { grid-template-columns: 1fr; gap: 16px; }
+  .requestLayout { gap: 28px; }
+  .preparation a { grid-column: 1; }
+}

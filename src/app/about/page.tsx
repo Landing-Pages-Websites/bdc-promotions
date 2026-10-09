@@ -4,17 +4,19 @@ import type { ReactElement } from "react";
 
 import { JsonLd } from "@/components/schema/JsonLd";
 import { absoluteUrl, buildMetadata } from "@/lib/seo";
-import { phoneHref } from "@/lib/phone";
+import { InteriorChapter, InteriorLinks, InteriorPage } from "@/components/signal-lane/InteriorPage";
+import shared from "@/components/signal-lane/interior-page.module.css";
+import homeContent from "@/content/pages/home.json";
+import styles from "./about.module.css";
 import { siteConfig } from "@/site.config";
 
-const pageTitle = "About BDC Promotions | Automotive Marketing";
+const pageTitle = "About BDC Promotions | Automotive Marketing Specialists";
 const pageDescription =
   "Learn how BDC Promotions helps dealerships create more conversations, appointments, and sales opportunities through focused automotive marketing.";
 const organizationId = "https://bdcpromotions.com/#organization";
 const aboutPageUrl = "https://bdcpromotions.com/about/";
 const aboutPageId = "https://bdcpromotions.com/about/#about";
 const publicPhone = "352-207-1074";
-const publicPhoneHref = phoneHref(publicPhone);
 
 export const metadata: Metadata = {
   ...buildMetadata({
@@ -55,141 +57,32 @@ const aboutSchema = {
   ],
 };
 
-const processSteps = [
-  {
-    title: "Learn Your Store",
-    body: "We start by understanding your dealership, goals, and the type of customers you want to reach.",
-  },
-  {
-    title: "Build The Campaign",
-    body: "We develop the social messaging, creative direction, and lead engagement approach around your needs.",
-  },
-  {
-    title: "Engage Shoppers",
-    body: "We help create real conversations with shoppers and guide them toward the next step.",
-  },
-  {
-    title: "Drive Appointments",
-    body: "We help turn online interest into qualified appointments and showroom visits for your sales team.",
-  },
-] as const;
-
 export default function AboutPage(): ReactElement {
-  return (
-    <div id="top" className="site-page">
-      <header className="site-header">
-        <Link className="brand" href="/" aria-label="BDC Promotions home">
-          <span className="brand__mark">BDC</span>
-          <span className="brand__copy">
-            <strong>BDC Promotions</strong>
-            <small>Automotive Marketing</small>
-          </span>
-        </Link>
-        <nav className="site-nav" aria-label="Primary navigation">
-          <Link href="/#services">Services</Link>
-          <Link href="/#process">Process</Link>
-        </nav>
-        <a
-          className="button button--compact"
-          href={publicPhoneHref}
-          aria-label={`Call BDC Promotions at ${publicPhone}`}
-        >
-          <span className="button__signal" aria-hidden="true" />
-          {publicPhone}
-        </a>
-      </header>
-
-      <main>
-        <section
-          className="section-shell py-20 md:py-28"
-          aria-labelledby="about-title"
-        >
-          <JsonLd data={aboutSchema} />
-          <p className="eyebrow">Our company</p>
-          <h1 id="about-title" className="display-title">
-            About BDC Promotions
-          </h1>
-          <p className="hero__description">
-            BDC Promotions is an automotive marketing company focused on helping
-            dealerships create more conversations, more appointments, and more
-            sales opportunities.
-          </p>
-        </section>
-
-        <section
-          className="section-shell value-section"
-          aria-labelledby="dealerships-title"
-        >
-          <div className="section-intro">
-            <p className="eyebrow">Who we serve</p>
-            <h2 id="dealerships-title">Built for automotive dealerships</h2>
-            <p>
-              BDC Promotions works with automotive dealership owners, sales
-              teams, marketing managers, and dealership BDC teams. Our work is
-              built around the day-to-day goal of turning online shopper interest
-              into meaningful dealership conversations.
-            </p>
-          </div>
-        </section>
-
-        <section
-          id="process"
-          className="section-shell process-section"
-          aria-labelledby="process-title"
-        >
-          <div className="section-intro">
-            <p className="eyebrow">Our approach</p>
-            <h2 id="process-title">How it works</h2>
-          </div>
-          <ol className="process-grid">
-            {processSteps.map((step, index) => (
-              <li className="process-card" key={step.title}>
-                <span className="process-card__step">Step 0{index + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section
-          id="contact"
-          className="section-shell contact-section"
-          aria-labelledby="contact-title"
-        >
-          <div className="contact-section__copy">
-            <p className="eyebrow">Start a conversation</p>
-            <h2 id="contact-title">Ready to talk about your dealership?</h2>
-            <p>
-              Call BDC Promotions at {publicPhone} or request information
-              through our contact form.
-            </p>
-          </div>
-          <div className="contact-card">
-            <div className="hero__actions">
-              <a className="button" href={publicPhoneHref}>
-                Call {publicPhone}
-              </a>
-              <a className="button button--ghost" href="https://bdcpromotions.com/#contact">
-                Contact BDC Promotions
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="site-footer section-shell">
-        <div>
-          <strong>{siteConfig.businessName}</strong>
-          <p>{siteConfig.description}</p>
-        </div>
-        <div className="site-footer__links">
-          <a href={publicPhoneHref}>{publicPhone}</a>
-          <Link href="/privacy-policy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/cookie-policy">Cookies</Link>
-        </div>
-      </footer>
-    </div>
-  );
+  return <div className={styles.surface}><InteriorPage path="/about" title="About BDC Promotions"
+    intro="Automotive marketing focused on the path to the showroom. We help dealerships connect advertising, shopper conversations and appointment opportunities."
+    chapters={[{ href: "#dealership-focus", label: "Who we serve" }, { href: "#working-principles", label: "Our principles" }, { href: "#connected-support", label: "How the work connects" }]}
+    contactTitle="Let’s talk about your dealership"
+    contactCopy="Bring your store’s priorities and the parts of your marketing or follow-up process that need support. Start a conversation about the right service mix."
+    contactLabel="Contact BDC Promotions">
+    <JsonLd data={aboutSchema} />
+    <InteriorChapter id="dealership-focus" title="Built around dealership conversations">
+      <div className={styles.identity}>
+        <div><p>BDC Promotions, Inc. provides automotive marketing and customer engagement services for franchise and established independent dealerships.</p><a className={shared.textLink} href="https://www.linkedin.com/company/bdcpromotions">BDC Promotions on LinkedIn ↗</a></div>
+        <div><p>We work with dealership owners, sales teams, marketing managers and BDC teams. Their responsibilities meet at the same point: a shopper who has shown interest and needs a useful next conversation.</p><p>Advertising gives that shopper a reason to respond. Lead engagement helps keep the conversation moving. Appointment support connects that interest with an opportunity for the dealership’s sales team.</p></div>
+      </div>
+    </InteriorChapter>
+    <InteriorChapter id="working-principles" title="Fast. Focused. Social. Results.">
+      <p className={shared.chapterIntro}>Four principles keep the work tied to the dealership and the shopper.</p>
+      <dl className={styles.principles}>
+        {homeContent.values.items.map(item => <div key={item.id}><dt>{item.title}</dt><dd>{item.description}.</dd></div>)}
+      </dl>
+    </InteriorChapter>
+    <InteriorChapter id="connected-support" title="From creative to the next conversation" dark>
+      <div className={shared.split}>
+        <div className={shared.stack}><h3>A message built for automotive</h3><p>Static and video creative give your vehicles, offers and events a clear message. Paid social campaigns and ad optimization connect that message with shoppers and their response.</p><p>The work starts with your store: what you want to promote, who you want to reach and what your team needs from the campaign.</p><Link className={shared.textLink} href="/work">Inspect automotive advertising examples →</Link></div>
+        <div className={shared.stack}><h3>Support after the response</h3><p>Facebook Messenger response, BDC staff and AI-supported nurturing help continue shopper conversations. Appointment setting gives an interested shopper a next step with a scheduled day and time.</p><p>Choose individual services or connect the support around your team. Use the process discussion to agree responsibilities and how appointment details reach the dealership.</p><Link className={shared.textLink} href="/process">See how the process works →</Link></div>
+      </div>
+    </InteriorChapter>
+    <InteriorLinks title="Get to know the work" links={[{ href: "/services", label: "Explore the services" }, { href: "/blog", label: "Read automotive insights" }]} />
+  </InteriorPage></div>;
 }

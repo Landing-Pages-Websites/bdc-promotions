@@ -1,0 +1,27 @@
+.surface header nav a { min-width: 44px; }
+.topics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 28px; }
+.topics > div { border-top: 2px solid var(--blue); padding-top: 24px; }
+.topics p { margin-top: 16px; }
+.topicLinks { display: flex; flex-wrap: wrap; gap: 0 24px; margin-top: 12px; }
+.startingPoints { margin-top: 28px; }
+.startingPoints > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; padding-block: 24px; border-top: 1px solid var(--muted); }
+.startingPoints > div:last-child { padding-bottom: 0; }
+.startingPoints h3 a, .post h3 a { display: block; min-height: 48px; }
+.startingPoints span { color: var(--mint); }
+.archive { margin-top: 28px; border-top: 2px solid var(--blue); }
+.post { display: grid; grid-template-columns: minmax(140px, .38fr) minmax(0, 1fr) minmax(0, 1fr); gap: 40px; padding-block: 28px; border-bottom: 1px solid var(--muted); }
+.post:last-child { border-bottom: 0; padding-bottom: 0; }
+.post h3 { font-size: clamp(26px, 2.1vw, 32px); }
+.post h3 span { color: var(--blue); }
+.date { font-size: 16px; color: var(--panel); padding-top: 4px; }
+@media (max-width: 1050px) {
+  .topics { gap: 24px; }
+  .post { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 32px; }
+  .date { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  .topics, .startingPoints > div, .post { grid-template-columns: 1fr; }
+  .topics { gap: 28px; }
+  .startingPoints > div, .post { gap: 16px; }
+  .post h3 { font-size: 28px; }
+}
