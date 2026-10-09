@@ -32,7 +32,7 @@ export default function InventoryAdvertisingPage(): ReactElement {
           <article className={styles.channel}>
             <h3>Meta Automotive Inventory Ads</h3>
             <p>Dynamic new and used vehicle advertising showcases real dealership inventory to shoppers on Meta.</p>
-            <p>The service includes third-party data to target owners of similar makes and models. Discuss how this audience approach fits the inventory you want to promote.</p>
+            <p>Ask which audience-targeting options, if any, are available for your inventory campaign. Discuss how this audience approach fits the inventory you want to promote.</p>
           </article>
           <article className={styles.channel}>
             <h3>Google Vehicle Listing Ads</h3>
