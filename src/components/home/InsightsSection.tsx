@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactElement } from "react";
 import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
@@ -53,6 +54,9 @@ export function InsightsSection({
             </article>
           ))}
         </div>
+        <p className="insights-link">
+          Explore more <Link href="/blog">dealership marketing guides</Link>.
+        </p>
       </div>
     </section>
   );

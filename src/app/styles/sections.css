@@ -426,6 +426,17 @@ h3 {
   margin-top: 3rem;
 }
 
+.insights-link {
+  margin: 2rem 0 0;
+  color: var(--muted);
+}
+
+.insights-link a {
+  color: var(--cyan);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .insight-card {
   display: flex;
   min-height: 320px;
