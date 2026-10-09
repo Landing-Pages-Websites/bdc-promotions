@@ -16,13 +16,14 @@ export function PrimarySiteNavigation({
 }): ReactElement {
   return (
     <>
+      <a href="#page-content" className="skip-link">Skip page navigation</a>
       <header className="mx-auto w-full max-w-2xl px-6 pt-8">
         <nav aria-label="Home and articles" className="flex flex-wrap gap-x-6 gap-y-3 text-sm">
           <Link href="/" className={linkClassName}>Home</Link>
           <Link href="/blog" className={linkClassName}>All articles</Link>
         </nav>
       </header>
-      <main>{children}</main>
+      <main id="page-content" tabIndex={-1}>{children}</main>
       <footer className="mx-auto w-full max-w-2xl px-6 pb-12">
         <nav aria-label="Primary site pages" className="border-t border-[color:var(--line)] pt-6 text-sm text-[color:var(--muted)]">
           <ul className="flex flex-wrap gap-x-6 gap-y-4">
