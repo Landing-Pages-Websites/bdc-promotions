@@ -12,7 +12,7 @@ targetKeyword: slow lead response consequences for dealerships
 ---
 Slow lead response consequences for dealerships include losing the shopper’s attention, weakening the conversation before it starts, and making it harder to turn an inquiry into an appointment. There is no universal minute mark at which every shopper disappears; the practical risk is letting an interested person wait without a clear, timely next step.
 
-[Call to discuss your dealership’s lead engagement](tel:+13528121491)
+[Call to discuss your dealership’s lead engagement](tel:+13522071074)
 
 This article is part of a broader look at [why speed to lead matters for dealerships](https://bdcpromotions.com/blog/welcome). The focus here is narrower: what can go wrong when response lags, how to tell whether it is happening in your store, and what a workable improvement process looks like.
 
@@ -142,7 +142,7 @@ When results differ across groups, resist the urge to turn the difference immedi
 
 Managers can make the review actionable by assigning one owner to each corrective step and setting a date to check it. For example, if weekend inquiries wait until Monday because no one owns them, document the coverage decision and then audit a sample of weekend records the following week. If the alert is unreliable, have the person responsible test delivery and acknowledgment. This makes “respond faster” a specific operational improvement rather than a broad request with no way to verify progress.
 
-[Call to talk through your dealership’s lead-response process](tel:+13528121491)
+[Call to talk through your dealership’s lead-response process](tel:+13522071074)
 
 ## Frequently Asked Questions
 
