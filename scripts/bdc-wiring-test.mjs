@@ -14,7 +14,11 @@ import { reviewRoutes } from "./bdc-review-routes.mjs";
 
 const approved = "1f24ca2fbebd14dedbaf3cd6b56fdc660a22b02f";
 const home = "d061433edbfd72e99c9896b05142e2238b4601e2";
-const r1 = "bc1b3dff3e1dad9f058f76000409bf102b72c67f";
+const r2 = "6ebb3d21a9a4e0019330005e4032cfceecde61c5";
+const privacyMain = "230445355f8b3cc056a558b549c21ecf6c1567d1";
+const correctedPost = "content/blog/slow-lead-response-consequences-for-dealerships.md";
+const thankYou = "src/app/thank-you/page.tsx";
+const markdownBody = "src/components/blog/MarkdownBody.tsx";
 const article = "src/app/blog/[slug]/page.tsx";
 const legal = "src/components/legal/LegalPageLayout.tsx";
 const navigation = "src/components/navigation/PrimarySiteNavigation.tsx";
@@ -26,20 +30,29 @@ const routes = reviewRoutes();
 
 // Compare all tracked app/content/assets/package bytes, not just handpicked UI.
 test("approved source is untouched outside the exact wiring scope", () => {
-  const allowed = new Set([article, legal, navigation, "src/lib/routes.ts", "scripts/bdc-review-routes.mjs", "scripts/bdc-wiring-test.mjs"]);
+  const allowed = new Set([article, legal, navigation, "src/lib/routes.ts", "scripts/bdc-review-routes.mjs", "scripts/bdc-wiring-test.mjs", thankYou, markdownBody, correctedPost]);
   const changed = git("diff", "--name-only", approved).trim().split("\n").filter(Boolean);
   assert.deepEqual(changed.filter((path) => !allowed.has(path)), []);
-  const r2Allowed = new Set([article, legal, navigation, "scripts/bdc-wiring-test.mjs"]);
-  assert.deepEqual(git("diff", "--name-only", r1).trim().split("\n").filter((path) => path && !r2Allowed.has(path)), []);
+  const r3Paths = [thankYou, markdownBody, correctedPost, "scripts/bdc-wiring-test.mjs"];
+  assert.deepEqual(git("diff", "--name-only", r2).trim().split("\n").filter(Boolean).sort(), r3Paths.sort());
   const homePaths = ["src/app/page.tsx", "src/app/layout.tsx", "src/components/home", "src/content", "src/site.config.ts", "src/app/globals.css", "src/app/styles"];
   assert.equal(git("diff", home, "--", ...homePaths), "");
 });
 
-test("all 14 published Markdown records retain their exact SHA-256 bytes", () => {
+test("14 published records preserve approved bytes except the exact merged PR57 href correction", () => {
   const files = git("ls-tree", "-r", "--name-only", approved, "content/blog").trim().split("\n");
   assert.equal(files.filter((path) => path.endsWith(".md")).length, 15);
   assert.equal(listPublishedPosts().length, 14);
-  for (const path of files) assert.equal(digest(readFileSync(path)), digest(execFileSync("git", ["show", `${approved}:${path}`])), path);
+  assert.deepEqual(git("ls-files", "content/blog").trim().split("\n"), files);
+  const prior = original(correctedPost);
+  assert.equal(prior.split("tel:+13528121491").length - 1, 2);
+  const expected = prior.replaceAll("tel:+13528121491", "tel:+13522071074");
+  assert.equal(expected, original(correctedPost, privacyMain), "independent merged PR57 blob");
+  assert.equal(read(correctedPost), expected);
+  for (const path of files) {
+    const expectedBytes = path === correctedPost ? Buffer.from(expected) : execFileSync("git", ["show", `${approved}:${path}`]);
+    assert.equal(digest(readFileSync(path)), digest(expectedBytes), path);
+  }
 });
 
 test("selected article rendering, params, imports and legacy/legal prose are preserved", () => {
@@ -54,6 +67,13 @@ test("selected article rendering, params, imports and legacy/legal prose are pre
     assert.equal(source.split(before).length, 2, `expected one occurrence: ${before}`);
     return source.replace(before, after);
   };
+  const expectedThankYou = replaceOnce(original(thankYou),
+    'text-neutral-600 dark:text-neutral-400', 'text-[color:var(--muted)]');
+  const expectedMarkdownBody = replaceOnce(original(markdownBody),
+    '<div key={key} className="mt-6 overflow-x-auto">',
+    '<div key={key} className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Article table">');
+  assert.equal(read(thankYou), expectedThankYou);
+  assert.equal(read(markdownBody), expectedMarkdownBody);
   const originalMetadata = `  const isContrastTarget =
     post.slug === "automotive-dealership-customer-retention" ||
     post.slug === "facebook-advertising-for-car-dealerships";
@@ -134,6 +154,16 @@ test("production HTML: routes, bridge, sitemap, legal/article links and retired 
     assert.ok(!pages.get(path).includes('id="page-content"'), path);
     assert.ok(!hrefs(pages.get(path)).includes("#page-content"), path);
   }
+  assert.match(pages.get("/thank-you"), /<p class="text-\[color:var\(--muted\)\]">/);
+  for (const slug of ["automotive-dealership-customer-retention", "automotive-dealership-bdc-lead-response-process", "dealership-messenger-lead-engagement"]) {
+    const html = pages.get(`/blog/${slug}`);
+    const wrappers = html.match(/<div class="mt-6 overflow-x-auto"[^>]*>/g) ?? [];
+    assert.ok(wrappers.length > 0, slug);
+    for (const wrapper of wrappers) assert.equal(wrapper, '<div class="mt-6 overflow-x-auto" tabindex="0" role="region" aria-label="Article table">');
+  }
+  const correctedHtml = pages.get("/blog/slow-lead-response-consequences-for-dealerships");
+  assert.doesNotMatch(correctedHtml, /tel:\+13528121491/);
+  assert.ok(hrefs(correctedHtml).filter((href) => href === "tel:+13522071074").length >= 2);
   const lp = await (await fetch(new URL("/lp", base))).text();
   assert.ok(!lp.includes('aria-label="Primary site pages"'));
   for (const path of ["/variant-a", "/variant-b", "/variant-c"]) {

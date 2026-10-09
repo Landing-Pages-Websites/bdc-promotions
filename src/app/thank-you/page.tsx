@@ -14,7 +14,7 @@ export default function ThankYouPage(): ReactElement {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
       <h1 className="text-3xl font-bold">Thank you!</h1>
-      <p className="text-neutral-600 dark:text-neutral-400">
+      <p className="text-[color:var(--muted)]">
         Your message is on its way to {siteConfig.businessName}. We will get
         back to you shortly.
       </p>

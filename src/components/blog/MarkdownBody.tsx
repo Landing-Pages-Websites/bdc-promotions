@@ -109,7 +109,7 @@ function renderBlock(block: Block, key: number): ReactElement {
       return (
         // Wide tables scroll inside their own container so the page body
         // never scrolls sideways on a phone.
-        <div key={key} className="mt-6 overflow-x-auto">
+        <div key={key} className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Article table">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr>
