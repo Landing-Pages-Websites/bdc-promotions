@@ -39,6 +39,8 @@ That stage map gives dealership leaders a way to find gaps. For example, a team 
 
 A reliable workflow begins with a defined trigger: a new Messenger inquiry, a reply to a campaign, or an existing shopper returning to the conversation. The goal is not simply to place messages in an inbox. It is to preserve the shopper's source and context, identify who owns the next action, and make escalation clear when the request exceeds the assigned representative's role.
 
+For the campaign entry point behind some Messenger inquiries, see [Facebook advertising for car dealerships](https://bdcpromotions.com/blog/facebook-advertising-for-car-dealerships).
+
 Meta's official documentation describes lead-generation ads in Messenger as a way to ask qualifying questions and pass lead information through supported handoff options. That platform capability does not decide who should respond, what a dealership can promise, or how exceptions should be handled. Those are operating decisions for the dealership's approved process. See [Meta's Messenger lead-generation documentation](https://developers.facebook.com/documentation/business-messaging/messenger-platform/discovery/lead-generation-ads-in-messenger) for the platform-level details.
 
 1. **Detect and capture the conversation.** Monitor the agreed Messenger entry points and record the conversation as an inbound lead or contact according to the dealership's process. Preserve the campaign or referral context, the shopper's name when available, the vehicle or service mentioned, and any prior interaction. BDC Promotions describes coordinating Messenger with email and CRM, but the exact software behavior depends on the dealership's systems and scope.
@@ -89,6 +91,8 @@ Where the dealership's setup supports it, conversation or lead details may also 
 ### Measure the outcome, not just the transfer
 
 Recording an appointment opportunity is not the same as proving an appointment was set, attended, or connected to a sales outcome. Keep those stages distinct when reviewing performance. The [automotive dealership CRM guide](https://bdcpromotions.com/blog/automotive-dealership-crm-buyer-guide) can help frame the system and record-keeping questions, while the Messenger workflow should define what each handoff status means. That measurement boundary keeps reporting useful and prevents a completed transfer from being presented as a guaranteed appointment or sale.
+
+When follow-up continues beyond the first conversation, review the [customer retention guide](https://bdcpromotions.com/blog/automotive-dealership-customer-retention).
 
 ## How Should You Handle Unresponsive Leads in Messenger?
 

@@ -48,6 +48,7 @@ export default function BlogIndexPage(): ReactElement {
           return post ? <div key={slug}><h3><Link href={`/blog/${post.slug}`}>{post.title} <span aria-hidden="true">↗</span></Link></h3><p>{context}</p></div> : null;
         })}
       </div>
+      <p className={shared.chapterIntro}>If you want to discuss your dealership&apos;s next step, <a className={shared.textLink} href="https://bdcpromotions.com/#contact">contact BDC Promotions</a>.</p>
     </InteriorChapter>
     <InteriorChapter id="all-articles" title="All articles">
       <p className={shared.chapterIntro}>Browse the published guides from BDC Promotions, with their original publication dates.</p>
