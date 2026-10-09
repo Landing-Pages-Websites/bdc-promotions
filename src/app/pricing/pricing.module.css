@@ -1,0 +1,6 @@
+.options { margin-top: 32px; border-top: 2px solid var(--blue); }
+.option { display: grid; grid-template-columns: minmax(0, .5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 40px; padding-block: 28px; border-bottom: 1px solid var(--muted); }
+.option:last-child { padding-bottom: 0; border-bottom: 0; }
+.question { border-left: 1px solid var(--muted); padding-left: 32px; }
+@media (max-width: 900px) { .option { grid-template-columns: 1fr 2fr; gap: 20px; } .question { grid-column: 2; padding-left: 0; border: 0; } }
+@media (max-width: 700px) { .option { grid-template-columns: 1fr; gap: 16px; } .question { grid-column: auto; border-left: 2px solid var(--blue); padding-left: 16px; } }

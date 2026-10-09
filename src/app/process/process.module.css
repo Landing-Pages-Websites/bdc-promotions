@@ -1,0 +1,6 @@
+ol.sequence { list-style: none; padding: 0; margin-top: 32px; border-top: 2px solid var(--blue); }
+.sequence li { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 64px; padding-block: 32px; border-bottom: 1px solid var(--muted); }
+.sequence li:last-child { border-bottom: 0; padding-bottom: 0; }
+.sequence li h3 { margin-bottom: 16px; }
+.links { display: flex; flex-wrap: wrap; column-gap: 24px; }
+@media (max-width: 700px) { .sequence li { grid-template-columns: 1fr; gap: 16px; padding-block: 28px; } }
