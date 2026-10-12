@@ -2,6 +2,7 @@
 // blog fixtures temporarily mutate the content directory:
 // node --import tsx --test scripts/bdc-wiring-test.mjs
 import assert from "node:assert/strict";
+import { parse } from "parse5";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync, existsSync, statSync } from "node:fs";
@@ -289,6 +290,103 @@ test("registry, review routes and sitemap agree on 31 unique canonical paths", (
   assert.deepEqual(sitemap().map(({ url }) => new URL(url).pathname), routes);
 });
 
+/**
+ * Walk the document tree only: template.content is a separate inert fragment.
+ * @param {import("parse5").DefaultTreeAdapterTypes.Node} node
+ * @param {string} tagName
+ * @returns {Generator<import("parse5").DefaultTreeAdapterTypes.Element>}
+ */
+function* htmlElements(node, tagName) {
+  if (!("childNodes" in node)) return;
+  for (const child of node.childNodes) {
+    if ("tagName" in child && child.namespaceURI === "http://www.w3.org/1999/xhtml" && child.tagName === tagName) yield child;
+    yield* htmlElements(child, tagName);
+  }
+}
+
+/** @param {string} html @returns {void} */
+function assertServicesInitialHtml(html) {
+  // HTML5 parsing handles quoted >, entities, raw text and first duplicate attrs.
+  const document = parse(html, { sourceCodeLocationInfo: true });
+  const mains = [...htmlElements(document, "main")];
+  assert.equal(mains.length, 1, "Services has one actual HTML main");
+  const main = mains[0];
+  const location = main.sourceCodeLocation;
+  assert.ok(location?.startTag && location.endTag, "Services main has explicit opening and closing source tags");
+  const sections = [...htmlElements(main, "section")];
+  assert.equal(sections.length, 4, "Services main has exactly four actual HTML sections");
+  let previousOffset = location.startTag.endOffset - 1;
+  const identities = sections.map((section) => {
+    const startTag = section.sourceCodeLocation?.startTag;
+    assert.ok(startTag && startTag.startOffset > previousOffset && startTag.endOffset <= location.endTag.startOffset,
+      "Services sections follow source/document order inside explicit main tags");
+    previousOffset = startTag.startOffset;
+    assert.equal(section.attrs.some(({ name }) => name === "data-section"), false, "Services section has no introduced data-section");
+    return section.attrs.find(({ name }) => name === "id")?.value || section.attrs.find(({ name }) => name === "data-section")?.value || null;
+  });
+  assert.deepEqual(identities, [null, null, "compare", null]);
+}
+
+test("Services initial HTML parser accepts equivalent markup and rejects structural spoofs", async (t) => {
+  const sections = '<section></section><section></section><section id="compare"></section><section></section>';
+  const valid = `<main>${sections}</main>`;
+  /** @type {Array<[string, string]>} */
+  const accepted = [
+    ["normal initial document", `<!doctype html><html><head><title>Services</title></head><body>${valid}</body></html>`],
+    ["double-quoted ID", valid],
+    ["single-quoted ID", valid.replace('id="compare"', "id='compare'")],
+    ["unquoted ID", valid.replace('id="compare"', "id=compare")],
+    ["entity-decoded ID", valid.replace('id="compare"', 'id="&#99;ompare"')],
+    ["unquoted entity-decoded ID", valid.replace('id="compare"', 'id=&#x63;ompare')],
+    ["quoted greater-than", valid.replace('<section>', '<section title="a>b">')],
+    ["first duplicate ID wins", valid.replace('id="compare"', 'id="compare" id="wrong"')],
+    ["case-insensitive HTML names", valid.replaceAll('main', 'MAIN').replaceAll('section', 'SECTION').replace('id=', 'ID=')],
+    ["nested real sections in document order", `<main><div>${sections}</div></main>`],
+    ["foreign sections ignored", valid.replace('</main>', '<svg><section data-section="ignored" /></svg></main>')],
+  ];
+  /** @type {Array<[string, string]>} */
+  const rejected = [
+    ["duplicate wrong-first compare IDs", valid.replace('id="compare"', 'id="wrong" id="compare"')],
+    ["duplicate mixed-case wrong-first IDs", valid.replace('id="compare"', 'ID=wrong id=compare')],
+    ["missing section", `<main>${sections.replace('<section></section>', '')}</main>`],
+    ["extra section", valid.replace('</main>', '<section></section></main>')],
+    ["wrong compare", valid.replace('id="compare"', 'id="wrong"')],
+    ["wrong compare position", `<main><section id="compare"></section><section></section><section></section><section></section></main>`],
+    ["ordinary data-section", valid.replace('<section>', '<section data-section="01-opening">')],
+    ["single-quoted data-section", valid.replace('<section>', "<section data-section='01-opening'>")],
+    ["unquoted data-section", valid.replace('<section>', '<section data-section=01-opening>')],
+    ["boolean data-section", valid.replace('<section>', '<section data-section>')],
+    ["quoted greater-than before forbidden attribute", valid.replace('<section>', '<section title="a>b" data-section="01-opening">')],
+    ["single-quoted greater-than before forbidden attribute", valid.replace('<section>', "<section title='a>b' data-section='01-opening'>")],
+    ["duplicate forbidden attribute", valid.replace('<section>', '<section data-section="" data-section="01-opening">')],
+    ["second main", `${valid}<main></main>`],
+    ["nested second main", valid.replace('</main>', '<main></main></main>')],
+    ["missing explicit main close", valid.replace('</main>', '')],
+    ["main implicitly closed by div", `<div>${valid.replace('</main>', '')}</div>`],
+    ["commented main tags", `<!--<main>-->${sections}<!--</main>-->`],
+    ["foreign main", `<svg><main>${sections}</main></svg>`],
+    ["foreign sections cannot satisfy count", `<main><svg>${sections}</svg></main>`],
+  ];
+  for (const [name, open, close] of [
+    ["comment", "<!--", "-->"],
+    ["script", "<script>", "</script>"],
+    ["style", "<style>", "</style>"],
+    ["textarea", "<textarea>", "</textarea>"],
+    ["template", "<template>", "</template>"],
+  ]) {
+    accepted.push([`${name} spoof ignored alongside real markup`, valid.replace('</main>', `${open}${valid}${close}</main>`)]);
+    rejected.push([`${name} sections cannot satisfy count`, `<main>${open}${sections}${close}</main>`]);
+    rejected.push([`${name} main cannot satisfy count`, `${open}${valid}${close}`]);
+    rejected.push([`${name} main close is not explicit markup`, `<main>${sections}${open}</main>${close}`]);
+  }
+  for (const [name, html] of accepted) await t.test(`accept: ${name}`, () => assert.doesNotThrow(() => assertServicesInitialHtml(html)));
+  for (const [name, html] of rejected) await t.test(`reject: ${name}`, () => assert.throws(() => assertServicesInitialHtml(html), assert.AssertionError));
+});
+
+test("Services initial HTML parser accepts the current compiled Services document offline", () => {
+  assertServicesInitialHtml(read(".next/server/app/services.html"));
+});
+
 const base = process.env.BDC_TEST_BASE_URL;
 test("production HTML: routes, bridge, sitemap, legal/article links and retired variants", { skip: !base }, async () => {
   const contract = JSON.parse(read(process.env.BDC_BRIDGE_CONTRACT)).promoted;
@@ -339,19 +437,7 @@ test("production HTML: routes, bridge, sitemap, legal/article links and retired 
     for (const wrapper of wrappers) assert.equal(wrapper, '<div class="mt-6 overflow-x-auto" tabindex="0" role="region" aria-label="Article table">');
   }
   const servicesHtml = pages.get("/services");
-  assert.equal([...servicesHtml.matchAll(/<main(?=[\s>])[^>]*>/gi)].length, 1, "Services has one main opening tag");
-  assert.equal([...servicesHtml.matchAll(/<\/main\s*>/gi)].length, 1, "Services has one main closing tag");
-  const servicesMain = servicesHtml.match(/<main(?=[\s>])[^>]*>([\s\S]*?)<\/main\s*>/i);
-  assert.ok(servicesMain, "Services has a complete initial HTML main");
-  const servicesSections = [...servicesMain[1].matchAll(/<section(?=[\s>])[^>]*>/gi)].map((match) => match[0]);
-  assert.equal(servicesSections.length, 4, "Services main has exactly four sections");
-  const servicesIdentities = servicesSections.map((section) => {
-    const attributes = new Map([...section.matchAll(/\s([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)]
-      .map((match) => [match[1].toLowerCase(), match[2] ?? match[3] ?? match[4] ?? ""]));
-    assert.equal(attributes.has("data-section"), false, "Services section has no introduced data-section");
-    return attributes.get("id") || attributes.get("data-section") || null;
-  });
-  assert.deepEqual(servicesIdentities, [null, null, "compare", null]);
+  assertServicesInitialHtml(servicesHtml);
   for (const entry of originals) {
     assert.ok(pages.get(`/blog/${entry.slug}`).includes(encodeURIComponent(entry.localPath)), entry.slug);
     const response = await fetch(new URL(entry.localPath, base), { redirect: "manual" });
