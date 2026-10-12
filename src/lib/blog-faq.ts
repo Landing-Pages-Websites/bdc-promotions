@@ -51,7 +51,31 @@ const marketingAgencyEvaluationFaq: readonly FaqItem[] = [
   },
 ];
 
+const messengerVsEmailFaq: readonly FaqItem[] = [
+  {
+    question: "Is Messenger better than email for car dealership leads?",
+    answer:
+      "Not in every case. Messenger is well suited to quick, conversational exchanges, while email works well for detailed information and written follow-up. The better choice depends on the shopper's entry point, preference, inquiry, and the dealership's ability to respond.",
+  },
+  {
+    question: "Does Messenger always get a higher response rate?",
+    answer:
+      "No. Do not assume a universal response-rate advantage. Compare your own inquiries using consistent definitions, similar lead sources, and a clear time window. Staffing and message quality can affect results as much as channel selection.",
+  },
+  {
+    question: "Should a dealership follow up by email after a Messenger conversation?",
+    answer:
+      "Only when email adds value and the shopper has provided or requested that contact method. It may be helpful for requested details or confirmation, but avoid duplicating messages or making the shopper repeat information.",
+  },
+  {
+    question: "What should a dealership measure first?",
+    answer:
+      "Start with time to first meaningful response, meaningful shopper replies, conversation progression, and appointments that are actually agreed and recorded. Define each measure before comparing channels.",
+  },
+];
+
 export const blogFaqBySlug: Readonly<Record<string, readonly FaqItem[]>> = {
   "automotive-dealership-customer-retention": customerRetentionFaq,
   "automotive-marketing-agency-evaluation": marketingAgencyEvaluationFaq,
+  "messenger-vs-email-for-car-dealership-leads": messengerVsEmailFaq,
 };
