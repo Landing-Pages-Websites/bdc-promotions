@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
 
-import { Chapter, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
+import { Chapter, Plate, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
 import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 
@@ -15,6 +15,7 @@ export const metadata: Metadata = buildMetadata({
 export default function LeadGenerationPage(): ReactElement {
   return (
     <ServicePage
+      visual={<Plate file="growth-repo-sale" width={1080} height={1080} alt="Historical repossession-sale static ad with three vehicles and original offer copy" max={420} eager />}
       title="Lead generation focused on dealership opportunities"
       intro="Connect automotive creative with campaign optimization. BDC Promotions builds social campaigns and promotions designed to increase visibility, generate traffic and encourage shoppers to respond."
       chapters={[
@@ -41,13 +42,13 @@ export default function LeadGenerationPage(): ReactElement {
         </div>
       </Chapter>
 
-      <Chapter id="response-handoff" title="Plan for what happens after the ad">
+      <Chapter id="response-handoff" title="Plan for what happens after the ad" dark>
         <ol className={styles.steps}>
           <li><h3>Ads & engagement</h3><p>Use your inventory and offers to give shoppers a relevant reason to engage with the dealership.</p></li>
           <li><h3>Shopper response</h3><p>A response starts a conversation. It still needs follow-up to understand the shopper’s interest and next step.</p></li>
           <li><h3>Nurturing handoff</h3><p>Depending on your service mix, BDC staff and AI-supported tools can continue the conversation toward a scheduled appointment.</p></li>
         </ol>
-        <p className={styles.chapterIntro}>Campaign support and BDC follow-up have different roles. Agree who owns the response before the campaign runs; a lead alone is not a scheduled visit or a sale.</p>
+        <p className={styles.stepsNote}>Campaign support and BDC follow-up have different roles. Agree who owns the response before the campaign runs; a lead alone is not a scheduled visit or a sale.</p>
       </Chapter>
 
       <Chapter id="campaign-fit" title="Is your dealership a fit?">

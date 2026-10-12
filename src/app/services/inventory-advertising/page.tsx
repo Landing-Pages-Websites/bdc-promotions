@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
 
-import { Chapter, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
+import { Chapter, Plate, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
 import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 
@@ -15,6 +15,7 @@ export const metadata: Metadata = buildMetadata({
 export default function InventoryAdvertisingPage(): ReactElement {
   return (
     <ServicePage
+      visual={<Plate file="hero-wholesale-public" width={1122} height={1402} alt="Historical wholesale-to-the-public creative showing vehicles outside a dealership" max={400} eager />}
       title="Inventory advertising for the vehicles on your lot"
       intro="Bring dealership inventory into your advertising. Compare Meta Automotive Inventory Ads with Google Vehicle Listing Ads to understand where each channel fits your store’s priorities."
       chapters={[
@@ -26,16 +27,18 @@ export default function InventoryAdvertisingPage(): ReactElement {
       contactCopy="Discuss the vehicles you want to promote, your current advertising and the requirements for Meta, Google or a combined approach."
       contactLabel="Discuss inventory advertising"
     >
-      <Chapter id="inventory-channels" title="Two channels. Different shopper moments.">
+      <Chapter id="inventory-channels" title="Two channels. Different shopper moments." dark>
         <p className={styles.chapterIntro}>Meta supports vehicle discovery in a social environment. Google connects inventory advertising with shoppers actively searching for vehicles.</p>
         <div className={styles.split}>
           <article className={styles.channel}>
             <h3>Meta Automotive Inventory Ads</h3>
+            <Plate file="work-inventory-ad" width={1090} height={596} alt="Supplied Meta inventory ad example showing truck listings in a social feed" />
             <p>Dynamic new and used vehicle advertising showcases real dealership inventory to shoppers on Meta.</p>
             <p>Ask which audience-targeting options, if any, are available for your inventory campaign. Discuss how this audience approach fits the inventory you want to promote.</p>
           </article>
           <article className={styles.channel}>
             <h3>Google Vehicle Listing Ads</h3>
+            <Plate file="work-google-vla" width={963} height={509} alt="Supplied Google search example with sponsored vehicle listings and original vehicle prices" />
             <p>Put dealership inventory in front of high-intent shoppers while they are actively searching for vehicles on Google.</p>
             <p>The channel’s role is search visibility: connecting the vehicles you advertise with shoppers already looking for a vehicle.</p>
           </article>

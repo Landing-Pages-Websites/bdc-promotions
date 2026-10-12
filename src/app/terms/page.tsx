@@ -38,5 +38,5 @@ const sections: LegalSection[] = [
 ];
 
 export default function TermsPage(): ReactElement {
-  return <LegalPageLayout title="Terms of Service" sections={sections} />;
+  return <LegalPageLayout title="Terms of Service" path="/terms" sections={sections} />;
 }

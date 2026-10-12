@@ -74,7 +74,9 @@ export interface SiteConfig {
   /** Path under /public, e.g. "/logo.png". */
   logoPath: string;
   /** Approved testimonial video assets, in playback order. */
-  testimonialVideos: readonly { src: string; poster: string }[];
+  // homePoster: the homepage card has no caption explaining a non-Curt frame,
+  // so it may show a different frame than /testimonials (which says who is shown).
+  testimonialVideos: readonly { src: string; poster: string; homePoster?: string }[];
   /** Path under /public, 1200x630, e.g. "/og-image.png". */
   ogImagePath: string;
   /** Customer UUID from MEGA Admin. */
@@ -156,6 +158,7 @@ export const siteConfig: SiteConfig = {
     {
       src: "/videos/curt-testimonial-part-2.mp4",
       poster: "/videos/curt-testimonial-part-2.jpg",
+      homePoster: "/videos/curt-testimonial-part-2-home.jpg",
     },
   ],
   ogImagePath: "/og-image.png",

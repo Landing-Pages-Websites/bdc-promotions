@@ -77,7 +77,7 @@ export function LandingPage({
   return (
     <div id="top" className="site-page">
       <SiteHeader identity={identity} tagline={content.hero.eyebrow} />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <HeroSection
           content={content.hero}
           identity={identity}

@@ -1,9 +1,9 @@
 import localFont from "next/font/local";
-import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { footerNavigation, primaryNavigation as navigation } from "@/lib/site-navigation";
+import { strategyCall } from "@/lib/site-navigation";
+
+import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 import styles from "./interior-page.module.css";
 
@@ -16,24 +16,15 @@ const barlowCondensed = localFont({
   weight: "700", style: "normal", display: "swap", variable: "--interior-heading",
 });
 
-const strategyCall = "https://calendly.com/justins-bdc-promotions/bdc-promotions-strategy-call";
 
 export function ContactInterior({ children, className }: {
   children: ReactNode;
   className: string;
 }) {
   return (
-    <div className={`${styles.page} ${className} ${barlow.variable} ${barlowCondensed.variable}`}>
-      <header className={`${styles.container} ${styles.header}`}>
-        <Link className={styles.brand} href="/" aria-label="BDC Promotions home">
-          <Image src="/images/services/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} sizes="180px" loading="eager" />
-        </Link>
-        <nav className={styles.navigation} aria-label="Primary navigation">
-          {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === "/contact" ? "page" : undefined}>{label}</Link>)}
-        </nav>
-        <a className={styles.headerCall} href="tel:+13522071074">Call (352) 207-1074</a>
-      </header>
-      <main id="interior-content">
+    <div data-surface="signal-lane" className={`${styles.page} ${className} ${barlow.variable} ${barlowCondensed.variable}`}>
+      <SiteHeader path="/contact" />
+      <main id="main-content" tabIndex={-1}>
         {children}
         <section className={styles.contact} id="discuss-your-dealership" aria-labelledby="contact-title">
           <div className={`${styles.container} ${styles.contactLayout}`}>
@@ -46,17 +37,7 @@ export function ContactInterior({ children, className }: {
           </div>
         </section>
       </main>
-      <footer className={`${styles.container} ${styles.footer}`}>
-        <p>BDC Promotions · Automotive marketing</p>
-        <nav aria-label="Footer navigation">
-          {footerNavigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === "/contact" ? "page" : undefined}>{label}</Link>)}
-        </nav>
-        <div className={styles.contactDetails}>
-          <a href="tel:+13522071074">(352) 207-1074</a>
-          <a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com</a>
-          <a href={strategyCall}>Book a Strategy Call</a>
-        </div>
-      </footer>
+      <SiteFooter path="/contact" />
     </div>
   );
 }

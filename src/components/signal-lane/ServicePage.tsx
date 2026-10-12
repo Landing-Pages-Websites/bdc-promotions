@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactElement, ReactNode } from "react";
 
-import { footerNavigation, primaryNavigation } from "@/lib/site-navigation";
+import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 import styles from "./service-page.module.css";
 
@@ -32,29 +32,30 @@ type ServicePageProps = {
   contactTitle: string;
   contactCopy: string;
   contactLabel: string;
+  /** A client creative shown beside the heading (pass a <Plate>). */
+  visual?: ReactNode;
   children: ReactNode;
 };
 
 export function ServicePage({
-  title, intro, chapters, contactTitle, contactCopy, contactLabel, children,
+  title, intro, chapters, contactTitle, contactCopy, contactLabel, visual, children,
 }: ServicePageProps): ReactElement {
   return (
-    <div className={`${styles.page} ${barlow.variable} ${barlowCondensed.variable}`}>
-      <header className={`${styles.container} ${styles.header}`}>
-        <Link className={styles.brand} href="/" aria-label="BDC Promotions home">
-          <Image src="/images/services/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} sizes="180px" loading="eager" />
-        </Link>
-        <nav className={styles.navigation} aria-label="Primary navigation">
-          {primaryNavigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === "/services" ? "location" : undefined}>{label}</Link>)}
-        </nav>
-        <a className={styles.headerCall} href="tel:+13522071074">Call (352) 207-1074</a>
-      </header>
+    <div data-surface="signal-lane" className={`${styles.page} ${barlow.variable} ${barlowCondensed.variable}`}>
+      <SiteHeader path="/services/" />
 
-      <main id="service-content">
-        <section className={`${styles.container} ${styles.hero}`} id="overview" aria-labelledby="service-title">
-          <Link className={styles.backLink} href="/services">All services <span aria-hidden="true">↗</span></Link>
+      <main id="main-content" tabIndex={-1}>
+        <section className={`${styles.container} ${styles.hero} ${visual ? styles.heroSplit : ""}`} id="overview" aria-labelledby="service-title">
+          <div className={styles.heroCopy}>
+          <Link className={styles.backLink} href="/services" data-back><span aria-hidden="true">←</span> All services</Link>
           <h1 id="service-title">{title}</h1>
           <p className={styles.intro}>{intro}</p>
+          {/* Skip the fold button when a jump link already offers the same action. */}
+          {chapters.some(({ label }) => label === contactLabel) ? null : (
+            <Link className={`${styles.primary} ${styles.heroAction}`} href="/contact">{contactLabel}<span aria-hidden="true">→</span></Link>
+          )}
+          </div>
+          {visual ? <div className={styles.heroVisual}>{visual}</div> : null}
           <nav className={styles.chapterLinks} aria-label="On this page">
             {chapters.map(({ href, label }) => (
               <a key={href} href={href}>{label}<span aria-hidden="true">↓</span></a>
@@ -82,23 +83,19 @@ export function ServicePage({
         </section>
       </main>
 
-      <footer className={`${styles.container} ${styles.footer}`}>
-        <p>BDC Promotions · Automotive marketing</p>
-        <nav aria-label="Footer navigation">
-          {footerNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
-        </nav>
-      </footer>
+      <SiteFooter path="/services/" />
     </div>
   );
 }
 
-export function Chapter({ id, title, children }: {
+export function Chapter({ id, title, dark = false, children }: {
   id: string;
   title: string;
+  dark?: boolean;
   children: ReactNode;
 }): ReactElement {
   return (
-    <section className={styles.chapter} id={id} aria-labelledby={`${id}-title`}>
+    <section className={`${styles.chapter} ${dark ? styles.chapterDark : ""}`} id={id} aria-labelledby={`${id}-title`}>
       <div className={styles.container}>
         <h2 id={`${id}-title`}>{title}</h2>
         {children}
@@ -119,5 +116,16 @@ export function RelatedLinks({ title, links }: { title: string; links: PageLink[
         </ul>
       </div>
     </section>
+  );
+}
+
+/** A published /work creative in a navy plate, never wider than half its pixels (V207). */
+export function Plate({ file, width, height, alt, max = Math.round(width / 2), eager = false }: {
+  file: string; width: number; height: number; alt: string; max?: number; eager?: boolean;
+}): ReactElement {
+  return (
+    <div className={styles.plate}>
+      <Image src={`/images/signal-work/${file}.png`} width={width} height={height} alt={alt} unoptimized loading={eager ? "eager" : "lazy"} style={{ maxWidth: max }} />
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { InteriorChapter, InteriorLinks, InteriorPage } from "@/components/signal-lane/InteriorPage";
+import { Plate } from "@/components/signal-lane/ServicePage";
 import shared from "@/components/signal-lane/interior-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 import styles from "./work.module.css";
@@ -18,12 +19,13 @@ function WorkExample({ file, width, height, alt, caption, eager = false }: {
   const src = `/images/signal-work/${file}.png`;
   return <figure className={styles.example}>
     <Image src={src} width={width} height={height} alt={alt} unoptimized loading={eager ? "eager" : "lazy"} />
-    <figcaption><p>{caption}</p><a href={src}>Open full-size example <span aria-hidden="true">↗</span></a></figcaption>
+    <figcaption><p>{caption}</p><a href={src}>Open full-size example <span aria-hidden="true">→</span></a></figcaption>
   </figure>;
 }
 
 export default function WorkPage() {
   return <InteriorPage path="/work" title="Automotive advertising work"
+    visual={<Plate file="work-luxury-campaign" width={1122} height={1402} alt="Historical luxury automotive campaign artwork with a dealership and three vehicles" max={400} eager />}
     intro="Explore supplied static creative, a luxury video storyboard and inventory advertising examples. These historical examples retain their original offers and attribution; offers and vehicle prices shown are not current offers or BDC Promotions service prices."
     chapters={[{ href: "#event-creative", label: "Static & event creative" }, { href: "#luxury-creative", label: "Luxury & storyboard" }, { href: "#inventory-examples", label: "Meta & Google inventory" }]}
     contactTitle="What should your next campaign say?"
@@ -37,7 +39,7 @@ export default function WorkPage() {
       </div>
       <div className={styles.repoExample}>
         <WorkExample file="growth-repo-sale" width={1080} height={1080} alt="Historical repossession-sale static ad with three vehicles and original offer copy" caption="Repossession-sale event — square static creative with the original vehicle offer and response prompt." />
-        <div className={shared.stack}><h3>Build around the campaign’s message</h3><p>This square event example brings the vehicle selection and promotional message together in a single static ad.</p><Link className={shared.textLink} href="/services/automotive-ad-creative">Explore automotive ad creative →</Link></div>
+        <div className={shared.stack}><h3>Build around the campaign’s message</h3><p>This square event example brings the vehicle selection and promotional message together in a single static ad.</p><Link className={shared.textLink} href="/services/automotive-ad-creative">Explore automotive ad creative<span aria-hidden="true">→</span></Link></div>
       </div>
     </InteriorChapter>
     <InteriorChapter id="luxury-creative" title="Luxury campaign & video planning" dark>
@@ -53,7 +55,7 @@ export default function WorkPage() {
         <div><h3>Meta inventory advertising</h3><WorkExample file="work-inventory-ad" width={1090} height={596} alt="Supplied Meta inventory ad example showing truck listings in a social feed" caption="Meta inventory example — vehicle cards displayed with their original listing details." /></div>
         <div><h3>Google Vehicle Listing Ads</h3><WorkExample file="work-google-vla" width={963} height={509} alt="Supplied Google search example with sponsored vehicle listings and original vehicle prices" caption="Google Vehicle Listing Ads example — sponsored vehicles shown within a vehicle search." /></div>
       </div>
-      <Link className={shared.textLink} href="/services/inventory-advertising">Compare inventory advertising channels →</Link>
+      <Link className={shared.textLink} href="/services/inventory-advertising">Compare inventory advertising channels<span aria-hidden="true">→</span></Link>
     </InteriorChapter>
     <InteriorLinks title="Continue your review" links={[{ href: "/testimonials", label: "Watch Curt’s testimonial" }, { href: "/pricing", label: "Discuss service options" }]} />
   </InteriorPage>;

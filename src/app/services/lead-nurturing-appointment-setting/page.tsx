@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
 
-import { Chapter, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
+import { Chapter, Plate, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
 import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 
@@ -15,6 +15,7 @@ export const metadata: Metadata = buildMetadata({
 export default function LeadNurturingPage(): ReactElement {
   return (
     <ServicePage
+      visual={<Plate file="hero-used-car-event" width={1086} height={1448} alt="Historical used-car sales event creative with a vehicle lineup and voucher message" max={380} eager />}
       title="Lead nurturing & appointment setting for dealerships"
       intro="Keep the conversation moving after a shopper responds. BDC staff and AI-supported tools support follow-up, prequalification and the path toward a dealership appointment with a scheduled day and time."
       chapters={[
@@ -22,7 +23,7 @@ export default function LeadNurturingPage(): ReactElement {
         { href: "#appointment-handoff", label: "Conversation to appointment" },
         { href: "#follow-up-scope", label: "Define your support" },
       ]}
-      contactTitle="Where does your follow-up need support?"
+      contactTitle="Where does your follow‑up need support?" // U+2011: same glyph, never breaks the word
       contactCopy="Talk through your lead sources, current response process and appointment handoff. Define the BDC and AI-supported nurturing your dealership needs."
       contactLabel="Discuss your follow-up process"
     >
@@ -42,7 +43,7 @@ export default function LeadNurturingPage(): ReactElement {
         </div>
       </Chapter>
 
-      <Chapter id="appointment-handoff" title="Make the next step a specific one">
+      <Chapter id="appointment-handoff" title="Make the next step a specific one" dark>
         <div className={styles.rows}>
           <article><h3>Continue the conversation</h3><p>Follow up on the shopper’s interest and keep the conversation moving. The focus is the shopper’s next step, beyond the initial marketing response.</p></article>
           <article><h3>Prequalify the opportunity</h3><p>Use the conversation to understand the shopper’s interest and readiness for a dealership visit. Agree the qualification questions with your store.</p></article>

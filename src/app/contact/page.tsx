@@ -22,8 +22,8 @@ export default function ContactPage() {
       <h1 id="contact-page-title">Let’s talk about your dealership</h1>
       <p className={shared.intro}>Discuss the creative, campaigns and follow-up your store needs. Choose a direct contact option or leave your contact information below.</p>
       <div className={styles.directChoices}>
-        <div><p>Call the office</p><a href="tel:+13522071074">(352) 207-1074 <span aria-hidden="true">↗</span></a></div>
-        <div><p>Email Justin</p><a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com <span aria-hidden="true">↗</span></a></div>
+        <div><p>Call the office</p><a href="tel:+13522071074">(352) 207-1074 <span aria-hidden="true">→</span></a></div>
+        <div><p>Email Justin</p><a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com <span aria-hidden="true">→</span></a></div>
         <div><p>Choose a meeting time</p><a href={strategyCall}>Book a Strategy Call <span aria-hidden="true">↗</span></a></div>
       </div>
       <nav className={shared.chapterLinks} aria-label="On this page">
@@ -36,7 +36,7 @@ export default function ContactPage() {
         <div className={shared.stack}>
           <p>Leave your first and last name, email and phone number to request contact from BDC Promotions.</p>
           <p>This form collects your contact details. To share dealership information or questions now, use the email option above. To choose a meeting time, use the booking link.</p>
-          <Link className={shared.textLink} href="/privacy-policy">Read our privacy policy →</Link>
+          <Link className={shared.textLink} href="/privacy-policy">Read our privacy policy<span aria-hidden="true">→</span></Link>
         </div>
         <LeadForm className={styles.form} submitLabel="Send a request" />
       </div>
@@ -44,9 +44,9 @@ export default function ContactPage() {
     <InteriorChapter id="prepare-your-conversation" title="Make the conversation useful">
       <p className={shared.chapterIntro}>Think through these questions before a call or include the details in your email.</p>
       <div className={styles.preparation}>
-        <div><h3>What needs attention?</h3><p>Which vehicles, offers or events matter to your store? Where do creative, campaign activity or shopper response need support?</p><Link className={shared.textLink} href="/services">Explore the service roles →</Link></div>
-        <div><h3>What does your team handle?</h3><p>Who responds to leads today, who approves campaign messaging and how do appointment details reach your sales team?</p><Link className={shared.textLink} href="/process">Review the process →</Link></div>
-        <div><h3>What belongs in the scope?</h3><p>Consider the support you need, the work your team will keep, and any timing or budget questions you want to discuss.</p><Link className={shared.textLink} href="/pricing">Compare service options →</Link></div>
+        <div><h3>What needs attention?</h3><p>Which vehicles, offers or events matter to your store? Where do creative, campaign activity or shopper response need support?</p><Link className={shared.textLink} href="/services">Explore the service roles<span aria-hidden="true">→</span></Link></div>
+        <div><h3>What does your team handle?</h3><p>Who responds to leads today, who approves campaign messaging and how do appointment details reach your sales team?</p><Link className={shared.textLink} href="/process">Review the process<span aria-hidden="true">→</span></Link></div>
+        <div><h3>What belongs in the scope?</h3><p>Consider the support you need, the work your team will keep, and any timing or budget questions you want to discuss.</p><Link className={shared.textLink} href="/pricing">Compare service options<span aria-hidden="true">→</span></Link></div>
       </div>
     </InteriorChapter>
   </ContactInterior>;

@@ -30,5 +30,5 @@ const sections: LegalSection[] = [
 ];
 
 export default function CookiePolicyPage(): ReactElement {
-  return <LegalPageLayout title="Cookie Policy" sections={sections} />;
+  return <LegalPageLayout title="Cookie Policy" path="/cookie-policy" sections={sections} />;
 }

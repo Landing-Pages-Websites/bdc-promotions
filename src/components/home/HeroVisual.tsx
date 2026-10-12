@@ -22,7 +22,6 @@ export function HeroVisual({ image, label }: HeroVisualProps): ReactElement {
         {...managedSiteFieldAttributesV1(image.fieldId)}
       />
       <div className="hero__visual-label" aria-hidden="true">
-        <span>01</span>
         <p>{label}</p>
       </div>
     </div>

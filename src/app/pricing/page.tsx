@@ -29,7 +29,7 @@ export default function PricingPage() {
       <div className={styles.options}>
         {options.map(option => <article key={option.title} className={styles.option}>
           <h3>{option.title}</h3>
-          <div><p>{option.role}</p><Link className={shared.textLink} href={option.href}>{option.label} →</Link></div>
+          <div><p>{option.role}</p><Link className={shared.textLink} href={option.href}>{option.label}<span aria-hidden="true">→</span></Link></div>
           <div className={styles.question}><p>{option.question}</p></div>
         </article>)}
       </div>
@@ -37,7 +37,7 @@ export default function PricingPage() {
     <InteriorChapter id="connected-support" title="Individual services. Connected responsibilities." dark>
       <div className={shared.split}>
         <div className={shared.stack}><p>Your dealership may need creative for an existing campaign, help connecting ads with shopper response, or support continuing the conversation after a lead arrives.</p><p>Discuss the parts your team already handles and where BDC Promotions can contribute.</p></div>
-        <div className={shared.stack}><h3>When the work connects</h3><p>Creative gives the campaign its message. Campaign optimization supports shopper engagement. BDC staff and AI-supported nurturing help move the conversation toward an appointment.</p><Link className={shared.textLink} href="/process">Follow the operating process →</Link></div>
+        <div className={shared.stack}><h3>When the work connects</h3><p>Creative gives the campaign its message. Campaign optimization supports shopper engagement. BDC staff and AI-supported nurturing help move the conversation toward an appointment.</p><Link className={shared.textLink} href="/process">Follow the operating process<span aria-hidden="true">→</span></Link></div>
       </div>
     </InteriorChapter>
     <InteriorChapter id="quote-scope" title="Make the consultation specific">
@@ -48,7 +48,7 @@ export default function PricingPage() {
           <li>What media budget and setup needs should the plan account for?</li>
           <li>Who will handle approvals, shopper responses and appointment handoffs?</li>
           <li>What timing and reporting needs should be discussed?</li>
-        </ul><Link className={shared.textLink} href="/contact">Share your requirements →</Link></div>
+        </ul><Link className={shared.textLink} href="/contact">Share your requirements<span aria-hidden="true">→</span></Link></div>
       </div>
     </InteriorChapter>
     <InteriorLinks title="Keep evaluating your fit" links={[{ href: "/services", label: "All automotive marketing services" }, { href: "/work", label: "See advertising examples" }]} />

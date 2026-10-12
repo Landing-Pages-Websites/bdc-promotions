@@ -1,10 +1,12 @@
-.surface header nav a { min-width: 44px; }
+/* Article titles run long; they keep the earlier 64px ceiling. */
+.surface main h1 { font-size: clamp(40px, 4.4vw, 64px); }
 .surface .article {
   background: var(--paper);
   color: var(--navy);
-  padding: 32px 32px 64px;
+  padding: clamp(40px, 5vw, 72px) 32px clamp(64px, 7vw, 104px);
 }
-.reading { max-width: 68ch; margin-inline: auto; }
+/* 640px at 20px Barlow ≈ 72 characters a line (68ch rendered 87–91). */
+.reading { max-width: 640px; margin-inline: auto; }
 .metadata {
   display: flex;
   flex-wrap: wrap;
@@ -21,11 +23,11 @@
 .surface .body [role="region"]:focus-visible { outline: 3px solid var(--blue); outline-offset: 5px; }
 .image { margin-bottom: 32px; }
 .image img { display: block; width: 100%; height: auto; border-radius: 0; object-fit: contain; }
-.surface .body { font-size: 18px; line-height: 1.7; overflow-wrap: anywhere; }
+.surface .body { font-size: 20px; line-height: 1.6; overflow-wrap: anywhere; }
 .surface .body > div, .surface .body p, .surface .body li { color: var(--panel); }
-.surface .body p { margin: 0 0 24px; line-height: 1.7; max-width: none; }
-.surface .body h2 { margin: 48px 0 20px; font-size: 36px; line-height: 1.15; text-wrap: pretty; }
-.surface .body h3 { margin: 32px 0 16px; font-size: 28px; line-height: 1.2; text-wrap: pretty; }
+.surface .body p { margin: 0 0 24px; line-height: 1.6; max-width: none; }
+.surface .body h2 { margin: 64px 0 16px; font-size: 36px; line-height: 1.15; text-wrap: pretty; }
+.surface .body h3 { margin: 40px 0 10px; font-size: 24px; line-height: 1.2; text-wrap: pretty; }
 .surface .body ul, .surface .body ol { margin: 20px 0 28px; padding-left: 28px; list-style-position: outside; }
 .surface .body li { margin-block: 10px; padding-left: 4px; }
 .surface .body li > ul, .surface .body li > ol { margin-block: 12px; }
@@ -41,21 +43,47 @@
 .surface .body blockquote { margin-block: 28px; padding-left: 20px; border-left: 3px solid var(--blue); color: var(--panel); }
 .surface .body > div > :last-child { margin-bottom: 0; }
 .related { background: var(--paper); color: var(--navy); border-top: 1px solid var(--muted); padding: 40px 32px; }
-.relatedInner { max-width: 1120px; margin-inline: auto; }
+.relatedInner { max-width: 1180px; margin-inline: auto; }
 .surface .related h2 { font-size: 36px; }
 .readNext { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; margin-top: 24px; }
 .surface .readNext h3 { font-size: 28px; line-height: 1.2; text-wrap: pretty; }
 .readNext a { display: block; min-height: 48px; }
-.readNext span { color: var(--blue); }
-.surface .readNext p { margin-top: 12px; color: var(--panel); }
+.readNext span { margin-left: .3em; color: var(--blue); }
+/* Titles and descriptions share rows across the two columns. */
+.readNext { grid-template-rows: auto auto; }
+.readNext > div { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 12px; }
+.surface .readNext p { color: var(--panel); }
 @media (max-width: 700px) {
   .surface .article { padding: 24px 20px 40px; }
   .metadata { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .metadata > div { flex-direction: column; }
   .surface .body { font-size: 17px; }
-  .surface .body h2 { margin-top: 36px; font-size: 30px; }
-  .surface .body h3 { font-size: 25px; }
+  .surface .body h2 { margin-top: 48px; font-size: 30px; }
+  .surface .body h3 { margin-top: 32px; font-size: 20px; }
   .surface .body th, .surface .body td { padding: 12px; }
   .related { padding: 32px 20px; }
   .readNext { grid-template-columns: 1fr; gap: 28px; }
+}
+/* Phones: each table row becomes a labelled card instead of a sideways scroll. */
+@media (max-width: 700px) {
+  .surface .body table { min-width: 0; }
+  .surface .body thead { display: none; } /* every cell carries its column name in data-label */
+  .surface .body tr { display: block; padding-block: 12px; border-bottom: 1px solid var(--muted); }
+  .surface .body tr:last-child { border-bottom: 0; }
+  .surface .body td { display: block; padding: 4px 16px; border: 0; }
+  .surface .body td { padding: 6px 16px 12px; }
+  .surface .body td::before { content: attr(data-label); display: block; margin-bottom: 2px; color: var(--panel); font: 700 13px/1.3 var(--interior-heading), "Arial Narrow", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  /* The first cell is the row's title, so it needs no label. */
+  .surface .body td:first-child::before { content: none; }
+  .surface .body td:first-child { padding-top: 12px; color: var(--navy); font: 700 20px/1.2 var(--interior-heading), "Arial Narrow", sans-serif; text-transform: uppercase; }
+}
+
+.metadata a { gap: 8px; }
+/* Desktop tables: condensed heads, a first column wide enough not to wrap its labels. */
+.surface .body th { padding-block: 14px; font: 700 15px/1.3 var(--interior-heading), "Arial Narrow", sans-serif; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.surface .body :is(th, td):first-child { width: 28%; }
+.surface .body td:first-child { color: var(--navy); font: 700 17px/1.35 var(--interior-heading), "Arial Narrow", sans-serif; text-transform: uppercase; }
+/* A paragraph that is only a link reads as a deliberate call-out, not a stray link. */
+.surface .body p[data-cta] { padding: 12px 0 12px 20px; border-left: 3px solid var(--blue); }
+@media (max-width: 700px) {
+  .surface .body { font-size: 17px; }
 }

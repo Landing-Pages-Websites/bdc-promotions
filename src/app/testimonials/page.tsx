@@ -17,7 +17,8 @@ export default function TestimonialsPage() {
     contactLabel="Contact BDC Promotions">
     {labels.map((label, index) => {
       const media = siteConfig.testimonialVideos[index];
-      return <InteriorChapter key={label} id={`curt-part-${index + 1}`} title={label}>
+      // non-breaking spaces keep "— Part 1" from starting a line on phones
+      return <InteriorChapter key={label} id={`curt-part-${index + 1}`} title={label.replace(" — Part ", "\u00a0— Part\u00a0")}>
         <div className={styles.interview}>
           <p>{index === 0 ? "Begin Curt’s interview here, then continue with Part 2 below." : "Continue the same interview. The poster for this part shows BDC Promotions representative Justin Specht."}</p>
           <video controls playsInline preload="metadata" width={640} height={360} aria-label={label} src={media.src} poster={media.poster}>

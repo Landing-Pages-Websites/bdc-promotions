@@ -3,4 +3,5 @@ export type Services = readonly {
   readonly name: string;
   readonly description: string;
   readonly role: string;
+  readonly href: string;
 }[];

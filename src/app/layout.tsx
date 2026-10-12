@@ -55,7 +55,7 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <div id="main-content" className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col">
           {children}
         </div>
         {/*

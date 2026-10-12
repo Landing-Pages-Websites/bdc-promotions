@@ -16,14 +16,15 @@
   display: grid;
   grid-template-columns: minmax(0, 0.94fr) minmax(360px, 0.78fr);
   gap: clamp(2rem, 5vw, 5.5rem);
-  align-items: center;
+  align-items: start;
   min-height: 760px;
-  padding-block: 5.5rem 7rem;
+  padding-block: 4.5rem 7rem;
 }
 
 .hero::before {
   position: absolute;
-  inset: 0 auto 0 46%;
+  /* Centre of the column gap: copy column = (100% - gap) * .94/1.72. */
+  inset: 0 auto 0 calc((100% - clamp(2rem, 5vw, 5.5rem)) * 0.5465 + clamp(2rem, 5vw, 5.5rem) / 2);
   width: 1px;
   background: linear-gradient(
     transparent,
@@ -56,7 +57,7 @@
   gap: 0.65rem;
   margin: 0 0 1.4rem;
   color: var(--cyan);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -79,8 +80,8 @@ h3 {
 
 .display-title {
   max-width: 710px;
-  font-size: clamp(4.5rem, 7.3vw, 7rem);
-  line-height: 0.85;
+  font-size: clamp(4rem, 6.2vw, 6rem);
+  line-height: 0.9;
   letter-spacing: -0.045em;
   text-transform: uppercase;
   text-wrap: balance;
@@ -109,7 +110,7 @@ h3 {
   padding: 1.4rem 0 0;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.69rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   list-style: none;
@@ -124,6 +125,8 @@ h3 {
 }
 
 .hero__visual {
+  /* Top edge meets the headline's cap line (eyebrow + its margin). */
+  margin-top: 3.85rem;
   height: min(610px, 68vw);
   min-height: 520px;
   overflow: hidden;
@@ -199,6 +202,16 @@ h3 {
   line-height: 1.75;
 }
 
+.section-intro h2 + p,
+.focus-panel h2 + p,
+.contact-section__copy h2 + p {
+  margin-top: 1.5rem;
+}
+
+main p {
+  text-wrap: pretty;
+}
+
 .section-intro--split {
   display: grid;
   grid-template-columns: 1.3fr 0.7fr;
@@ -213,7 +226,7 @@ h3 {
 
 .value-section,
 .process-section {
-  padding-block: 7rem;
+  padding-block: 3rem 7rem;
 }
 
 .value-grid {
@@ -229,7 +242,10 @@ h3 {
   padding: 1.75rem;
   border-right: 1px solid var(--line);
   flex-direction: column;
-  justify-content: space-between;
+}
+
+.value-card__number {
+  margin-bottom: 2.5rem;
 }
 
 .value-card:last-child {
@@ -241,7 +257,7 @@ h3 {
 .insight-card > span {
   color: var(--cyan);
   font-family: var(--font-display), sans-serif;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0.13em;
 }
@@ -261,7 +277,7 @@ h3 {
 .process-card p {
   margin: 0.75rem 0 0;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 1rem;
   line-height: 1.65;
 }
 
@@ -290,8 +306,9 @@ h3 {
 
 .service-card {
   position: relative;
-  min-height: 340px;
-  padding: 1.8rem;
+  min-height: 300px;
+  /* bottom room for the absolutely placed meter, so text never runs into it */
+  padding: 1.8rem 1.8rem calc(1.8rem + 2px + 1.75rem);
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -304,12 +321,14 @@ h3 {
 
 .service-card__topline {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 5rem;
+  margin-bottom: 2.5rem;
   color: var(--muted);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .service-card h3 {
@@ -331,18 +350,13 @@ h3 {
   width: 28%;
   height: 100%;
   background: linear-gradient(90deg, var(--cyan), var(--blue));
-  transition: width 280ms ease;
-}
-
-.service-card:hover .service-card__meter span {
-  width: 100%;
 }
 
 .focus-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  padding-block: 7rem;
+  padding-block: 0 7rem;
 }
 
 .focus-panel {
@@ -397,7 +411,7 @@ h3 {
 
 .process-card {
   position: relative;
-  min-height: 290px;
+  min-height: 250px;
   padding: 1.8rem;
   border: 1px solid var(--line);
   border-right: 0;
@@ -414,9 +428,9 @@ h3 {
 
 .process-card__step {
   display: block;
-  margin-bottom: 5rem;
+  margin-bottom: 2.5rem;
   color: var(--cyan);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -437,7 +451,7 @@ h3 {
 }
 
 .insight-card p {
-  margin: 3rem 0 auto;
+  margin: 1.5rem 0 auto;
   color: var(--muted);
   line-height: 1.75;
 }
@@ -468,7 +482,7 @@ h3 {
 }
 
 .contact-section__copy {
-  align-self: center;
+  align-self: start;
   padding: clamp(0.5rem, 3vw, 2rem);
 }
 
@@ -495,7 +509,7 @@ h3 {
   display: block;
   margin-top: 0.7rem;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -524,7 +538,7 @@ h3 {
 
 .homepage-lead-form__label {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -534,7 +548,7 @@ h3 {
   width: 100%;
   min-height: 48px;
   padding: 0.75rem 0.85rem;
-  border: 1px solid rgba(174, 197, 229, 0.26);
+  border: 1px solid rgba(174, 197, 229, 0.5);
   border-radius: 9px;
   outline: none;
   background: rgba(8, 11, 18, 0.76);
@@ -551,7 +565,23 @@ h3 {
 }
 
 .homepage-lead-form__input::placeholder {
-  color: rgba(169, 181, 200, 0.55);
+  color: rgba(169, 181, 200, 0.85);
+}
+
+.homepage-lead-form__input:hover {
+  border-color: rgba(174, 197, 229, 0.7);
+}
+
+.homepage-lead-form__input:user-invalid {
+  border-width: 2px;
+  border-color: #fb7185;
+}
+
+.homepage-lead-form > p[role="alert"] {
+  border: 1px solid #fb7185;
+  border-radius: 9px;
+  background: rgba(251, 113, 133, 0.08);
+  color: #fecdd3;
 }
 
 .homepage-lead-form__submit {
@@ -570,7 +600,7 @@ h3 {
   justify-content: center;
   margin-top: 1.5rem;
   color: var(--muted);
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -621,7 +651,7 @@ h3 {
   max-width: 580px;
   margin: 0.55rem 0 0;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -632,30 +662,18 @@ h3 {
   gap: 0 1.2rem;
   align-items: center;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
 }
 
 .reveal {
   animation: rise 720ms both cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.reveal--two {
-  animation-delay: 90ms;
-}
-.reveal--three {
-  animation-delay: 180ms;
-}
-.reveal--four {
-  animation-delay: 270ms;
-}
-
 @keyframes rise {
   from {
-    opacity: 0;
     transform: translateY(16px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }

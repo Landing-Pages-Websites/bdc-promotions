@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import Image from "next/image";
-import Link from "next/link";
 import type { ReactElement } from "react";
 
 import { buildMetadata } from "@/lib/seo";
-import { footerNavigation, primaryNavigation } from "@/lib/site-navigation";
+import { SiteFooter, SiteHeader } from "@/components/signal-lane/SiteChrome";
 import OpeningSection from "./sections/OpeningSection";
 import DirectorySection from "./sections/DirectorySection";
 import CompareSection from "./sections/CompareSection";
@@ -52,6 +50,7 @@ export const metadata: Metadata = {
 const services = [
   {
     id: "automotive-ad-creative",
+    href: "/services/automotive-ad-creative",
     name: "Automotive ad creative",
     description:
       "Static, event, inventory and video advertising designed for automotive shoppers.",
@@ -59,18 +58,21 @@ const services = [
   },
   {
     id: "lead-generation",
+    href: "/services/lead-generation",
     name: "Lead generation",
     description: "Static ad creation, video ad editing and ad optimization.",
     role: "Connect ad creative with campaign optimization.",
   },
   {
     id: "inventory-advertising",
+    href: "/services/inventory-advertising",
     name: "Inventory advertising",
     description: "Meta inventory ads and Google Vehicle Listing Ads.",
     role: "Advertise vehicle inventory on Meta and Google.",
   },
   {
     id: "lead-nurturing",
+    href: "/services/lead-nurturing-appointment-setting",
     name: "Lead nurturing & appointment setting",
     description:
       "BDC staff and AI-supported tools nurture the conversation and move interested shoppers toward an appointment with a scheduled day and time.",
@@ -80,25 +82,10 @@ const services = [
 
 export default function ServicesPage(): ReactElement {
   return (
-    <div className={`${styles.page} ${barlow.variable} ${barlowCondensed.variable}`}>
-      <header className={`${styles.container} ${styles.header}`}>
-        <Link className={styles.brand} href="/" aria-label="BDC Promotions home">
-          <Image
-            src={logo}
-            alt="BDC Promotions"
-            width={1254}
-            height={749}
-            sizes="180px"
-            loading="eager"
-          />
-        </Link>
-        <nav className={styles.navigation} aria-label="Primary navigation">
-          {primaryNavigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === "/services" ? "page" : undefined}>{label}</Link>)}
-        </nav>
-        <a className={styles.headerCall} href={phoneHref}>Call {phone}</a>
-      </header>
+    <div data-surface="signal-lane" className={`${styles.page} ${barlow.variable} ${barlowCondensed.variable}`}>
+      <SiteHeader path="/services" />
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <OpeningSection services={services} overview={overview} />
 
         <DirectorySection services={services} />
@@ -108,12 +95,7 @@ export default function ServicesPage(): ReactElement {
         <ContactSection phone={phone} phoneHref={phoneHref} />
       </main>
 
-      <footer className={`${styles.container} ${styles.footer}`}>
-        <p>BDC Promotions · Automotive marketing</p>
-        <nav aria-label="Footer navigation">
-          {footerNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
-        </nav>
-      </footer>
+      <SiteFooter path="/services" />
     </div>
   );
 }
