@@ -51,6 +51,13 @@ export default function BlogIndexPage(): ReactElement {
     </InteriorChapter>
     <InteriorChapter id="all-articles" title="All articles">
       <p className={shared.chapterIntro}>Browse the published guides from BDC Promotions, with their original publication dates.</p>
+      <p className={shared.chapterIntro}>
+        If you want to discuss your dealership&apos;s next step,{' '}
+        <a className={shared.textLink} href="https://bdcpromotions.com/#contact">
+          contact BDC Promotions
+        </a>
+        .
+      </p>
       <div className={styles.archive}>
         {posts.map(post => {
           const dateLabel = formatPublishedDate(post);

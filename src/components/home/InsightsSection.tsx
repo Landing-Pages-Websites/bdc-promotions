@@ -53,6 +53,13 @@ export function InsightsSection({
             </article>
           ))}
         </div>
+        <p className="insights-link">
+          Explore more{' '}
+          <a className="button button--ghost" href="https://bdcpromotions.com/blog">
+            dealership marketing guides
+          </a>
+          .
+        </p>
       </div>
     </section>
   );
