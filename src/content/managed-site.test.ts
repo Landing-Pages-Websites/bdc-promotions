@@ -11,5 +11,6 @@ test("exposes every BDC Promotions home section in reference order", () => {
   assert.equal(home.focus.items.length, 4);
   assert.equal(home.process.items.length, 4);
   assert.equal(home.faq.items.length, 3);
-  assert.match(home.contact.heading, /appointments/i);
+  // Owner-approved copy (PR #43/#44) replaced the older "appointments" heading.
+  assert.match(home.contact.heading, /right approach for your dealership/i);
 });

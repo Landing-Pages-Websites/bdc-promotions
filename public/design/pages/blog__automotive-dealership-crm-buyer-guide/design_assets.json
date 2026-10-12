@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "route": "/blog/automotive-dealership-crm-buyer-guide",
+  "slug": "blog__automotive-dealership-crm-buyer-guide",
+  "kind": "source-copy",
+  "assets_dir": "public/images/design/blog__automotive-dealership-crm-buyer-guide",
+  "assets": [
+    {
+      "file": "02-article-original.webp",
+      "frame": "02-article-content",
+      "role": "article-editorial-illustration",
+      "source": "client-copy",
+      "source_url": "https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/automotive-dealership-crm-buyer-guide-333230.webp",
+      "sha256": "ae020709c53e6504285754c66cff55adf0c60491c1811158a2013e92d37c2eba",
+      "width": 1344,
+      "height": 768,
+      "runtime_file": "public/images/design/blog__automotive-dealership-crm-buyer-guide/assets/02-article-original.webp",
+      "runtime_path": "/images/design/blog__automotive-dealership-crm-buyer-guide/assets/02-article-original.webp",
+      "source_frontmatter": {
+        "file": "content/blog/automotive-dealership-crm-buyer-guide.md",
+        "field": "image",
+        "sha256": "f21ac61938186c58573eefc86746f58e159416716d4e6e2a88b139151d4ae89e"
+      },
+      "qualification": "Existing approved editorial illustration; not documentary customer staff, premises, or results proof. Source-preserving rename of original bytes; no generation or re-encoding. This source-copy catalog is not an asset KEEP, crop, or fidelity approval."
+    }
+  ]
+}

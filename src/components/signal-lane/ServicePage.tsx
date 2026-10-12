@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactElement, ReactNode } from "react";
 
+import { footerNavigation, primaryNavigation } from "@/lib/site-navigation";
+
 import styles from "./service-page.module.css";
 
 const barlow = localFont({
@@ -43,8 +45,7 @@ export function ServicePage({
           <Image src="/images/services/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} sizes="180px" loading="eager" />
         </Link>
         <nav className={styles.navigation} aria-label="Primary navigation">
-          <Link href="/services" aria-current="location">Services</Link>
-          <Link href="/contact">Contact</Link>
+          {primaryNavigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === "/services" ? "location" : undefined}>{label}</Link>)}
         </nav>
         <a className={styles.headerCall} href="tel:+13522071074">Call (352) 207-1074</a>
       </header>
@@ -84,14 +85,7 @@ export function ServicePage({
       <footer className={`${styles.container} ${styles.footer}`}>
         <p>BDC Promotions · Automotive marketing</p>
         <nav aria-label="Footer navigation">
-          <Link href="/services">Services</Link>
-          <Link href="/process">Process</Link>
-          <Link href="/work">Work</Link>
-          <Link href="/about">About</Link>
-          <Link href="/blog">Insights</Link>
-          <Link href="/pricing">Service Options</Link>
-          <Link href="/testimonials">Testimonials</Link>
-          <Link href="/contact">Contact</Link>
+          {footerNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
         </nav>
       </footer>
     </div>

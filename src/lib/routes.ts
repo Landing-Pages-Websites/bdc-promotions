@@ -28,7 +28,7 @@ export const siteRoutes: RouteEntry[] = [
   { path: "/cookie-policy", title: "Cookie Policy", priority: 0.2, hideFromKeyPages: true },
   { path: "/thank-you", title: "Thank You", priority: 0.1, hideFromKeyPages: true },
   { path: "/blog", title: "Blog", priority: 0.7 },
-  { path: "/about/", title: "About BDC Promotions", priority: 0.5 },
+  { path: "/about", title: "About BDC Promotions", priority: 0.5 },
   // Builders: append new pages below this line.
   { path: "/services", title: "Automotive Marketing Services" },
   { path: "/services/automotive-ad-creative", title: "Automotive Ad Creative for Car Dealerships" },

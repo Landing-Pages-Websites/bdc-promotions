@@ -103,6 +103,7 @@
 
 .selector {
   padding-top: 56px;
+  padding-bottom: 16px;
 }
 
 .page .eyebrow {
@@ -172,7 +173,7 @@
 }
 
 .directory {
-  padding-block: 56px;
+  padding-block: 56px 48px;
   background: var(--paper);
   color: var(--navy);
 }
@@ -314,6 +315,45 @@
   overflow-wrap: anywhere;
 }
 
+.footer {
+  padding-block: 24px;
+  border-top: 1px solid var(--panel);
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 28px;
+  margin-top: 8px;
+}
+
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 48px;
+}
+
+.footer a:hover {
+  color: var(--mint);
+}
+
+@media (max-width: 1050px) {
+  .header {
+    grid-template-columns: 1fr auto;
+    padding-block: 8px;
+  }
+
+  .navigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: wrap;
+    gap: 0 24px;
+  }
+}
+
 @media (max-width: 900px) {
   .selectorLinks {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -349,11 +389,6 @@
     width: 160px;
   }
 
-  .navigation {
-    flex-direction: column;
-    gap: 0;
-  }
-
   .headerCall {
     grid-column: 1 / -1;
     justify-self: stretch;
@@ -363,6 +398,7 @@
 
   .selector {
     padding-top: 40px;
+    padding-bottom: 12px;
   }
 
   .selector h1 {
@@ -384,6 +420,10 @@
   .directory,
   .contact {
     padding-block: 40px;
+  }
+
+  .directory {
+    padding-bottom: 24px;
   }
 
   .entry,

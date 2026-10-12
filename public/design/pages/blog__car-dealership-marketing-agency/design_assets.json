@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "route": "/blog/car-dealership-marketing-agency",
+  "slug": "blog__car-dealership-marketing-agency",
+  "kind": "source-copy",
+  "assets_dir": "public/images/design/blog__car-dealership-marketing-agency",
+  "assets": [
+    {
+      "file": "02-article-original.webp",
+      "frame": "02-article-content",
+      "role": "article-editorial-illustration",
+      "source": "client-copy",
+      "source_url": "https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/car-dealership-marketing-agency-how-to-choose-919633.webp",
+      "sha256": "90b2d1fefbd1fec838b6f80abae79df9556ad16b5d6e780d4122129d2700a9cc",
+      "width": 1344,
+      "height": 768,
+      "runtime_file": "public/images/design/blog__car-dealership-marketing-agency/assets/02-article-original.webp",
+      "runtime_path": "/images/design/blog__car-dealership-marketing-agency/assets/02-article-original.webp",
+      "source_frontmatter": {
+        "file": "content/blog/car-dealership-marketing-agency.md",
+        "field": "image",
+        "sha256": "de81e5941d6720e8e0ddf2c4569f36d7ce5a575b6e40982f6f7b0d9fbfc7e37b"
+      },
+      "qualification": "Existing approved editorial illustration; not documentary customer staff, premises, or results proof. Source-preserving rename of original bytes; no generation or re-encoding. This source-copy catalog is not an asset KEEP, crop, or fidelity approval."
+    }
+  ]
+}

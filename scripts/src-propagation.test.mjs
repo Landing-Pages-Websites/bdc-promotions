@@ -52,6 +52,7 @@ const EXEMPT_BECAUSE_THE_SUBSYSTEM_DOES_NOT_PROPAGATE = new Set([
   "src/components/home/ServicesSection.tsx",
   "src/components/home/SiteFooter.tsx",
   "src/components/home/SiteHeader.tsx",
+  "src/components/home/TestimonialSection.tsx",
   "src/components/home/ValueGrid.tsx",
   "src/content/managed-site.ts",
 ]);

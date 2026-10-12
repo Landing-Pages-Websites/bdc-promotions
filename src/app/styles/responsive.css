@@ -26,10 +26,21 @@
   overflow: hidden;
 }
 
-@media (max-width: 900px) {
-  .site-nav {
-    display: none;
+@media (max-width: 1100px) {
+  .site-header {
+    grid-template-columns: 1fr auto;
+    row-gap: 0.5rem;
+    padding-block: 1rem 0.25rem;
   }
+  .site-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: wrap;
+    gap: 0 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
   .site-header {
     grid-template-columns: 1fr auto;
   }
@@ -150,7 +161,7 @@
     flex-direction: column;
   }
   .site-footer__links {
-    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 
