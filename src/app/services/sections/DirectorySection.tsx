@@ -4,7 +4,7 @@ import styles from "../services.module.css";
 
 export default function DirectorySection({ services }: { services: Services }): ReactElement {
   return (
-    <section data-section="02-section" className={styles.directory} aria-labelledby="directory-title">
+    <section className={styles.directory} aria-labelledby="directory-title">
       <div className={styles.container}>
         <h2 id="directory-title">Choose your support</h2>
         <div className={styles.entries}>

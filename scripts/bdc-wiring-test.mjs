@@ -136,7 +136,7 @@ function assertServicesPreserved() {
   const props = ['{ services, overview }: { services: Services; overview: string }', '{ services }: { services: Services }', '{ services }: { services: Services }', '{ phone, phoneHref }: { phone: string; phoneHref: string }'];
   for (const [i, owner] of owners.entries()) {
     const imports = 'import type { ReactElement } from "react";\n' + (i === 3 ? 'import Link from "next/link";\n' : 'import type { Services } from "./types";\n') + 'import styles from "../services.module.css";\n';
-    const body = sections[i].split("\n").map((line) => line.slice(4)).join("\n").replace('<section ', `<section data-section="${frames[i]}" `);
+    const body = sections[i].split("\n").map((line) => line.slice(4)).join("\n");
     assert.equal(read(`src/app/services/sections/${owner}.tsx`), imports + `\nexport default function ${owner}(${props[i]}): ReactElement {\n  return (\n` + body + '\n  );\n}\n');
     const attrs = ['services={services} overview={overview}', 'services={services}', 'services={services}', 'phone={phone} phoneHref={phoneHref}'][i];
     expectedPage = expectedPage.replace(sections[i], `        <${owner} ${attrs} />`).replace('import styles from "./services.module.css";', `import ${owner} from "./sections/${owner}";\nimport styles from "./services.module.css";`);
@@ -161,9 +161,17 @@ test("approved source is untouched outside the exact wiring scope", () => {
     sha256: entry.sha256,
   }));
   assert.deepEqual(changedSince(r5), [imageLookup, "scripts/bdc-wiring-test.mjs",
+    ...owners.map((owner) => `src/app/services/sections/${owner}.tsx`),
     ...renamedAssets.flatMap(({ before, after }) => [before, after]),
     ...originals.map((entry) => `public/design/pages/blog__${entry.slug}/design_assets.json`),
   ].sort());
+  for (const [i, owner] of owners.entries()) {
+    const path = `src/app/services/sections/${owner}.tsx`;
+    const prior = original(path, r5);
+    const attribute = ` data-section="${frames[i]}"`;
+    assert.equal(prior.split(attribute).length - 1, 1, `${path}: exactly one prior attribute`);
+    assert.equal(read(path), prior.replace(attribute, ""), `${path}: complete bytes after one attribute removal`);
+  }
   for (const { before, after, sha256 } of renamedAssets) {
     assert.equal(existsSync(before), false, `old asset must not remain: ${before}`);
     assert.equal(digest(execFileSync("git", ["show", `${r5}:${before}`])), sha256);
@@ -330,7 +338,20 @@ test("production HTML: routes, bridge, sitemap, legal/article links and retired 
     assert.ok(wrappers.length > 0, slug);
     for (const wrapper of wrappers) assert.equal(wrapper, '<div class="mt-6 overflow-x-auto" tabindex="0" role="region" aria-label="Article table">');
   }
-  assert.deepEqual([...pages.get("/services").matchAll(/data-section="([^"]+)"/g)].map((m) => m[1]), frames);
+  const servicesHtml = pages.get("/services");
+  assert.equal([...servicesHtml.matchAll(/<main(?=[\s>])[^>]*>/gi)].length, 1, "Services has one main opening tag");
+  assert.equal([...servicesHtml.matchAll(/<\/main\s*>/gi)].length, 1, "Services has one main closing tag");
+  const servicesMain = servicesHtml.match(/<main(?=[\s>])[^>]*>([\s\S]*?)<\/main\s*>/i);
+  assert.ok(servicesMain, "Services has a complete initial HTML main");
+  const servicesSections = [...servicesMain[1].matchAll(/<section(?=[\s>])[^>]*>/gi)].map((match) => match[0]);
+  assert.equal(servicesSections.length, 4, "Services main has exactly four sections");
+  const servicesIdentities = servicesSections.map((section) => {
+    const attributes = new Map([...section.matchAll(/\s([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)]
+      .map((match) => [match[1].toLowerCase(), match[2] ?? match[3] ?? match[4] ?? ""]));
+    assert.equal(attributes.has("data-section"), false, "Services section has no introduced data-section");
+    return attributes.get("id") || attributes.get("data-section") || null;
+  });
+  assert.deepEqual(servicesIdentities, [null, null, "compare", null]);
   for (const entry of originals) {
     assert.ok(pages.get(`/blog/${entry.slug}`).includes(encodeURIComponent(entry.localPath)), entry.slug);
     const response = await fetch(new URL(entry.localPath, base), { redirect: "manual" });

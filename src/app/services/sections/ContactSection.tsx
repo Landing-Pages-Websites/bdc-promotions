@@ -4,7 +4,7 @@ import styles from "../services.module.css";
 
 export default function ContactSection({ phone, phoneHref }: { phone: string; phoneHref: string }): ReactElement {
   return (
-    <section data-section="04-section" className={styles.contact} aria-labelledby="contact-title">
+    <section className={styles.contact} aria-labelledby="contact-title">
       <div className={`${styles.container} ${styles.contactLayout}`}>
         <div>
           <h2 id="contact-title">Find the right mix for your dealership</h2>
