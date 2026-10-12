@@ -124,6 +124,13 @@ a {
   transition: color 180ms ease;
 }
 
+.site-nav a,
+.site-footer__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .site-nav a:hover,
 .site-footer a:hover {
   color: var(--cyan);

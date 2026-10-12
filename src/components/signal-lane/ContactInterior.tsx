@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { footerNavigation, primaryNavigation as navigation } from "@/lib/site-navigation";
+
 import styles from "./interior-page.module.css";
 
 const barlow = localFont({
@@ -14,11 +16,6 @@ const barlowCondensed = localFont({
   weight: "700", style: "normal", display: "swap", variable: "--interior-heading",
 });
 
-const navigation = [
-  ["/services", "Services"], ["/process", "Process"], ["/work", "Work"],
-  ["/about", "About"], ["/blog", "Insights"], ["/contact", "Contact"],
-] as const;
-const footerNavigation = [...navigation, ["/pricing", "Service Options"], ["/testimonials", "Testimonials"]] as const;
 const strategyCall = "https://calendly.com/justins-bdc-promotions/bdc-promotions-strategy-call";
 
 export function ContactInterior({ children, className }: {

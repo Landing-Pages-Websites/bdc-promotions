@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ReactElement } from "react";
 
 import { buildMetadata } from "@/lib/seo";
+import { footerNavigation, primaryNavigation } from "@/lib/site-navigation";
 import OpeningSection from "./sections/OpeningSection";
 import DirectorySection from "./sections/DirectorySection";
 import CompareSection from "./sections/CompareSection";
@@ -92,8 +93,7 @@ export default function ServicesPage(): ReactElement {
           />
         </Link>
         <nav className={styles.navigation} aria-label="Primary navigation">
-          <Link href="/services" aria-current="page">Services</Link>
-          <Link href="/contact">Contact</Link>
+          {primaryNavigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === "/services" ? "page" : undefined}>{label}</Link>)}
         </nav>
         <a className={styles.headerCall} href={phoneHref}>Call {phone}</a>
       </header>
@@ -107,6 +107,13 @@ export default function ServicesPage(): ReactElement {
 
         <ContactSection phone={phone} phoneHref={phoneHref} />
       </main>
+
+      <footer className={`${styles.container} ${styles.footer}`}>
+        <p>BDC Promotions · Automotive marketing</p>
+        <nav aria-label="Footer navigation">
+          {footerNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
+        </nav>
+      </footer>
     </div>
   );
 }

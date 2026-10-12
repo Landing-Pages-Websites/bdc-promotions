@@ -1,6 +1,8 @@
+import Link from "next/link";
 import type { ReactElement } from "react";
 
 import { phoneHref } from "@/lib/phone";
+import { footerNavigation } from "@/lib/site-navigation";
 
 import type { BrandIdentity } from "./LandingPage";
 
@@ -17,9 +19,7 @@ export function SiteFooter({ identity }: SiteFooterProps): ReactElement {
       </div>
       <div className="site-footer__links">
         <a href={phoneHref(identity.telephone)}>{identity.telephone}</a>
-        <a href="/privacy-policy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <a href="/cookie-policy">Cookies</a>
+        {footerNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
       </div>
     </footer>
   );

@@ -1,7 +1,9 @@
+import Link from "next/link";
 import type { ReactElement } from "react";
 import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
 import { phoneHref } from "@/lib/phone";
+import { primaryNavigation } from "@/lib/site-navigation";
 
 import type { BrandIdentity, ManagedTextContent } from "./LandingPage";
 
@@ -27,8 +29,7 @@ export function SiteHeader({
         </span>
       </a>
       <nav className="site-nav" aria-label="Primary navigation">
-        <a href="#services">Services</a>
-        <a href="#process">Process</a>
+        {primaryNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
       </nav>
       <a
         className="button button--compact"

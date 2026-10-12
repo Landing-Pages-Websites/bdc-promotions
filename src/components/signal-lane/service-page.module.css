@@ -117,6 +117,11 @@
 .footer nav { display: flex; flex-wrap: wrap; gap: 0 28px; margin-top: 8px; }
 .footer a { display: inline-flex; align-items: center; min-width: 44px; min-height: 48px; }
 
+@media (max-width: 1050px) {
+  .header { grid-template-columns: 1fr auto; padding-block: 8px; }
+  .navigation { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; gap: 0 24px; }
+}
+
 @media (max-width: 900px) {
   .split,
   .contactLayout { gap: 32px; }
@@ -128,7 +133,6 @@
   .container { width: calc(100% - 40px); }
   .header { grid-template-columns: 1fr auto; gap: 0 16px; padding-block: 8px; }
   .brand { width: 160px; }
-  .navigation { flex-direction: column; gap: 0; }
   .headerCall { grid-column: 1 / -1; justify-self: stretch; justify-content: center; margin-top: 8px; }
   .hero { padding-top: 24px; }
   .hero h1 { font-size: clamp(40px, 10.8vw, 64px); }
