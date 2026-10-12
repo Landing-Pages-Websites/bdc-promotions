@@ -1,0 +1,108 @@
+/* The page wrapper: same navy as every interior, so the shared header and footer sit on it unchanged. */
+.site { background: #020716; color: #f4f7fc; }
+
+/*
+ * Signal Lane (image 1) — shared tokens.
+ * Desktop geometry is authored in reference pixels at a 1536px frame:
+ * calc(N * var(--u)) equals N px at 1536 and scales fluidly up to 1920.
+ * At 1179px and below every section switches to a stacked flow layout.
+ */
+.page {
+  --navy: #00061a;
+  --ink: #000514;
+  --header: #010622;
+  --panel: #010b23;
+  --blue: #0054fb;
+  --route: #0144f4;
+  --line-blue: #0563fc;
+  --cyan: #01f5e0;
+  --mint: #7af4eb;
+  --white: #fcfcfc;
+  --light: #f6f8fb;
+  --display: var(--a-display), "Arial Narrow", sans-serif;
+  --label: var(--a-label), "Arial Narrow", sans-serif;
+  --semi: var(--a-semi), "Arial Narrow", sans-serif;
+  --body: var(--a-body), Arial, sans-serif;
+  --u: calc(min(100cqw, 1920px) / 1536);
+  /* distance from the 1536-grid frame to the viewport edge (0 up to 1920px wide) */
+  --bleed: max(0px, (100cqw - 1536 * var(--u)) / 2);
+  /*
+   * Type ladder in reference px (x --u). The 46 measured sizes were merged onto these
+   * 20 steps (within about 4%); where a merge moved a line, its width was re-solved with
+   * wdth/tracking so the 1536 composition holds. Names read as px ("17-5" = 17.5).
+   */
+  --fs-12: calc(12 * var(--u));
+  --fs-13: calc(13 * var(--u));
+  --fs-14: calc(14 * var(--u));
+  --fs-16: calc(16 * var(--u));
+  --fs-17-5: calc(17.5 * var(--u));
+  --fs-18-5: calc(18.5 * var(--u));
+  --fs-20-5: calc(20.5 * var(--u));
+  --fs-22-5: calc(22.5 * var(--u));
+  --fs-24: calc(24 * var(--u));
+  --fs-25-5: calc(25.5 * var(--u));
+  --fs-32-5: calc(32.5 * var(--u));
+  --fs-38-5: calc(38.5 * var(--u));
+  --fs-44: calc(44 * var(--u));
+  --fs-51: calc(51 * var(--u));
+  --fs-57: calc(57 * var(--u));
+  --fs-70: calc(70 * var(--u));
+  --fs-88: calc(88 * var(--u));
+  --fs-118: calc(118 * var(--u));
+  --fs-124: calc(124 * var(--u));
+  --fs-135: calc(135 * var(--u));
+  /* one plate shadow for every creative plate; one hover signal for every CTA */
+  --plate-shadow: 0 calc(8 * var(--u)) calc(24 * var(--u)) calc(4 * var(--u)) rgb(1 6 20 / 0.6);
+  --hover-ring: inset 0 0 0 3px var(--cyan);
+  position: relative;
+  container-type: inline-size;
+  width: 100%;
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--body);
+  overflow-x: clip;
+  /* no one-word last lines where copy reflows (the stacked layout) */
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+.page *::before,
+.page *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.frame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  margin-inline: auto;
+}
+
+.line {
+  display: block;
+  white-space: nowrap;
+}
+
+@media (max-width: 1179px) {
+  .frame {
+    max-width: 760px;
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .line {
+    display: inline;
+    white-space: normal;
+  }
+
+  /* one 26px icon box for both, so the phone number and the email start on one line */
+
+}

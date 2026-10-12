@@ -71,57 +71,27 @@ test("defines the exact structured starter contract and source documents", async
   assert.match(managedSource, /site\.json/u);
 });
 
-test("renders the managed home without code-owned copy", async () => {
-  const [page, ...components] = await Promise.all([
+test("renders the customer-approved Signal Lane home with CMS-managed SEO", async () => {
+  // 2026-10-13: the customer selected homepage direction A ("Signal Lane"); its copy is the
+  // approved design's. The CMS still owns the page identity, title, description and indexing.
+  const [page, shell, options] = await Promise.all([
     readSource("src/app/page.tsx"),
-    readSource("src/components/home/LandingPage.tsx"),
-    readSource("src/components/home/HeroCopy.tsx"),
-    readSource("src/components/home/HeroVisual.tsx"),
-    readSource("src/components/home/ValueGrid.tsx"),
-    readSource("src/components/home/ServicesSection.tsx"),
-    readSource("src/components/home/ServiceCard.tsx"),
-    readSource("src/components/home/ManagedCardCopy.tsx"),
-    readSource("src/components/home/FocusSection.tsx"),
-    readSource("src/components/home/ProcessSection.tsx"),
-    readSource("src/components/home/InsightsSection.tsx"),
-    readSource("src/components/home/ContactSection.tsx"),
+    readSource("src/components/signal-home/SignalLane.tsx"),
+    readSource("src/components/signal-home/Options.tsx"),
   ]);
-  const renderedSource = [page, ...components].join("\n");
-  const home = await readJson("src/content/pages/home.json");
 
   assert.match(page, /from "@\/content\/managed-site"/u);
-  assert.match(page, /managedSitePageAttributesV1/u);
-  assert.match(page, /hero: managedHome\.hero/u);
-  assert.match(page, /values: managedHome\.values/u);
-  assert.match(renderedSource, /managedSiteFieldAttributesV1/u);
-  // A collection renders one declared field once per item, so the field id names
-  // a column. Without the item the markup cannot name the cell, and an editor
-  // reading the page can say what was clicked but not which one.
-  assert.match(
-    renderedSource,
-    /managedSiteFieldAttributesV1\(\s*item\.title\.fieldId,\s*item\.itemId,?\s*\)/u,
-  );
-  assert.match(
-    renderedSource,
-    /managedSiteFieldAttributesV1\(\s*item\.description\.fieldId,\s*item\.itemId,?\s*\)/u,
-  );
-  assert.match(renderedSource, /<Image/u);
-  assert.match(renderedSource, /image\.fieldId/u);
-  assert.doesNotMatch(renderedSource, /const demoFaqs/u);
-  assert.doesNotMatch(renderedSource, /PLACEHOLDER —/u);
-  assert.doesNotMatch(
-    renderedSource,
-    /siteConfig\.(businessName|description)/u,
-  );
-  for (const eyebrow of [
-    home.values.eyebrow,
-    home.services.eyebrow,
-    home.process.eyebrow,
-    home.faq.eyebrow,
-  ]) {
-    assert.equal(typeof eyebrow, "string");
-    assert.doesNotMatch(renderedSource, new RegExp(eyebrow, "u"));
-  }
+  assert.match(page, /managedSitePageAttributesV1\(managedHome\.pageId\)/u);
+  assert.match(page, /managedHome\.seo/u);
+  assert.match(page, /<SignalLane \/>/u);
+  // The FAQ schema is built from the FAQ the page shows, never a second copy.
+  assert.match(page, /buildFaqSchema\(\s*faqs\.map/u);
+  // Same chrome as every other page.
+  assert.match(shell, /<SiteHeader path="\/" wide \/>/u);
+  assert.match(shell, /<SiteFooter path="\/" wide \/>/u);
+  // The owner removed prices site-wide after the comp; the options must not reintroduce them.
+  assert.doesNotMatch(options, /\$\s?\d|\/ month|month commitment/iu);
+  assert.doesNotMatch(page + shell + options, /PLACEHOLDER —/u);
 });
 
 test("binds the image manifest facts to the checked-in hero asset", async () => {

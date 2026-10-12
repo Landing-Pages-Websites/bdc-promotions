@@ -1,3 +1,4 @@
+import localFont from "next/font/local";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactElement } from "react";
@@ -6,19 +7,22 @@ import { footerNavigation, primaryNavigation, strategyCall } from "@/lib/site-na
 
 import styles from "./chrome.module.css";
 
+// The chrome carries its own face so it reads the same inside any page wrapper.
+const chromeFont = localFont({ src: "../../../public/fonts/services/Barlow-Regular.ttf", weight: "400", display: "swap" });
+
 // "page" on the exact route, "location" on its children (/services/x, /blog/x).
 function current(href: string, path: string): "page" | "location" | undefined {
   if (href === path) return "page";
   return path.startsWith(`${href}/`) ? "location" : undefined;
 }
 
-/** The one header every Signal Lane page renders. */
-export function SiteHeader({ path }: { path: string }): ReactElement {
+/** The one header every page renders. `wide` aligns it to the homepage's edge-to-edge frame. */
+export function SiteHeader({ path, wide = false }: { path: string; wide?: boolean }): ReactElement {
   const links = primaryNavigation.map(([href, label]) => (
     <Link key={href} href={href} aria-current={current(href, path)}>{label}</Link>
   ));
   return (
-    <header className={`${styles.container} ${styles.header}`}>
+    <header className={`${styles.container} ${styles.header} ${wide ? styles.wide : ""} ${chromeFont.className}`}>
       <Link className={styles.brand} href="/" aria-label="BDC Promotions home">
         <Image src="/images/services/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} sizes="180px" loading="eager" />
       </Link>
@@ -36,10 +40,10 @@ export function SiteHeader({ path }: { path: string }): ReactElement {
   );
 }
 
-/** The one footer every Signal Lane page renders. */
-export function SiteFooter({ path }: { path: string }): ReactElement {
+/** The one footer every page renders. */
+export function SiteFooter({ path, wide = false }: { path: string; wide?: boolean }): ReactElement {
   return (
-    <footer className={`${styles.container} ${styles.footer}`}>
+    <footer className={`${styles.container} ${styles.footer} ${wide ? styles.wide : ""} ${chromeFont.className}`}>
       <p>BDC Promotions · Automotive marketing</p>
       <nav aria-label="Footer navigation">
         {footerNavigation.map(([href, label]) => (
