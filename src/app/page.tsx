@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { managedSitePageAttributesV1 } from "@landing-pages-websites/managed-site-contract";
 
-import {
-  LandingPage,
-  type LandingPageContent,
-} from "@/components/home/LandingPage";
+import { faqs } from "@/components/signal-home/Close";
+import { SignalLane } from "@/components/signal-home/SignalLane";
 import { JsonLd } from "@/components/schema/JsonLd";
 import {
   buildBusinessSchema,
@@ -33,42 +31,16 @@ export const metadata: Metadata = buildMetadata({
 });
 
 const businessSchema = buildBusinessSchema(identity);
-// The schema wants the words; the content module carries the words and the
-// identity of the cell they came from. Narrowed here rather than teaching the
-// schema builders what a field id is.
 const faqSchema = buildFaqSchema(
-  managedHome.faq.items.map((item) => ({
-    answer: item.answer.value,
-    question: item.question.value,
+  faqs.map(([question, answer]) => ({
+    question,
+    // the visible answer is set as lines with non-breaking hyphens; the schema wants plain text
+    answer: answer.join(" ").replaceAll("\u2011", "-"),
   })),
 );
 
-const landingContent: LandingPageContent = {
-  hero: managedHome.hero,
-  values: managedHome.values,
-  services: managedHome.services,
-  focus: managedHome.focus,
-  process: managedHome.process,
-  insights: {
-    eyebrow: managedHome.insights.eyebrow,
-    heading: managedHome.insights.heading,
-    fieldId: managedHome.insights.fieldId,
-    items: managedHome.insights.items.map((item) => ({
-      itemId: item.itemId,
-      title: item.question,
-      description: item.answer,
-    })),
-  },
-  testimonial: managedHome.testimonial,
-  contact: managedHome.contact,
-};
-
-const brandIdentity = {
-  displayName: managedHome.seo.identity.displayName,
-  description: managedHome.seo.identity.description,
-  telephone: managedHome.seo.identity.telephone,
-};
-
+// The customer-approved Signal Lane homepage. Title, description, indexing and
+// identity stay CMS-managed (managedHome.seo); the page copy is the approved design's.
 export default function HomePage(): ReactElement {
   return (
     <div
@@ -77,7 +49,7 @@ export default function HomePage(): ReactElement {
     >
       <JsonLd data={businessSchema} />
       <JsonLd data={faqSchema} />
-      <LandingPage content={landingContent} identity={brandIdentity} />
+      <SignalLane />
     </div>
   );
 }

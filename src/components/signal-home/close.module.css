@@ -1,0 +1,330 @@
+/* Close + FAQ (image 1: y 4832–5591). Values are reference px × var(--u). */
+.close {
+  background: var(--ink);
+}
+
+.frame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(759 * var(--u));
+  margin-inline: auto;
+}
+
+.routes {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.title {
+  position: absolute;
+  top: calc(112.5 * var(--u));
+  left: calc(74 * var(--u));
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-118);
+  font-variation-settings: "wdth" 50;
+  font-weight: 700;
+  line-height: calc(92 * var(--u));
+  letter-spacing: 0;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+/*
+ * Open tracking, as in image 1. Saira's narrowest width is still wider than the image's
+ * glyphs, so each line is fitted to its measured width (483 / 606 / 638px at 1536).
+ */
+.title > span {
+  transform-origin: 0 0;
+}
+
+.title > span:nth-child(1) { transform: scaleX(0.982); }
+.title > span:nth-child(2) { transform: scaleX(0.935); }
+.title > span:nth-child(3) { transform: scaleX(0.934); }
+
+.body {
+  position: absolute;
+  top: calc(405.3 * var(--u));
+  left: calc(77 * var(--u));
+  margin: 0;
+  font-size: var(--fs-24);
+  font-variation-settings: "wdth" 100;
+  font-weight: 500;
+  line-height: calc(33 * var(--u));
+  letter-spacing: 0.005em;
+  color: var(--white);
+}
+
+.audit,
+.call {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  font-family: var(--label);
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: box-shadow 160ms ease;
+}
+
+.audit:hover,
+.call:hover {
+  box-shadow: var(--hover-ring);
+}
+
+.audit {
+  top: calc(528 * var(--u));
+  left: calc(77 * var(--u));
+  gap: calc(22 * var(--u));
+  width: calc(590 * var(--u));
+  height: calc(81 * var(--u));
+  padding-left: calc(16 * var(--u));
+  background: var(--blue);
+  font-family: var(--display);
+  font-size: var(--fs-38-5);
+  font-variation-settings: "wdth" 56;
+  letter-spacing: 0.018em;
+}
+
+.iconBox {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: calc(47 * var(--u));
+  height: calc(47 * var(--u));
+  border: 2px solid var(--white);
+}
+
+.iconBox svg {
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+}
+
+.call {
+  top: calc(632 * var(--u));
+  left: calc(78 * var(--u));
+  gap: calc(28 * var(--u));
+  width: calc(589 * var(--u));
+  height: calc(80 * var(--u));
+  padding-left: calc(25 * var(--u));
+  border: 2px solid var(--line-blue);
+  font-family: var(--display);
+  font-size: var(--fs-44);
+  font-variation-settings: "wdth" 62;
+  letter-spacing: 0.038em;
+}
+
+.phone {
+  width: calc(38 * var(--u));
+  height: calc(38 * var(--u));
+  color: #0a5cf0;
+}
+
+.faq {
+  position: absolute;
+  top: calc(78 * var(--u));
+  left: calc(792 * var(--u));
+  right: calc(-1 * var(--bleed));
+  height: calc(666 * var(--u));
+  border: 1px solid #16273f;
+  border-right: 0;
+  background: var(--panel);
+}
+
+.faq dl {
+  margin: 0;
+}
+
+.item {
+  position: absolute;
+  left: calc(88 * var(--u));
+}
+
+.item:nth-child(1) { top: calc(35.3 * var(--u)); }
+.item:nth-child(2) { top: calc(191.3 * var(--u)); }
+.item:nth-child(3) { top: calc(351.3 * var(--u)); }
+.item:nth-child(4) { top: calc(534.3 * var(--u)); }
+
+.item + .item::before {
+  content: "";
+  position: absolute;
+  top: calc(-26 * var(--u));
+  left: calc(-52 * var(--u));
+  width: calc(660 * var(--u));
+  height: 1px;
+  background: #3b4b66;
+}
+
+.item dt {
+  position: relative;
+  font-family: var(--display);
+  font-size: var(--fs-32-5);
+  font-variation-settings: "wdth" 56;
+  font-weight: 700;
+  line-height: calc(36 * var(--u));
+  letter-spacing: 0.011em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.q {
+  position: absolute;
+  top: 0;
+  left: calc(-49 * var(--u));
+  font-size: var(--fs-51);
+  font-variation-settings: "wdth" 60;
+  line-height: calc(36 * var(--u));
+  color: #025afb;
+}
+
+/* reading floor: never below 16px once the poster scales down */
+.item dd {
+  margin: calc(11 * var(--u)) 0 0 calc(-43 * var(--u));
+  font-size: max(16px, var(--fs-20-5));
+  font-variation-settings: "wdth" 98;
+  line-height: max(calc(30 * var(--u)), 1.46em);
+  color: #eceef3;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 1179px) {
+  .frame {
+    max-width: 760px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    padding: 56px 20px 48px;
+  }
+
+  .routes {
+    display: none;
+  }
+
+  .title,
+  .body,
+  .audit,
+  .call,
+  .faq,
+  .item,
+  .item:nth-child(n) {
+    position: relative;
+    inset: auto;
+  }
+
+  /* image 1's three lines, each its own block, open tracking */
+  .title {
+    font-size: clamp(40px, 12.5vw, 64px);
+    line-height: 0.92;
+    word-spacing: 0.04em;
+    white-space: normal;
+  }
+
+  .title > span,
+  .title > span:nth-child(n) {
+    display: block;
+    transform: none;
+  }
+
+  .body {
+    margin-top: 20px;
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .audit,
+  .call {
+    width: 100%;
+    height: auto;
+    min-height: 64px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    white-space: normal;
+  }
+
+  .audit {
+    margin-top: 26px;
+    gap: 14px;
+    font-size: 22px;
+    line-height: 1.05;
+  }
+
+  /* the contract's break: "GET A FREE DEALERSHIP" + "MARKETING AUDIT" */
+  .auditText > span {
+    display: block;
+  }
+
+  .iconBox {
+    width: 42px;
+    height: 42px;
+  }
+
+  .iconBox svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .call {
+    gap: 16px;
+    font-size: 26px;
+  }
+
+  .phone {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* a contained panel on mobile: all four borders inside the gutter */
+  .faq {
+    height: auto;
+    margin: 40px 0 0;
+    padding: 8px 20px 12px 0;
+    border-right: 1px solid #16273f;
+  }
+
+  .item,
+  .item:nth-child(n) {
+    left: auto;
+    padding: 22px 0 22px 58px;
+  }
+
+  .item + .item::before {
+    top: 0;
+    left: 16px;
+    width: calc(100% - 16px);
+  }
+
+  .item dt {
+    font-size: 23px;
+    line-height: 1.1;
+    white-space: normal;
+  }
+
+  .q {
+    left: -42px;
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .item dd {
+    margin: 10px 0 0;
+    font-size: 17px;
+    line-height: 1.45;
+  }
+}

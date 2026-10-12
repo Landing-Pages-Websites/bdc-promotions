@@ -1,0 +1,429 @@
+/* Hero + signal band (image 1: y 0–1376). Values are reference px × var(--u). */
+.hero {
+  background: var(--ink);
+}
+
+.frame {
+  position: relative;
+  width: calc(1536 * var(--u));
+  height: calc(862 * var(--u));
+  margin-inline: auto;
+}
+
+.routes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.slab {
+  position: absolute;
+  top: calc(32 * var(--u));
+  left: calc(813 * var(--u));
+  width: calc(723 * var(--u) + var(--bleed));
+  height: calc(762 * var(--u));
+  background: var(--blue);
+  clip-path: polygon(calc(72 * var(--u)) 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.repoPlate,
+.frontPlate {
+  position: absolute;
+  margin: 0;
+}
+
+.repoPlate img,
+.frontPlate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.repoPlate {
+  top: calc(291 * var(--u));
+  left: calc(655 * var(--u));
+  width: calc(387 * var(--u));
+  height: calc(387 * var(--u));
+  padding: calc(9 * var(--u));
+  background: #0a55ff;
+  box-shadow: var(--plate-shadow);
+  transform: rotate(-8.5deg);
+}
+
+.frontPlate {
+  top: calc(59 * var(--u));
+  left: calc(907 * var(--u));
+  width: calc(600 * var(--u));
+  height: calc(712 * var(--u));
+  border: 1px solid #e6e0da;
+  box-shadow: var(--plate-shadow);
+}
+
+.copy {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.copy > * {
+  pointer-events: auto;
+}
+
+.eyebrow {
+  position: absolute;
+  top: calc(112.8 * var(--u));
+  left: calc(144 * var(--u));
+  margin: 0;
+  font-family: var(--label);
+  font-size: var(--fs-18-5);
+  font-weight: 600;
+  line-height: calc(26 * var(--u));
+  letter-spacing: 0.101em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eyebrowNode {
+  position: absolute;
+  top: calc(6 * var(--u));
+  left: calc(-103 * var(--u));
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+  background: var(--cyan);
+}
+
+.eyebrowNode::after {
+  content: "";
+  position: absolute;
+  top: calc(6 * var(--u));
+  left: calc(14 * var(--u));
+  width: calc(74 * var(--u));
+  height: 2px;
+  background: var(--cyan);
+}
+
+.title {
+  position: absolute;
+  top: calc(153 * var(--u));
+  left: calc(44 * var(--u));
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-118);
+  font-variation-settings: "wdth" 60.25;
+  font-weight: 800;
+  line-height: calc(92.3 * var(--u));
+  letter-spacing: 0;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
+/* per-line widths solved against image 1 (433 / 389 / 495 / 429px at 1536) */
+.title > span:nth-child(1) { font-variation-settings: "wdth" 61.25; }
+.title > span:nth-child(2) { font-variation-settings: "wdth" 65.5; }
+.title > span:nth-child(3) { font-variation-settings: "wdth" 57.75; }
+
+.body {
+  position: absolute;
+  top: calc(538 * var(--u));
+  left: calc(48 * var(--u));
+  margin: 0;
+  font-size: var(--fs-24);
+  font-variation-settings: "wdth" 86.5;
+  font-weight: 400;
+  line-height: calc(33 * var(--u));
+  color: var(--white);
+}
+
+.proofBox {
+  position: absolute;
+  top: calc(692 * var(--u));
+  left: calc(48 * var(--u));
+  display: flex;
+  width: calc(327 * var(--u));
+  height: calc(107 * var(--u));
+  border: 1px solid #0acdbd;
+}
+
+.proofIcon {
+  display: grid;
+  flex: 0 0 calc(82 * var(--u));
+  place-items: center;
+  border-right: 1px solid #0acdbd;
+  color: var(--cyan);
+}
+
+.proofIcon svg {
+  width: calc(54 * var(--u));
+  height: calc(54 * var(--u));
+}
+
+.proofBox p {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0;
+  padding-left: calc(15 * var(--u));
+  font-family: var(--display);
+  font-size: var(--fs-18-5);
+  font-variation-settings: "wdth" 62;
+  font-weight: 500;
+  line-height: calc(26.5 * var(--u));
+  letter-spacing: 0.028em;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.proofCyan {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.audit,
+.call {
+  position: absolute;
+  left: calc(397 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(311 * var(--u));
+  padding: 0 calc(15 * var(--u)) 0 calc(23 * var(--u));
+  font-family: var(--label);
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: box-shadow 160ms ease;
+}
+
+.audit:hover,
+.call:hover {
+  box-shadow: var(--hover-ring);
+}
+
+.audit {
+  top: calc(666 * var(--u));
+  height: calc(75 * var(--u));
+  border: 1px solid #53a2d6;
+  background: var(--blue);
+  font-size: var(--fs-25-5);
+  line-height: calc(25 * var(--u));
+  letter-spacing: -0.02em;
+}
+
+.call {
+  top: calc(750 * var(--u));
+  height: max(44px, calc(61 * var(--u)));
+  border: 2px solid var(--line-blue);
+  background: var(--ink);
+  font-family: var(--display);
+  font-size: var(--fs-32-5);
+  font-variation-settings: "wdth" 62;
+  letter-spacing: -0.005em;
+}
+
+.iconBox {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: calc(41 * var(--u));
+  height: calc(41 * var(--u));
+  border: 2px solid var(--white);
+}
+
+.iconBox svg {
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+}
+
+.call .iconBox {
+  margin-right: calc(-1 * var(--u));
+}
+
+@media (max-width: 1179px) {
+  /*
+   * Copy and CTAs first, then the art row, then the proof box, so the luxury plate's lockup
+   * reaches the 390x844 fold and the call CTA the 320x700 fold. .copy dissolves into the grid;
+   * the slab shares the art cell so it is sized by the plates.
+   */
+  .frame {
+    max-width: 760px;
+    margin-inline: auto;
+    display: grid;
+    grid-template-areas: "eyebrow" "title" "body" "audit" "call" "art" "proof";
+    width: 100%;
+    height: auto;
+    padding: 28px 20px 36px;
+  }
+
+  .routes {
+    display: none;
+  }
+
+  .copy {
+    display: contents;
+  }
+
+  .copy > * {
+    position: relative;
+    inset: auto;
+  }
+
+  .eyebrow {
+    grid-area: eyebrow;
+    top: auto;
+    left: auto;
+    padding-left: 48px;
+    font-size: 13px;
+    line-height: 20px;
+    letter-spacing: 0.1em;
+    white-space: normal;
+  }
+
+  /* break after the slash: "AUTOMOTIVE MARKETING /" + "CREATIVE TO APPOINTMENT" */
+  .eyebrowLine {
+    display: block;
+  }
+
+  .eyebrowNode {
+    top: 4px;
+    left: 0;
+    width: 12px;
+    height: 12px;
+  }
+
+  .eyebrowNode::after {
+    top: 5px;
+    left: 12px;
+    width: 26px;
+  }
+
+  .title {
+    grid-area: title;
+    top: auto;
+    left: auto;
+    margin-top: 14px;
+    font-size: clamp(54px, 17vw, 88px);
+    line-height: 0.82;
+  }
+
+  /* reflowed lines share one width */
+  .title > span:nth-child(n) {
+    font-variation-settings: "wdth" 61;
+  }
+
+  .body {
+    grid-area: body;
+    top: auto;
+    left: auto;
+    margin-top: 20px;
+    font-size: 18px;
+    line-height: 1.5;
+  }
+
+  .proofBox {
+    grid-area: proof;
+    top: auto;
+    left: auto;
+    width: 100%;
+    height: auto;
+    min-height: 96px;
+    margin-top: 28px;
+  }
+
+  .proofIcon {
+    flex-basis: 72px;
+  }
+
+  .proofIcon svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .proofBox p {
+    padding: 12px 12px 12px 14px;
+    font-size: 15px;
+    line-height: 24px;
+    white-space: normal;
+  }
+
+  .audit,
+  .call {
+    top: auto;
+    left: auto;
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px 12px 12px 18px;
+    white-space: normal;
+  }
+
+  .audit {
+    grid-area: audit;
+    height: auto;
+    min-height: 72px;
+    margin-top: 22px;
+    font-size: 21px;
+    line-height: 22px;
+  }
+
+  /* the contract's break: "GET A FREE DEALERSHIP" + "MARKETING AUDIT" */
+  .audit > span:first-child > span {
+    display: block;
+  }
+
+  .call {
+    grid-area: call;
+    height: 60px;
+    font-size: 22px;
+  }
+
+  .iconBox {
+    width: 40px;
+    height: 40px;
+  }
+
+  .iconBox svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .slab,
+  .repoPlate,
+  .frontPlate {
+    grid-area: art;
+    position: relative;
+    top: auto;
+    left: auto;
+  }
+
+  /* bleeds to the viewport edge; its height is the front plate's plus a 28px inset */
+  .slab {
+    width: auto;
+    height: auto;
+    margin: 28px -20px 0 0;
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  /* 20px of blue on the right keeps all four frame edges visible */
+  .frontPlate {
+    justify-self: end;
+    width: 64%;
+    height: auto;
+    margin: 56px 0 28px;
+    aspect-ratio: 600 / 712;
+  }
+
+  .repoPlate {
+    align-self: end;
+    justify-self: start;
+    width: 42%;
+    height: auto;
+    margin: 0 0 min(20vw, 110px) 22px;
+    aspect-ratio: 1;
+    padding: 5px;
+  }
+}
