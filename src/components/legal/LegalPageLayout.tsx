@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
-import { PrimarySiteNavigation } from "@/components/navigation/PrimarySiteNavigation";
+import { InteriorPage } from "@/components/signal-lane/InteriorPage";
+import shared from "@/components/signal-lane/interior-page.module.css";
 import { siteConfig } from "@/site.config";
 
 export interface LegalSection {
@@ -9,27 +10,24 @@ export interface LegalSection {
 
 export interface LegalPageLayoutProps {
   title: string;
+  path: string;
   sections: LegalSection[];
 }
 
 /** Shared shell for the scaffolded legal pages (privacy/terms/cookies). */
-export function LegalPageLayout({ title, sections }: LegalPageLayoutProps): ReactElement {
+export function LegalPageLayout({ title, path, sections }: LegalPageLayoutProps): ReactElement {
   return (
-    <PrimarySiteNavigation>
-    <article className="mx-auto w-full max-w-2xl px-6 py-16">
-      <h1 className="text-3xl font-bold">{title}</h1>
-      <p className="mt-2 text-sm text-[color:var(--muted)]">
-        {siteConfig.legalName} ({siteConfig.businessName})
-      </p>
-      {sections.map((section) => (
-        <section key={section.heading} className="mt-8">
-          <h2 className="text-xl font-semibold">{section.heading}</h2>
-          <p className="mt-2 leading-relaxed text-[color:var(--muted)]">
-            {section.body}
-          </p>
-        </section>
-      ))}
-    </article>
-    </PrimarySiteNavigation>
+    <InteriorPage path={path} title={title} intro={`${siteConfig.legalName} (${siteConfig.businessName})`} chapters={[]}>
+      <section className={shared.chapter} aria-label={title}>
+        <div className={`${shared.container} ${shared.legalDoc}`}>
+          {sections.map((section, index) => (
+            <div key={section.heading} id={`section-${index + 1}`} className={shared.clause}>
+              <h2>{section.heading}</h2>
+              <p>{section.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </InteriorPage>
   );
 }

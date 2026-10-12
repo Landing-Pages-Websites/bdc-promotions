@@ -70,3 +70,14 @@ export function parseInline(source: string): InlineNode[] {
 export function parseBlocks(source: string): Block[] {
   return parseHtmlBody(source ?? "");
 }
+
+/** The visible text of an inline run (link text, image alt), for labels and aria. */
+export function plainText(nodes: InlineNode[]): string {
+  return nodes.map((node) => node.kind === "link" ? node.text : node.kind === "image" ? node.alt : node.value).join("");
+}
+
+/** A paragraph that is just one link (plus stray punctuation): rendered as a call-out. */
+export function isLinkOnly(nodes: InlineNode[]): boolean {
+  const meaningful = nodes.filter((node) => !(node.kind === "text" && /^[\s.,;:!?]*$/.test(node.value)));
+  return meaningful.length === 1 && meaningful[0].kind === "link";
+}

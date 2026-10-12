@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
 
-import { Chapter, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
+import { Chapter, Plate, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
 import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 
@@ -15,6 +15,7 @@ export const metadata: Metadata = buildMetadata({
 export default function AutomotiveAdCreativePage(): ReactElement {
   return (
     <ServicePage
+      visual={<Plate file="work-luxury-campaign" width={1122} height={1402} alt="Historical luxury automotive campaign artwork with a dealership and three vehicles" max={400} eager />}
       title="Automotive ad creative that starts the conversation"
       intro="Give shoppers a reason to respond. BDC Promotions creates static, event, inventory and video advertising around your dealership’s vehicles, offers and campaign priorities."
       chapters={[
@@ -26,22 +27,22 @@ export default function AutomotiveAdCreativePage(): ReactElement {
       contactCopy="Bring your current inventory, offer or event idea. Talk through the formats and production support that fit your dealership."
       contactLabel="Discuss your creative"
     >
-      <Chapter id="creative-formats" title="Start with the message. Choose the format.">
+      <Chapter id="creative-formats" title="Start with the message. Choose the format." dark>
         <div className={styles.rows}>
           <article>
-            <h3>Static & new-car lead-gen ads</h3>
+            <div><h3>Static & new-car lead-gen ads</h3><Plate file="growth-repo-sale" width={1080} height={1080} alt="Historical repossession-sale static ad with three vehicles and original offer copy" max={280} /></div>
             <p>Offer-focused creative gives a new-car campaign a clear message and invites shoppers to connect with the dealership. Static ad creation supports the campaign’s vehicle and offer priorities.</p>
           </article>
           <article>
-            <h3>Event ads & event videos</h3>
+            <div><h3>Event ads & event videos</h3><Plate file="hero-used-car-event" width={1086} height={1448} alt="Historical used-car sales event creative with a vehicle lineup and voucher message" max={240} /></div>
             <p>Build the creative around the event your store is promoting. Static and video formats give that event a place in your automotive advertising.</p>
           </article>
           <article>
-            <h3>Inventory creative</h3>
+            <div><h3>Inventory creative</h3><Plate file="work-inventory-ad" width={1090} height={596} alt="Supplied Meta inventory ad example showing truck listings in a social feed" max={400} /></div>
             <p>Put the vehicles at the center of the message. Inventory-focused creative connects what your dealership has available with what you are promoting.</p>
           </article>
           <article>
-            <h3>Video creation & editing</h3>
+            <div><h3>Video creation & editing</h3><Plate file="work-luxury-storyboard" width={426} height={640} alt="Supplied luxury automotive storyboard with five scenes and original production attribution" /></div>
             <p>Explore new-car, employee, luxury, viral-concept and customer-testimonial video formats. Choose the subject that fits your campaign and the footage or stories available to your store.</p>
           </article>
         </div>

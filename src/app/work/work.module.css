@@ -2,15 +2,20 @@
 .example img { display: block; width: 100%; height: auto; object-fit: contain; }
 .example figcaption { margin-top: 16px; font-size: 16px; }
 .example figcaption a { display: inline-flex; align-items: center; gap: 16px; min-height: 48px; color: var(--blue); text-decoration: underline; }
-.eventPair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 48px; max-width: 1180px; margin-top: 32px; }
-.repoExample { display: grid; grid-template-columns: minmax(0, 566px) minmax(0, 1fr); align-items: center; gap: 64px; margin-top: 56px; }
-.luxuryPair { display: grid; grid-template-columns: minmax(0, 566px) minmax(0, 426px); align-items: start; gap: 64px; margin-top: 32px; }
+/* Every pair sits on the site's 1fr/1fr line; frames match so captions align. */
+.eventPair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 64px; margin-top: 32px; }
+.repoExample { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 64px; margin-top: 56px; }
+.luxuryPair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 64px; margin-top: 32px; }
+/* Ads are letterboxed, never cropped: their copy runs to the edges. */
+.eventPair .example img, .luxuryPair .example img { aspect-ratio: 4 / 5; object-fit: contain; }
+/* The storyboard is 426px wide: it never grows past its own pixels (V207). */
+.luxuryPair .example:last-child img { object-fit: scale-down; background: var(--navy); border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent); }
 .luxuryPair .example figcaption a { color: var(--mint); }
-.inventoryExamples { display: grid; gap: 48px; max-width: 1090px; margin-block: 32px 16px; }
+.inventoryExamples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 64px; margin-block: 32px 16px; }
+.inventoryExamples img { aspect-ratio: 1090 / 596; object-fit: contain; }
 .inventoryExamples > div h3 { margin-bottom: 24px; }
-.inventoryExamples > div:last-child { max-width: 963px; }
-@media (max-width: 700px) {
-  .eventPair, .repoExample, .luxuryPair { grid-template-columns: 1fr; gap: 36px; }
+/* Below 900px the 566px plate leaves the caption column too narrow to read. */
+@media (max-width: 900px) {
+  .eventPair, .repoExample, .luxuryPair, .inventoryExamples { grid-template-columns: 1fr; gap: 36px; }
   .repoExample { margin-top: 36px; }
-  .luxuryPair .example:last-child { max-width: 426px; }
 }

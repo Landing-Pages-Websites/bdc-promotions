@@ -11,8 +11,14 @@
 
 .testimonial-section h2 {
   font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1.1;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
   text-wrap: balance;
+}
+
+.testimonial-section h2 + p {
+  margin-top: 1.25rem;
 }
 
 .testimonial-section__copy > p:last-child {

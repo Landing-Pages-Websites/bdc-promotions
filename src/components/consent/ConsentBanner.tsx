@@ -24,13 +24,13 @@ export function ConsentBanner(): ReactElement | null {
     <div
       role="region"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-black/10 bg-white p-4 shadow-lg dark:border-white/10 dark:bg-neutral-900"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-[#a9b3c7]/30 bg-[#0a1633] p-4"
     >
       <div className="mx-auto flex max-w-3xl flex-col items-start gap-3 sm:flex-row sm:items-center">
-        <p className="text-sm text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm text-[#a9b3c7]">
           {siteConfig.businessName} uses cookies for analytics to improve this
           site. See our{" "}
-          <Link href="/cookie-policy" className="underline">
+          <Link href="/cookie-policy" className="text-[#00f5c8] underline underline-offset-4">
             cookie policy
           </Link>
           .
@@ -40,7 +40,7 @@ export function ConsentBanner(): ReactElement | null {
             type="button"
             onClick={accept}
             aria-label="Accept analytics cookies"
-            className="min-h-11 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            className="min-h-11 cursor-pointer bg-[#0059fc] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0059fc]/85 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#00f5c8]"
           >
             {strict ? "Accept" : "Got it"}
           </button>
@@ -48,7 +48,7 @@ export function ConsentBanner(): ReactElement | null {
             type="button"
             onClick={decline}
             aria-label="Decline analytics cookies"
-            className="min-h-11 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-100 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800"
+            className="min-h-11 cursor-pointer border border-[#a9b3c7] px-5 py-2 text-sm font-medium text-[#f4f7fc] transition-colors hover:border-[#f4f7fc] hover:bg-white/5 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-[#00f5c8]"
           >
             Decline
           </button>

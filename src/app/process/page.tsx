@@ -22,19 +22,19 @@ export default function ProcessPage() {
       <ol className={styles.sequence} role="list">
         <li id="learn-your-store">
           <div><h3>Learn Your Store</h3><p>We get familiar with your dealership, your goals, and the type of customers you want to reach.</p></div>
-          <div><p>Consultation connects your inventory, market and sales priorities to the campaign. Start with the vehicles and offers you want shoppers to notice.</p><Link className={shared.textLink} href="/services/inventory-advertising">Explore inventory advertising →</Link></div>
+          <div><p>Consultation connects your inventory, market and sales priorities to the campaign. Start with the vehicles and offers you want shoppers to notice.</p><Link className={shared.textLink} href="/services/inventory-advertising">Explore inventory advertising<span aria-hidden="true">→</span></Link></div>
         </li>
         <li id="build-the-campaign">
           <div><h3>Build The Campaign</h3><p>We put together the social message, creative direction, and lead engagement strategy.</p></div>
-          <div><p>Static and video creative give the campaign its message. Paid social and ad optimization connect that creative with shopper response.</p><div className={styles.links}><Link className={shared.textLink} href="/services/automotive-ad-creative">Explore ad creative →</Link><Link className={shared.textLink} href="/services/lead-generation">Explore lead generation →</Link></div></div>
+          <div><p>Static and video creative give the campaign its message. Paid social and ad optimization connect that creative with shopper response.</p><div className={styles.links}><Link className={shared.textLink} href="/services/automotive-ad-creative">Explore ad creative<span aria-hidden="true">→</span></Link><Link className={shared.textLink} href="/services/lead-generation">Explore lead generation<span aria-hidden="true">→</span></Link></div></div>
         </li>
         <li id="engage-shoppers">
           <div><h3>Engage Shoppers</h3><p>We help create real conversations with shoppers and guide them toward the next step.</p></div>
-          <div><p>Messenger lead response, BDC staff and AI-supported nurturing help continue the conversation. The service mix determines where follow-up support fits.</p><Link className={shared.textLink} href="/services/lead-nurturing-appointment-setting">Explore lead nurturing →</Link></div>
+          <div><p>Messenger lead response, BDC staff and AI-supported nurturing help continue the conversation. The service mix determines where follow-up support fits.</p><Link className={shared.textLink} href="/services/lead-nurturing-appointment-setting">Explore lead nurturing<span aria-hidden="true">→</span></Link></div>
         </li>
         <li id="drive-appointments">
           <div><h3>Drive Appointments</h3><p>The goal is simple: more qualified opportunities and more showroom visits for your team.</p></div>
-          <div><p>Move interested shoppers toward a visit with a scheduled day and time. Agree how appointment details reach your team and who takes the next step at the dealership.</p><Link className={shared.textLink} href="/services/lead-nurturing-appointment-setting#appointment-handoff">See the appointment handoff →</Link></div>
+          <div><p>Move interested shoppers toward a visit with a scheduled day and time. Agree how appointment details reach your team and who takes the next step at the dealership.</p><Link className={shared.textLink} href="/services/lead-nurturing-appointment-setting#appointment-handoff">See the appointment handoff<span aria-hidden="true">→</span></Link></div>
         </li>
       </ol>
     </InteriorChapter>

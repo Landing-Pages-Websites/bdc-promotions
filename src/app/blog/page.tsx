@@ -27,7 +27,7 @@ export default function BlogIndexPage(): ReactElement {
     posts.map((post) => ({ title: post.title, path: `/blog/${post.slug}` })),
   );
 
-  return <div className={styles.surface}><InteriorPage path="/blog" title="Automotive marketing & BDC insights"
+  return <div className={styles.surface}><InteriorPage path="/blog" title={"Automotive marketing\u00a0& BDC insights"}
     intro="Practical reading for dealership owners, sales, marketing and BDC teams. Explore the decisions behind campaigns, shopper conversations and appointment handoffs."
     chapters={[{ href: "#find-your-topic", label: "Find your topic" }, { href: "#start-reading", label: "Start with a guide" }, { href: "#all-articles", label: "Browse all articles" }]}
     contactTitle="Put the questions to work at your store"
@@ -36,16 +36,16 @@ export default function BlogIndexPage(): ReactElement {
     <JsonLd data={blogIndexSchema} />
     <InteriorChapter id="find-your-topic" title="What are you working through?">
       <div className={styles.topics}>
-        <div><h3>Shopper response</h3><p>Review how a new inquiry becomes a conversation and moves between team members.</p><div className={styles.topicLinks}><Link className={shared.textLink} href="/blog/lead-response-optimization-automotive-dealerships">Lead response →</Link><Link className={shared.textLink} href="/blog/dealership-messenger-lead-workflow">Messenger workflow →</Link></div></div>
-        <div><h3>Customer continuity</h3><p>Consider the records and follow-up that connect first contact with an ongoing customer relationship.</p><div className={styles.topicLinks}><Link className={shared.textLink} href="/blog/automotive-dealership-crm-buyer-guide">CRM buyer guide →</Link><Link className={shared.textLink} href="/blog/automotive-dealership-customer-retention">Customer retention →</Link></div></div>
-        <div><h3>Campaign decisions</h3><p>Evaluate marketing responsibilities and how paid social activity connects to dealership opportunities.</p><div className={styles.topicLinks}><Link className={shared.textLink} href="/blog/car-dealership-marketing-agency">Agency selection →</Link><Link className={shared.textLink} href="/blog/paid-social-advertising-roi-automotive-dealerships">Paid social measurement →</Link></div></div>
+        <div><h3>Shopper response</h3><p>Review how a new inquiry becomes a conversation and moves between team members.</p><div className={styles.topicLinks}><Link className={shared.textLink} href="/blog/lead-response-optimization-automotive-dealerships">Lead response<span aria-hidden="true">→</span></Link><Link className={shared.textLink} href="/blog/dealership-messenger-lead-workflow">Messenger workflow<span aria-hidden="true">→</span></Link></div></div>
+        <div><h3>Customer continuity</h3><p>Consider the records and follow-up that connect first contact with an ongoing customer relationship.</p><div className={styles.topicLinks}><Link className={shared.textLink} href="/blog/automotive-dealership-crm-buyer-guide">CRM buyer guide<span aria-hidden="true">→</span></Link><Link className={shared.textLink} href="/blog/automotive-dealership-customer-retention">Customer retention<span aria-hidden="true">→</span></Link></div></div>
+        <div><h3>Campaign decisions</h3><p>Evaluate marketing responsibilities and how paid social activity connects to dealership opportunities.</p><div className={styles.topicLinks}><Link className={shared.textLink} href="/blog/car-dealership-marketing-agency">Agency selection<span aria-hidden="true">→</span></Link><Link className={shared.textLink} href="/blog/paid-social-advertising-roi-automotive-dealerships">Paid social measurement<span aria-hidden="true">→</span></Link></div></div>
       </div>
     </InteriorChapter>
     <InteriorChapter id="start-reading" title="Three useful starting points" dark>
       <div className={styles.startingPoints}>
         {startingPoints.map(({ slug, context }) => {
           const post = posts.find((entry) => entry.slug === slug);
-          return post ? <div key={slug}><h3><Link href={`/blog/${post.slug}`}>{post.title} <span aria-hidden="true">↗</span></Link></h3><p>{context}</p></div> : null;
+          return post ? <div key={slug}><h3><Link href={`/blog/${post.slug}`}>{post.title} <span aria-hidden="true">→</span></Link></h3><p>{context}</p></div> : null;
         })}
       </div>
     </InteriorChapter>
@@ -57,7 +57,7 @@ export default function BlogIndexPage(): ReactElement {
           const date = publishedDate(post);
           return <article key={post.slug} className={styles.post} aria-labelledby={`post-${post.slug}`}>
             <div className={styles.date}>{dateLabel && (date ? <time dateTime={date.toISOString()}>{dateLabel}</time> : <span>{dateLabel}</span>)}</div>
-            <h3 id={`post-${post.slug}`}><Link href={`/blog/${post.slug}`}>{post.title} <span aria-hidden="true">↗</span></Link></h3>
+            <h3 id={`post-${post.slug}`}><Link href={`/blog/${post.slug}`}>{post.title} <span aria-hidden="true">→</span></Link></h3>
             <p>{post.description}</p>
           </article>;
         })}

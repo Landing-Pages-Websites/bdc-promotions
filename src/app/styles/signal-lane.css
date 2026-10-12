@@ -1,0 +1,71 @@
+/*
+ * Signal Lane interaction layer — one motion vocabulary for every interior
+ * page (wrappers carry data-surface="signal-lane"). Layered so Tailwind
+ * utilities and the page modules still win any conflict.
+ */
+@layer components {
+  [data-surface="signal-lane"] {
+    --signal-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  [data-surface="signal-lane"] ::selection {
+    background: var(--mint);
+    color: var(--navy);
+  }
+
+  [data-surface="signal-lane"] :is(a, button, input, textarea, select) {
+    transition:
+      color 180ms var(--signal-ease),
+      background-color 180ms var(--signal-ease),
+      border-color 180ms var(--signal-ease),
+      text-decoration-color 180ms var(--signal-ease),
+      box-shadow 180ms var(--signal-ease),
+      transform 180ms var(--signal-ease);
+  }
+
+  /* Arrows travel the way they point: down for in-page anchors, up-right for
+     other sites, right for everything else. */
+  [data-surface="signal-lane"] a span[aria-hidden="true"] {
+    display: inline-block;
+    transition: transform 220ms var(--signal-ease);
+  }
+  [data-surface="signal-lane"] a:is(:hover, :focus-visible) span[aria-hidden="true"] {
+    transform: translateX(4px);
+  }
+  [data-surface="signal-lane"] a[href^="#"]:is(:hover, :focus-visible) span[aria-hidden="true"] {
+    transform: translateY(3px);
+  }
+  [data-surface="signal-lane"] a[href^="http"]:is(:hover, :focus-visible) span[aria-hidden="true"] {
+    transform: translate(3px, -3px);
+  }
+  [data-surface="signal-lane"] a[data-back]:is(:hover, :focus-visible) span[aria-hidden="true"] {
+    transform: translateX(-4px);
+  }
+
+  /* Navigation underlines fade in instead of popping. */
+  [data-surface="signal-lane"] :is(header, footer) nav a,
+  [data-surface="signal-lane"] nav[aria-label="On this page"] a {
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
+  }
+  [data-surface="signal-lane"] :is(header, footer) nav a:hover,
+  [data-surface="signal-lane"] nav[aria-label="On this page"] a:hover,
+  [data-surface="signal-lane"] :is(header, footer) nav a[aria-current] {
+    text-decoration-color: currentColor;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-surface="signal-lane"] *,
+  [data-surface="signal-lane"] *::before,
+  [data-surface="signal-lane"] *::after {
+    transition-duration: 0.01ms !important;
+  }
+  [data-surface="signal-lane"] a span[aria-hidden="true"],
+  [data-surface="signal-lane"] :active {
+    transform: none !important;
+  }
+}

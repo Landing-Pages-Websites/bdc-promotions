@@ -9,3 +9,5 @@ export const footerNavigation = [
   ["/pricing", "Service Options"], ["/testimonials", "Testimonials"],
   ["/privacy-policy", "Privacy"], ["/terms", "Terms"], ["/cookie-policy", "Cookies"],
 ] as const;
+
+export const strategyCall = "https://calendly.com/justins-bdc-promotions/bdc-promotions-strategy-call";

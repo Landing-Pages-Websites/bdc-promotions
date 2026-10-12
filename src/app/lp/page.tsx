@@ -16,7 +16,7 @@ export default function LpPage(): ReactElement {
   return (
     <div className="lp-root min-h-screen bg-lp-ink text-lp-text">
       <LpHeader />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <LpHero />
         <TrustBar />
         <AppointmentGap />

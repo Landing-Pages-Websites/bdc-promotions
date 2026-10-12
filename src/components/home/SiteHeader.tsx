@@ -17,6 +17,7 @@ export function SiteHeader({
   tagline,
 }: SiteHeaderProps): ReactElement {
   const { displayName, telephone } = identity;
+  const links = primaryNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>);
   return (
     <header className="site-header">
       <a className="brand" href="#top" aria-label={`${displayName} home`}>
@@ -29,8 +30,16 @@ export function SiteHeader({
         </span>
       </a>
       <nav className="site-nav" aria-label="Primary navigation">
-        {primaryNavigation.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
+        {links}
       </nav>
+      {/* Native disclosure for small screens: no JS, closes when the page changes. */}
+      <details className="site-menu">
+        <summary>
+          <span className="sr-only">Menu</span>
+          <span className="site-menu__icon" aria-hidden="true" />
+        </summary>
+        <nav aria-label="Primary navigation">{links}</nav>
+      </details>
       <a
         className="button button--compact"
         href={phoneHref(telephone)}

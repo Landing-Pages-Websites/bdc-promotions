@@ -1,9 +1,10 @@
 import localFont from "next/font/local";
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { footerNavigation, primaryNavigation as navigation } from "@/lib/site-navigation";
+import { strategyCall } from "@/lib/site-navigation";
+
+import { SiteFooter, SiteHeader } from "./SiteChrome";
 
 import styles from "./interior-page.module.css";
 
@@ -16,41 +17,41 @@ const barlowCondensed = localFont({
   weight: "700", style: "normal", display: "swap", variable: "--interior-heading",
 });
 
-export const strategyCall = "https://calendly.com/justins-bdc-promotions/bdc-promotions-strategy-call";
+export { strategyCall };
 
 type PageLink = { href: string; label: string };
 
-export function InteriorPage({ path, title, intro, chapters, children, contactTitle, contactCopy, contactLabel }: {
+export function InteriorPage({ path, title, intro, chapters, children, contactTitle, contactCopy, contactLabel, visual }: {
   path: string;
   title: string;
   intro: string;
   chapters: PageLink[];
   children: ReactNode;
-  contactTitle: string;
-  contactCopy: string;
-  contactLabel: string;
+  // Legal, thank-you and 404 pages carry no contact band of their own.
+  contactTitle?: string;
+  contactCopy?: string;
+  contactLabel?: string;
+  /** A client creative shown beside the heading (pass a <Plate>). */
+  visual?: ReactNode;
 }) {
   return (
-    <div className={`${styles.page} ${barlow.variable} ${barlowCondensed.variable}`}>
-      <header className={`${styles.container} ${styles.header}`}>
-        <Link className={styles.brand} href="/" aria-label="BDC Promotions home">
-          <Image src="/images/services/bdc-logo-2026.png" alt="BDC Promotions" width={1254} height={749} sizes="180px" loading="eager" />
-        </Link>
-        <nav className={styles.navigation} aria-label="Primary navigation">
-          {navigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === path ? "page" : undefined}>{label}</Link>)}
-        </nav>
-        <a className={styles.headerCall} href="tel:+13522071074">Call (352) 207-1074</a>
-      </header>
-      <main id="interior-content">
-        <section className={`${styles.container} ${styles.hero}`} aria-labelledby="interior-title">
-          <h1 id="interior-title">{title}</h1>
-          <p className={styles.intro}>{intro}</p>
-          <nav className={styles.chapterLinks} aria-label="On this page">
-            {chapters.map(({ href, label }) => <a key={href} href={href}>{label}<span aria-hidden="true">↓</span></a>)}
-          </nav>
+    <div data-surface="signal-lane" className={`${styles.page} ${barlow.variable} ${barlowCondensed.variable}`}>
+      <SiteHeader path={path} />
+      <main id="main-content" tabIndex={-1}>
+        <section className={`${styles.container} ${styles.hero} ${visual ? styles.heroSplit : ""}`} aria-labelledby="interior-title">
+          <div className={styles.heroCopy}>
+            <h1 id="interior-title">{title}</h1>
+            <p className={styles.intro}>{intro}</p>
+          </div>
+          {visual ? <div className={styles.heroVisual}>{visual}</div> : null}
+          {chapters.length ? (
+            <nav className={styles.chapterLinks} aria-label="On this page">
+              {chapters.map(({ href, label }) => <a key={href} href={href}>{label}<span aria-hidden="true">↓</span></a>)}
+            </nav>
+          ) : null}
         </section>
         {children}
-        <section className={styles.contact} id="discuss-your-dealership" aria-labelledby="contact-title">
+        {contactTitle ? <section className={styles.contact} id="discuss-your-dealership" aria-labelledby="contact-title">
           <div className={`${styles.container} ${styles.contactLayout}`}>
             <div><h2 id="contact-title">{contactTitle}</h2><p>{contactCopy}</p></div>
             <div className={styles.contactActions}>
@@ -58,19 +59,9 @@ export function InteriorPage({ path, title, intro, chapters, children, contactTi
               <a className={styles.secondary} href={strategyCall}>Book a Strategy Call <span aria-hidden="true">↗</span></a>
             </div>
           </div>
-        </section>
+        </section> : null}
       </main>
-      <footer className={`${styles.container} ${styles.footer}`}>
-        <p>BDC Promotions · Automotive marketing</p>
-        <nav aria-label="Footer navigation">
-          {footerNavigation.map(([href, label]) => <Link key={href} href={href} aria-current={href === path ? "page" : undefined}>{label}</Link>)}
-        </nav>
-        <div className={styles.contactDetails}>
-          <a href="tel:+13522071074">(352) 207-1074</a>
-          <a href="mailto:justins@bdc-promotions.com">justins@bdc-promotions.com</a>
-          <a href={strategyCall}>Book a Strategy Call</a>
-        </div>
-      </footer>
+      <SiteFooter path={path} />
     </div>
   );
 }

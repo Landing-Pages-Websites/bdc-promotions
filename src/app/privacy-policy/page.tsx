@@ -38,5 +38,5 @@ const sections: LegalSection[] = [
 ];
 
 export default function PrivacyPolicyPage(): ReactElement {
-  return <LegalPageLayout title="Privacy Policy" sections={sections} />;
+  return <LegalPageLayout title="Privacy Policy" path="/privacy-policy" sections={sections} />;
 }

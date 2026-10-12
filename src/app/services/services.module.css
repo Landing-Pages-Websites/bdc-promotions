@@ -45,64 +45,17 @@
 }
 
 .container {
-  width: min(1376px, calc(100% - 64px));
+  width: min(1180px, calc(100% - 64px));
   margin-inline: auto;
 }
 
-.header {
-  min-height: 124px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 24px;
-  border-bottom: 1px solid var(--panel);
-}
-
-.brand {
-  display: block;
-  width: 180px;
-}
-
-.brand img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.navigation {
-  display: flex;
-  gap: 32px;
-  font-size: 16px;
-}
-
-.navigation a,
-.headerCall {
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-}
-
-.navigation a[aria-current="page"] {
-  color: var(--mint);
-  text-decoration: underline;
-}
-
-.navigation a:hover,
-.headerCall:hover,
 .contactDetails a:hover {
   color: var(--mint);
   text-decoration: underline;
 }
 
-.headerCall {
-  justify-self: end;
-  padding: 10px 18px;
-  border: 1px solid var(--muted);
-  font-size: 16px;
-}
-
 .selector {
-  padding-top: 56px;
+  padding-top: clamp(40px, 4.5vw, 72px);
   padding-bottom: 16px;
 }
 
@@ -152,7 +105,8 @@
 
 .selectorLinks {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* The fourth label is the longest; give it the room so it stays on one line. */
+  grid-template-columns: 1fr 1fr 1fr 1.35fr;
   gap: 32px;
   margin-top: 32px;
   padding-block: 24px;
@@ -173,7 +127,7 @@
 }
 
 .directory {
-  padding-block: 56px 48px;
+  padding-block: clamp(56px, 6vw, 88px);
   background: var(--paper);
   color: var(--navy);
 }
@@ -189,8 +143,8 @@
 
 .entry {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
   align-items: start;
   padding-block: 28px;
   border-bottom: 1px solid var(--muted);
@@ -198,7 +152,7 @@
 
 .entry h3 {
   max-width: 440px;
-  font-size: clamp(28px, 2.5vw, 36px);
+  font-size: clamp(24px, 2vw, 30px);
   text-wrap: pretty;
 }
 
@@ -208,7 +162,7 @@
 }
 
 .comparison {
-  padding-block: 40px;
+  padding-block: clamp(40px, 4.5vw, 64px);
   background: var(--paper);
   color: var(--navy);
   border-top: 1px solid var(--muted);
@@ -216,12 +170,13 @@
 
 .compareLayout {
   display: grid;
+  /* A table, not a label/text row: it keeps the wide column. */
   grid-template-columns: minmax(0, 0.6fr) minmax(0, 1.4fr);
-  gap: 48px;
+  gap: 64px;
 }
 
 .comparison h2 {
-  font-size: 32px;
+  font-size: clamp(28px, 2.5vw, 36px);
 }
 
 .comparison p {
@@ -251,13 +206,13 @@
 }
 
 .contact {
-  padding-block: 64px;
+  padding-block: clamp(64px, 7vw, 104px);
 }
 
 .contactLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: 80px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
   align-items: center;
 }
 
@@ -296,9 +251,18 @@
   border: 1px solid var(--muted);
 }
 
-.primary:hover,
+.primary:hover {
+  background-color: color-mix(in srgb, var(--blue) 82%, var(--paper));
+}
+
+.primary:active,
+.secondary:active {
+  transform: translateY(1px);
+}
+
 .secondary:hover {
-  text-decoration: underline;
+  border-color: var(--paper);
+  background-color: color-mix(in srgb, var(--paper) 6%, transparent);
 }
 
 .contactDetails {
@@ -313,45 +277,6 @@
   align-items: center;
   min-height: 48px;
   overflow-wrap: anywhere;
-}
-
-.footer {
-  padding-block: 24px;
-  border-top: 1px solid var(--panel);
-  color: var(--muted);
-  font-size: 16px;
-}
-
-.footer nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 28px;
-  margin-top: 8px;
-}
-
-.footer a {
-  display: inline-flex;
-  align-items: center;
-  min-width: 44px;
-  min-height: 48px;
-}
-
-.footer a:hover {
-  color: var(--mint);
-}
-
-@media (max-width: 1050px) {
-  .header {
-    grid-template-columns: 1fr auto;
-    padding-block: 8px;
-  }
-
-  .navigation {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    flex-wrap: wrap;
-    gap: 0 24px;
-  }
 }
 
 @media (max-width: 900px) {
@@ -379,23 +304,6 @@
     width: calc(100% - 40px);
   }
 
-  .header {
-    grid-template-columns: 1fr auto;
-    gap: 0 16px;
-    padding-block: 8px;
-  }
-
-  .brand {
-    width: 160px;
-  }
-
-  .headerCall {
-    grid-column: 1 / -1;
-    justify-self: stretch;
-    justify-content: center;
-    margin-top: 8px;
-  }
-
   .selector {
     padding-top: 40px;
     padding-bottom: 12px;
@@ -418,7 +326,7 @@
   }
 
   .directory,
-  .contact {
+.contact {
     padding-block: 40px;
   }
 
@@ -427,7 +335,7 @@
   }
 
   .entry,
-  .contactLayout {
+.contactLayout {
     grid-template-columns: 1fr;
     gap: 16px;
   }
@@ -444,4 +352,25 @@
     grid-template-columns: 1fr;
     gap: 4px;
   }
+}
+
+/* Visual review, round 2 */
+.page :is(p, dd, li) { text-wrap: pretty; }
+.selectorLinks a { justify-content: flex-start; gap: 12px; }
+.entry h3 { max-width: none; }
+.entry h3 a, .compareRows dt a { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; }
+.entry h3 a:hover { color: var(--blue); text-decoration: none; }
+.entry h3 span { color: var(--blue); font-size: 0.8em; }
+.compareRows dt a { text-decoration: underline; text-underline-offset: 5px; }
+/* The compare table joins the site's one column line: title above, rows on 1fr/1fr. */
+.compareLayout { grid-template-columns: 1fr; gap: 24px; }
+.compareRows > div { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; }
+.contactLayout { align-items: start; }
+.contact h2 { font-size: clamp(36px, 3.75vw, 54px); }
+@media (max-width: 700px) {
+  .directory h2 { font-size: clamp(28px, 7.8vw, 32px); }
+  .contact h2 { font-size: 32px; }
+  .directory, .contact { padding-block: 56px; }
+  .compareRows > div { grid-template-columns: 1fr; gap: 4px; }
+  .selectorLinks a { border-bottom: 1px solid color-mix(in srgb, var(--muted) 25%, transparent); }
 }

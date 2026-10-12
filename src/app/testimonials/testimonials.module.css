@@ -1,3 +1,10 @@
-.interview { max-width: 1040px; margin-top: 24px; }
-.interview video { display: block; width: 100%; height: auto; margin-top: 24px; background: var(--navy); }
-.download { display: inline-flex; align-items: center; min-height: 48px; margin-top: 12px; color: var(--blue); text-decoration: underline; font-size: 16px; }
+.interview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 64px; align-items: start; margin-top: 28px; }
+/* The source is 640×360: shown at most at its own width so Curt stays sharp. */
+.interview video { display: block; grid-column: 1; grid-row: 1 / span 2; width: 100%; max-width: 640px; height: auto; background: var(--navy); }
+.interview p { grid-column: 2; grid-row: 1; }
+.download { display: inline-flex; grid-column: 2; grid-row: 2; align-self: start; align-items: center; min-height: 48px; margin-top: 12px; color: var(--blue); text-decoration: underline; font-size: 16px; }
+@media (max-width: 1050px) {
+  .interview { grid-template-columns: 1fr; }
+  .interview p, .interview video, .download { grid-column: auto; grid-row: auto; }
+  .interview video { margin-top: 24px; }
+}

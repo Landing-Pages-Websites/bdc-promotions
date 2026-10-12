@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactElement } from "react";
-import MarkdownBody from "@/components/blog/MarkdownBody";
 import SelectedArticlePage from "@/components/signal-lane/SelectedArticlePage";
-import BlogImage from "@/components/blog/BlogImage";
-import { PrimarySiteNavigation } from "@/components/navigation/PrimarySiteNavigation";
 import { JsonLd } from "@/components/schema/JsonLd";
 import {
   buildArticleSchema,
   buildFaqSchema,
 } from "@/components/schema/builders";
 import {
-  formatPublishedDate,
   getPublishedPost,
   listPublishedPosts,
   publishedDate,
@@ -66,32 +61,8 @@ export default async function BlogArticlePage({
   // The date the author wrote is still shown either way.
   const publishedIso = publishedDate(post)?.toISOString() ?? null;
   const faqItems = blogFaqBySlug[post.slug];
-  if (
-    post.slug === "welcome" ||
-    post.slug === "car-dealership-marketing-agency" ||
-    post.slug === "automotive-dealership-crm-buyer-guide"
-  ) {
-    return (
-      <SelectedArticlePage post={post} publishedIso={publishedIso}>
-        {publishedIso ? (
-          <JsonLd
-            data={buildArticleSchema({
-              headline: post.title,
-              description: post.description || post.title,
-              path,
-              datePublished: publishedIso,
-              imagePath: post.image ?? undefined,
-            })}
-          />
-        ) : null}
-        {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
-      </SelectedArticlePage>
-    );
-  }
-  const metadataTextClassName = "text-sm text-[color:var(--muted)]";
   return (
-    <PrimarySiteNavigation>
-    <article className="mx-auto w-full max-w-2xl px-6 py-16">
+    <SelectedArticlePage post={post} publishedIso={publishedIso}>
       {publishedIso ? (
         <JsonLd
           data={buildArticleSchema({
@@ -104,39 +75,6 @@ export default async function BlogArticlePage({
         />
       ) : null}
       {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
-      <p className={metadataTextClassName}>
-        <Link href="/blog" className="underline">
-          ← All articles
-        </Link>
-        {post.date ? (
-          <>
-            {" · "}
-            {publishedIso ? (
-              <time dateTime={publishedIso}>{formatPublishedDate(post)}</time>
-            ) : (
-              post.date
-            )}
-          </>
-        ) : null}
-      </p>
-      <h1 className="mt-6 text-3xl font-bold">{post.title}</h1>
-      {post.author ? (
-        <p className={`mt-2 ${metadataTextClassName}`}>By {post.author}</p>
-      ) : null}
-      {post.image ? (
-        <div className="mt-8">
-          <BlogImage
-            src={post.image}
-            alt={post.imageAlt ?? post.title}
-            variant="banner"
-            priority
-          />
-        </div>
-      ) : null}
-      <div className="mt-10">
-        <MarkdownBody source={post.body} />
-      </div>
-    </article>
-    </PrimarySiteNavigation>
+    </SelectedArticlePage>
   );
 }

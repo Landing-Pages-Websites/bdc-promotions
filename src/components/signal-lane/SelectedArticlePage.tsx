@@ -22,7 +22,8 @@ export default function SelectedArticlePage({ post, publishedIso, children }: {
   const relatedPosts = readingSlugs
     .filter((slug) => slug !== post.slug)
     .map(getPublishedPost)
-    .filter((entry): entry is BlogPost => entry !== null);
+    .filter((entry): entry is BlogPost => entry !== null)
+    .slice(0, 2); // the reading grid has two columns
 
   return (
     <div className={styles.surface}>
@@ -43,7 +44,7 @@ export default function SelectedArticlePage({ post, publishedIso, children }: {
         <article className={styles.article} id="article-content" aria-labelledby="interior-title">
           <div className={styles.reading}>
             <div className={styles.metadata}>
-              <Link href="/blog">← Back to Insights</Link>
+              <Link href="/blog" data-back><span aria-hidden="true">←</span> Back to Insights</Link>
               <div>
                 {post.author ? <span>By {post.author}</span> : null}
                 {post.date ? (

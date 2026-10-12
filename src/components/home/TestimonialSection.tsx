@@ -13,7 +13,7 @@ export function TestimonialSection({
 }: TestimonialSectionProps): ReactElement | null {
   const videos = content.videoLabels.flatMap((label, index) => {
     const media = siteConfig.testimonialVideos[index];
-    return media ? [{ ...media, label }] : [];
+    return media ? [{ ...media, poster: media.homePoster ?? media.poster, label }] : [];
   });
   if (videos.length === 0) return null;
 

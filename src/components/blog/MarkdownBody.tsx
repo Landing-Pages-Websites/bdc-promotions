@@ -5,6 +5,8 @@ import {
   type Block,
   type InlineNode,
   type ListItem,
+  plainText,
+  isLinkOnly,
 } from "@/lib/markdown";
 
 interface MarkdownBodyProps {
@@ -129,6 +131,7 @@ function renderBlock(block: Block, key: number): ReactElement {
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
+                      data-label={plainText(block.header[cellIndex] ?? [])}
                       className="border-b border-neutral-200 px-3 py-2 align-top dark:border-neutral-800"
                     >
                       {renderInline(cell)}
@@ -159,6 +162,7 @@ function renderBlock(block: Block, key: number): ReactElement {
       return (
         <p
           key={key}
+          data-cta={isLinkOnly(block.inline) || undefined}
           className="mt-4 leading-relaxed text-neutral-300 first:mt-0"
         >
           {renderInline(block.inline)}
