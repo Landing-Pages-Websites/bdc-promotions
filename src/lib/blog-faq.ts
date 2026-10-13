@@ -19,7 +19,7 @@ const customerRetentionFaq: readonly FaqItem[] = [
   {
     question: "Which metrics help measure customer retention?",
     answer:
-      "Choose a defined customer group and time period, then track repeat service visits and repeat purchases where those records are available. Pair those outcomes with operational measures such as completed follow-ups, appointment attendance, unresolved inquiries, and opt-outs. Review results by customer group and channel so the team can distinguish a relationship issue from a data or process gap.",
+      "Choose a defined customer cohort and observation window. For service, report the share of that cohort with a completed return visit by the chosen date; for repeat vehicle purchases, use a separate cohort and definition. Pair each outcome with process measures such as completed promised follow-up, appointment set and attended, unresolved inquiries, record match rate, and correctly applied opt-outs. Always publish the numerator, denominator, period, and exclusions so data cleanup or different observation windows do not look like a retention change.",
   },
   {
     question: "Can dealerships use recall notices as marketing messages?",
