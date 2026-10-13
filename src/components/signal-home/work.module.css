@@ -474,3 +474,6 @@
     height: 26px;
   }
 }
+
+/* Lighter weights (client: "text is too bold"): one step down, same hierarchy. */
+.labelTitle, .moreLabel { font-weight: 600; }

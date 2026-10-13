@@ -348,3 +348,6 @@
     letter-spacing: 0.08em;
   }
 }
+
+/* Lighter weights (client: "text is too bold"): one step down, same hierarchy. */
+.rules li { font-weight: 500; }
