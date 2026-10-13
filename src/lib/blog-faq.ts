@@ -51,6 +51,34 @@ const marketingAgencyEvaluationFaq: readonly FaqItem[] = [
   },
 ];
 
+const dealershipMessengerLeadWorkflowFaq: readonly FaqItem[] = [
+  {
+    question: "What is included in a dealership Messenger lead workflow?",
+    answer:
+      "A practical workflow covers more than sending a first reply. It identifies new Messenger inquiries, captures conversation context, assigns ownership, provides a helpful response, qualifies the shopper, supports an appropriate next step, and records the outcome. The exact process depends on dealership staffing, systems, and agreed service scope.",
+  },
+  {
+    question: "Who should own an inbound Messenger lead?",
+    answer:
+      "Ownership should be clear as soon as the inquiry arrives. Depending on the dealership, that may be a BDC representative, sales team member, or another assigned responder. The workflow should define who monitors the channel, who handles questions, when a lead is handed off. And how context is preserved so the shopper does not need to repeat information.",
+  },
+  {
+    question: "How should a dealership qualify a Messenger conversation?",
+    answer:
+      "Start with the shopper's stated intent, then ask only the questions needed to guide the next step. Useful context may include the vehicle or offer of interest, purchase timing, and the shopper's preferred way to continue. Qualification should support a relevant response and a possible appointment, not turn the opening exchange into a rigid form.",
+  },
+  {
+    question: "What should happen if a Messenger lead does not reply?",
+    answer:
+      "Use a dealership-approved follow-up plan that is respectful and appropriate to the conversation. Record the attempted contact, stop when the shopper asks not to be contacted. And escalate to a human when the question is sensitive, complex, or ready for direct sales assistance. There is no universal cadence that fits every dealership or shopper.",
+  },
+  {
+    question: "How is a dealership Messenger workflow measured?",
+    answer:
+      "Review both process coverage and business outcomes. Useful checks include whether inquiries received an owner, whether conversations became two-way exchanges, whether qualification and handoff context were captured, and whether appointments and later outcomes were visible to the team. Compare results against a consistent dealership baseline rather than relying on lead volume alone.",
+  },
+];
+
 const messengerVsEmailFaq: readonly FaqItem[] = [
   {
     question: "Is Messenger better than email for car dealership leads?",
@@ -78,4 +106,5 @@ export const blogFaqBySlug: Readonly<Record<string, readonly FaqItem[]>> = {
   "automotive-dealership-customer-retention": customerRetentionFaq,
   "automotive-marketing-agency-evaluation": marketingAgencyEvaluationFaq,
   "messenger-vs-email-for-car-dealership-leads": messengerVsEmailFaq,
+  "dealership-messenger-lead-workflow": dealershipMessengerLeadWorkflowFaq,
 };

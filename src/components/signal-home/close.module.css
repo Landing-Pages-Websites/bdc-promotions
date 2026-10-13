@@ -10,6 +10,25 @@
   margin-inline: auto;
 }
 
+.formPanel {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 32px;
+  border: 1px solid #16273f;
+  background: var(--panel);
+}
+
+.formPanel h3 {
+  margin: 0 0 24px;
+  font-family: var(--display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-variation-settings: "wdth" 56;
+  font-weight: 700;
+  line-height: 0.95;
+  color: var(--white);
+  text-transform: uppercase;
+}
+
 .routes {
   position: absolute;
   z-index: 1;
