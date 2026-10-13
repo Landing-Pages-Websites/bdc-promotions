@@ -23,8 +23,10 @@
   --label: var(--a-label), "Arial Narrow", sans-serif;
   --semi: var(--a-semi), "Arial Narrow", sans-serif;
   --body: var(--a-body), Arial, sans-serif;
-  --u: calc(min(100cqw, 1920px) / 1536);
-  /* distance from the 1536-grid frame to the viewport edge (0 up to 1920px wide) */
+  /* Scales with the window up to 1440px, then holds: wider screens get margins, not a
+     125%-size page (it read as "zoomed in" at 1920). */
+  --u: calc(min(100cqw, 1440px) / 1536);
+  /* distance from the 1536-grid frame to the viewport edge (0 up to 1440px wide) */
   --bleed: max(0px, (100cqw - 1536 * var(--u)) / 2);
   /*
    * Type ladder in reference px (x --u). The 46 measured sizes were merged onto these

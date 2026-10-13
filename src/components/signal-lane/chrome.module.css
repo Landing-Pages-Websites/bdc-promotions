@@ -2,8 +2,8 @@
 .container { width: min(1180px, calc(100% - 64px)); margin-inline: auto; }
 /* Own tokens: identical to the interiors, and immune to a host page that redefines them (the homepage does). */
 .header, .footer { --navy: #020716; --panel: #0a1633; --blue: #0059fc; --paper: #f4f7fc; --muted: #a9b3c7; --mint: #00f5c8; color: var(--paper); }
-/* Homepage: align to its 1536-grid frame (39px margins at 1536, scaling to 1920). */
-@media (min-width: 1180px) { .wide.container { width: calc(100% - min(100vw, 1920px) * 78 / 1536); } }
+/* Homepage: align to its 1536-unit frame (39-unit margins), which stops growing at 1440px. */
+@media (min-width: 1180px) { .wide.container { width: calc(min(100%, 1440px) * 1458 / 1536); } }
 /* Below 1180px the homepage stacks into a 720px column: the chrome follows it, menu instead of links. */
 @media (max-width: 1179px) {
   .wide.container { width: min(720px, calc(100% - 40px)); }
