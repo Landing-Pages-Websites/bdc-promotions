@@ -10,9 +10,9 @@ const A = "/images/home";
 function HeroRoutes(): ReactElement {
   return (
     <svg className={styles.routes} viewBox="0 0 1536 862" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <rect x="496" y="479" width="14" height="14" fill="#01f5e0" />
-      <path d="M510 486H576Q588 486 588 498V593Q588 605 600 605H690" fill="none" stroke="#01f5e0" strokeWidth="2" />
-      <path d="M708 780H752Q764 780 764 792V813Q764 825 776 825H1502" fill="none" stroke="#01f5e0" strokeWidth="2" />
+      <rect x="496" y="419" width="14" height="14" fill="#01f5e0" />
+      <path d="M510 426H576Q588 426 588 438V593Q588 605 600 605H690" fill="none" stroke="#01f5e0" strokeWidth="2" />
+      <path d="M708 720H752Q764 720 764 732V813Q764 825 776 825H1502" fill="none" stroke="#01f5e0" strokeWidth="2" />
       <path d="M1499 818 1512 825 1499 832Z" fill="#01f5e0" />
     </svg>
   );

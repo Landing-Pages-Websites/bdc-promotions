@@ -4,6 +4,7 @@ import { Close } from "./Close";
 import { fontVariables } from "./fonts";
 import { Growth } from "./Growth";
 import { Hero } from "./Hero";
+import { HomeMotion } from "./HomeMotion";
 import { Options } from "./Options";
 import { Proof } from "./Proof";
 import { Signal } from "./Signal";
@@ -19,7 +20,7 @@ export function SignalLane(): ReactElement {
   return (
     <div data-surface="signal-lane" className={styles.site}>
       <SiteHeader path="/" wide />
-      <main id="main-content" tabIndex={-1} className={`${fontVariables} ${styles.page}`}>
+      <main id="main-content" tabIndex={-1} data-motion-root className={`${fontVariables} ${styles.page}`}>
         <Hero />
         <Signal />
         <Growth />
@@ -29,6 +30,7 @@ export function SignalLane(): ReactElement {
         <Close />
       </main>
       <SiteFooter path="/" wide />
+      <HomeMotion />
     </div>
   );
 }
