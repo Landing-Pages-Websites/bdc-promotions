@@ -445,3 +445,8 @@
 @keyframes plateIn { from { transform: translateY(28px); } }
 @keyframes repoIn { from { opacity: 0; transform: translate(-36px, 24px) rotate(-15deg); } }
 @keyframes routeDraw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* Lighter weights (client: "text is too bold"): one step down, same hierarchy. */
+.title { font-weight: 700; }
+.audit, .call { font-weight: 600; }
+.proofCyan { font-weight: 500; }

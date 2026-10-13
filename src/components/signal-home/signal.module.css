@@ -135,3 +135,7 @@
     background: var(--cyan);
   }
 }
+
+/* Lighter weights (client: "text is too bold"): one step down, same hierarchy. */
+.signalTitle { font-weight: 600; }
+.signalList { font-weight: 500; }

@@ -10,23 +10,74 @@
   margin-inline: auto;
 }
 
+/* The restored lead form, set into the homepage grid: aligned to the headline's left edge
+   (77 units), a measured gap under the FAQ, heading left / form right, the page's own
+   square fields and solid-blue button instead of the old homepage's rounded gradient. */
 .formPanel {
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  column-gap: calc(64 * var(--u));
+  align-items: start;
+  width: calc(1382 * var(--u));
+  margin: calc(72 * var(--u)) auto calc(104 * var(--u));
+  padding: calc(48 * var(--u)) calc(56 * var(--u));
   border: 1px solid #16273f;
   background: var(--panel);
 }
 
 .formPanel h3 {
-  margin: 0 0 24px;
+  margin: 0;
   font-family: var(--display);
-  font-size: clamp(32px, 4vw, 52px);
+  font-size: max(34px, var(--fs-57));
   font-variation-settings: "wdth" 56;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.95;
   color: var(--white);
   text-transform: uppercase;
+}
+
+.formPanel :global(.homepage-lead-form) { gap: 18px 20px; }
+.formPanel :global(.homepage-lead-form__label) {
+  font-family: var(--label);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgb(252 252 252 / 0.72);
+}
+.formPanel :global(.homepage-lead-form__input) {
+  min-height: 52px;
+  border-color: rgb(5 99 252 / 0.6);
+  border-radius: 0;
+  background: var(--ink);
+}
+.formPanel :global(.homepage-lead-form__input:focus) {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgb(1 245 224 / 0.15);
+}
+.formPanel :global(.homepage-lead-form__submit) {
+  min-height: 56px;
+  border-radius: 0;
+  background: var(--blue);
+  box-shadow: none;
+  color: var(--white);
+  font-family: var(--display);
+  font-size: 22px;
+  font-variation-settings: "wdth" 60;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: box-shadow 160ms ease;
+}
+.formPanel :global(.homepage-lead-form__submit:hover) { box-shadow: var(--hover-ring); }
+
+@media (max-width: 1179px) {
+  .formPanel {
+    grid-template-columns: 1fr;
+    row-gap: 24px;
+    width: min(720px, calc(100% - 40px));
+    margin: 8px auto 64px;
+    padding: 24px;
+  }
 }
 
 .routes {
@@ -347,3 +398,8 @@
     line-height: 1.45;
   }
 }
+
+/* Lighter weights (client: "text is too bold"): one step down, same hierarchy. */
+.title { font-weight: 600; }
+.audit, .call { font-weight: 600; }
+.item dt { font-weight: 600; }
