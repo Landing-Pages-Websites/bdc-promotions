@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { LeadForm } from "@/components/LeadForm";
 import { auditHref, phoneDisplay, phoneHref } from "./content";
 import { ArrowIcon, PhoneSolidIcon } from "./icons";
 import { Lines } from "./Lines";
@@ -70,6 +71,10 @@ export function Close(): ReactElement {
             ))}
           </dl>
         </div>
+      </div>
+      <div className={styles.formPanel}>
+        <h3>Request information</h3>
+        <LeadForm variant="homepage" submitLabel="Request Information" />
       </div>
     </section>
   );
