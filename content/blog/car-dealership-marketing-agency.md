@@ -61,7 +61,7 @@ Ask for the complete path from a paid social impression to a Messenger conversat
 
 These questions reveal whether the agency is offering a complete operating workflow or simply launching ads and handing the results back to your team. For a dealership, the handoff matters as much as the ad. An attractive campaign that creates confusion for the sales team can increase activity without improving the customer experience.
 
-**[Review the dealership marketing services BDC Promotions provides.](https://www.bdcpromotions.com/#services)**
+**[Review the dealership marketing services BDC Promotions provides.](https://www.bdcpromotions.com/services)**
 
 ## 3. Test the agency's lead-handling and appointment process
 
@@ -137,7 +137,7 @@ Red flags are usually process problems rather than one missing feature. Slow ans
 
 A red flag does not automatically mean an agency is wrong for every dealer. It does mean you should ask for evidence, define a safeguard, or compare another partner before committing.
 
-**[See how BDC Promotions frames the dealership marketing process.](https://www.bdcpromotions.com/#process)**
+**[See how BDC Promotions frames the dealership marketing process.](https://www.bdcpromotions.com/process)**
 
 ## Questions to ask before hiring a car dealership marketing agency
 
