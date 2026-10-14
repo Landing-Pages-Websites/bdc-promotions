@@ -40,8 +40,10 @@ export async function generateMetadata({
   const post = getPublishedPost(slug);
   if (!post) return {};
   return buildMetadata({
-    title: post.title,
-    description: post.description || post.title,
+    title: post.metaTitle || post.title,
+    description: post.metaDescription || post.description || post.title,
+    socialTitle: post.title,
+    socialDescription: post.description || post.title,
     path: `/blog/${post.slug}`,
     ogImagePath: post.image ?? undefined,
   });
