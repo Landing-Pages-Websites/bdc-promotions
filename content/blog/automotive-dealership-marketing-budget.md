@@ -1,5 +1,5 @@
 ---
-id: 1312e83c-2b60-4947-8b33-9df95e043fa2
+id: item_6m2r8v4k9x1c7z5t3p0n8q6w4g
 title: Automotive Dealership Marketing Budget: How to Allocate Spend for Better Appointments
 metaTitle: Automotive Dealership Marketing Budget Guide
 description: Build an automotive dealership marketing budget around campaign reach, lead response, appointments, and measurement, with a practical monthly review process.
