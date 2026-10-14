@@ -20,6 +20,8 @@ import {
 } from "./blog.ts";
 import { listPostFilenames, servablePost } from "./post-file.mjs";
 import { parseFrontmatter } from "./frontmatter.mjs";
+import { buildArticleSchema } from "@/components/schema/builders";
+import { buildMetadata } from "./seo.ts";
 
 // The loader resolves `content/blog` against `process.cwd()`, so every case
 // runs from a throwaway site root, the same way imageSize.test.ts does.
@@ -563,6 +565,59 @@ test("excerpt stands in for a missing description", () => {
     }).description,
     "Real one",
   );
+});
+
+test("search metadata stays separate from visible and social article fields", () => {
+  const searchTitle = "Automotive Dealership CRM Buyer's Guide";
+  const searchDescription =
+    "Compare automotive dealership CRM features for lead routing, follow-up, appointments, attribution, and integrations before choosing a platform.";
+  const visibleTitle = "Automotive Dealership CRM Buyer Guide";
+  const visibleDescription =
+    "Learn what an automotive dealership CRM should manage, from lead routing and follow-up to appointments, attribution, and integrations.";
+  const found = onlyPostOf({
+    "a.md": post(
+      [
+        `title: ${visibleTitle}`,
+        `description: ${visibleDescription}`,
+        `metaTitle: ${searchTitle}`,
+        `metaDescription: ${searchDescription}`,
+      ].join("\n"),
+      "Visible article body.",
+    ),
+  });
+
+  assert.equal(found.title, visibleTitle);
+  assert.equal(found.description, visibleDescription);
+  assert.equal(found.metaTitle, searchTitle);
+  assert.equal(found.metaDescription, searchDescription);
+  assert.equal(searchTitle.length, 39);
+  assert.equal(`${searchTitle} | BDC Promotions`.length, 56);
+  assert.equal(searchDescription.length, 143);
+  assert.equal(/^[\x00-\x7F]*$/.test(searchTitle), true);
+  assert.equal(/^[\x00-\x7F]*$/.test(searchDescription), true);
+
+  const metadata = buildMetadata({
+    title: found.metaTitle || found.title,
+    description: found.metaDescription || found.description,
+    socialTitle: found.title,
+    socialDescription: found.description,
+    path: `/blog/${found.slug}`,
+  });
+  assert.equal(metadata.title, searchTitle);
+  assert.equal(metadata.description, searchDescription);
+  assert.equal(metadata.openGraph?.title, visibleTitle);
+  assert.equal(metadata.openGraph?.description, visibleDescription);
+  assert.equal(metadata.twitter?.title, visibleTitle);
+  assert.equal(metadata.twitter?.description, visibleDescription);
+
+  const articleSchema = buildArticleSchema({
+    headline: found.title,
+    description: found.description,
+    path: `/blog/${found.slug}`,
+    datePublished: "2026-09-14T00:00:00.000Z",
+  });
+  assert.equal(articleSchema.headline, visibleTitle);
+  assert.equal(articleSchema.description, visibleDescription);
 });
 
 test("unknown frontmatter keys are ignored, not fatal", () => {

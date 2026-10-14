@@ -5,6 +5,9 @@ export interface MetadataOverrides {
   /** Page title. Rendered through the "%s | Business Name" template. */
   title?: string;
   description?: string;
+  /** Search metadata can differ from the social card copy when a page has an SEO override. */
+  socialTitle?: string;
+  socialDescription?: string;
   siteName?: string;
   /** Site path or absolute canonical URL. Defaults to "/". */
   path?: string;
@@ -30,6 +33,9 @@ export function absoluteUrl(path: string): string {
  */
 export function buildMetadata(overrides: MetadataOverrides = {}): Metadata {
   const description = overrides.description ?? siteConfig.description;
+  const socialTitle =
+    overrides.socialTitle ?? overrides.title ?? siteConfig.businessName;
+  const socialDescription = overrides.socialDescription ?? description;
   const path = overrides.path ?? "/";
   const ogImagePath = overrides.ogImagePath ?? siteConfig.ogImagePath;
   const gscVerification = process.env.NEXT_PUBLIC_GSC_VERIFICATION;
@@ -49,16 +55,16 @@ export function buildMetadata(overrides: MetadataOverrides = {}): Metadata {
     openGraph: {
       type: "website",
       siteName: overrides.siteName ?? siteConfig.businessName,
-      title: overrides.title ?? siteConfig.businessName,
-      description,
+      title: socialTitle,
+      description: socialDescription,
       url: path,
       locale: siteConfig.locale.replace("-", "_"),
       images: [{ url: ogImagePath, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
-      title: overrides.title ?? siteConfig.businessName,
-      description,
+      title: socialTitle,
+      description: socialDescription,
       images: [ogImagePath],
     },
     ...(overrides.robots ? { robots: overrides.robots } : {}),

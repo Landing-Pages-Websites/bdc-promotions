@@ -43,6 +43,8 @@ export interface BlogPost {
   slug: string;
   title: string;
   description: string;
+  metaTitle: string | null;
+  metaDescription: string | null;
   date: string | null;
   image: string | null;
   imageAlt: string | null;
@@ -150,6 +152,8 @@ function toPost(filename: string, raw: string): BlogPost | null {
     title: served.title,
     description:
       pickString(data, ["description", "excerpt", "summary"]) ?? "",
+    metaTitle: pickString(data, ["metaTitle"]),
+    metaDescription: pickString(data, ["metaDescription"]),
     date: pickString(data, ["date", "publishedAt", "publishDate"]),
     image: pickString(data, ["image", "heroImage", "featuredImage"]),
     imageAlt: pickString(data, [
