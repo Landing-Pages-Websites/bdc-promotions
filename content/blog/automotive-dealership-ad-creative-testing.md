@@ -1,5 +1,5 @@
 ---
-id: item_mahgdgr82sse353rs5x2569yss
+id: item_wtagg1n8wp9g643yxws43zqter
 title: 'Automotive Dealership Ad Creative Testing Framework'
 slug: automotive-dealership-ad-creative-testing
 description: 'Learn automotive dealership ad creative testing with a repeatable framework for hypotheses, audience controls, measurement, approvals, and campaign iteration.'
