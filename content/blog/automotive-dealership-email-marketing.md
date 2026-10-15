@@ -1,5 +1,5 @@
 ---
-id: item_mphe1w2h5dg06ck6wdkh7cejqj
+id: item_mphe1w2h5dg06ck6wdkh7cejqg
 title: Automotive Dealership Email Marketing: A Guide to Better Follow-Up
 metaTitle: Automotive Dealership Email Marketing Guide
 metaDescription: Learn how dealerships can use email to follow up with shoppers, share useful information, confirm appointments, and measure engagement across channels.
