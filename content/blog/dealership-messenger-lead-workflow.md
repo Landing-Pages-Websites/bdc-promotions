@@ -100,6 +100,8 @@ Start with a dealership-defined cadence. The right number of follow-up touches a
 
 Each follow-up should add context or make the next step easier. Refer back to the vehicle, question, or preference the shopper shared. A concise message that offers a useful clarification is more helpful than repeating the same generic prompt. Log the contact and its outcome in the dealership's approved system when the workflow supports that process, so another team member can understand what has already happened.
 
+When follow-up continues beyond the first conversation, review the [customer retention guide](https://bdcpromotions.com/blog/automotive-dealership-customer-retention).
+
 Follow-up must also include clear stop and escalation rules. Once the shopper re-engages, the workflow should stop any pending automated or templated sequence and give the active conversation to the appropriate owner. An opt-out should suppress further promotional follow-up according to the dealership's policies. Escalation is appropriate when a person is requested or when the conversation involves an exception that should not be handled through a routine sequence.
 
 * **Stop follow-up:** the shopper replies, asks to stop, opts out, or otherwise indicates that continued outreach is unwanted.
