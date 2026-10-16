@@ -21,3 +21,5 @@ Today’s car shopper expects quick, useful answers. When a message sits unanswe
 Paid social should do more than earn impressions. It should give shoppers a clear next step and connect them with a professional response while their interest is still high.
 
 BDC Promotions combines automotive-focused campaigns with live customer engagement to help dealerships create more conversations, more appointments, and more opportunities to sell.
+
+If your dealership is working to turn online interest into more appointments, learn more about [how BDC Promotions helps dealerships engage shoppers](/#services) or [talk with BDC Promotions](/#contact).
