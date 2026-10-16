@@ -145,6 +145,23 @@ Separate urgent checks from performance judgments. A team member can verify that
 
 At each review, finish with a written decision: continue as planned, correct a specific issue, test a defined change, or pause for a stated reason. Name who will make the change and when the team will look again. This small discipline preserves the learning from each month and keeps budget conversations tied to agreed objectives instead of repeated guesses.
 
+## How should a dealership connect budget decisions to appointments?
+
+A budget decision is useful only when it connects a planned investment to a defined next step for the shopper. Before moving money, record a baseline for the current period: campaign spend, inquiries by source, response coverage, appointments set, appointments confirmed, and any tracking or staffing limits. The baseline does not need to predict results. It gives the team a reference point for understanding what changed.
+
+Next, define the role of each channel in the path. One channel may create awareness or start conversations, while another may support a vehicle inquiry or a direct appointment request. Write down the action each channel is expected to produce, where the inquiry will be recorded, and which team owns the response. The [automotive lead generation dealership guide](https://bdcpromotions.com/blog/automotive-lead-generation-dealership-guide) provides a related framework for connecting lead capture, qualification, and appointment handoff.
+
+Before increasing spend, test the response workflow with a real or controlled inquiry. Confirm that the record includes the source and shopper context, reaches the right owner, and has a documented next action. If a lead is captured but no one can explain who responds or how an appointment is recorded, the next budget decision may need to address the process rather than add distribution.
+
+At the scheduled review, compare the baseline with the new period in sequence:
+
+* Did the channel deliver the planned campaign and shopper action?
+* Were inquiries recorded and answered with usable context?
+* Did conversations progress to appointment requests, appointments set, or another defined next step?
+* Is the tracking complete enough to explain the difference?
+
+Finish with one written decision: continue, correct a specific operational issue, test a defined change, or pause for a stated reason. Tie that decision to the evidence available, name the owner, and set the next review date. This keeps the budget conversation focused on appointments and learning without treating spend alone as a guarantee.
+
 ## What mistakes can weaken a dealership marketing budget?
 
 * **Starting with a percentage rather than a goal.** A budget split copied from another store may not match your market, objectives, or follow-up capacity.
