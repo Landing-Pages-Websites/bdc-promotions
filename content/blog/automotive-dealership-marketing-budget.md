@@ -90,6 +90,17 @@ For a small or newly launched test, simplicity can be more useful than a detaile
 
 Do not promise yourself a fixed number of leads or sales based on spend alone. Outcomes depend on multiple elements, including the offer, local competition, inventory relevance, shopper intent, the response process, and accurate tracking. Record assumptions in the plan and revisit them when real store data becomes available.
 
+## How should budget decisions connect to appointments?
+
+A budget decision is not complete when a campaign launches. It is complete when the dealership can explain what the spend was meant to do, how shopper interest was handled, and what the next review should decide. Use the following sequence to connect budget planning to appointments without treating any single platform metric as the answer.
+
+1. **Set a baseline.** Record the current inquiry volume, response coverage, appointments set, confirmations, and other outcomes the dealership already tracks. Note how each measure is defined so the next review compares like with like.
+2. **Give each channel a job.** State whether the campaign is meant to create inquiries, start conversations, promote a vehicle category, or support another clear action. Keep media spend visible separately from creative, lead engagement, and appointment work.
+3. **Trace the response workflow.** Follow a test inquiry from the ad, form, or message into the dealership record. Confirm who owns the first response, how follow-up is logged, when an appointment is offered, and how the result is handed to the sales team. If the handoff or tracking is broken, investigate that issue before increasing spend.
+4. **Review the complete path.** At the planned review, compare spend and delivery with recorded inquiries, response activity, appointments, and the downstream information the dealership can reliably connect. Then write one decision: continue, correct a defined problem, test a specific change, or pause for a stated reason.
+
+This approach helps a dealership distinguish a reach problem from a response-capacity problem, a measurement gap, or a campaign result that deserves a different allocation. It also gives the team a practical record of why budget moved and what to inspect next. For a broader framework for building dealership demand, see the [automotive dealership lead generation guide](https://bdcpromotions.com/blog/automotive-lead-generation-dealership-guide).
+
 ## How can you make the budget useful in different dealership situations?
 
 The same planning framework can lead to different allocations because stores face different constraints. Consider three examples, not as universal templates, but as ways to diagnose what deserves attention first.
