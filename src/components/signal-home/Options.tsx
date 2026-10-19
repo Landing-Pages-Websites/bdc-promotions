@@ -57,6 +57,10 @@ export function Options(): ReactElement {
                   <Link className={styles.nameLink} href="/services/lead-generation">
                     <Lines lines={card.name} />
                   </Link>
+                ) : card.number === "03" ? (
+                  <Link className={styles.nameLink} href="/services/lead-nurturing-appointment-setting">
+                    <Lines lines={card.name} />
+                  </Link>
                 ) : (
                   <Lines lines={card.name} />
                 )}
