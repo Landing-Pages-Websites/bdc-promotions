@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import Link from "next/link";
 import { auditHref } from "./content";
 import { LongArrowIcon } from "./icons";
 import { Lines } from "./Lines";
@@ -52,7 +53,13 @@ export function Options(): ReactElement {
                 {card.number}
               </span>
               <h3 className={styles.name}>
-                <Lines lines={card.name} />
+                {card.number === "02" ? (
+                  <Link className={styles.nameLink} href="/services/lead-generation">
+                    <Lines lines={card.name} />
+                  </Link>
+                ) : (
+                  <Lines lines={card.name} />
+                )}
               </h3>
               <div className={styles.includes}>
                 <p className={styles.includesLabel}>Includes</p>
