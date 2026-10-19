@@ -1,5 +1,5 @@
 ---
-id: item_sbc1qba0a9xz8gzav9xfqsyvd3
+id: item_tsk3022d695hva4hfxab818cec
 title: 'Automotive Dealership Software: A Buyer Guide for Marketing, Leads, and Appointments'
 slug: automotive-dealership-software
 description: 'Compare automotive dealership software by workflow, integration, reporting, security, and adoption so your team can choose tools that support better follow-up.'
