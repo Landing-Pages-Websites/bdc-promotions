@@ -1,7 +1,8 @@
 ---
 id: item_0t77f780exj69b8n0gk4d2gbdg
 title: Automotive Lead Generation: A Dealership Guide
-metaTitle: Automotive Lead Generation: A Dealership Guide
+metaTitle: Automotive Lead Generation for Dealerships | BDC Promotions
+metaDescription: Generate better dealership leads with faster response, qualification, and appointment strategies from BDC Promotions. Explore a practical guide.
 description: Learn how automotive lead generation improves lead quality, response, qualification, and appointment results for dealership teams.
 slug: automotive-lead-generation-dealership-guide
 date: 2026-10-12
