@@ -102,9 +102,38 @@ const messengerVsEmailFaq: readonly FaqItem[] = [
   },
 ];
 
+const facebookAdvertisingFaq: readonly FaqItem[] = [
+  {
+    question: "What should a dealership decide before launching Facebook advertising?",
+    answer:
+      "Start with the business action you need to improve, then choose the audience, creative, destination, and follow-up process that support that action. Define who owns new inquiries and how results will be recorded before increasing campaign activity.",
+  },
+  {
+    question: "Which Facebook ad types can dealerships use?",
+    answer:
+      "Common options include Automotive Inventory Ads, lead ads and instant forms, Click-to-Messenger or conversation campaigns, and traffic or landing-page campaigns. The right choice depends on the dealership's objective, inventory data, audience, destination, and ability to respond to new interest.",
+  },
+  {
+    question: "What should dealerships measure besides clicks and impressions?",
+    answer:
+      "Track the action tied to the campaign objective, such as leads, meaningful conversations, requests for information, calls, or appointments. Pair those results with cost, lead quality, response status, and follow-up outcome so the team can distinguish attention from useful sales opportunities.",
+  },
+  {
+    question: "How does Facebook advertising connect to dealership lead follow-up?",
+    answer:
+      "The campaign should define where each inquiry goes, who owns the reply, what response is expected, and how the conversation outcome is recorded. BDC Promotions focuses on professional Messenger response and appointment generation, while the exact handoff depends on the dealership's agreed workflow and systems.",
+  },
+  {
+    question: "Is managed Meta advertising right for every dealership?",
+    answer:
+      "Not automatically. A dealership should consider inventory accuracy, creative resources, response capacity, measurement, and the outcomes it wants to improve. Managed support may make sense when a team wants help with strategy, creative, campaign setup, and lead engagement.",
+  },
+];
+
 export const blogFaqBySlug: Readonly<Record<string, readonly FaqItem[]>> = {
   "automotive-dealership-customer-retention": customerRetentionFaq,
   "automotive-marketing-agency-evaluation": marketingAgencyEvaluationFaq,
   "messenger-vs-email-for-car-dealership-leads": messengerVsEmailFaq,
   "dealership-messenger-lead-workflow": dealershipMessengerLeadWorkflowFaq,
+  "facebook-advertising-for-car-dealerships": facebookAdvertisingFaq,
 };
