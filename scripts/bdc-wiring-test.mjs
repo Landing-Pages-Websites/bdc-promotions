@@ -194,11 +194,13 @@ test("14 published records preserve approved bytes except the exact merged PR57 
   assert.equal(listPublishedPosts().length, 14);
   assert.deepEqual(git("ls-files", "content/blog").trim().split("\n"), files);
   const prior = original(correctedPost);
-  assert.equal(prior.split("tel:+13528121491").length - 1, 2);
-  const expected = prior.replaceAll("tel:+13528121491", "tel:+13522071074");
+  const officeURI = "tel:+13522071074";
+  const historicalPersonalURI = prior.match(/tel:\+\d+/g)?.find((uri) => uri !== officeURI);
+  assert.ok(historicalPersonalURI, "historical personal tel URI in original fixture");
+  assert.equal(prior.split(historicalPersonalURI).length - 1, 2);
+  const expected = prior.replaceAll(historicalPersonalURI, officeURI);
   assert.equal(expected, original(correctedPost, privacyMain), "independent merged PR57 blob");
   assert.equal(read(correctedPost), expected);
-  const officeURI = "tel:+13522071074";
   const officeCount = (source) => source.split(officeURI).length - 1;
   const phoneDeltas = files.filter((path) => path.endsWith(".md")).map((path) => ({
     path,
@@ -445,7 +447,7 @@ test("production HTML: routes, bridge, sitemap, legal/article links and retired 
     assert.equal(digest(Buffer.from(await response.arrayBuffer())), entry.sha256);
   }
   const correctedHtml = pages.get("/blog/slow-lead-response-consequences-for-dealerships");
-  assert.doesNotMatch(correctedHtml, /tel:\+13528121491/);
+  assert.ok(!correctedHtml.includes(historicalPersonalURI));
   assert.ok(hrefs(correctedHtml).filter((href) => href === "tel:+13522071074").length >= 2);
   const lp = await (await fetch(new URL("/lp", base))).text();
   assert.ok(!lp.includes('aria-label="Primary site pages"'));
