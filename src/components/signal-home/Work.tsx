@@ -64,6 +64,9 @@ export function Work(): ReactElement {
               "Meta inventory ads, and Google Vehicle Listing Ads.",
             ]}
           />
+          <a className={styles.contextualLink} href="/services/automotive-ad-creative">
+            Explore automotive ad creative services
+          </a>
         </p>
         <Plate className={styles.story} title="Video creative" kind="Luxury storyboard">
           <Image
