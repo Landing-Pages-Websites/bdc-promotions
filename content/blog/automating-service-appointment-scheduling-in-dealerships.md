@@ -1,5 +1,5 @@
 ---
-id: ae111ad2-9b25-4c5f-9da0-5c3eceb9e7c1
+id: item_01k8t9z5q2m7v4c6b1n0p3r8xw
 title: 'Automating Service Appointment Scheduling in Dealerships'
 slug: automating-service-appointment-scheduling-in-dealerships
 description: 'Learn how to automate dealership service scheduling with clear booking rules, customer handoffs, reminders, and measures that keep the service lane organized.'
