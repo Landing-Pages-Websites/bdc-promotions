@@ -1,5 +1,5 @@
 ---
-id: item_pvx8f5ve631qd8hvg6jtj0vrp1
+id: item_pvx8f5ve631qd8hvg6jtj0vrpw
 title: Meta Advertising for Automotive Dealerships
 slug: meta-advertising-for-automotive-dealerships
 description: See how Meta advertising for automotive dealerships connects campaign strategy, inventory, lead routing, and follow-up to qualified appointments.
