@@ -1,6 +1,6 @@
 ---
 id: item_v238923q5c3rv81ynf6zt69dh4
-title: Dealership Lead Quality Scoring: A Practical Framework
+title: 'Dealership Lead Quality Scoring: A Practical Framework'
 slug: dealership-lead-quality-scoring
 description: Build a practical dealership lead quality scoring model around contactability, buyer intent, inventory fit, appointment readiness, and sales outcomes.
 date: 2026-10-22
