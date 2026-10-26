@@ -47,7 +47,7 @@ const marketingAgencyEvaluationFaq: readonly FaqItem[] = [
   {
     question: "How much does dealership marketing agency support cost?",
     answer:
-      "There is no responsible one-size-fits-all answer because scope depends on the channels, creative requirements, response workflow, reporting, and level of support involved. Request a written agreement that defines deliverables, ownership, approvals, data access, and measurement before comparing proposals. BDC Promotions does not publish standard pricing; engagements are governed by written agreements.",
+      "There is no responsible one-size-fits-all answer because scope depends on the channels, creative requirements, response workflow, reporting, and level of support involved. Request a written agreement that defines deliverables, ownership, approvals, data access, and measurement before comparing proposals. BDC Promotions lists campaigns starting at just $2,500 and recommends $100 per day in ad spend; other support depends on scope, and engagement terms are set by written agreement.",
   },
 ];
 
