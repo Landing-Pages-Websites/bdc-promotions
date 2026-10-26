@@ -7,19 +7,17 @@ const componentPath = new URL(
   import.meta.url
 );
 const layoutPath = new URL("../src/app/layout.tsx", import.meta.url);
-const bridgeSource = "https://app.gomega.ai/review-bridge/v7/review-bridge.js";
-const bridgeIntegrity =
-  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
+const bridgeSource = "https://app.gomega.ai/review-bridge/latest/review-bridge.js";
 
 test("renders the credential-free Gomega review bridge in the initial HTML", async () => {
   const component = await readFile(componentPath, "utf8");
 
   assert.ok(component.includes(bridgeSource));
-  assert.ok(component.includes(bridgeIntegrity));
+  assert.doesNotMatch(component, /integrity/iu);
   assert.doesNotMatch(component, /from "next\/script"/u);
   assert.match(component, /<script/u);
   assert.match(component, /src=\{GOMEGA_REVIEW_BRIDGE_SOURCE\}/u);
-  assert.match(component, /integrity=\{GOMEGA_REVIEW_BRIDGE_INTEGRITY\}/u);
+  assert.doesNotMatch(component, /integrity/iu);
   assert.match(component, /crossOrigin="anonymous"/u);
   assert.match(component, /\bdefer\b/u);
   assert.doesNotMatch(component, /\bstrategy=/u);
