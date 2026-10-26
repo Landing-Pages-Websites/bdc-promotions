@@ -52,7 +52,7 @@ export default function AutomotiveAdCreativePage(): ReactElement {
         <div className={styles.split}>
           <div className={styles.stack}>
             <p>Consultation connects the creative brief to your store, inventory, market and sales priorities. That context helps define the message before static creation or video production and editing begins.</p>
-            <p>Ad optimization connects the creative to its use in a campaign. If you also need campaign execution or shopper follow-up, choose those services as part of the conversation.</p>
+            <p>Ad optimization connects the creative to its use in a campaign. If you also need campaign execution or shopper follow-up, consider <Link href="/services/lead-nurturing-appointment-setting">lead nurturing and appointment setting</Link> as part of the conversation.</p>
             <Link className={styles.textLink} href="/work">Explore automotive advertising work <span aria-hidden="true">→</span></Link>
           </div>
           <div className={styles.stack}>
