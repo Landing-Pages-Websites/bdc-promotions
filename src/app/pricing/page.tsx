@@ -13,7 +13,7 @@ export const metadata: Metadata = buildMetadata({
 
 const options = [
   { title: "Creative", role: "Static ad creation and video creation or editing around dealership vehicles, offers and events.", question: "Which message, formats and existing footage should shape the creative?", href: "/services/automotive-ad-creative", label: "Automotive ad creative" },
-  { title: "Campaigns", role: "Paid social campaigns connect automotive creative with ad optimization and shopper engagement.", question: "Which shoppers and inventory are you trying to reach, and what advertising is already running?", href: "/services/lead-generation", label: "Lead generation" },
+  { title: "Campaigns", role: "Paid social campaigns connect automotive creative with ad optimization and shopper engagement.", question: "Which shoppers and inventory are you trying to reach, and what advertising is already running?", href: "/services/lead-generation", label: "Lead generation", pricing: "Campaigns starting at just $2,500. Recommended ad spend: $100 per day." },
   { title: "Inventory", role: "Meta Automotive Inventory Ads and Google Vehicle Listing Ads put vehicle inventory into advertising.", question: "Which channel fits your inventory, and what feed, account and setup requirements need review?", href: "/services/inventory-advertising", label: "Inventory advertising" },
   { title: "Follow-up", role: "BDC staff and AI-supported tools nurture shopper conversations toward appointments with a scheduled day and time.", question: "Where do leads arrive, who responds today, and what appointment handoff does your store need?", href: "/services/lead-nurturing-appointment-setting", label: "Lead nurturing & appointment setting" },
 ] as const;
@@ -29,7 +29,7 @@ export default function PricingPage() {
       <div className={styles.options}>
         {options.map(option => <article key={option.title} className={styles.option}>
           <h3>{option.title}</h3>
-          <div><p>{option.role}</p><Link className={shared.textLink} href={option.href}>{option.label}<span aria-hidden="true">→</span></Link></div>
+          <div><p>{option.role}</p><Link className={shared.textLink} href={option.href}>{option.label}<span aria-hidden="true">→</span></Link>{"pricing" in option && <p>{option.pricing}</p>}</div>
           <div className={styles.question}><p>{option.question}</p></div>
         </article>)}
       </div>
