@@ -1,3 +1,12 @@
+import {
+  isManagedTextAttribute,
+  managedAttributeBindingName,
+  managedAttributeItemBindingName,
+  type ManagedAttributeBindingName,
+  type ManagedAttributeItemBindingName,
+  type ManagedTextAttribute,
+} from "./attribute-text.js";
+import { ManagedSiteContractError } from "./errors.js";
 import { parseStableId, type StableId } from "./ids.js";
 
 export interface ManagedSitePageAttributesV1 {
@@ -43,4 +52,35 @@ export function managedSiteFieldAttributesV1(
           "data-gomega-item-id": parseStableId(itemId, "item"),
         },
   );
+}
+
+/**
+ * The bindings that name the field an element's `attribute` holds: the field,
+ * and the collection item for an item's copy. Spread onto the element beside
+ * the attribute itself (`aria-label={value}`). Every name is derived from the
+ * attribute, so an element may carry a text field and several attribute fields
+ * at once, each read only from its own bindings; an attribute outside
+ * `MANAGED_TEXT_ATTRIBUTES` is refused.
+ */
+export type ManagedSiteAttributeFieldAttributesV1<Attribute extends ManagedTextAttribute> = {
+  readonly [Name in ManagedAttributeBindingName<Attribute>]: StableId<"field">;
+} & {
+  readonly [Name in ManagedAttributeItemBindingName<Attribute>]?: StableId<"item">;
+};
+
+export function managedSiteAttributeFieldAttributesV1<Attribute extends ManagedTextAttribute>(
+  attribute: Attribute,
+  fieldId: StableId<"field">,
+  itemId?: StableId<"item">,
+): ManagedSiteAttributeFieldAttributesV1<Attribute> {
+  if (!isManagedTextAttribute(attribute)) {
+    throw new ManagedSiteContractError("FIELD_ATTRIBUTE", `Not an attribute a field may write: ${String(attribute)}`);
+  }
+  const bindings: Record<string, string> = {
+    [managedAttributeBindingName(attribute)]: parseStableId(fieldId, "field"),
+  };
+  if (itemId !== undefined) {
+    bindings[managedAttributeItemBindingName(attribute)] = parseStableId(itemId, "item");
+  }
+  return Object.freeze(bindings) as ManagedSiteAttributeFieldAttributesV1<Attribute>;
 }

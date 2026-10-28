@@ -1,6 +1,9 @@
 import {
   createManagedSiteAstroV1,
+  managedGeneratedRoutePath,
+  managedRichTextLinkAttributesV1,
   ManagedSiteContractError,
+  resolveManagedImageAltText,
   type ManagedCollectionDescriptor,
   type ManagedCollectionItemField,
   type ManagedContentOwner,
@@ -9,6 +12,8 @@ import {
   type ManagedInternalProtectedField,
   type ManagedPageDescriptor,
   type ManagedRichTextDocument,
+  type ManagedRichTextLinkAttributesV1,
+  type ManagedRichTextMark,
   type ManagedSiteContentValue,
   type StableId,
 } from "@landing-pages-websites/managed-site-contract";
@@ -389,14 +394,24 @@ function assertSeoFieldIdentity(): void {
 assertSeoFieldIdentity();
 
 function imageModel(
-  fieldId: StableId<"field">,
+  field: ManagedFieldDescriptor | ManagedCollectionItemField,
   owner: ManagedContentOwner,
 ): Readonly<{ fieldId: StableId<"field">; src: string; alt: string }> {
-  const image = renderedValue(fieldId, owner, "image");
+  if (field.type !== "image") {
+    return fail("ASTRO_REFERENCE_IMAGE_FIELD", `Field ${field.id} must be an image`);
+  }
+  const image = renderedValue(field.id, owner, "image");
+  // This fixture declares no optional image (contract 0.36.0), so an empty one is a broken fixture.
+  if (image === null) return fail("ASTRO_REFERENCE_IMAGE_FIELD", `Field ${field.id} holds no image`);
+  const slot = exactlyOne(
+    site.contract.assets.filter((asset) => asset.id === field.assetSlotId),
+    "ASTRO_REFERENCE_IMAGE_SLOT",
+    `Expected one asset slot for ${field.id}`,
+  );
   return Object.freeze({
-    fieldId,
+    fieldId: field.id,
     src: publicAssetPath(image.path),
-    alt: image.altText ?? fail("ASTRO_REFERENCE_IMAGE_ALT", "Image alt is required"),
+    alt: resolveManagedImageAltText(slot, image),
   });
 }
 
@@ -415,7 +430,7 @@ function serviceModel(itemId: StableId<"item">) {
       fieldId: serviceFields.body.id,
       value: renderedValue(serviceFields.body.id, owner, "rich_text"),
     }),
-    image: imageModel(serviceFields.image.id, owner),
+    image: imageModel(serviceFields.image, owner),
     seo: Object.freeze({
       title: internalString(serviceFields.title.id, owner),
       description: internalString(serviceFields.description.id, owner),
@@ -449,7 +464,7 @@ export const managedAstroHome = Object.freeze({
       fieldId: homeFields.description.id,
       value: renderedValue(homeFields.description.id, homeOwner, "plain_text"),
     }),
-    image: imageModel(homeFields.image.id, homeOwner),
+    image: imageModel(homeFields.image, homeOwner),
   }),
   services: Object.freeze({
     heading: Object.freeze({
@@ -494,3 +509,46 @@ export const managedAstroServicePaths = Object.freeze(
 export const managedAstroIdentity = identity;
 export type ManagedAstroService = (typeof serviceModels)[number];
 export type ManagedAstroRichText = ManagedRichTextDocument;
+
+/**
+ * A prose link's attributes. An internal link names a page by id, and this site
+ * knows its pages' paths from the contract; a page with no static path is
+ * refused rather than linked somewhere. A link to an item of a generated page
+ * takes that page's pattern filled with the item's route key.
+ */
+function staticPagePath(pageId: string): string {
+  const page = exactlyOne(
+    site.contract.pages.filter((candidate) => candidate.id === pageId),
+    "ASTRO_REFERENCE_LINK_PAGE",
+    `Expected one page for ${pageId}`,
+  );
+  return page.route.kind === "static"
+    ? page.route.path
+    : fail("ASTRO_REFERENCE_LINK_PAGE", `Page ${page.id} has no static path`);
+}
+
+function itemPagePath(pageId: string, itemId: string): string {
+  const page = exactlyOne(
+    site.contract.pages.filter((candidate) => candidate.id === pageId),
+    "ASTRO_REFERENCE_LINK_PAGE",
+    `Expected one page for ${pageId}`,
+  );
+  if (page.route.kind !== "generated") {
+    return fail("ASTRO_REFERENCE_LINK_PAGE", `Page ${page.id} is not a generated page`);
+  }
+  const owner: ManagedContentOwner = {
+    kind: "collection_item",
+    collectionId: page.route.collectionId,
+    itemId: itemId as StableId<"item">,
+  };
+  return managedGeneratedRoutePath(
+    page.route.pattern,
+    internalString(page.route.routeKeyFieldId, owner),
+  );
+}
+
+export function managedAstroLinkAttributes(
+  mark: Extract<ManagedRichTextMark, { readonly type: "link" }>,
+): ManagedRichTextLinkAttributesV1 {
+  return managedRichTextLinkAttributesV1(mark, staticPagePath, itemPagePath);
+}

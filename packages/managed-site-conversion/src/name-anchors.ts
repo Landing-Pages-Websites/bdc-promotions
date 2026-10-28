@@ -98,15 +98,42 @@ const SELECTOR_FILE_EXTENSIONS = [".css", ".scss", ".sass", ".less", ".html"] as
 /** `#name` anywhere: a fragment link, a selector, a scroll target. */
 const FRAGMENT_PATTERN = /#([A-Za-z][\w-]*)/gu;
 
+/**
+ * The paths this run writes, which are never the repository's own text.
+ *
+ * The output directory was the only one for a long time, and the reason is
+ * stated at `repositoryText`: a run that reads its own proposal back finds
+ * every name occupied and mints suffixed ones, so the same input answers
+ * differently each time. The LEDGER is the same hazard and has to live
+ * somewhere worse. It records the anchor each id was minted for, so a name it
+ * holds appears as text; and it must sit INSIDE the repository, because that
+ * is the only way a later conversion keeps the ids the CMS addresses a
+ * customer's edits by. Left in the scan it poisons itself: converting All
+ * Points Media a second time turned `ms-proof-challenge` into
+ * `ms-proof-challenge-2`, which changed the anchor, which minted a new field
+ * id for a value that had not moved -- and a third run would have said `-3`.
+ */
+export interface OwnArtifacts {
+  readonly outputDirectory?: string;
+  readonly ledgerPath?: string;
+}
+
+function ownPathsOf(own: OwnArtifacts): readonly string[] {
+  return [own.outputDirectory, own.ledgerPath].filter(
+    (path): path is string => path !== undefined && path !== "",
+  );
+}
+
 export function nameAmbiguousAnchors(
   ambiguous: readonly (readonly Candidate[])[],
   repositoryRoot: string,
-  outputDirectory = "",
+  own: OwnArtifacts = {},
 ): NamingProposal {
   const cache = new ModuleCache();
-  const existing = takenIdentifiers(repositoryRoot, cache, outputDirectory);
+  const ownPaths = ownPathsOf(own);
+  const existing = takenIdentifiers(repositoryRoot, cache, ownPaths);
   const taken = new Set(existing.taken);
-  const corpus = repositoryText(repositoryRoot, outputDirectory, cache);
+  const corpus = repositoryText(repositoryRoot, ownPaths, cache);
   const names: AnchorName[] = [];
   const findings: Finding[] = [];
   // An id somewhere in this repository that cannot be shown disjoint from the
@@ -823,14 +850,19 @@ function decodedLiteralsOf(source: ts.SourceFile | null): string {
 }
 
 /** Every file's text, read once, as the corpus a chosen name must not appear in. */
-function repositoryText(repositoryRoot: string, exclude: string, cache: ModuleCache): string {
+function repositoryText(
+  repositoryRoot: string,
+  ownPaths: readonly string[],
+  cache: ModuleCache,
+): string {
   const parts: string[] = [];
   for (const file of repositoryFiles(repositoryRoot, SEARCHED_FILE_EXTENSIONS)) {
     // This tool's own output is not part of the repository it is reading. A dry
     // run writes the proposed names, and a second unchanged run that read them
     // back would find every name occupied and propose suffixed ones instead --
-    // the same input producing a different answer each time.
-    if (isInside(file, exclude)) continue;
+    // the same input producing a different answer each time. See `OwnArtifacts`
+    // for why the ledger is in this set even though it lives in the tree.
+    if (isOwnArtifact(file, ownPaths)) continue;
     try {
       const text = readFileSync(file, "utf8");
       parts.push(text);
@@ -856,13 +888,19 @@ function repositoryText(repositoryRoot: string, exclude: string, cache: ModuleCa
 }
 
 /**
- * Whether a file sits inside a directory.
+ * Whether a file is one this run writes, named directly or by a directory above
+ * it.
+ *
+ * `containsPath` answers both, because a path contains itself, and it resolves
+ * each side first -- which matters here, since a ledger reached as
+ * `/var/...` and walked to as `/private/var/...` is one file with two
+ * spellings, and comparing the spellings would put it back in the corpus.
  *
  * One rule for this, in `scan.ts`, because the layout walk asks the same
  * question and the two answers must not drift.
  */
-function isInside(file: string, directory: string): boolean {
-  return directory !== "" && containsPath(directory, file);
+function isOwnArtifact(file: string, ownPaths: readonly string[]): boolean {
+  return ownPaths.some((own) => containsPath(own, file));
 }
 
 /**
@@ -938,7 +976,7 @@ interface ExistingNames {
 function takenIdentifiers(
   repositoryRoot: string,
   cache: ModuleCache,
-  outputDirectory: string,
+  ownPaths: readonly string[],
 ): ExistingNames {
   const found: string[] = [];
   const opaque: ts.Node[] = [];
@@ -1022,7 +1060,7 @@ function takenIdentifiers(
     found.push(...fragmentsIn(decodedLiteralsOf(parsed.source)));
   }
   for (const file of repositoryFiles(repositoryRoot, SELECTOR_FILE_EXTENSIONS)) {
-    if (isInside(file, outputDirectory)) continue;
+    if (isOwnArtifact(file, ownPaths)) continue;
     try {
       const text = readFileSync(file, "utf8");
       // `#{$prefix}start-anywhere` compiles to a selector for an id no text in

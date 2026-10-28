@@ -28,9 +28,11 @@ export type AnchorName = string & { readonly [beyondCustomerReach]: true };
  * Admissible because this tool will not offer the value for editing.
  *
  * `durable` is the caller's proof, and it has to come from the same reading
- * that decides whether the value is proposed as a field — `#nameVerdictOf` for
- * an attribute, `ownershipOfDestination` for a link destination — so that
- * identity and ownership cannot disagree about one value.
+ * that decides whether the value is proposed as a field, so that identity and
+ * ownership cannot disagree about one value: `#nameVerdictOf` for an
+ * attribute, and for a link the destination kind `destinationDiscriminator`
+ * reads, where `#` names a same-site link's `internal_only` authority, which no
+ * edit can change, and never the page the customer may change.
  */
 export function nameIfDurable(value: string, durable: boolean): AnchorName | null {
   return durable ? (value as AnchorName) : null;

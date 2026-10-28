@@ -7,9 +7,8 @@
     "editProtocol": 2,
     "annotationVersion": 1,
     "delivery": {
-      "version": "v7",
-      "src": "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
-      "integrity": "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ",
+      "version": "latest",
+      "src": "https://app.gomega.ai/review-bridge/latest/review-bridge.js",
       "crossOrigin": "anonymous",
       "load": "head_defer"
     },

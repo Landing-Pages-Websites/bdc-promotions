@@ -2,12 +2,28 @@ import type {
   ManagedPageDescriptor,
   ManagedSiteContractV1,
 } from "./contract.js";
+import { validateSearchVisibilityToggles } from "./contract-semantics-search-visibility.js";
 import { ManagedSiteContractError } from "./errors.js";
-import type {
-  ManagedCollectionDescriptor,
-  ManagedCollectionItemField,
+import {
+  isManagedOptionalItemField,
+  MANAGED_RUNNING_TEXT_SEMANTICS,
+  MAX_MANAGED_SEO_TEXT_CHARACTERS,
+  type ManagedCollectionDescriptor,
+  type ManagedCollectionItemField,
+  type ManagedFieldDescriptor,
 } from "./fields.js";
+import type { ManagedInternalValueType } from "./internal-value-types.js";
 import type { ManagedGeneratedPageSeoDescriptor } from "./seo.js";
+import {
+  GENERATED_PATTERN_SLOTS,
+  indexRenderedFields,
+  MANAGED_METADATA_SLOT_POLICY,
+  metadataFieldReferences,
+  ownedByPage,
+  validateStaticPageMetadata,
+  type RenderedFieldEntry,
+} from "./contract-semantics-seo-metadata.js";
+import { MANAGED_RICH_TEXT_HEADING_LEVELS } from "./rich-text.js";
 import { isManagedGeneratedRouteSegment } from "./values.js";
 
 type GeneratedRoute = Extract<ManagedPageDescriptor["route"], { kind: "generated" }>;
@@ -65,7 +81,7 @@ function fieldById(
 function requireProtectedField(
   collection: ManagedCollectionDescriptor,
   fieldId: string,
-  valueType: "string" | "url" | "indexing_directives",
+  valueType: ManagedInternalValueType,
   semantic: string,
 ): void {
   const field = fieldById(collection, fieldId);
@@ -81,35 +97,150 @@ function requireProtectedField(
   }
 }
 
-function validateMetadata(
-  collection: ManagedCollectionDescriptor,
-  descriptor: ManagedGeneratedPageSeoDescriptor,
-): void {
-  const { metadata } = descriptor;
-  requireProtectedField(collection, metadata.title, "string", "seo.title");
-  requireProtectedField(
-    collection,
-    metadata.description,
-    "string",
-    "seo.description",
+type GeneratedSlot = (typeof GENERATED_PATTERN_SLOTS)[number];
+type GeneratedPattern = NonNullable<ManagedGeneratedPageSeoDescriptor["metadata"]["titlePattern"]>;
+
+function isProtectedFor(
+  field: ManagedCollectionItemField,
+  slot: keyof typeof MANAGED_METADATA_SLOT_POLICY,
+): boolean {
+  const policy = MANAGED_METADATA_SLOT_POLICY[slot];
+  return (
+    field.type === "internal_protected" &&
+    field.valueType === policy.valueType &&
+    field.semantic === policy.semantic
   );
-  requireProtectedField(collection, metadata.canonical, "url", "seo.canonical");
-  requireProtectedField(
-    collection,
-    metadata.indexing,
-    "indexing_directives",
-    "seo.indexing",
+}
+
+/** An item's own search text: one safe line a customer edits per page. */
+function isEditableItemSeoText(field: ManagedCollectionItemField, slot: GeneratedSlot): boolean {
+  return (
+    field.type === "plain_text" &&
+    field.classification === "customer_editable" &&
+    field.semantic === MANAGED_METADATA_SLOT_POLICY[slot].editableSemantic &&
+    field.constraints.newlines === "forbid" &&
+    field.constraints.maxLength <= MAX_MANAGED_SEO_TEXT_CHARACTERS &&
+    field.constraints.template === undefined &&
+    field.constraints.pattern === undefined &&
+    field.constraints.attribute === undefined
   );
-  if (metadata.social.title !== null) {
-    requireProtectedField(collection, metadata.social.title, "string", "seo.title");
-  }
-  if (metadata.social.description !== null) {
-    requireProtectedField(
-      collection,
-      metadata.social.description,
-      "string",
-      "seo.description",
+}
+
+/**
+ * Item text a pattern may read, a search pattern or page text (0.38.0): one
+ * non-empty line of the customer's words, never tokens of its own.
+ */
+export function isManagedPatternSourceField(field: ManagedCollectionItemField): boolean {
+  if (field.classification !== "customer_editable") return false;
+  if (field.type === "heading_text") {
+    return (
+      field.constraints.newlines === "forbid" &&
+      field.constraints.minLength >= 1 &&
+      field.constraints.pattern === undefined
     );
+  }
+  return (
+    field.type === "plain_text" &&
+    MANAGED_RUNNING_TEXT_SEMANTICS.has(field.semantic) &&
+    field.constraints.newlines === "forbid" &&
+    field.constraints.minLength >= 1 &&
+    field.constraints.template === undefined &&
+    field.constraints.pattern === undefined &&
+    field.constraints.attribute === undefined
+  );
+}
+
+function sameNames(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && new Set(left).size === left.length &&
+    left.every((name) => right.includes(name));
+}
+
+/**
+ * A pattern is this generated page's own search-pattern field of the slot's
+ * semantic, and its sources fill exactly its placeholders, each from item text
+ * of the route collection.
+ */
+function validatePattern(
+  context: GeneratedSeoContext,
+  slot: GeneratedSlot,
+  pattern: GeneratedPattern,
+): void {
+  const entry = context.renderedFields.get(pattern.fieldId);
+  const field = entry?.field;
+  const ownField =
+    entry !== undefined &&
+    field?.type === "plain_text" &&
+    field.semantic === MANAGED_METADATA_SLOT_POLICY[slot].editableSemantic &&
+    field.constraints.pattern !== undefined &&
+    ownedByPage(entry, context.descriptor.pageId);
+  if (!ownField) {
+    fail("CONTRACT_SEO_FIELD_POLICY", `Generated ${slot} pattern is not the page's own search pattern: ${pattern.fieldId}`);
+  }
+  const declared = field.constraints.pattern?.placeholders.map((placeholder) => placeholder.name) ?? [];
+  if (!sameNames(pattern.sources.map((source) => source.placeholder), declared)) {
+    fail("CONTRACT_SEO_FIELD_POLICY", `Generated ${slot} pattern sources do not fill exactly its placeholders: ${pattern.fieldId}`);
+  }
+  for (const source of pattern.sources) {
+    if (!isManagedPatternSourceField(fieldById(context.collection, source.fieldId))) {
+      fail("CONTRACT_SEO_FIELD_POLICY", `Generated ${slot} pattern source is not one line of item text: ${source.fieldId}`);
+    }
+  }
+}
+
+/**
+ * A title or description slot names a protected item field, as every generated
+ * page did before 0.26.0, or the item's own editable search text. With a
+ * pattern beside it, that text is an optional override (`minLength` 0) and the
+ * pattern is served when it is empty; without one it is the text itself and
+ * must hold some. A protected slot takes no pattern. A social echo is null, a
+ * protected field, or the slot's own field.
+ */
+function validateGeneratedSlot(context: GeneratedSeoContext, slot: GeneratedSlot): void {
+  const { metadata } = context.descriptor;
+  const fieldId = metadata[slot];
+  const pattern = metadata[`${slot}Pattern`];
+  const field = fieldById(context.collection, fieldId);
+  const echo = metadata.social[slot];
+  if (echo !== null && echo !== fieldId && !isProtectedFor(fieldById(context.collection, echo), slot)) {
+    fail("CONTRACT_SEO_FIELD_POLICY", `Generated social ${slot} has unsafe authority or type: ${echo}`);
+  }
+  if (isProtectedFor(field, slot)) {
+    if (pattern !== undefined) {
+      fail("CONTRACT_SEO_FIELD_POLICY", `Generated ${slot} pattern needs an editable override, not protected ${fieldId}`);
+    }
+    return;
+  }
+  if (!isEditableItemSeoText(field, slot)) {
+    fail("CONTRACT_SEO_FIELD_POLICY", `Generated SEO field has unsafe authority or type: ${fieldId}`);
+  }
+  const minLength = field.type === "plain_text" ? field.constraints.minLength : 0;
+  if (pattern === undefined ? minLength < 1 : minLength !== 0) {
+    fail(
+      "CONTRACT_SEO_FIELD_POLICY",
+      pattern === undefined
+        ? `Generated ${slot} without a pattern must hold text: ${fieldId}`
+        : `Generated ${slot} override must be optional: ${fieldId}`,
+    );
+  }
+  if (pattern !== undefined) validatePattern(context, slot, pattern);
+}
+
+interface GeneratedSeoContext {
+  readonly collection: ManagedCollectionDescriptor;
+  readonly descriptor: ManagedGeneratedPageSeoDescriptor;
+  readonly renderedFields: ReadonlyMap<string, RenderedFieldEntry>;
+}
+
+function validateMetadata(context: GeneratedSeoContext): void {
+  const { collection, descriptor } = context;
+  const { metadata } = descriptor;
+  for (const slot of GENERATED_PATTERN_SLOTS) validateGeneratedSlot(context, slot);
+  // Canonical and indexing stay protected: a URL is derived from the route, and
+  // whether a page is indexed is the site's decision.
+  for (const reference of metadataFieldReferences(metadata)) {
+    if (reference.slot !== "canonical" && reference.slot !== "indexing") continue;
+    const policy = MANAGED_METADATA_SLOT_POLICY[reference.slot];
+    requireProtectedField(collection, reference.fieldId, policy.valueType, policy.semantic);
   }
   if (metadata.social.imageFieldId !== null) {
     requireImageField(collection, metadata.social.imageFieldId);
@@ -120,10 +251,12 @@ function requireImageField(
   collection: ManagedCollectionDescriptor,
   fieldId: string,
 ): void {
-  if (fieldById(collection, fieldId).type !== "image") {
+  const field = fieldById(collection, fieldId);
+  // A share card needs a picture on every item: an optional image may be none.
+  if (field.type !== "image" || isManagedOptionalItemField(field)) {
     fail(
       "CONTRACT_SEO_FIELD_POLICY",
-      `Generated SEO image does not resolve to an image field: ${fieldId}`,
+      `Generated SEO image does not resolve to a required image field: ${fieldId}`,
     );
   }
 }
@@ -238,7 +371,7 @@ function validateGeneratedDescriptor(
   const collection = collectionById(contract, descriptor.collectionId);
   validateRoutePattern(page.route);
   validateRouteKey(collection, page.route);
-  validateMetadata(collection, descriptor);
+  validateMetadata({ collection, descriptor, renderedFields: indexRenderedFields(contract) });
   validateHeadingOutline(collection, descriptor);
   validateSiteJsonLdSources(contract, descriptor);
   if (descriptor.primaryImageFieldId !== null) {
@@ -275,9 +408,52 @@ function validateCoverage(contract: ManagedSiteContractV1): void {
   }
 }
 
+function renderedFieldsById(contract: ManagedSiteContractV1): ReadonlyMap<string, ManagedFieldDescriptor> {
+  return new Map(contract.pages.flatMap((page) =>
+    page.sections.flatMap((section) => section.fields.map((field) => [field.id, field] as const))));
+}
+
+/**
+ * A field whose rendered output can carry a heading at `level`, on this page:
+ * a heading field at exactly that level, or a rich-text field that admits a
+ * heading block, whose levels the grammar bounds. A rich-text field that
+ * admits only paragraphs renders no heading the contract can see, even when
+ * code wraps it in one, so it is refused at any level.
+ */
+function namesHeading(field: ManagedFieldDescriptor | undefined, level: number, pageId: string): boolean {
+  if (field === undefined || !field.usages.some((usage) => usage.pageId === pageId)) return false;
+  if (field.type === "heading_text") return field.semanticLevel === level;
+  if (field.type !== "rich_text") return false;
+  return field.constraints.allowedBlocks.includes("heading") &&
+    (MANAGED_RICH_TEXT_HEADING_LEVELS as readonly number[]).includes(level);
+}
+
+/**
+ * A static page's outline, as a generated page's is: at most one H1 (a static
+ * page may declare none, since a converted page states only the headings its
+ * source marks), and every entry a heading.
+ */
+function validateStaticHeadingOutlines(contract: ManagedSiteContractV1): void {
+  const fields = renderedFieldsById(contract);
+  for (const descriptor of contract.internalSeo.pages) {
+    const h1Count = descriptor.headingOutline.filter((heading) => heading.semanticLevel === 1).length;
+    if (h1Count > 1) {
+      fail("CONTRACT_SEO_FIELD_POLICY", `Static page declares more than one H1: ${descriptor.pageId}`);
+    }
+    for (const heading of descriptor.headingOutline) {
+      if (!namesHeading(fields.get(heading.fieldId), heading.semanticLevel, descriptor.pageId)) {
+        fail("CONTRACT_SEO_FIELD_POLICY", `Static heading outline names a field that is not a heading: ${heading.fieldId}`);
+      }
+    }
+  }
+}
+
 export function validateManagedSiteSeoSemantics(
   contract: ManagedSiteContractV1,
 ): void {
   validateDescriptorRoutes(contract);
+  validateStaticPageMetadata(contract);
+  validateSearchVisibilityToggles(contract);
+  validateStaticHeadingOutlines(contract);
   validateCoverage(contract);
 }

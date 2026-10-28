@@ -1,9 +1,18 @@
 import { canonicalizeJson } from "./canonical.js";
+import {
+  MANAGED_SITE_MIGRATION_COMMAND,
+  parseManagedSiteMigrationCliArguments,
+  runManagedSiteMigrationCli,
+  type ManagedSiteMigrationCliArguments,
+} from "./conformance-cli-migration.js";
 import { conformManagedSiteJsonText } from "./conformance-input.js";
 import { ManagedSiteContractError } from "./errors.js";
 
 export const MANAGED_SITE_CONFORMANCE_USAGE =
-  "Usage: gomega-managed-site-conformance --contract <path> --content <path>\n";
+  "Usage: gomega-managed-site-conformance --contract <path> --content <path>\n" +
+  "       gomega-managed-site-conformance migrate --production-contract <path> " +
+  "--production-content <path> --contract <path> --content <path> " +
+  "--migration <path> [--admit-bridge <version>=<integrity>]\n";
 
 export type ManagedSiteConformanceExitCode = 0 | 1 | 2 | 3 | 4;
 
@@ -20,7 +29,8 @@ interface ConformancePaths {
 
 type ParsedArguments =
   | { readonly kind: "help" }
-  | { readonly kind: "conform"; readonly paths: ConformancePaths };
+  | { readonly kind: "conform"; readonly paths: ConformancePaths }
+  | { readonly kind: "migrate"; readonly args: ManagedSiteMigrationCliArguments };
 
 function usageFailure(): never {
   throw new ManagedSiteContractError(
@@ -31,6 +41,12 @@ function usageFailure(): never {
 
 function parseArguments(argv: readonly string[]): ParsedArguments {
   if (argv.length === 1 && argv[0] === "--help") return { kind: "help" };
+  if (argv[0] === MANAGED_SITE_MIGRATION_COMMAND) {
+    return {
+      kind: "migrate",
+      args: parseManagedSiteMigrationCliArguments(argv.slice(1), MANAGED_SITE_CONFORMANCE_USAGE),
+    };
+  }
   if (argv.length !== 4) return usageFailure();
   const paths = new Map<string, string>();
   for (let index = 0; index < argv.length; index += 2) {
@@ -124,6 +140,7 @@ export function runManagedSiteConformanceCli(
   try {
     const parsed = parseArguments(argv);
     if (parsed.kind === "help") io.writeStdout(MANAGED_SITE_CONFORMANCE_USAGE);
+    else if (parsed.kind === "migrate") runManagedSiteMigrationCli(parsed.args, io);
     else conform(parsed.paths, io);
     return 0;
   } catch (error) {

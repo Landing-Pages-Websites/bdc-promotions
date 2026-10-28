@@ -2,6 +2,7 @@ import type {
   ManagedSiteAssetManifestEntry,
   ManagedSiteContentDocument,
 } from "./content.js";
+import { sameAssetMaterial } from "./asset-manifest-index.js";
 import { validateManagedSiteContractV1ContentSemantics } from "./content-semantics.js";
 import type { ManagedSiteContractV1 } from "./contract.js";
 import { collectManagedSiteContractV1Facts } from "./contract-semantics-facts.js";
@@ -51,29 +52,26 @@ function assetFact(
   });
 }
 
-function sameMaterial(
-  left: ManagedSiteGuardAssetFactV1,
-  right: ManagedSiteGuardAssetFactV1,
-): boolean {
-  return left.sha256 === right.sha256 && left.bytes === right.bytes;
-}
-
-function assetFacts(
+/**
+ * Compares the whole manifest material, not just the fact's sha256 and bytes,
+ * so the Guard refuses a path with two materials even if content validation
+ * did not run first. Exported for tests only; not part of the package barrel.
+ */
+export function assetFacts(
   content: ManagedSiteContentDocument,
 ): readonly ManagedSiteGuardAssetFactV1[] {
-  const byPath = new Map<string, ManagedSiteGuardAssetFactV1>();
+  const byPath = new Map<string, ManagedSiteAssetManifestEntry>();
   for (const entry of content.assetManifest) {
-    const fact = assetFact(entry);
-    const existing = byPath.get(fact.path);
-    if (existing !== undefined && !sameMaterial(existing, fact)) {
+    const existing = byPath.get(entry.path);
+    if (existing !== undefined && !sameAssetMaterial(existing, entry)) {
       return fail(
         "GUARD_ASSET_PATH_CONFLICT",
-        `Guard asset path has conflicting material: ${fact.path}`,
+        `Guard asset path has conflicting material: ${entry.path}`,
       );
     }
-    byPath.set(fact.path, existing ?? fact);
+    if (existing === undefined) byPath.set(entry.path, entry);
   }
-  return Object.freeze([...byPath.values()].sort(comparePath));
+  return Object.freeze([...byPath.values()].map(assetFact).sort(comparePath));
 }
 
 function isAmbiguousPath(left: string, right: string): boolean {

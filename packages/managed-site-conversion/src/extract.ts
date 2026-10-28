@@ -1,13 +1,23 @@
 import ts from "typescript";
 
 import {
+  MANAGED_RICH_TEXT_HEADING_LEVELS,
+  type ManagedRichTextBlock,
+} from "@landing-pages-websites/managed-site-contract";
+
+import {
   nameFromSourceIdentifier,
   nameIfDurable,
   type AnchorName,
 } from "./anchor-name.js";
-import { extendAnchor, type AnchorPath, type AnchorSegment } from "./anchors.js";
+import {
+  extendAnchor,
+  type AnchorPath,
+  type AnchorSegment,
+} from "./anchors.js";
 import {
   POSITION_IDENTITY,
+  type CandidateReceiver,
   type Candidate,
   type CollectionItemValue,
   type Ownership,
@@ -61,16 +71,14 @@ import {
   templateOverItem,
   type ModuleConstants,
 } from "./literals.js";
+import { isTextBlockTag, readInlineBlock } from "./inline-block.js";
+import { buildRichTextListDocument, partitionChildren } from "./jsx-text.js";
 import {
-  buildRichTextDocument,
-  buildRichTextListDocument,
-  partitionChildren,
-} from "./jsx-text.js";
-import {
-  readDestination,
+  classifyHref,
   destinationDiscriminator,
   ownershipOfDestination,
 } from "./destinations.js";
+import { readHref, unstorableLinkBehaviour } from "./href-expression.js";
 import { walkRenderOutput, NO_TRIGGERS } from "./render-output.js";
 import type { Finding, SourceLocation } from "./report.js";
 import {
@@ -125,7 +133,19 @@ type NameVerdict =
 
 /** What reading a component's own source yielded about one of its props. */
 type ComponentPropReading =
-  | { readonly kind: "role"; readonly reading: PropReading }
+  | {
+      readonly kind: "role";
+      readonly reading: PropReading;
+      /**
+       * The component the value is handed to.
+       *
+       * Carried out of the reading rather than resolved a second time by
+       * whatever needs it. A rewriter has to edit this exact declaration, and
+       * resolving `<Section title=…>` again elsewhere would be a second answer
+       * to a question already answered here.
+       */
+      readonly receiver: ComponentDeclaration;
+    }
   /** The tag names nothing this repository declares, so nothing can be read. */
   | { readonly kind: "unresolved_tag" }
   /** The component was read, and its source does not decide what the prop is. */
@@ -160,7 +180,9 @@ const CHILDREN_PROP = "children";
  * React fills `children` from the call site, so it is a slot rather than a
  * value this component declares. Layouts are required by Next.js to render it.
  */
-function childrenSlotsOf(parameters: readonly ts.ParameterDeclaration[]): ReadonlySet<string> {
+function childrenSlotsOf(
+  parameters: readonly ts.ParameterDeclaration[],
+): ReadonlySet<string> {
   const slots = new Set<string>();
   for (const parameter of parameters) {
     if (ts.isIdentifier(parameter.name)) {
@@ -182,7 +204,9 @@ function childrenSlotsOf(parameters: readonly ts.ParameterDeclaration[]): Readon
  * resolves callbacks against, so no function shape can be a component to one
  * reading and invisible to the other.
  */
-export function findComponentDeclarations(module: ParsedModule): readonly ComponentDeclaration[] {
+export function findComponentDeclarations(
+  module: ParsedModule,
+): readonly ComponentDeclaration[] {
   return namedFunctionsOf(module.source)
     .filter((entry) => isComponentName(entry.name) && containsJsx(entry.body))
     .map((entry) => ({
@@ -200,7 +224,11 @@ export function resolveTagRoles(module: ParsedModule): TagRoles {
   const imageTags = new Set<string>(["img"]);
   const linkTags = new Set<string>(["a"]);
   for (const statement of module.source.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    )
+      continue;
     const specifier = statement.moduleSpecifier.text;
     const defaultName = statement.importClause?.name?.text;
     if (defaultName === undefined) continue;
@@ -216,7 +244,10 @@ export function resolveTagRoles(module: ParsedModule): TagRoles {
  * `aria-labelledby` holds an ID, which is the same kind of durable token an
  * `id` is, so it outranks the inline spelling.
  */
-const ACCESSIBLE_NAME_ATTRIBUTES: readonly string[] = ["aria-labelledby", "aria-label"];
+const ACCESSIBLE_NAME_ATTRIBUTES: readonly string[] = [
+  "aria-labelledby",
+  "aria-label",
+];
 
 const ID_ATTRIBUTE = "id";
 
@@ -260,7 +291,11 @@ function attributesAreInert(element: JsxElementNode): boolean {
   const opening = ts.isJsxElement(element) ? element.openingElement : element;
   // A spread supplies attributes this reader cannot see, `aria-hidden` among
   // them, so an element carrying one can never be shown inert.
-  if (opening.attributes.properties.some((property) => ts.isJsxSpreadAttribute(property))) {
+  if (
+    opening.attributes.properties.some((property) =>
+      ts.isJsxSpreadAttribute(property),
+    )
+  ) {
     return false;
   }
   return namedAttributes(element).every((attribute) =>
@@ -297,7 +332,9 @@ function semanticOfHostTag(tag: string): "body" | "label" {
  * `label` -- the stricter cap, and the behaviour before this reading existed,
  * so an unknown never loosens a bound.
  */
-function semanticOfRenderSites(tags: readonly (string | null)[]): "body" | "label" {
+function semanticOfRenderSites(
+  tags: readonly (string | null)[],
+): "body" | "label" {
   if (tags.length === 0) return "label";
   return tags.every((tag) => tag !== null && semanticOfHostTag(tag) === "body")
     ? "body"
@@ -344,11 +381,14 @@ class ComponentWalker {
     this.#propRoles = {
       resolver: tags,
       // One reading of the repository's React version, shared by both sides.
-      refReachesComponents: refReachesComponents(reactMajorOf(resolution.repositoryRoot)),
+      refReachesComponents: refReachesComponents(
+        reactMajorOf(resolution.repositoryRoot),
+      ),
       // Where each component is rendered, so a reading can ask what a prop can
       // BE. An empty index means no site was observed, and a dynamic tag then
       // stays unread rather than being guessed at.
-      callSitesOf: (target) => callSites.sites.get(declarationKey(target)) ?? [],
+      callSitesOf: (target) =>
+        callSites.sites.get(declarationKey(target)) ?? [],
       // Sites this reader could not attribute to any declaration. A proof about
       // "every call of this component" has to account for them, because one of
       // them may be a call of it under another name.
@@ -358,13 +398,19 @@ class ComponentWalker {
   }
 
   run(): ExtractionResult {
-    const base: AnchorPath = [{ kind: "component", name: this.#declaration.name }];
+    const base: AnchorPath = [
+      { kind: "component", name: this.#declaration.name },
+    ];
     this.#walkNode(this.#declaration.jsxRoot, base);
     return { candidates: this.#candidates, findings: this.#findings };
   }
 
   #locationOf(node: ts.Node): SourceLocation {
-    return locationOf(this.#declaration.module.source, this.#declaration.module.file, node);
+    return locationOf(
+      this.#declaration.module.source,
+      this.#declaration.module.file,
+      node,
+    );
   }
 
   #evidenceOf(node: ts.Node): string {
@@ -429,7 +475,11 @@ class ComponentWalker {
     if (expression === undefined) return;
     if (jsxExpressionStringValue(child) !== null) return;
     // The caller's subtree is read where it is written, not here.
-    if (this.#declaration.childrenSlots.has(expression.getText(this.#declaration.module.source))) {
+    if (
+      this.#declaration.childrenSlots.has(
+        expression.getText(this.#declaration.module.source),
+      )
+    ) {
       return;
     }
     const mapCall = readMapCall(expression, this.#resolution);
@@ -460,11 +510,15 @@ class ComponentWalker {
     // declaring `LAST_UPDATED` are two dates, not one ambiguous field.
     const anchor = resolved.shared
       ? resolved.path
-      : extendAnchor([{ kind: "component", name: this.#declaration.name }], ...resolved.path);
+      : extendAnchor(
+          [{ kind: "component", name: this.#declaration.name }],
+          ...resolved.path,
+        );
     this.#candidates.push({
       kind: "plain_text",
       anchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       location: this.#locationOf(node),
       evidence: this.#evidenceOf(node),
       ownership: CUSTOMER_EDITABLE,
@@ -492,7 +546,11 @@ class ComponentWalker {
    * `id` is. An identity read from the literal there names an element that may
    * not have it, which is the one way this reading can be confidently wrong.
    */
-  #durableAttributeOf(element: JsxElementNode, tag: string, name: string): AnchorName | null {
+  #durableAttributeOf(
+    element: JsxElementNode,
+    tag: string,
+    name: string,
+  ): AnchorName | null {
     const attribute = findAttribute(element, name);
     if (attribute === null) return null;
     if (overriddenByLaterSpread(attribute)) return null;
@@ -537,7 +595,11 @@ class ComponentWalker {
    * does not settle, refuses: an unread answer is not a proof that a value is
    * code.
    */
-  #nameVerdictOf(tag: string, name: string, node: ts.JsxAttribute): NameVerdict {
+  #nameVerdictOf(
+    tag: string,
+    name: string,
+    node: ts.JsxAttribute,
+  ): NameVerdict {
     // A host attribute deliberately does NOT defer to `prop-roles.ts`'s host
     // tail, which answers a different question. That reader classifies a role,
     // and calls `alt` an accessibility interface; this one asks whether the
@@ -602,7 +664,11 @@ class ComponentWalker {
    * half was missing, while naming treats an unread component as durable and an
    * unsettled prop as unproven.
    */
-  #componentPropReading(tag: string, name: string, node: ts.Node): ComponentPropReading {
+  #componentPropReading(
+    tag: string,
+    name: string,
+    node: ts.Node,
+  ): ComponentPropReading {
     const cached = this.#propReadings.get(node);
     if (cached !== undefined) return cached;
     const reading = this.#readComponentProp(tag, name, node);
@@ -610,11 +676,17 @@ class ComponentWalker {
     return reading;
   }
 
-  #readComponentProp(tag: string, name: string, node: ts.Node): ComponentPropReading {
+  #readComponentProp(
+    tag: string,
+    name: string,
+    node: ts.Node,
+  ): ComponentPropReading {
     const target = resolveTagAt(this.#tags, tag, node, this.#declaration);
     if (target === null) return { kind: "unresolved_tag" };
     const reading = propReadingOf(target, name, this.#propRoles);
-    return reading === null ? { kind: "undecided" } : { kind: "role", reading };
+    return reading === null
+      ? { kind: "undecided" }
+      : { kind: "role", reading, receiver: target };
   }
 
   /**
@@ -646,11 +718,17 @@ class ComponentWalker {
   #namingOf(
     element: JsxElementNode,
     tag: string,
-  ): { readonly region: AnchorSegment | null; readonly discriminator: AnchorName | null } {
+  ): {
+    readonly region: AnchorSegment | null;
+    readonly discriminator: AnchorName | null;
+  } {
     const literalId = this.#durableAttributeOf(element, tag, ID_ATTRIBUTE);
     const isContainer = namesARegion(element, tag);
     if (literalId !== null && isContainer) {
-      return { region: { kind: "region", name: literalId }, discriminator: null };
+      return {
+        region: { kind: "region", name: literalId },
+        discriminator: null,
+      };
     }
     if (literalId !== null) return { region: null, discriminator: literalId };
     // An `id` is the strongest name, so it is tried first; an accessible name
@@ -658,9 +736,14 @@ class ComponentWalker {
     // named by either is not decided here: `#durableAttributeOf` refuses any
     // value the customer could edit, whatever the tag and whatever the
     // attribute's spelling.
-    const accessibleName = isContainer ? this.#accessibleNameOf(element, tag) : null;
+    const accessibleName = isContainer
+      ? this.#accessibleNameOf(element, tag)
+      : null;
     if (accessibleName !== null) {
-      return { region: { kind: "region", name: accessibleName }, discriminator: null };
+      return {
+        region: { kind: "region", name: accessibleName },
+        discriminator: null,
+      };
     }
     if (LANDMARK_TAGS.has(tag)) {
       return {
@@ -679,7 +762,8 @@ class ComponentWalker {
    */
   #provenOpaque(element: JsxElementNode, tag: string): boolean {
     return (
-      provenHostTagsOf(tag, element, this.#declaration, this.#propRoles)?.kind === "opaque"
+      provenHostTagsOf(tag, element, this.#declaration, this.#propRoles)
+        ?.kind === "opaque"
     );
   }
 
@@ -721,7 +805,8 @@ class ComponentWalker {
       return;
     }
     this.#collectAttributes(element, tag, scopeAnchor, discriminator);
-    if (this.#collectStaticList(element, tag, scopeAnchor, discriminator)) return;
+    if (this.#collectStaticList(element, tag, scopeAnchor, discriminator))
+      return;
     this.#collectHostContent(element, tag, scopeAnchor, discriminator);
   }
 
@@ -750,19 +835,25 @@ class ComponentWalker {
     // meaning the document cannot hold, so the list falls back to the ordinary
     // walk rather than losing it.
     if (!this.#listIsPlain(element)) return false;
-    if (!childrenOf(element).every((child) => this.#itemIsPlain(child))) return false;
-    const document = buildRichTextListDocument(element, tag === "ol");
+    if (!childrenOf(element).every((child) => this.#itemIsPlain(child)))
+      return false;
+    const document = buildRichTextListDocument(element, tag === "ol", {
+      linkTags: this.#roles.linkTags,
+      constants: this.#constants,
+    });
     if (document === null) return false;
     this.#candidates.push({
       kind: "rich_text",
       anchor: this.#elementAnchor(scopeAnchor, tag, discriminator),
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: CUSTOMER_EDITABLE,
       document,
       headingLevel: null,
+      templates: null,
     });
     return true;
   }
@@ -807,7 +898,10 @@ class ComponentWalker {
     const role: AnchorSegment = { kind: "role", tag, attribute: null };
     return discriminator === null
       ? extendAnchor(scopeAnchor, role)
-      : extendAnchor(scopeAnchor, role, { kind: "discriminator", value: discriminator });
+      : extendAnchor(scopeAnchor, role, {
+          kind: "discriminator",
+          value: discriminator,
+        });
   }
 
   #collectAttributes(
@@ -833,7 +927,12 @@ class ComponentWalker {
     //
     // `readTagAs` is reachability.ts's, and the call-site index asks the same
     // function, so a tag cannot read as a component here and be skipped there.
-    const provenHost = provenHostTagsOf(tag, element, this.#declaration, this.#propRoles);
+    const provenHost = provenHostTagsOf(
+      tag,
+      element,
+      this.#declaration,
+      this.#propRoles,
+    );
     // A tag proven to be `script`, `style`, `svg` or `template` renders
     // nothing, so it has no attributes worth a field OR a finding. Testing the
     // proof for `null` alone sent the opaque answer down the HOST branch, and
@@ -844,7 +943,8 @@ class ComponentWalker {
     if (provenHost?.kind === "opaque") return;
     const readsAsComponent =
       provenHost === null &&
-      readTagAs(this.#tags, tag, element, this.#declaration).kind === "component";
+      readTagAs(this.#tags, tag, element, this.#declaration).kind ===
+        "component";
     for (const attribute of namedAttributes(element)) {
       // JSX applies attributes left to right, so a duplicated name means only
       // the LAST one is received. `findAttribute` was taught that; this loop
@@ -888,7 +988,12 @@ class ComponentWalker {
         // is no fall-through to the host rules below, which is why it returns
         // nothing to branch on.
         this.#collectComponentProp(
-          attribute.name, tag, value, scopeAnchor, discriminator, attribute.node,
+          attribute.name,
+          tag,
+          value,
+          scopeAnchor,
+          discriminator,
+          attribute.node,
         );
         continue;
       }
@@ -916,7 +1021,10 @@ class ComponentWalker {
   }
 
   #isHandledElsewhere(tag: string, attributeName: string): boolean {
-    if (this.#roles.imageTags.has(tag) && (attributeName === "src" || attributeName === "alt")) {
+    if (
+      this.#roles.imageTags.has(tag) &&
+      (attributeName === "src" || attributeName === "alt")
+    ) {
       return true;
     }
     return this.#roles.linkTags.has(tag) && attributeName === "href";
@@ -973,6 +1081,11 @@ class ComponentWalker {
       node,
       ownership,
       semanticOfRenderSites(reading.reading.renderTags),
+      {
+        component: reading.receiver.name,
+        file: reading.receiver.module.file,
+        prop: attributeName,
+      },
     );
   }
 
@@ -985,22 +1098,28 @@ class ComponentWalker {
     node: ts.Node,
     ownership: Ownership,
     semantic: "body" | "label",
+    receiver?: CandidateReceiver,
   ): void {
     const role: AnchorSegment = { kind: "role", tag, attribute: attributeName };
     const anchor =
       discriminator === null
         ? extendAnchor(scopeAnchor, role)
-        : extendAnchor(scopeAnchor, role, { kind: "discriminator", value: discriminator });
+        : extendAnchor(scopeAnchor, role, {
+            kind: "discriminator",
+            value: discriminator,
+          });
     this.#candidates.push({
       kind: "plain_text",
       anchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(node),
       evidence: this.#evidenceOf(node),
       ownership,
       semantic,
       value,
+      ...(receiver === undefined ? {} : { receiver }),
     });
   }
 
@@ -1045,7 +1164,8 @@ class ComponentWalker {
     declaredId: AnchorName | null,
   ): void {
     const sourceAttribute = findAttribute(element, "src");
-    const source = sourceAttribute === null ? null : literalAttributeValue(sourceAttribute);
+    const source =
+      sourceAttribute === null ? null : literalAttributeValue(sourceAttribute);
     if (source === null) {
       this.#report(
         "NON_LITERAL_VALUE",
@@ -1055,7 +1175,8 @@ class ComponentWalker {
       return;
     }
     const altAttribute = findAttribute(element, "alt");
-    const altText = altAttribute === null ? null : literalAttributeValue(altAttribute);
+    const altText =
+      altAttribute === null ? null : literalAttributeValue(altAttribute);
     // An image field always carries `image.upload`, so `src` IS the value the
     // customer replaces, and `alt` is `image.alt.edit`. Neither can name this
     // element: the anchor named `at:/images/team.webp` until now, so the first
@@ -1064,11 +1185,13 @@ class ComponentWalker {
     // to be an `AnchorName`, so the compiler refuses it rather than a comment.
     const discriminator = declaredId;
     const anchor = this.#elementAnchor(scopeAnchor, tag, discriminator);
-    if (discriminator === null) this.#reportEditableName(element, tag, "src", source);
+    if (discriminator === null)
+      this.#reportEditableName(element, tag, "src", source);
     this.#candidates.push({
       kind: "image",
       anchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
@@ -1085,45 +1208,72 @@ class ComponentWalker {
     declaredId: AnchorName | null,
   ): void {
     const hrefAttribute = findAttribute(element, "href");
-    const expression = hrefAttribute === null ? null : attributeExpression(hrefAttribute);
-    const destination =
-      expression === null ? null : readDestination(expression, this.#constants);
-    if (destination === null) {
+    const expression =
+      hrefAttribute === null ? null : attributeExpression(hrefAttribute);
+    // A spread after `href` can replace it, so the written value is not the
+    // rendered one and there is nothing to read.
+    const reading =
+      hrefAttribute === null || expression === null || overriddenByLaterSpread(hrefAttribute)
+        ? null
+        : readHref(expression, this.#resolution);
+    if (reading === null) {
       this.#report(
         "NON_LITERAL_VALUE",
         element,
-        "Link destination is not a literal or a module constant; declare this link by hand.",
+        "Link destination is not a literal, a declared value, or one passed through a " +
+          "function that returns it unchanged; declare this link by hand.",
       );
       return;
     }
+    const unstorable = unstorableLinkBehaviour(element);
+    if (unstorable !== null) {
+      this.#report(
+        "LINK_BEHAVIOUR_UNSTORABLE",
+        element,
+        `This link stays in code: ${unstorable}, so a stored value would navigate ` +
+          "differently from the page. Remove what the value cannot carry to make it editable.",
+      );
+      return;
+    }
+    // Past the guard a target can only be `_blank`.
+    const newWindow = findAttribute(element, "target") !== null;
+    const destination = classifyHref(reading.href);
     const discriminator =
-      declaredId ?? (expression === null ? null : destinationDiscriminator(destination, expression));
+      declaredId ?? destinationDiscriminator(destination, reading.name);
     const anchor = this.#elementAnchor(scopeAnchor, tag, discriminator);
     if (discriminator === null) {
-      // `destinationDiscriminator` returns a name for a module constant and for
-      // a code-owned destination, so a null here means exactly one thing: the
-      // destination is the customer's to rewrite. The href is resolved only to
-      // show the operator what was declined.
-      const href = expression === null ? null : resolvedStringValueOf(expression, this.#constants);
-      if (href !== null) this.#reportEditableName(element, tag, "href", href);
+      // `destinationDiscriminator` names a link from a source name and from a
+      // same-site href, so a null here means exactly one thing: the
+      // destination is the customer's to rewrite. The href is shown only so
+      // the operator sees what was declined.
+      this.#reportEditableName(element, tag, "href", reading.href);
     }
-    const partition = partitionChildren(childrenOf(element));
-    const targetAttribute = findAttribute(element, "target");
-    const target = targetAttribute === null ? null : literalAttributeValue(targetAttribute);
+    const partition = partitionChildren(true, childrenOf(element));
     this.#collectAttributes(element, tag, scopeAnchor, discriminator);
     this.#candidates.push({
       kind: "link",
       anchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: ownershipOfDestination(destination),
       label: partition.allText,
+      labelEditable: partition.elementChildren.length === 0,
       destination,
-      newWindow: target === "_blank",
+      newWindow,
     });
-    if (partition.elementChildren.length > 0 && !partition.hasInlineMark) {
+    // A link's label is a text block whatever tag renders it (`Link` included).
+    // A formatted label is ONE rich-text field of its own, rendered in place
+    // inside the link: a link field's label is plain text and cannot carry the
+    // formatting, and reading its runs as fields of their own would split one
+    // label into pieces. The link field keeps the destination and target.
+    if (partition.formatted) {
+      this.#pushRichText(element, extendAnchor(anchor, { kind: "text" }), partition.children, null, false);
+      return;
+    }
+    if (partition.elementChildren.length > 0) {
       this.#pushDirectText(element, anchor, tag, null, partition);
       this.#collectStructuredChildren(partition, anchor);
     }
@@ -1140,16 +1290,16 @@ class ComponentWalker {
     scopeAnchor: AnchorPath,
     declaredId: AnchorName | null,
   ): void {
-    const partition = partitionChildren(childrenOf(element));
+    const partition = partitionChildren(isTextBlockTag(tag), childrenOf(element));
     const headingLevel = headingLevelOf(tag);
-    const rendersOwnText = partition.textRun.length > 0 || partition.hasInlineMark;
+    const rendersOwnText = partition.textRun.length > 0 || partition.formatted;
     if (!rendersOwnText) {
       this.#collectStructuredChildren(partition, scopeAnchor);
       return;
     }
     const anchor = this.#elementAnchor(scopeAnchor, tag, declaredId);
-    if (partition.hasInlineMark) {
-      this.#pushRichText(element, anchor, partition.children, headingLevel);
+    if (partition.formatted) {
+      this.#pushRichText(element, anchor, partition.children, headingLevel, true);
       return;
     }
     this.#pushDirectText(element, anchor, tag, headingLevel, partition);
@@ -1165,6 +1315,23 @@ class ComponentWalker {
     partition: ReturnType<typeof partitionChildren>,
   ): void {
     if (partition.textRun.length === 0) return;
+    // Text arriving in more than one piece cannot be ONE field. `textRun` joins
+    // them, so the value would stand for text at two positions with something
+    // else between, and the editor applies an edit with
+    // `element.textContent = text` -- writing it back would replace whatever
+    // sits between the pieces. Proposing it anyway put 11 fields in All Points
+    // Media's contract that no editor could ever write.
+    if (partition.textIsSplit) {
+      this.#report(
+        "NON_LITERAL_VALUE",
+        element,
+        "This element's text is interrupted by a computed value or another element, so it " +
+          "cannot be one editable field: writing it back would replace what sits between " +
+          "the pieces. Put the text in its own element, or declare the whole element as " +
+          "rich text.",
+      );
+      return;
+    }
     this.#pushText(
       element,
       extendAnchor(anchor, { kind: "text" }),
@@ -1178,35 +1345,67 @@ class ComponentWalker {
     partition: ReturnType<typeof partitionChildren>,
     anchor: AnchorPath,
   ): void {
-    for (const child of partition.elementChildren) this.#walkElement(child, anchor);
+    for (const child of partition.elementChildren)
+      this.#walkElement(child, anchor);
     this.#walkChildren(partition.expressionChildren, anchor);
   }
 
+  /**
+   * One formatted block as ONE value: a paragraph, or a heading block at the
+   * element's own level when the contract's heading block admits that level.
+   * Any other level (4 to 6) stays a paragraph: the
+   * element keeps its level in code, and the value holds only its text.
+   */
   #pushRichText(
     element: JsxElementNode,
     anchor: AnchorPath,
     children: readonly ts.JsxChild[],
     headingLevel: number | null,
+    allowLinks: boolean,
   ): void {
-    const document = buildRichTextDocument(children);
-    if (document === null) {
+    const reading = readInlineBlock(element, children, {
+      linkTags: this.#roles.linkTags,
+      constants: this.#constants,
+      allowLinks,
+    });
+    if (reading.kind === "computed") {
       this.#report(
         "NON_LITERAL_VALUE",
-        element,
+        reading.node,
         "Formatted text contains a computed value; declare this rich-text field by hand.",
       );
       return;
     }
+    if (reading.kind === "unmapped") {
+      this.#report(
+        "INLINE_FORMATTING_UNMAPPED",
+        element,
+        `This block is one visual block of text, but ${reading.reason}, so it cannot be ` +
+          "one rich-text field and was not split into pieces either: nothing inside it, " +
+          "including a link or a named value, was proposed. Change the markup to " +
+          "use a mark the converter maps (em, i, strong, b, a span whose class is `italic` or " +
+          "a bold weight, or a link to an https URL, email address or phone number), or " +
+          "declare this field by hand.",
+      );
+      return;
+    }
+    const level = MANAGED_RICH_TEXT_HEADING_LEVELS.find((admitted) => admitted === headingLevel);
+    const block: ManagedRichTextBlock =
+      level === undefined
+        ? { type: "paragraph", content: reading.inlines }
+        : { type: "heading", attrs: { level }, content: reading.inlines };
     this.#candidates.push({
       kind: "rich_text",
       anchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: CUSTOMER_EDITABLE,
-      document,
+      document: { type: "doc", content: [block] },
       headingLevel,
+      templates: reading.templates,
     });
   }
 
@@ -1220,13 +1419,19 @@ class ComponentWalker {
     const shared = {
       anchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(element),
       evidence: this.#evidenceOf(element),
       ownership: CUSTOMER_EDITABLE,
     } as const;
     if (headingLevel !== null) {
-      this.#candidates.push({ ...shared, kind: "heading_text", level: headingLevel, value });
+      this.#candidates.push({
+        ...shared,
+        kind: "heading_text",
+        level: headingLevel,
+        value,
+      });
       return;
     }
     this.#candidates.push({
@@ -1252,14 +1457,16 @@ class ComponentWalker {
       );
       return;
     }
-    const imageField = analysis.itemFields.find((field) => field.kind === "image");
+    const imageField = analysis.itemFields.find(
+      (field) => field.kind === "image",
+    );
     if (imageField !== undefined) {
       this.#report(
         "COLLECTION_ITEM_IMAGE_UNSUPPORTED",
         child,
         `Items of '${sourceName(mapCall)}' each carry their own image ('${imageField.property}'), ` +
-          "but the standard binds one asset slot to exactly one file, so a collection " +
-          "cannot vary an image per item. Decide whether to declare these as individual " +
+          "and the converter does not yet derive one asset slot that fits every item's " +
+          "image, so it cannot propose this collection. Decide whether to declare these as individual " +
           "fields with their own asset slots, or to drop the images. Nothing was proposed " +
           "for this collection.",
       );
@@ -1271,7 +1478,10 @@ class ComponentWalker {
     // the collection. A module-private array is qualified by the component
     // that reads it, for the reason `#collectDeclaredValue` gives.
     const collectionAnchor = mapCall.source.shared
-      ? extendAnchor(anchor.filter((segment) => segment.kind === "component"), ...mapCall.source.path)
+      ? extendAnchor(
+          anchor.filter((segment) => segment.kind === "component"),
+          ...mapCall.source.path,
+        )
       : extendAnchor(anchor, ...mapCall.source.path);
     const items: (readonly CollectionItemValue[])[] = [];
     for (const item of mapCall.items) {
@@ -1293,6 +1503,7 @@ class ComponentWalker {
       kind: "collection",
       anchor: collectionAnchor,
       componentNames: [this.#declaration.name],
+      componentKeys: [declarationKey(this.#declaration)],
       identity: POSITION_IDENTITY,
       location: this.#locationOf(child),
       evidence: this.#evidenceOf(child),
@@ -1306,7 +1517,11 @@ class ComponentWalker {
 
 function sourceName(mapCall: MapCall): string {
   return mapCall.source.path
-    .map((segment) => (segment.kind === "binding" || segment.kind === "property" ? segment.name : ""))
+    .map((segment) =>
+      segment.kind === "binding" || segment.kind === "property"
+        ? segment.name
+        : "",
+    )
     .filter((name) => name.length > 0)
     .join(".");
 }
@@ -1328,7 +1543,12 @@ function readItemValues(
   const values: CollectionItemValue[] = [];
   const asRecord = new Map<string, string>();
   for (const spec of analysis.itemFields) {
-    const value = textPropertyOf(item, spec.property, mapCall.source.declaredIn, context);
+    const value = textPropertyOf(
+      item,
+      spec.property,
+      mapCall.source.declaredIn,
+      context,
+    );
     if (value === null) return null;
     asRecord.set(spec.property, value);
   }
@@ -1338,7 +1558,11 @@ function readItemValues(
       altExpression === undefined
         ? null
         : templateOverItem(altExpression, mapCall.parameterName, asRecord);
-    values.push({ property: spec.property, value: asRecord.get(spec.property)!, altText });
+    values.push({
+      property: spec.property,
+      value: asRecord.get(spec.property)!,
+      altText,
+    });
   }
   return values;
 }
@@ -1357,7 +1581,12 @@ export function extractComponent(
   repositoryRoot: string,
   cache: ModuleCache,
   tags: TagResolver = tagResolver(repositoryRoot, cache),
-  callSites: CallSiteIndex = { sites: new Map(), opaque: [], unknownRenders: 0 },
+  callSites: CallSiteIndex = {
+    sites: new Map(),
+    opaque: [],
+    unknownRenders: 0,
+    declarations: new Map(),
+  },
 ): ExtractionResult {
   const constants = collectModuleConstants(declaration.module.source);
   const resolution: ResolutionContext = {

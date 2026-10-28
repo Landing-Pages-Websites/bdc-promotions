@@ -44,6 +44,27 @@ function protectedItemField(
   };
 }
 
+function pageProtectedField(
+  id: string,
+  pageId: string,
+  valueType: string,
+  semantic: string,
+  pointer: string,
+): object {
+  return {
+    id,
+    scope: "page",
+    type: "internal_protected",
+    classification: "internal_protected",
+    capabilities: [],
+    valueType,
+    semantic,
+    resolver: resolver(pointer),
+    usages: [{ pageId, itemId: null }],
+    presentation: presentation(semantic),
+  };
+}
+
 function headingItemField(id: string): object {
   return {
     id,
@@ -107,6 +128,10 @@ export function conformingContract(): Record<string, unknown> {
   const generatedHeadingId = fixtureId("field");
   const generatedImageId = fixtureId("field");
   const itemId = fixtureId("item");
+  // Minted last so every id above keeps the value it had before these existed.
+  const protectedDescriptionId = fixtureId("field");
+  const protectedCanonicalId = fixtureId("field");
+  const protectedIndexingId = fixtureId("field");
   return {
     schemaVersion: "1.0",
     contractId,
@@ -115,7 +140,7 @@ export function conformingContract(): Record<string, unknown> {
       reviewProtocol: 1,
       editProtocol: 2,
       annotationVersion: 1,
-      delivery: { version: "v7", src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js", integrity: `sha384-${"a".repeat(64)}`, crossOrigin: "anonymous", load: "head_defer" },
+      delivery: { version: "v13", src: "https://app.gomega.ai/review-bridge/v13/review-bridge.js", integrity: `sha384-${"a".repeat(64)}`, crossOrigin: "anonymous", load: "head_defer" },
       framing: "authenticated_preview_gateway",
     },
     pages: [
@@ -154,9 +179,14 @@ export function conformingContract(): Record<string, unknown> {
     }],
     assets: [{ id: assetId, presentation: presentation("Hero image"), semantics: { kind: "informative" }, acceptedMimeTypes: ["image/webp"], outputMimeTypes: ["image/webp"], minWidth: 1, maxWidth: 2, minHeight: 1, maxHeight: 2, aspectRatios: [{ width: 1, height: 1 }], cropPolicy: "optional", focalPointPolicy: "optional", maxBytes: 1 }],
     internalSeo: {
-      protectedFields: [{ id: protectedId, scope: "site", type: "internal_protected", classification: "internal_protected", capabilities: [], valueType: "string", semantic: "seo.title", resolver: resolver("/seo/title"), usages: [{ pageId: homeId, itemId: null }], presentation: presentation("SEO title") }],
+      protectedFields: [
+        { id: protectedId, scope: "site", type: "internal_protected", classification: "internal_protected", capabilities: [], valueType: "string", semantic: "seo.title", resolver: resolver("/seo/title"), usages: [{ pageId: homeId, itemId: null }], presentation: presentation("SEO title") },
+        pageProtectedField(protectedDescriptionId, homeId, "string", "seo.description", "/seo/description"),
+        pageProtectedField(protectedCanonicalId, homeId, "url", "seo.canonical", "/seo/canonical"),
+        pageProtectedField(protectedIndexingId, homeId, "indexing_directives", "seo.indexing", "/seo/indexing"),
+      ],
       businessIdentity: { legalName: protectedId, displayName: protectedId, telephone: protectedId, postalAddress: protectedId, email: null, geo: null, openingHours: null, sameAs: null },
-      pages: [{ pageId: homeId, intent: { purpose: "home", primaryEntity: protectedId, services: [], locations: [] }, metadata: { title: protectedId, description: protectedId, canonical: protectedId, indexing: protectedId, social: { title: null, description: null, image: assetId } }, headingOutline: [{ fieldId: titleId, semanticLevel: 1 }], jsonLd: [{ schemaType: "LocalBusiness", required: true, sourceFieldIds: [protectedId], requiredOutputProperties: ["name"] }], breadcrumbParentPageId: null, internalLinks: { requiredPageIds: [generatedId], minimumInboundLinks: 0 }, sitemap: { included: true, changeFrequency: "monthly", priority: 1 }, primaryImageAssetSlotId: assetId, performanceBudget: { maxLcpMilliseconds: 1, maxCls: 0, maxInpMilliseconds: 1, maxPageBytes: 1 } }],
+      pages: [{ pageId: homeId, intent: { purpose: "home", primaryEntity: protectedId, services: [], locations: [] }, metadata: { title: protectedId, description: protectedDescriptionId, canonical: protectedCanonicalId, indexing: protectedIndexingId, social: { title: null, description: null, image: assetId } }, headingOutline: [{ fieldId: titleId, semanticLevel: 1 }], jsonLd: [{ schemaType: "LocalBusiness", required: true, sourceFieldIds: [protectedId], requiredOutputProperties: ["name"] }], breadcrumbParentPageId: null, internalLinks: { requiredPageIds: [generatedId], minimumInboundLinks: 0 }, sitemap: { included: true, changeFrequency: "monthly", priority: 1 }, primaryImageAssetSlotId: assetId, performanceBudget: { maxLcpMilliseconds: 1, maxCls: 0, maxInpMilliseconds: 1, maxPageBytes: 1 } }],
       generatedPages: [{
         pageId: generatedId,
         collectionId,

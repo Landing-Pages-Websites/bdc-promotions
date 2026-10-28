@@ -84,9 +84,8 @@ function textConstraints(maxLength: number): {
  * Collecting the mark objects instead would dedupe by identity rather than by
  * kind and report the same mark repeatedly.
  *
- * Link marks are excluded because a converted document never carries one, and
- * `allowedMarks` covers formatting only; prose links stay governed by
- * `allowLinks` and its companions.
+ * Link marks are excluded because `allowedMarks` covers formatting only; prose
+ * links are governed by `allowLinks` and its companions (see `linkPolicyOf`).
  */
 function markKindsOf(candidate: Candidate): readonly ManagedRichTextMarkKind[] {
   if (candidate.kind !== "rich_text") return [];
@@ -94,33 +93,53 @@ function markKindsOf(candidate: Candidate): readonly ManagedRichTextMarkKind[] {
   // Every paragraph, including the ones inside a list item. Reading only the
   // top level meant a bold word in a list produced a document its own contract
   // rejected -- the writer and the reader of the same field disagreeing.
-  for (const paragraph of paragraphsIn(candidate.document.content)) {
-    for (const node of paragraph.content) {
-      for (const mark of node.marks ?? []) {
-        if (mark.type !== "link") kinds.add(mark.type);
-      }
+  for (const node of textIn(candidate.document.content)) {
+    for (const mark of node.marks ?? []) {
+      if (mark.type !== "link") kinds.add(mark.type);
     }
   }
   return [...kinds];
 }
 
-type RichTextParagraph = Extract<ManagedRichTextBlock, { type: "paragraph" }>;
+type RichTextInline = Extract<ManagedRichTextBlock, { type: "paragraph" }>["content"][number];
+type RichTextText = Extract<RichTextInline, { type: "text" }>;
 /** Every block type the contract's own document schema admits. */
 type ManagedRichTextBlockKind = ManagedRichTextBlock["type"];
 
-/** Every paragraph in a document, at whatever depth a block nests one. */
-function paragraphsIn(blocks: readonly ManagedRichTextBlock[]): readonly RichTextParagraph[] {
-  const found: RichTextParagraph[] = [];
-  for (const block of blocks) {
-    if (block.type === "paragraph") {
-      found.push(block);
-      continue;
+/**
+ * Every inline node in a document, at whatever depth a block nests one.
+ * Exhaustive over the block union, so a block kind added to the contract is a
+ * compile error here rather than text whose marks, or a break whose opt-in, the
+ * emitted policy never names.
+ */
+function inlinesIn(blocks: readonly ManagedRichTextBlock[]): readonly RichTextInline[] {
+  return blocks.flatMap((block): readonly RichTextInline[] => {
+    switch (block.type) {
+      case "paragraph":
+      case "heading":
+        return block.content;
+      case "blockquote":
+        return block.content.flatMap((paragraph) => paragraph.content);
+      case "bullet_list":
+      case "ordered_list":
+        return block.content.flatMap((item) => inlinesIn(item.content));
     }
-    if (block.type === "bullet_list" || block.type === "ordered_list") {
-      for (const item of block.content) found.push(...paragraphsIn(item.content));
-    }
-  }
-  return found;
+  });
+}
+
+function textIn(blocks: readonly ManagedRichTextBlock[]): readonly RichTextText[] {
+  return inlinesIn(blocks).filter((node): node is RichTextText => node.type === "text");
+}
+
+/**
+ * The hard-break opt-in a document's own breaks need, and nothing wider: a
+ * block that drew no line break gains no way to add one. No cap is declared,
+ * because a converted block's line count is the customer's to change.
+ */
+function hardBreakPolicyOf(candidate: Candidate): { readonly allowHardBreaks?: true } {
+  if (candidate.kind !== "rich_text") return {};
+  const breaks = inlinesIn(candidate.document.content).some((node) => node.type === "hard_break");
+  return breaks ? { allowHardBreaks: true } : {};
 }
 
 /**
@@ -133,11 +152,42 @@ function paragraphsIn(blocks: readonly ManagedRichTextBlock[]): readonly RichTex
  */
 function blockKindsOf(candidate: Candidate): readonly ManagedRichTextBlockKind[] {
   if (candidate.kind !== "rich_text") return ["paragraph"];
+  // A block rendered in place in one element is exactly its one block type: a
+  // heading field offered a paragraph would let the customer change what the
+  // element holds into something it never rendered.
+  if (candidate.templates !== null) return candidate.document.content.map((block) => block.type);
   const kinds = new Set<ManagedRichTextBlockKind>(["paragraph"]);
-  for (const block of candidate.document.content) {
-    if (block.type === "bullet_list" || block.type === "ordered_list") kinds.add(block.type);
-  }
+  for (const block of candidate.document.content) kinds.add(block.type);
   return [...kinds];
+}
+
+type RichTextLinkMark = Extract<NonNullable<RichTextText["marks"]>[number], { type: "link" }>;
+
+/**
+ * The link policy a document's own links need, and nothing wider: links on
+ * only if the block had one, the targets it used, and the hosts its external
+ * links name. A field allowing more than its source used would let the
+ * customer add links the site never rendered.
+ */
+function linkPolicyOf(candidate: Candidate): {
+  readonly allowLinks: boolean;
+  readonly allowedExternalHosts: readonly string[];
+  readonly allowedTargets: readonly ("same_window" | "new_window")[];
+} {
+  const links: RichTextLinkMark[] =
+    candidate.kind !== "rich_text"
+      ? []
+      : textIn(candidate.document.content).flatMap((node) =>
+          (node.marks ?? []).filter((mark): mark is RichTextLinkMark => mark.type === "link"),
+        );
+  const hosts = links.flatMap((mark) =>
+    mark.destination.kind === "external" ? [new URL(mark.destination.url).hostname] : [],
+  );
+  return {
+    allowLinks: links.length > 0,
+    allowedExternalHosts: [...new Set(hosts)].sort(),
+    allowedTargets: [...new Set(links.map((mark) => mark.target))].sort(),
+  };
 }
 
 function linkConstraints(
@@ -150,24 +200,22 @@ function linkConstraints(
     labelConstraints: textConstraints(maxLength),
     allowedTargets: targets,
   };
-  if (destination.kind === "self") {
-    return {
-      ...base,
-      authority: "internal_only",
-      allowedSchemes: [],
-      allowedExternalHosts: [],
-      fragmentPolicy: "forbid",
-      allowedFragments: [],
-    };
+  if (destination.kind === "fragment" || destination.kind === "site_href") {
+    // `site-links.ts` resolves or refuses every one of these before the gate.
+    throw new Error(`An unresolved ${destination.kind} destination reached contract emission`);
   }
-  if (destination.kind === "fragment") {
+  if (destination.kind === "page") {
+    // The one fragment the page renders today, and none other: a customer may
+    // keep it, drop it, or point at another page, never at a place the
+    // converter did not see rendered.
+    const fragment = destination.fragment;
     return {
       ...base,
       authority: "internal_only",
       allowedSchemes: [],
       allowedExternalHosts: [],
-      fragmentPolicy: "declared",
-      allowedFragments: [destination.fragment],
+      fragmentPolicy: fragment === null ? "forbid" : "declared",
+      allowedFragments: fragment === null ? [] : [fragment],
     };
   }
   if (destination.kind === "external") {
@@ -250,7 +298,7 @@ function unrepresentableAssetPath(
   config: ConversionConfig,
 ): Finding {
   const cause = assetRootIsAtFault(config.assetRoot, source)
-    ? `the configured assetRoot '${config.assetRoot}' leaves no room for it`
+    ? `the configured assetRoot '${config.assetRoot}' does not place it at a served path under public/, or leaves no room for it`
     : "the file path itself is not one the standard can carry";
   return {
     code: "ASSET_PATH_UNREPRESENTABLE",
@@ -259,7 +307,7 @@ function unrepresentableAssetPath(
     evidence: candidate.evidence,
     decision:
       `'${source}' cannot be addressed as a repository path because ${cause}. ` +
-      "Shorten the asset root or move the file, then re-run.",
+      "Use the served asset root or move the file, then re-run.",
   };
 }
 
@@ -273,8 +321,10 @@ function collectionBoundsFinding(candidate: CollectionCandidate, itemCount: numb
       `Confirm the minimum and maximum item count for '${candidate.bindingName}' — the ` +
       "source only proves it currently has " +
       `${itemCount}. Item IDs were bootstrapped from present array order and are frozen ` +
-      "into the emitted content; reordering after this run is safe, re-running before " +
-      "committing the content is not.",
+      "into the emitted content. The converted page renders the repository's own " +
+      "array, so this collection is granted no reorder, add or remove capability: " +
+      "its order and its length are the code's, and only the item text is the " +
+      "customer's.",
   };
 }
 
@@ -283,8 +333,6 @@ function itemCapabilitiesFor(kind: ItemFieldSpec["kind"]): readonly ManagedField
     case "plain_text":
     case "heading_text":
       return ["text.edit"];
-    case "link":
-      return ["link.label.edit", "link.destination.edit", "link.target.edit"];
     case "image":
       return ["image.upload", "image.crop", "image.focal_point.edit", "image.alt.edit"];
   }
@@ -350,8 +398,10 @@ export class ContractEmitter {
       case "link":
         this.#fields.push({
           ...commonOf(binding),
+          // The label has exactly one editor: the link field only when the
+          // label is bare text (see `LinkCandidate.labelEditable`).
           capabilities: capabilitiesFor(binding, [
-            "link.label.edit",
+            ...(candidate.labelEditable ? (["link.label.edit"] as const) : []),
             "link.destination.edit",
             "link.target.edit",
           ]),
@@ -377,18 +427,29 @@ export class ContractEmitter {
       (kind): ManagedFieldCapability =>
         kind === "bold" ? "rich_text.mark.bold" : "rich_text.mark.italic",
     );
+    const links = linkPolicyOf(binding.candidate);
+    const linkCapabilities: ManagedFieldCapability[] = links.allowLinks
+      ? ["rich_text.link.edit"]
+      : [];
+    const inPlace =
+      binding.candidate.kind === "rich_text" && binding.candidate.templates !== null;
     this.#fields.push({
       ...commonOf(binding),
-      capabilities: capabilitiesFor(binding, ["text.edit", ...markCapabilities]),
+      capabilities: capabilitiesFor(binding, [
+        "text.edit",
+        ...markCapabilities,
+        ...linkCapabilities,
+      ]),
       type: "rich_text",
       constraints: {
         maxCharacters: this.#context.config.text.richTextMaxCharacters,
         maxNodes: this.#context.config.text.richTextMaxNodes,
         allowedBlocks: blockKindsOf(binding.candidate),
+        // One element renders one block, so the value may hold only one.
+        ...(inPlace ? { maxBlocks: 1 } : {}),
+        ...hardBreakPolicyOf(binding.candidate),
         allowedMarks: markKinds,
-        allowLinks: false,
-        allowedExternalHosts: [],
-        allowedTargets: [],
+        ...links,
       },
     } as ManagedFieldDescriptor);
   }
@@ -468,11 +529,30 @@ export class ContractEmitter {
     this.#fields.push({
       ...commonOf(binding),
       resolver: resolverFor(binding.sourcePath, `${binding.pointer}/order`),
-      capabilities: capabilitiesFor(binding, [
-        "collection.reorder",
-        "collection.add",
-        "collection.remove",
-      ]),
+      // A collection's SHAPE belongs to the code, so the field that holds it
+      // says so.
+      //
+      // The rewritten template maps the REPOSITORY's own array -- that is where
+      // each row's icon, key and click behaviour come from -- so the rendered
+      // order is the source order and the rendered count is the source length.
+      // Declaring this field customer_editable and granting reorder, add and
+      // remove offered three controls the site cannot honour: reordering a
+      // collection in the editor left the live page exactly as it was, and
+      // adding or removing an item had nowhere to render. A contract that
+      // promises what the page cannot do is worse than one that says so,
+      // because the customer only finds out by trying.
+      //
+      // The standard forbids a customer_editable field with no capabilities,
+      // and rightly: "yours, but you may do nothing to it" is not a thing to
+      // say. The truthful statement is that this one is the code's. Every item
+      // TEXT field stays customer_editable with `text.edit`, which is what
+      // conversion can actually deliver.
+      //
+      // Honouring the customer's order means rendering from `orderedItemIds`
+      // and resolving each row's behaviour by item id -- a rewriter change and
+      // a feature, not a capability flag.
+      classification: "code_owned_interface",
+      capabilities: [],
       type: "collection",
       collectionId,
     } as ManagedFieldDescriptor);
@@ -530,17 +610,6 @@ export class ContractEmitter {
         type: "heading_text",
         semanticLevel: spec.headingLevel ?? 3,
         constraints: textConstraints(this.#context.config.text.headingMaxLength),
-      } as ManagedCollectionItemField;
-    }
-    if (spec.kind === "link") {
-      return {
-        ...shared,
-        type: "link",
-        constraints: linkConstraints(
-          { kind: "external", url: "https://example.invalid" },
-          false,
-          this.#context.config.text.linkLabelMaxLength,
-        ),
       } as ManagedCollectionItemField;
     }
     return {

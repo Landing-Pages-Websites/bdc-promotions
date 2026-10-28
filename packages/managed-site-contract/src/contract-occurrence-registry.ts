@@ -187,18 +187,25 @@ const OCCURRENCE_RULES = {
   "pages[].route[kind=generated].collectionId#collection": { idKind: "collection", role: "reference", scope: "global" },
   "pages[].route[kind=generated].routeKeyFieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "pages[].sections[].id#section": { idKind: "section", role: "declaration", scope: "global" },
+  "pages[].sections[].views[].collectionId#collection": { idKind: "collection", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=plain_text].id#field": { idKind: "field", role: "declaration", scope: "global" },
   "pages[].sections[].fields[type=plain_text].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=plain_text].usages[].itemId#item": { idKind: "item", role: "deferred" },
+  // An item-text pattern's sources (0.38.0): item fields of the page's route collection.
+  "pages[].sections[].fields[type=plain_text].constraints.pattern.placeholders[].fieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "pages[].sections[].fields[type=heading_text].id#field": { idKind: "field", role: "declaration", scope: "global" },
   "pages[].sections[].fields[type=heading_text].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=heading_text].usages[].itemId#item": { idKind: "item", role: "deferred" },
+  "pages[].sections[].fields[type=heading_text].constraints.pattern.placeholders[].fieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "pages[].sections[].fields[type=rich_text].id#field": { idKind: "field", role: "declaration", scope: "global" },
   "pages[].sections[].fields[type=rich_text].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=rich_text].usages[].itemId#item": { idKind: "item", role: "deferred" },
   "pages[].sections[].fields[type=link].id#field": { idKind: "field", role: "declaration", scope: "global" },
   "pages[].sections[].fields[type=link].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=link].usages[].itemId#item": { idKind: "item", role: "deferred" },
+  // The page a link field admits a query on (0.41.0): a reference, so it must
+  // name a declared page and a page it names cannot be retired from under it.
+  "pages[].sections[].fields[type=link].constraints.allowedQueries[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=image].id#field": { idKind: "field", role: "declaration", scope: "global" },
   "pages[].sections[].fields[type=image].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=image].usages[].itemId#item": { idKind: "item", role: "deferred" },
@@ -207,13 +214,27 @@ const OCCURRENCE_RULES = {
   "pages[].sections[].fields[type=collection].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "pages[].sections[].fields[type=collection].usages[].itemId#item": { idKind: "item", role: "deferred" },
   "pages[].sections[].fields[type=collection].collectionId#collection": { idKind: "collection", role: "reference", scope: "global" },
+  "pages[].sections[].fields[type=icon].id#field": { idKind: "field", role: "declaration", scope: "global" },
+  "pages[].sections[].fields[type=icon].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
+  "pages[].sections[].fields[type=icon].usages[].itemId#item": { idKind: "item", role: "deferred" },
+  "pages[].sections[].fields[type=toggle].id#field": { idKind: "field", role: "declaration", scope: "global" },
+  "pages[].sections[].fields[type=toggle].usages[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
+  "pages[].sections[].fields[type=toggle].usages[].itemId#item": { idKind: "item", role: "deferred" },
   "collections[].id#collection": { idKind: "collection", role: "declaration", scope: "global" },
   "collections[].itemFields[type=plain_text].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].itemFields[type=heading_text].id#field": { idKind: "field", role: "declaration", scope: "collection" },
+  // Classified so they are seen; contract semantics refuse an item-text pattern on an item field.
+  "collections[].itemFields[type=plain_text].constraints.pattern.placeholders[].fieldId#field": { idKind: "field", role: "reference", scope: "collection" },
+  "collections[].itemFields[type=heading_text].constraints.pattern.placeholders[].fieldId#field": { idKind: "field", role: "reference", scope: "collection" },
   "collections[].itemFields[type=rich_text].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].itemFields[type=link].id#field": { idKind: "field", role: "declaration", scope: "collection" },
+  "collections[].itemFields[type=link].constraints.allowedQueries[].pageId#page": { idKind: "page", role: "reference", scope: "global" },
   "collections[].itemFields[type=image].id#field": { idKind: "field", role: "declaration", scope: "collection" },
+  "collections[].itemFields[type=collection].id#field": { idKind: "field", role: "declaration", scope: "collection" },
+  "collections[].itemFields[type=collection].collectionId#collection": { idKind: "collection", role: "reference", scope: "global" },
+  "collections[].itemFields[type=icon].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].itemFields[type=image].assetSlotId#asset": { idKind: "asset", role: "reference", scope: "global" },
+  "collections[].itemFields[type=toggle].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].itemFields[type=internal_protected].id#field": { idKind: "field", role: "declaration", scope: "collection" },
   "collections[].uniqueness[].fieldIds[]#field": { idKind: "field", role: "reference", scope: "collection" },
   "assets[].id#asset": { idKind: "asset", role: "declaration", scope: "global" },
@@ -239,6 +260,8 @@ const OCCURRENCE_RULES = {
   "internalSeo.pages[].metadata.social.title#field": { idKind: "field", role: "reference", scope: "global" },
   "internalSeo.pages[].metadata.social.description#field": { idKind: "field", role: "reference", scope: "global" },
   "internalSeo.pages[].metadata.social.image#asset": { idKind: "asset", role: "reference", scope: "global" },
+  "internalSeo.pages[].metadata.social.imageFieldId#field": { idKind: "field", role: "reference", scope: "global" },
+  "internalSeo.pages[].metadata.hiddenFieldId#field": { idKind: "field", role: "reference", scope: "global" },
   "internalSeo.pages[].headingOutline[].fieldId#field": { idKind: "field", role: "reference", scope: "global" },
   "internalSeo.pages[].jsonLd[].sourceFieldIds[]#field": { idKind: "field", role: "reference", scope: "global" },
   "internalSeo.pages[].breadcrumbParentPageId#page": { idKind: "page", role: "reference", scope: "global" },
@@ -256,6 +279,11 @@ const OCCURRENCE_RULES = {
   "internalSeo.generatedPages[].metadata.social.title#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "internalSeo.generatedPages[].metadata.social.description#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "internalSeo.generatedPages[].metadata.social.imageFieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.hiddenFieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.titlePattern.fieldId#field": { idKind: "field", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].metadata.titlePattern.sources[].fieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
+  "internalSeo.generatedPages[].metadata.descriptionPattern.fieldId#field": { idKind: "field", role: "reference", scope: "global" },
+  "internalSeo.generatedPages[].metadata.descriptionPattern.sources[].fieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "internalSeo.generatedPages[].headingOutline[].fieldId#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "internalSeo.generatedPages[].jsonLd[].itemSourceFieldIds[]#field": { idKind: "field", role: "reference", scope: "route_collection" },
   "internalSeo.generatedPages[].jsonLd[].siteSourceFieldIds[]#field": { idKind: "field", role: "reference", scope: "global" },
@@ -425,10 +453,12 @@ function collectionIdFrom(occurrence: LocatedValue, scope: OccurrenceScopeRule):
   if (scope === "global") return null;
   for (const value of [...occurrence.ancestors].reverse()) {
     if (!isRecord(value)) continue;
-    const candidate = scope === "route_collection" ? value.collectionId : value.id;
+    // A generated page's own fields reach its route collection through the page's `route`.
+    const routed = isRecord(value.route) ? value.route.collectionId : undefined;
+    const candidate = scope === "route_collection" ? (value.collectionId ?? routed) : value.id;
     const ownsCollection =
       scope === "route_collection"
-        ? typeof value.collectionId === "string"
+        ? typeof candidate === "string"
         : "itemFields" in value;
     if (ownsCollection && typeof candidate === "string") return candidate as StableId<"collection">;
   }

@@ -1,6 +1,6 @@
 import ts from "typescript";
 
-import { isWriteTarget } from "./evaluate.js";
+import { isNameWrittenIn } from "./evaluate.js";
 
 import type { ComponentDeclaration } from "./extract.js";
 import {
@@ -687,17 +687,7 @@ function declaredPropertyFor(component: FunctionLike, local: string): string | n
  * `isWriteTarget` is `evaluate.ts`'s, so `for (as of …)` and `as++` count too.
  */
 function isWrittenWithin(component: FunctionLike, name: string): boolean {
-  let found = false;
-  const visit = (node: ts.Node): void => {
-    if (found) return;
-    if (ts.isIdentifier(node) && node.text === name && isWriteTarget(node)) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(node, visit);
-  };
-  ts.forEachChild(component, visit);
-  return found;
+  return isNameWrittenIn(component, name);
 }
 
 /** A prop's declared default, when the destructuring states one as a literal. */

@@ -7,10 +7,11 @@ import type {
 } from "@landing-pages-websites/managed-site-contract";
 
 import type { PageBinding } from "./bindings.js";
-import type { ConversionConfig } from "./config.js";
+import type { ConversionConfig, PageSeoInput } from "./config.js";
 import type { IdLedger } from "./id-ledger.js";
 import { UNDECLARED_METADATA, type NextMetadata } from "./next-metadata.js";
 import type { Finding } from "./report.js";
+import { indexableRouteFinding } from "./route-serving.js";
 import { resolverFor } from "./source-address.js";
 
 /**
@@ -52,6 +53,10 @@ export interface SeoInput {
   readonly metadataByRoute: ReadonlyMap<string, NextMetadata>;
   readonly headingOutline: ReadonlyMap<string, readonly HeadingOutlineEntry[]>;
   readonly primaryImageByRoute: ReadonlyMap<string, StableId<"asset">>;
+  /** The pages this run proposed at least one editable value for. */
+  readonly pagesWithContent: ReadonlySet<StableId<"page">>;
+  /** Every route the scan found and this run excluded, already reported. */
+  readonly excludedRoutes: ReadonlySet<string>;
 }
 
 function missing(semantic: string, why: string): Finding {
@@ -64,7 +69,7 @@ function missing(semantic: string, why: string): Finding {
   };
 }
 
-function unservedRoute(route: string): Finding {
+function undeclaredRouteFinding(route: string): Finding {
   return {
     code: "SEO_INPUT_REQUIRED",
     anchor: `config:${route}`,
@@ -275,6 +280,7 @@ class SeoBuilder {
         ),
       );
     }
+    if (seoInput !== undefined) this.#reportIfUnserved(page, seoInput);
     if (
       title === null ||
       description === null ||
@@ -307,6 +313,25 @@ class SeoBuilder {
   }
 
   /**
+   * A route in the sitemap that this run could read nothing on.
+   *
+   * Reported, never withheld: both readings are facts about the reader rather
+   * than about the route, and a route it can PROVE is unserved never reaches
+   * here -- `propose` excludes it before a descriptor is built. A route that
+   * declines customer content contributes nothing by design, so the emptiest
+   * reading says nothing at all about it.
+   */
+  #reportIfUnserved(page: PageBinding, declared: PageSeoInput): void {
+    const finding = indexableRouteFinding(
+      page.routePath,
+      declared,
+      page.render,
+      !page.ownsContent || this.#input.pagesWithContent.has(page.pageId),
+    );
+    if (finding !== null) this.#findings.push(finding);
+  }
+
+  /**
    * A declared route the scan never found is an input nobody reads.
    *
    * The proposer matches config pages to scanned routes by exact path, so a typo
@@ -318,7 +343,11 @@ class SeoBuilder {
     const scanned = new Set(this.#input.pages.map((page) => page.routePath));
     for (const route of this.#input.config.pages.keys()) {
       if (scanned.has(route)) continue;
-      this.#findings.push(unservedRoute(route));
+      // A route the run found and excluded already carries the finding that
+      // excluded it, which says why and what to do. Reporting it a second time
+      // as a route that does not exist sends a reader hunting a typo.
+      if (this.#input.excludedRoutes.has(route)) continue;
+      this.#findings.push(undeclaredRouteFinding(route));
     }
   }
 

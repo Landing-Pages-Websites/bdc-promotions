@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 
 import { isRepositoryPath } from "./paths.js";
 import {
+  bridgeSrcFor,
+  isSupportedBridgeVersion,
   MANAGED_PAGE_PURPOSES,
+  MANAGED_SERVED_ASSET_ROOT,
   MAX_REPOSITORY_PATH_SEGMENT_BYTES,
   parseManagedAbsoluteHttpsUrl,
   parseManagedCollectionBounds,
@@ -13,13 +16,13 @@ import {
   parseManagedRichTextConstraints,
   parseManagedSitemapPolicy,
   parseManagedTextConstraints,
-  SUPPORTED_BRIDGE_SRC,
-  SUPPORTED_BRIDGE_VERSION,
+  SUPPORTED_BRIDGE_VERSIONS,
 } from "@landing-pages-websites/managed-site-contract";
 import type {
   ManagedPagePurpose,
   ManagedPerformanceBudget,
   ManagedSitemapPolicy,
+  SupportedBridgeVersion,
 } from "@landing-pages-websites/managed-site-contract";
 
 /**
@@ -33,8 +36,8 @@ import type {
  */
 
 export interface BridgeDelivery {
-  /** `v<n>`; the delivered asset is immutable per version, never rebuilt. */
-  readonly version: string;
+  /** The delivered asset is immutable per version, never rebuilt. */
+  readonly version: SupportedBridgeVersion;
   readonly src: string;
   readonly integrity: string;
   readonly crossOrigin: "anonymous";
@@ -82,6 +85,31 @@ export interface PageSeoInput {
   readonly canonical: string | null;
   readonly sitemap: SitemapPolicy | null;
   readonly performanceBudget: PerformanceBudget | null;
+  /**
+   * Whether a customer owns the words on this route. Defaults to true.
+   *
+   * Every route the scan finds and KEEPS has to be declared here or the
+   * descriptor is incomplete and the contract will not validate, so a
+   * repository's internal screens -- an operator console, a debug page -- have
+   * to be declared too. A route the scan excludes needs no declaration; see
+   * `route-serving.ts` for the one it excludes on its own evidence.
+   * Declaring one used to be the same as offering its labels to the customer:
+   * All Points Media's password-gated `/admin` contributed seven editable
+   * fields, 'Shared password' among them, to the editor of a page no customer
+   * can open.
+   *
+   * Setting this false keeps the route's SEO facts and gives it no content of
+   * its own: none of its words become fields, collections or asset slots, and
+   * it gets no page-root annotation, so the editor discovers nothing on it.
+   *
+   * It is a statement about this route, not about the files it renders. A
+   * component it SHARES with a public page belongs to the customer and is
+   * rewired as usual, and a client one is threaded at this route's call site
+   * too -- otherwise the internal screen alone would keep rendering the
+   * literal after the customer edits it. It says nothing about who may READ
+   * the page; that is the repository's own auth.
+   */
+  readonly managedContent: boolean;
 }
 
 export interface ConversionConfig {
@@ -175,6 +203,11 @@ function readRecord(raw: unknown, refuse: (reason: string) => never): UnknownRec
 function readString(raw: unknown, refuse: (reason: string) => never): string {
   if (typeof raw !== "string") refuse("it must be a string");
   if (raw.length === 0) refuse("it must not be empty");
+  return raw;
+}
+
+function readBoolean(raw: unknown, refuse: (reason: string) => never): boolean {
+  if (typeof raw !== "boolean") refuse("it must be true or false");
   return raw;
 }
 
@@ -315,6 +348,7 @@ function readPageSeo(raw: unknown, refuse: (reason: string) => never): PageSeoIn
     canonical: optional("canonical", readCanonical),
     sitemap: optional("sitemap", readSitemap),
     performanceBudget: optional("performanceBudget", readBudget),
+    managedContent: optional("managedContent", readBoolean) ?? true,
   };
 }
 
@@ -449,11 +483,12 @@ const SRI_SHA384 = /^sha384-[A-Za-z0-9+/]{64}$/u;
  * version or an unreplaced digest.
  *
  * The version and source are checked against the contract package's own
- * constants rather than a shape this file decides. Accepting anything the
- * canonical parser rejects would only move the failure: the config would load,
- * and the proposal would then fail to parse with `contract: null` and no
- * statement of why. Promoting the next bridge stays a single edit in the
- * contract package, which this follows automatically.
+ * supported list, and the source must be that version's own asset, rather than
+ * a shape this file decides. Accepting anything the canonical parser rejects
+ * would only move the failure: the config would load, and the proposal would
+ * then fail to parse with `contract: null` and no statement of why. Promoting
+ * the next bridge stays a single edit in the contract package, which this
+ * follows automatically.
  *
  * The digest is still checked by shape, because it is per-asset and this package
  * has no way to know the right one -- only that the example's placeholder is not
@@ -466,11 +501,12 @@ function readBridge(raw: unknown, refuse: (reason: string) => never): BridgeDeli
     return typeof value === "string" && value.length > 0 ? value : refuse(`${key} is missing`);
   };
   const version = field("version");
-  if (version !== SUPPORTED_BRIDGE_VERSION) {
-    refuse(`version ${version} is not the supported ${SUPPORTED_BRIDGE_VERSION}`);
+  if (!isSupportedBridgeVersion(version)) {
+    refuse(`version ${version} is not one of the supported ${SUPPORTED_BRIDGE_VERSIONS.join(", ")}`);
   }
+  const expectedSrc = bridgeSrcFor(version);
   const src = field("src");
-  if (src !== SUPPORTED_BRIDGE_SRC) refuse(`src ${src} is not ${SUPPORTED_BRIDGE_SRC}`);
+  if (src !== expectedSrc) refuse(`src ${src} is not ${expectedSrc}`);
   const integrity = field("integrity");
   if (!SRI_SHA384.test(integrity)) {
     refuse("integrity is not a sha384 digest; replace the example placeholder");
@@ -478,8 +514,8 @@ function readBridge(raw: unknown, refuse: (reason: string) => never): BridgeDeli
   if (record["crossOrigin"] !== "anonymous") refuse("crossOrigin must be anonymous");
   if (record["load"] !== "head_defer") refuse("load must be head_defer");
   return {
-    version: SUPPORTED_BRIDGE_VERSION,
-    src: SUPPORTED_BRIDGE_SRC,
+    version,
+    src: expectedSrc,
     integrity,
     crossOrigin: "anonymous",
     load: "head_defer",
@@ -554,6 +590,29 @@ function readRoot(key: keyof typeof ROOT_BUDGETS): Read<string> {
   };
 }
 
+/**
+ * The asset root is where the converter records every image it reads, and the
+ * pinned contract accepts an image only at a served path
+ * (isManagedServedAssetPath: under MANAGED_SERVED_ASSET_ROOT). So a root is
+ * accepted only if it IS that served root. A root outside it would emit image
+ * values the contract refuses, and the proposal would come back with no
+ * contract. A root inside it (public/images) would be contract-valid and still
+ * wrong: the source writes an image as a URL, `/hero.png`, which is served from
+ * public/hero.png, and joining that URL to public/images records a different
+ * file than the one rendered. Refused here, where a person can act on it.
+ */
+const readServedAssetRoot: Read<string> = (raw, refuse) => {
+  const root = readRoot("assetRoot")(raw, refuse);
+  if (`${root}/` !== MANAGED_SERVED_ASSET_ROOT) {
+    refuse(
+      `"${root}" is not the served root "${MANAGED_SERVED_ASSET_ROOT.slice(0, -1)}": the contract accepts an ` +
+        `image only under ${MANAGED_SERVED_ASSET_ROOT}, and an image written as /name.png is the file ` +
+        `${MANAGED_SERVED_ASSET_ROOT}name.png`,
+    );
+  }
+  return root;
+};
+
 export function loadConfig(path: string | null): ConversionConfig {
   const base = defaultConfig();
   if (path === null) return base;
@@ -564,7 +623,7 @@ export function loadConfig(path: string | null): ConversionConfig {
     readOptional(record, key, fallback, reader, path);
   return {
     contentRoot: read("contentRoot", base.contentRoot, readRoot("contentRoot")),
-    assetRoot: read("assetRoot", base.assetRoot, readRoot("assetRoot")),
+    assetRoot: read("assetRoot", base.assetRoot, readServedAssetRoot),
     bridge: read("bridge", base.bridge, readBridge),
     text: read("text", base.text, readPolicy(base.text, verifyTextPolicy)),
     collections: read(

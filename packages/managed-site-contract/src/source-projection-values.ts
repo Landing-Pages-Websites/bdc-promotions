@@ -1,3 +1,8 @@
+import {
+  addManifestEntry,
+  emptyManifestIndex,
+  orderedManifestEntries,
+} from "./asset-manifest-index.js";
 import type {
   ManagedContentOwner,
   ManagedSiteAssetManifestEntry,
@@ -45,29 +50,21 @@ function manifestEntry(
 }
 
 export class ProjectedAssetManifest {
-  private readonly entriesBySlot = new Map<
-    string,
-    ManagedSiteAssetManifestEntry
-  >();
+  private readonly entries = emptyManifestIndex();
 
+  // The first material seen at a (slot, path) is kept; a later value at that
+  // path with different material then fails content validation as a mismatch.
   public record(descriptor: RenderedDescriptor, value: JsonValue): void {
-    if (descriptor.type !== "image") return;
+    // No image (an optional item image) is no material.
+    if (descriptor.type !== "image" || value === null) return;
     const image = parseManagedImageValueInput(value);
-    if (!this.entriesBySlot.has(descriptor.assetSlotId)) {
-      this.entriesBySlot.set(
-        descriptor.assetSlotId,
-        manifestEntry(descriptor.assetSlotId, image),
-      );
-    }
+    addManifestEntry(this.entries, manifestEntry(descriptor.assetSlotId, image));
   }
 
   public ordered(
     assets: readonly ManagedAssetSlotDescriptor[],
   ): readonly ManagedSiteAssetManifestEntry[] {
-    return assets.flatMap((asset) => {
-      const entry = this.entriesBySlot.get(asset.id);
-      return entry === undefined ? [] : [entry];
-    });
+    return orderedManifestEntries(this.entries, assets);
   }
 }
 

@@ -5,8 +5,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  SUPPORTED_BRIDGE_SRC,
-  SUPPORTED_BRIDGE_VERSION,
+  CURRENT_BRIDGE_SRC,
+  CURRENT_BRIDGE_VERSION,
 } from "@landing-pages-websites/managed-site-contract";
 
 import type { Candidate } from "../../src/candidates.js";
@@ -31,9 +31,9 @@ const FIXTURE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtur
  * version must not need an edit in this repository's tests.
  */
 export const VALID_BRIDGE = {
-  version: SUPPORTED_BRIDGE_VERSION,
-  src: SUPPORTED_BRIDGE_SRC,
-  integrity: "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ",
+  version: CURRENT_BRIDGE_VERSION,
+  src: CURRENT_BRIDGE_SRC,
+  integrity: "sha384-GrpOL0+U/drV+M5Xmr7vIU11jHh4rpRJrsIAvBgdXnytkyWHDnssPzhI1wK/GpTg",
   crossOrigin: "anonymous",
   load: "head_defer",
 };
@@ -58,8 +58,16 @@ const BUSINESS_IDENTITY = {
  * Everything the proposer refuses to invent, declared for exactly the routes
  * named here. A route a fixture renders but this omits leaves internal SEO
  * incomplete, which is how a fixture is made to produce a refused contract.
+ *
+ * `overrideFor` supplies the keys a test varies, merged over the declaration
+ * below per route. Every suite that needed one was spreading `pages` back apart
+ * itself and restating the page shape in a cast to do it, which is three
+ * statements of a schema `config.ts` owns.
  */
-export function configFor(routePaths: readonly string[]): unknown {
+export function configFor(
+  routePaths: readonly string[],
+  overrideFor: (routePath: string) => Readonly<Record<string, unknown>> = () => ({}),
+): unknown {
   return {
     contentRoot: "src/content",
     assetRoot: "public",
@@ -73,6 +81,7 @@ export function configFor(routePaths: readonly string[]): unknown {
           canonical: `https://example.com${routePath}`,
           sitemap: { included: true, changeFrequency: "monthly", priority: 0.5 },
           performanceBudget: PERFORMANCE_BUDGET,
+          ...overrideFor(routePath),
         },
       ]),
     ),

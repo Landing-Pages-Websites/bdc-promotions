@@ -1,6 +1,10 @@
-import type { ManagedRichTextDocument } from "@landing-pages-websites/managed-site-contract";
+import type {
+  ManagedRichTextDocument,
+  StableId,
+} from "@landing-pages-websites/managed-site-contract";
 
 import type { AnchorPath } from "./anchors.js";
+import type { RichTextTemplates } from "./inline-block.js";
 import type { SourceLocation } from "./report.js";
 
 /** What the walker observed, before any contract shape is built. */
@@ -34,16 +38,42 @@ export interface CandidateBase {
    * is one value, so the gate merges them rather than calling them ambiguous.
    */
   readonly componentNames: readonly string[];
+  /**
+   * The same components, as `declarationKey` identities rather than names.
+   *
+   * A name is not an identity. Two modules may each declare `AdminCard`, and
+   * page attribution asked which routes render "a component called AdminCard",
+   * so one route's component was answered for by another's. That decides the
+   * field's scope, its content document and, since routes may now decline
+   * content, whether an internal screen is rewritten at all. `componentNames`
+   * stays for what it is good for: naming a section and slugging an anchor.
+   */
+  readonly componentKeys: readonly string[];
   readonly location: SourceLocation;
   readonly evidence: string;
   readonly ownership: Ownership;
   readonly identity: CandidateIdentity;
 }
 
+/**
+ * The component a value is handed to, when it is passed as a prop.
+ *
+ * Recorded where the reading resolved it. A rewriter that wants to annotate
+ * the element the RECEIVER renders the value in needs to find that
+ * declaration, and re-resolving the tag would be a second answer to a question
+ * extraction already answered.
+ */
+export interface CandidateReceiver {
+  readonly component: string;
+  readonly file: string;
+  readonly prop: string;
+}
+
 export interface PlainTextCandidate extends CandidateBase {
   readonly kind: "plain_text";
   readonly semantic: "body" | "label";
   readonly value: string;
+  readonly receiver?: CandidateReceiver;
 }
 
 export interface HeadingCandidate extends CandidateBase {
@@ -57,11 +87,31 @@ export interface RichTextCandidate extends CandidateBase {
   readonly document: ManagedRichTextDocument;
   /** Set when the formatted text is itself a heading element. */
   readonly headingLevel: number | null;
+  /**
+   * The site's own element for each mark, for a value rendered in place as ONE
+   * block of its element. Null for a document that is not one inline block (a
+   * list), which nothing renders in place.
+   */
+  readonly templates: RichTextTemplates | null;
 }
 
+/**
+ * A destination as the walker read it, and then as the site's pages judged it.
+ *
+ * `fragment` and `site_href` are what the walker can say ALONE: an href that
+ * names a place on this site, which only the site's page set can turn into a
+ * contract destination. `site-links.ts` replaces each with `page` or refuses
+ * the link before anything is gated, bound or emitted, so an emitter that
+ * meets either of them is meeting a defect, and throws.
+ */
 export type RawDestination =
   | { readonly kind: "fragment"; readonly fragment: string }
-  | { readonly kind: "self" }
+  | { readonly kind: "site_href"; readonly href: string }
+  | {
+      readonly kind: "page";
+      readonly pageId: StableId<"page">;
+      readonly fragment: string | null;
+    }
   | { readonly kind: "external"; readonly url: string }
   | { readonly kind: "email"; readonly address: string }
   | { readonly kind: "phone"; readonly number: string };
@@ -69,6 +119,13 @@ export type RawDestination =
 export interface LinkCandidate extends CandidateBase {
   readonly kind: "link";
   readonly label: string;
+  /**
+   * Whether the link field is the label's one editor. Only a label that is
+   * bare text is: a formatted label is its own rich-text field, and a label
+   * beside other elements has its text read as a field of its own, so offering
+   * it on the link too would give one label two editors.
+   */
+  readonly labelEditable: boolean;
   readonly destination: RawDestination;
   readonly newWindow: boolean;
 }
@@ -79,7 +136,11 @@ export interface ImageCandidate extends CandidateBase {
   readonly altText: string | null;
 }
 
-export type ItemFieldKind = "plain_text" | "heading_text" | "link" | "image";
+/**
+ * No `link`: an item has no label of its own for a link value, so
+ * `collections.ts` reports an item link and proposes no field for it.
+ */
+export type ItemFieldKind = "plain_text" | "heading_text" | "image";
 
 export interface ItemFieldSpec {
   readonly property: string;

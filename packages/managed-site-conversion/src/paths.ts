@@ -1,4 +1,5 @@
 import {
+  isManagedServedAssetPath,
   ManagedSiteContractError,
   parseRepositoryPath,
 } from "@landing-pages-websites/managed-site-contract";
@@ -29,7 +30,9 @@ function relativeAssetPath(source: string): string {
 
 /**
  * The repository path an image reference resolves to, or null when the result is
- * not a path the standard can carry.
+ * not a path the standard can carry. Judged by the contract's own
+ * isManagedServedAssetPath, so every image path the proposer emits is one the
+ * pinned contract accepts by construction, not by the config happening to agree.
  *
  * Both the contract emitter and the content emitter need this path, so they get
  * it from here: two constructions of one path is two chances for a proposal to
@@ -37,14 +40,15 @@ function relativeAssetPath(source: string): string {
  */
 export function assetRepositoryPath(assetRoot: string, source: string): string | null {
   const candidate = `${assetRoot}/${relativeAssetPath(source)}`;
-  return isRepositoryPath(candidate) ? candidate : null;
+  return isManagedServedAssetPath(candidate) ? candidate : null;
 }
 
 /**
- * Whether the configured root is what pushed an asset path past the limit, which
- * is the difference between a setting to change and a file to move.
+ * Whether the configured root is what made an asset path unrepresentable -- too
+ * long, or not a served path -- which is the difference between a setting to
+ * change and a file to move.
  */
 export function assetRootIsAtFault(assetRoot: string, source: string): boolean {
   const relative = relativeAssetPath(source);
-  return isRepositoryPath(relative) && !isRepositoryPath(`${assetRoot}/${relative}`);
+  return isRepositoryPath(relative) && !isManagedServedAssetPath(`${assetRoot}/${relative}`);
 }

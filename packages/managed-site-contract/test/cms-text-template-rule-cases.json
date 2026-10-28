@@ -1,0 +1,1040 @@
+{
+  "about": [
+    "One adversarial table for template text (editable words, live numbers) in a managed site, run by",
+    "site-starter packages/managed-site-contract (src/text-template.ts, the rule Site Guard and a site build hold a value to)",
+    "and by megaseo-web's CMS (the SQL writer's judge and its TypeScript twin cms_text_rules.ts).",
+    "Keep this file byte-identical wherever it is run; change every copy together.",
+    "templates: constraints.template declarations a valueCase or renderCase names.",
+    "valueCases: a plain_text value under its template, limits minLength 1, maxLength 60, newlines forbid unless the case states limits.",
+    "expected.reason is the CMS's refusal reason, in cmsTextRefusal's order: line_break; then for each placeholder in declared order, placeholder_missing or placeholder_repeated; then stray_brace; then too_long; then too_short. The contract package is held to outcome only.",
+    "renderCases: contract-only; each expected rendering is stable across CLDR versions (a separator CLDR has changed, such as de-CH's apostrophe, is not pinned here); renderManagedTextTemplateV1(template, text, inputs), and whether its inverse matchManagedTextTemplateV1 reads the inputs back (match false: the rendered text is ambiguous and reads as no match)."
+  ],
+  "defaultLimits": {
+    "minLength": 1,
+    "maxLength": 60,
+    "newlines": "forbid"
+  },
+  "templates": {
+    "count": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": false
+        }
+      ],
+      "plural": null
+    },
+    "count_one": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": false
+        }
+      ],
+      "plural": {
+        "placeholder": "count",
+        "category": "one"
+      }
+    },
+    "count_other": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": false
+        }
+      ],
+      "plural": {
+        "placeholder": "count",
+        "category": "other"
+      }
+    },
+    "two": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": false
+        },
+        {
+          "name": "total",
+          "minimumIntegerDigits": 1,
+          "grouping": false
+        }
+      ],
+      "plural": null
+    },
+    "step": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "step",
+          "minimumIntegerDigits": 2,
+          "grouping": false
+        }
+      ],
+      "plural": null
+    },
+    "grouped": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": true
+        }
+      ],
+      "plural": null
+    },
+    "grouped2": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": true
+        },
+        {
+          "name": "total",
+          "minimumIntegerDigits": 1,
+          "grouping": false
+        }
+      ],
+      "plural": null
+    },
+    "padded3": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 3,
+          "grouping": false
+        }
+      ],
+      "plural": null
+    },
+    "padgroup": {
+      "locale": "en",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 8,
+          "grouping": true
+        }
+      ],
+      "plural": null
+    },
+    "hi": {
+      "locale": "hi",
+      "placeholders": [
+        {
+          "name": "count",
+          "minimumIntegerDigits": 1,
+          "grouping": true
+        }
+      ],
+      "plural": null
+    }
+  },
+  "valueCases": [
+    {
+      "name": "token with words",
+      "template": "count",
+      "text": "{count} networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "words before the token",
+      "template": "count",
+      "text": "Networks: {count}",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "token alone",
+      "template": "count",
+      "text": "{count}",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "no space beside the token",
+      "template": "count",
+      "text": "{count}networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "NBSP after the token",
+      "template": "count",
+      "text": "{count} networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "NBSP before and after",
+      "template": "count",
+      "text": " {count} ",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "leading and trailing spaces are kept, not trimmed",
+      "template": "count",
+      "text": " {count} networks ",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "Arabic words around the token",
+      "template": "count",
+      "text": "{count} شبكات",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "Hebrew words before the token",
+      "template": "count",
+      "text": "רשתות {count}",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "RTL mark beside the token",
+      "template": "count",
+      "text": "‏{count} شبكات",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "HTML-ish markup is literal text",
+      "template": "count",
+      "text": "<b>{count}</b> networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "an entity is literal text",
+      "template": "count",
+      "text": "&lt;{count}&gt; networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "a script tag is literal text",
+      "template": "count",
+      "text": "<script>{count}</script>",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "emoji beside the token",
+      "template": "count",
+      "text": "{count} 🚀 networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "composed accent",
+      "template": "count",
+      "text": "{count} réseaux",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "backslashes around a real token",
+      "template": "count",
+      "text": "\\{count}\\ networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "a backslash inside the braces is not an escape",
+      "template": "count",
+      "text": "\\{count\\} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "fullwidth braces are not braces, real token present",
+      "template": "count",
+      "text": "{count} ｛networks｝",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "small braces are not braces, real token present",
+      "template": "count",
+      "text": "{count} ﹛networks﹜",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "very long word within the limit",
+      "template": "count",
+      "text": "{count} Pneumonoultramicroscopicsilicovolcanoconiosis",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "exactly at maxLength counting the token as written",
+      "template": "count",
+      "text": "{count} xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "one over maxLength counting the token as written",
+      "template": "count",
+      "text": "{count} xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "too_long"
+      }
+    },
+    {
+      "name": "missing token",
+      "template": "count",
+      "text": "networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "empty text",
+      "template": "count",
+      "text": "",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "token repeated",
+      "template": "count",
+      "text": "{count} of {count} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_repeated"
+      }
+    },
+    {
+      "name": "token adjacent to itself",
+      "template": "count",
+      "text": "{count}{count}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_repeated"
+      }
+    },
+    {
+      "name": "token renamed",
+      "template": "count",
+      "text": "{counts} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "token recased",
+      "template": "count",
+      "text": "{Count} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "token upper-cased",
+      "template": "count",
+      "text": "{COUNT} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "spaces inside the braces",
+      "template": "count",
+      "text": "{ count } networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "trailing space inside the braces",
+      "template": "count",
+      "text": "{count } networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "NBSP inside the braces",
+      "template": "count",
+      "text": "{ count} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "zero-width space inside the name",
+      "template": "count",
+      "text": "{co​unt} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "fullwidth braces instead of the token",
+      "template": "count",
+      "text": "｛count｝ networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "doubled braces",
+      "template": "count",
+      "text": "{{count}} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "extra closing brace",
+      "template": "count",
+      "text": "{count}} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "extra opening brace",
+      "template": "count",
+      "text": "{{count} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "literal opening brace in words",
+      "template": "count",
+      "text": "{count} networks {",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "literal closing brace in words",
+      "template": "count",
+      "text": "{count} networks }",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "empty braces",
+      "template": "count",
+      "text": "{} {count}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "undeclared placeholder",
+      "template": "count",
+      "text": "{count} {other} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "undeclared placeholder that is declared elsewhere",
+      "template": "count",
+      "text": "{count} of {total}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "line feed where breaks are forbidden",
+      "template": "count",
+      "text": "{count}\nnetworks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "line_break"
+      }
+    },
+    {
+      "name": "CRLF where breaks are forbidden",
+      "template": "count",
+      "text": "{count}\r\nnetworks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "line_break"
+      }
+    },
+    {
+      "name": "line feed where breaks are allowed",
+      "template": "count",
+      "text": "{count}\nnetworks",
+      "expected": {
+        "outcome": "accepted"
+      },
+      "limits": {
+        "newlines": "allow"
+      }
+    },
+    {
+      "name": "shorter than minLength",
+      "template": "count",
+      "text": "{count}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "too_short"
+      },
+      "limits": {
+        "minLength": 10
+      }
+    },
+    {
+      "name": "two tokens in declared order",
+      "template": "two",
+      "text": "{count} of {total}",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "two tokens in reverse order",
+      "template": "two",
+      "text": "{total} total, {count} shown",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "two tokens adjacent",
+      "template": "two",
+      "text": "{count}{total}",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "second token missing",
+      "template": "two",
+      "text": "{count} of all",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "first token repeated, second missing",
+      "template": "two",
+      "text": "{count} of {count}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_repeated"
+      }
+    },
+    {
+      "name": "second token repeated",
+      "template": "two",
+      "text": "{count} of {total} {total}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_repeated"
+      }
+    },
+    {
+      "name": "plural one form",
+      "template": "count_one",
+      "text": "{count} network",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "plural other form",
+      "template": "count_other",
+      "text": "{count} networks",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "plural one form may read as a word only if the token stays",
+      "template": "count_one",
+      "text": "one network",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "padded step",
+      "template": "step",
+      "text": "Step {step}",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "padded step with stray brace",
+      "template": "step",
+      "text": "Step {step}}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "grouped count",
+      "template": "grouped",
+      "text": "{count} venues",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "line break beats a missing token",
+      "template": "count",
+      "text": "networks\n",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "line_break"
+      }
+    },
+    {
+      "name": "stray brace beats too long",
+      "template": "count",
+      "text": "{count} {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "missing token beats too long",
+      "template": "count",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "stray brace beats too short",
+      "template": "count",
+      "text": "{count}}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      },
+      "limits": {
+        "minLength": 20
+      }
+    },
+    {
+      "name": "removing the token leaves braces that spell another",
+      "template": "count",
+      "text": "{co{count}unt}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "the first declared token is judged first",
+      "template": "two",
+      "text": "{total} {co{total}unt}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "a declared name as a prefix of another",
+      "template": "count",
+      "text": "{count_total} networks",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "placeholder_missing"
+      }
+    },
+    {
+      "name": "a declared name as a prefix beside the real token",
+      "template": "count",
+      "text": "{count}{count_x}",
+      "expected": {
+        "outcome": "rejected",
+        "reason": "stray_brace"
+      }
+    },
+    {
+      "name": "astral characters count once toward maxLength",
+      "template": "count",
+      "text": "{count} 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+      "expected": {
+        "outcome": "accepted"
+      }
+    },
+    {
+      "name": "a combining mark right after the token",
+      "template": "count",
+      "text": "{count}́ x",
+      "expected": {
+        "outcome": "accepted"
+      }
+    }
+  ],
+  "renderCases": [
+    {
+      "name": "zero",
+      "template": "count",
+      "text": "{count} networks",
+      "inputs": {
+        "count": 0
+      },
+      "expected": {
+        "rendered": "0 networks",
+        "match": true
+      }
+    },
+    {
+      "name": "one",
+      "template": "count",
+      "text": "{count} networks",
+      "inputs": {
+        "count": 1
+      },
+      "expected": {
+        "rendered": "1 networks",
+        "match": true
+      }
+    },
+    {
+      "name": "two",
+      "template": "count",
+      "text": "{count} networks",
+      "inputs": {
+        "count": 2
+      },
+      "expected": {
+        "rendered": "2 networks",
+        "match": true
+      }
+    },
+    {
+      "name": "negative",
+      "template": "count",
+      "text": "{count} networks",
+      "inputs": {
+        "count": -3
+      },
+      "expected": {
+        "rendered": "-3 networks",
+        "match": true
+      }
+    },
+    {
+      "name": "large without grouping",
+      "template": "count",
+      "text": "{count} networks",
+      "inputs": {
+        "count": 1234567
+      },
+      "expected": {
+        "rendered": "1234567 networks",
+        "match": true
+      }
+    },
+    {
+      "name": "large with grouping",
+      "template": "grouped",
+      "text": "{count} venues",
+      "inputs": {
+        "count": 1234567
+      },
+      "expected": {
+        "rendered": "1,234,567 venues",
+        "match": true
+      }
+    },
+    {
+      "name": "max safe integer",
+      "template": "count",
+      "text": "{count}",
+      "inputs": {
+        "count": 9007199254740991
+      },
+      "expected": {
+        "rendered": "9007199254740991",
+        "match": true
+      }
+    },
+    {
+      "name": "padded single digit",
+      "template": "step",
+      "text": "Step {step}",
+      "inputs": {
+        "step": 7
+      },
+      "expected": {
+        "rendered": "Step 07",
+        "match": true
+      }
+    },
+    {
+      "name": "padded already wide",
+      "template": "step",
+      "text": "Step {step}",
+      "inputs": {
+        "step": 123
+      },
+      "expected": {
+        "rendered": "Step 123",
+        "match": true
+      }
+    },
+    {
+      "name": "padded zero",
+      "template": "step",
+      "text": "Step {step}",
+      "inputs": {
+        "step": 0
+      },
+      "expected": {
+        "rendered": "Step 00",
+        "match": true
+      }
+    },
+    {
+      "name": "two placeholders",
+      "template": "two",
+      "text": "{total} total, {count} shown",
+      "inputs": {
+        "count": 3,
+        "total": 28
+      },
+      "expected": {
+        "rendered": "28 total, 3 shown",
+        "match": true
+      }
+    },
+    {
+      "name": "HTML-ish text stays text",
+      "template": "count",
+      "text": "<b>{count}</b>",
+      "inputs": {
+        "count": 2
+      },
+      "expected": {
+        "rendered": "<b>2</b>",
+        "match": true
+      }
+    },
+    {
+      "name": "RTL text",
+      "template": "count",
+      "text": "{count} شبكات",
+      "inputs": {
+        "count": 5
+      },
+      "expected": {
+        "rendered": "5 شبكات",
+        "match": true
+      }
+    },
+    {
+      "name": "negative zero",
+      "template": "count",
+      "text": "{count}",
+      "inputs": {
+        "count": -0.0
+      },
+      "expected": {
+        "rendered": "0",
+        "match": true
+      }
+    },
+    {
+      "name": "padded negative",
+      "template": "padded3",
+      "text": "{count}",
+      "inputs": {
+        "count": -5
+      },
+      "expected": {
+        "rendered": "-005",
+        "match": true
+      }
+    },
+    {
+      "name": "padded and grouped",
+      "template": "padgroup",
+      "text": "{count}",
+      "inputs": {
+        "count": 5
+      },
+      "expected": {
+        "rendered": "00,000,005",
+        "match": true
+      }
+    },
+    {
+      "name": "a literal digit beside a placeholder",
+      "template": "two",
+      "text": "{count}0{total}",
+      "inputs": {
+        "count": 10,
+        "total": 5
+      },
+      "expected": {
+        "rendered": "1005",
+        "match": true
+      }
+    },
+    {
+      "name": "a literal comma beside a grouped placeholder",
+      "template": "grouped2",
+      "text": "{count},{total}",
+      "inputs": {
+        "count": 1000,
+        "total": 5
+      },
+      "expected": {
+        "rendered": "1,000,5",
+        "match": true
+      }
+    },
+    {
+      "name": "adjacent placeholders render one way but read two ways",
+      "template": "two",
+      "text": "{count}{total}",
+      "inputs": {
+        "count": 12,
+        "total": 3
+      },
+      "expected": {
+        "rendered": "123",
+        "match": false
+      }
+    },
+    {
+      "name": "Indian grouping",
+      "template": "hi",
+      "text": "{count}",
+      "inputs": {
+        "count": 123456789
+      },
+      "expected": {
+        "rendered": "12,34,56,789",
+        "match": true
+      }
+    },
+    {
+      "name": "fraction refused",
+      "template": "count",
+      "text": "{count}",
+      "inputs": {
+        "count": 1.5
+      },
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "name": "unsafe integer refused",
+      "template": "count",
+      "text": "{count}",
+      "inputs": {
+        "count": 9007199254740992
+      },
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "name": "missing input refused",
+      "template": "two",
+      "text": "{count} of {total}",
+      "inputs": {
+        "count": 1
+      },
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "name": "extra input refused",
+      "template": "count",
+      "text": "{count}",
+      "inputs": {
+        "count": 1,
+        "total": 2
+      },
+      "expected": {
+        "error": true
+      }
+    },
+    {
+      "name": "broken text refused",
+      "template": "count",
+      "text": "networks",
+      "inputs": {
+        "count": 1
+      },
+      "expected": {
+        "error": true
+      }
+    }
+  ]
+}

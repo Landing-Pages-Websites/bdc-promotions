@@ -30,8 +30,18 @@ export interface ParsedModule {
   readonly source: ts.SourceFile;
 }
 
-const PAGE_BASENAMES = Object.freeze(["page.tsx", "page.jsx", "page.ts", "page.js"]);
-const LAYOUT_BASENAMES = Object.freeze(["layout.tsx", "layout.jsx", "layout.ts", "layout.js"]);
+const PAGE_BASENAMES = Object.freeze([
+  "page.tsx",
+  "page.jsx",
+  "page.ts",
+  "page.js",
+]);
+const LAYOUT_BASENAMES = Object.freeze([
+  "layout.tsx",
+  "layout.jsx",
+  "layout.ts",
+  "layout.js",
+]);
 const MODULE_EXTENSIONS = Object.freeze([".tsx", ".ts", ".jsx", ".js"]);
 
 /**
@@ -64,18 +74,26 @@ const IGNORED_DIRECTORIES = new Set([
 ]);
 
 function isTransparentSegment(segment: string): boolean {
-  return segment.startsWith("(") || segment.startsWith("@") || segment.startsWith("_");
+  return (
+    segment.startsWith("(") ||
+    segment.startsWith("@") ||
+    segment.startsWith("_")
+  );
 }
 
 function findAppDirectory(repositoryRoot: string): string | null {
   for (const candidate of ["app", join("src", "app")]) {
     const absolute = join(repositoryRoot, candidate);
-    if (existsSync(absolute) && statSync(absolute).isDirectory()) return absolute;
+    if (existsSync(absolute) && statSync(absolute).isDirectory())
+      return absolute;
   }
   return null;
 }
 
-function firstExisting(directory: string, basenames: readonly string[]): string | null {
+function firstExisting(
+  directory: string,
+  basenames: readonly string[],
+): string | null {
   for (const basename of basenames) {
     const candidate = join(directory, basename);
     if (existsSync(candidate)) return candidate;
@@ -107,7 +125,9 @@ export function discoverRoutes(repositoryRoot: string): readonly RouteModule[] {
   return walkDirectories(appDirectory)
     .map((directory) => {
       const file = firstExisting(directory, PAGE_BASENAMES);
-      return file === null ? null : { routePath: routePathFor(appDirectory, directory), file };
+      return file === null
+        ? null
+        : { routePath: routePathFor(appDirectory, directory), file };
     })
     .filter((route): route is RouteModule => route !== null)
     .sort((left, right) => left.routePath.localeCompare(right.routePath));
@@ -125,7 +145,8 @@ export function discoverRoutes(repositoryRoot: string): readonly RouteModule[] {
  */
 export function containsPath(parent: string, child: string): boolean {
   const top = realPathOf(parent);
-  const under = (path: string): boolean => path === top || path.startsWith(top + sep);
+  const under = (path: string): boolean =>
+    path === top || path.startsWith(top + sep);
   return under(child) || under(realPathOf(child));
 }
 
@@ -163,11 +184,28 @@ export function discoverLayoutChain(
 export function parseModule(file: string): ParsedModule {
   const real = realPathOf(file);
   const text = readFileSync(real, "utf8");
-  const source = ts.createSourceFile(real, text, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TSX);
+  const source = ts.createSourceFile(
+    real,
+    text,
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TSX,
+  );
   return { file: real, source };
 }
 
-/** Directories that never hold the repository's own source. */
+/**
+ * Directories that never hold the repository's own source.
+ *
+ * `.managed-site-proposal` is this tool's own default output, which lands
+ * INSIDE the repository it is reading. The name scan already excludes whatever
+ * `--out` a run was given, but only that scan and only for that run; every
+ * other walk here -- render sites, metadata, the proposer's own -- would read a
+ * previous run's report as repository source. Nothing breaks today, and the
+ * reason is an accident: the report file that quotes `id="ms-..."` evidence is
+ * a `.txt`, and `.txt` is not a searched extension. Skipping the directory
+ * makes that a rule instead of a coincidence.
+ */
 const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
   "node_modules",
   ".git",
@@ -177,6 +215,7 @@ const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set([
   "build",
   "out",
   "coverage",
+  ".managed-site-proposal",
 ]);
 
 /**
@@ -200,7 +239,10 @@ export function repositoryFiles(
   const visit = (directory: string): void => {
     let entries: readonly Dirent[];
     try {
-      entries = readdirSync(directory, { withFileTypes: true, encoding: "utf8" });
+      entries = readdirSync(directory, {
+        withFileTypes: true,
+        encoding: "utf8",
+      });
     } catch {
       return;
     }
@@ -266,13 +308,19 @@ export function reactMajorOf(repositoryRoot: string): number | null {
 function readReactMajor(repositoryRoot: string): number | null {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(readFileSync(join(repositoryRoot, "package.json"), "utf8"));
+    parsed = JSON.parse(
+      readFileSync(join(repositoryRoot, "package.json"), "utf8"),
+    );
   } catch {
     return null;
   }
   if (typeof parsed !== "object" || parsed === null) return null;
   const manifest = parsed as Record<string, unknown>;
-  for (const field of ["dependencies", "devDependencies", "peerDependencies"] as const) {
+  for (const field of [
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+  ] as const) {
     const group = manifest[field];
     if (typeof group !== "object" || group === null) continue;
     const range = (group as Record<string, unknown>)["react"];
@@ -316,7 +364,7 @@ function isInsideRepository(file: string, repositoryRoot: string): boolean {
   return inside !== "" && !inside.startsWith("..") && !isAbsolute(inside);
 }
 
-function realPathOf(path: string): string {
+export function realPathOf(path: string): string {
   try {
     return realpathSync(path);
   } catch {
@@ -340,7 +388,11 @@ export function repositoryFileForSpecifier(
   return resolveSpecifierToFile(specifier, fromFile, repositoryRoot);
 }
 
-function resolveSpecifierToFile(specifier: string, fromFile: string, repositoryRoot: string): string | null {
+function resolveSpecifierToFile(
+  specifier: string,
+  fromFile: string,
+  repositoryRoot: string,
+): string | null {
   const base = specifier.startsWith("@/")
     ? resolve(repositoryRoot, specifier.slice(2))
     : specifier.startsWith(".")
@@ -438,7 +490,10 @@ export function importedBindingsOf(
 }
 
 /** Barrel files are ordinary in this codebase, so re-exports are followed too. */
-export function reExportsOf(module: ParsedModule, repositoryRoot: string): readonly ReExport[] {
+export function reExportsOf(
+  module: ParsedModule,
+  repositoryRoot: string,
+): readonly ReExport[] {
   const exports: ReExport[] = [];
   for (const statement of module.source.statements) {
     if (!ts.isExportDeclaration(statement)) continue;
@@ -496,13 +551,23 @@ const NAMED_FUNCTIONS = new WeakMap<ts.SourceFile, readonly NamedFunction[]>();
  * body followed into that no declaration answers for, or a declaration whose
  * markup nothing collects. Teaching this one a new shape teaches both.
  */
-export function namedFunctionsOf(source: ts.SourceFile): readonly NamedFunction[] {
+export function namedFunctionsOf(
+  source: ts.SourceFile,
+): readonly NamedFunction[] {
   const cached = NAMED_FUNCTIONS.get(source);
   if (cached !== undefined) return cached;
   const found: NamedFunction[] = [];
   const visit = (node: ts.Node): void => {
-    if (ts.isFunctionDeclaration(node) && node.name !== undefined && node.body !== undefined) {
-      found.push({ name: node.name.text, body: node.body, parameters: node.parameters });
+    if (
+      ts.isFunctionDeclaration(node) &&
+      node.name !== undefined &&
+      node.body !== undefined
+    ) {
+      found.push({
+        name: node.name.text,
+        body: node.body,
+        parameters: node.parameters,
+      });
     }
     if (
       ts.isVariableDeclaration(node) &&
@@ -510,7 +575,10 @@ export function namedFunctionsOf(source: ts.SourceFile): readonly NamedFunction[
       node.initializer !== undefined
     ) {
       const initializer = unwrapTransparent(node.initializer);
-      if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) {
+      if (
+        ts.isArrowFunction(initializer) ||
+        ts.isFunctionExpression(initializer)
+      ) {
         found.push({
           name: node.name.text,
           body: initializer.body,
@@ -530,7 +598,11 @@ export function lineOf(source: ts.SourceFile, node: ts.Node): number {
 }
 
 /** Where a node is, precisely enough for a reader AND for an editor. */
-export function locationOf(source: ts.SourceFile, file: string, node: ts.Node): SourceLocation {
+export function locationOf(
+  source: ts.SourceFile,
+  file: string,
+  node: ts.Node,
+): SourceLocation {
   return { file, line: lineOf(source, node), offset: node.getStart(source) };
 }
 

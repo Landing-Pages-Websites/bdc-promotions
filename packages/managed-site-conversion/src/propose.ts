@@ -10,14 +10,28 @@ import {
   projectManagedSiteContentDocumentV1,
 } from "@landing-pages-websites/managed-site-contract";
 
-import { bindCandidates, routeSlug, type FieldBinding, type PageBinding } from "./bindings.js";
+import {
+  bindCandidates,
+  routeSlug,
+  type FieldBinding,
+  type PageBinding,
+} from "./bindings.js";
 import type { Candidate } from "./candidates.js";
 import type { TagRoles } from "./collections.js";
 import { loadConfig, type ConversionConfig } from "./config.js";
 import { ContractEmitter, type ContractParts } from "./emit-contract.js";
 import { emitContent, type ContentEmission } from "./emit-content.js";
-import { emitSeo, type HeadingOutlineEntry, type SeoEmission } from "./emit-seo.js";
-import { extractComponent, resolveTagRoles, type ComponentDeclaration } from "./extract.js";
+import { resolveSiteLinks, sitePagesOf } from "./site-links.js";
+import {
+  emitSeo,
+  type HeadingOutlineEntry,
+  type SeoEmission,
+} from "./emit-seo.js";
+import {
+  extractComponent,
+  resolveTagRoles,
+  type ComponentDeclaration,
+} from "./extract.js";
 import { applyConfidenceGate } from "./gate.js";
 import { IdLedger } from "./id-ledger.js";
 import { isJsonObject, writeAtPointer, type JsonObject } from "./json-write.js";
@@ -25,6 +39,7 @@ import { readNextMetadata, type NextMetadata } from "./next-metadata.js";
 import { isRepositoryPath } from "./paths.js";
 import {
   callSiteIndex,
+  type CallSiteIndex,
   declarationKey,
   resolveRenderTree,
   tagResolver,
@@ -35,7 +50,13 @@ import {
   type Finding,
   type ProposalReport,
 } from "./report.js";
-import { discoverLayoutChain, discoverRoutes, ModuleCache, type RouteModule } from "./scan.js";
+import { routeAnswers404Finding } from "./route-serving.js";
+import {
+  discoverLayoutChain,
+  discoverRoutes,
+  ModuleCache,
+  type RouteModule,
+} from "./scan.js";
 
 export interface ProposeOptions {
   readonly repositoryRoot: string;
@@ -70,6 +91,23 @@ export interface Proposal {
    * know which values are rivals of which.
    */
   readonly ambiguous: readonly (readonly Candidate[])[];
+  /**
+   * Every accepted value, with the field id it was given and where it was read
+   * from.
+   *
+   * The proposal already computes this join -- `bindCandidates` resolves a
+   * candidate's anchor to its id at one line -- and used to drop it at the
+   * boundary. A rewriter that turns a hardcoded literal into a contract read
+   * needs exactly this and nothing else, and rebuilding it outside would be a
+   * second implementation of the anchor-to-id rule.
+   */
+  readonly fields: readonly FieldBinding[];
+  /** Every place each reachable component is rendered. */
+  readonly callSites: CallSiteIndex;
+  /** The routes, with the id each page was given. */
+  readonly pages: readonly PageBinding[];
+  /** Where the content documents live, which is also where the runtime goes. */
+  readonly contentRoot: string;
 }
 
 interface RouteScan {
@@ -82,6 +120,7 @@ interface RouteScan {
 
 interface ComponentScan {
   readonly candidates: readonly Candidate[];
+  readonly callSites: CallSiteIndex;
   readonly findings: readonly Finding[];
 }
 
@@ -96,15 +135,22 @@ function scanRoute(
   repositoryRoot: string,
   cache: ModuleCache,
   ledger: IdLedger,
+  ownsContent: boolean,
 ): RouteScan {
-  const chain = [route.file, ...discoverLayoutChain(repositoryRoot, route.file)];
+  const chain = [
+    route.file,
+    ...discoverLayoutChain(repositoryRoot, route.file),
+  ];
   const tree = resolveRenderTree(chain, repositoryRoot, cache);
   return {
     binding: {
       routePath: route.routePath,
+      file: route.file,
       pageId: ledger.resolve("page", `route:${route.routePath}`),
       slug: routeSlug(route.routePath),
-      componentNames: new Set(tree.components.map((declaration) => declaration.name)),
+      componentKeys: new Set(tree.components.map(declarationKey)),
+      render: tree.route,
+      ownsContent,
     },
     components: tree.components,
     metadata: readNextMetadata(
@@ -114,6 +160,27 @@ function scanRoute(
     ),
     findings: tree.findings,
   };
+}
+
+/**
+ * The declarations at least one content-bearing route renders.
+ *
+ * A component is shared, so "does this belong to an internal screen" is a
+ * question about the routes that REACH it, never about the file: a header
+ * rendered by both `/admin` and `/about` is still the customer's. Only a
+ * declaration no content-bearing route reaches is left out.
+ */
+function contentBearingDeclarations(
+  routes: readonly RouteScan[],
+): ReadonlySet<string> {
+  const keys = new Set<string>();
+  for (const route of routes) {
+    if (!route.binding.ownsContent) continue;
+    for (const declaration of route.components) {
+      keys.add(declarationKey(declaration));
+    }
+  }
+  return keys;
 }
 
 /**
@@ -136,16 +203,25 @@ function extractRendered(
   // it from the declarations reachability already resolved keeps dead code from
   // counting as evidence.
   const callSites = callSiteIndex(
-    [...new Map(routes.flatMap((route) => route.components.map((d) => [declarationKey(d), d]))).values()],
+    [
+      ...new Map(
+        routes.flatMap((route) =>
+          route.components.map((d) => [declarationKey(d), d]),
+        ),
+      ).values(),
+    ],
     tags,
   );
+  const bearing = contentBearingDeclarations(routes);
   for (const route of routes) {
     for (const declaration of route.components) {
       const file = declaration.module.file;
       const key = declarationKey(declaration);
+      if (!bearing.has(key)) continue;
       if (walked.has(key)) continue;
       walked.add(key);
-      const roles = rolesByFile.get(file) ?? resolveTagRoles(declaration.module);
+      const roles =
+        rolesByFile.get(file) ?? resolveTagRoles(declaration.module);
       rolesByFile.set(file, roles);
       const extracted = extractComponent(
         declaration,
@@ -159,7 +235,11 @@ function extractRendered(
       findings.push(...extracted.findings);
     }
   }
-  return { candidates, findings };
+  // The call sites go out with the candidates. A rewrite that has to thread a
+  // value INTO a component -- because the component is a client module and
+  // cannot call the runtime -- needs to edit every caller, and finding callers
+  // by spelling is the mistake this package has made three times.
+  return { candidates, findings, callSites };
 }
 
 /**
@@ -180,13 +260,28 @@ function headingOutlineFor(
           ? candidate.headingLevel
           : null;
     if (level === null) continue;
-    for (const page of pages.filter((entry) => binding.pageIds.includes(entry.pageId))) {
+    for (const page of pages.filter((entry) =>
+      binding.pageIds.includes(entry.pageId),
+    )) {
       const entries = outline.get(page.routePath) ?? [];
       entries.push({ fieldId: binding.fieldId, semanticLevel: level });
       outline.set(page.routePath, entries);
     }
   }
   return outline;
+}
+
+/** The routes the scan found and this run did not keep as pages. */
+function excludedRoutesOf(
+  scanned: readonly RouteScan[],
+  pages: readonly PageBinding[],
+): ReadonlySet<string> {
+  const kept = new Set(pages.map((page) => page.routePath));
+  return new Set(
+    scanned
+      .map((entry) => entry.binding.routePath)
+      .filter((route) => !kept.has(route)),
+  );
 }
 
 function bridgeFindings(config: ConversionConfig): readonly Finding[] {
@@ -282,7 +377,10 @@ function contentPathOf(contentRoot: string, slug: string): string {
   return `${contentRoot}/pages/${slug}.json`;
 }
 
-function unrepresentableRouteFinding(page: PageBinding, contentRoot: string): Finding {
+function unrepresentableRouteFinding(
+  page: PageBinding,
+  contentRoot: string,
+): Finding {
   return {
     code: "ROUTE_PATH_UNREPRESENTABLE",
     anchor: null,
@@ -316,35 +414,86 @@ export function propose(options: ProposeOptions): Proposal {
 
   const cache = new ModuleCache();
   const discovered = discoverRoutes(options.repositoryRoot);
-  const templates = discovered.filter((route) => isDynamicRoute(route.routePath));
+  const templates = discovered.filter((route) =>
+    isDynamicRoute(route.routePath),
+  );
   collector.addMany(templates.map(dynamicRouteFinding));
   const scanned = discovered
     .filter((route) => !isDynamicRoute(route.routePath))
-    .map((route) => scanRoute(route, options.repositoryRoot, cache, ledger));
+    .map((route) =>
+      scanRoute(
+        route,
+        options.repositoryRoot,
+        cache,
+        ledger,
+        // Absent is not false. A route nobody declared keeps today's behaviour
+        // -- its values are proposed -- and the SEO descriptor refuses the run
+        // separately, naming the route. Reading absence as "no content" would
+        // turn forgetting to declare a page into silently converting none of
+        // it, with a contract that validates.
+        config.pages.get(route.routePath)?.managedContent ?? true,
+      ),
+    );
   for (const entry of scanned) collector.addMany(entry.findings);
 
-  const components = extractRendered(scanned, options.repositoryRoot, cache);
-  collector.addMany(components.findings);
+  // A route this repository PROVES it does not serve is not a page, and joins
+  // the two exclusions beside it -- a dynamic template, a path no content file
+  // can carry. The whole page descriptor is the advertisement -- canonical,
+  // robots, title, sitemap -- so excluding the route is what keeps the contract
+  // from describing a URL that 404s. The id its scan minted stays in the
+  // ledger, so a route that stops being hidden keeps the page id it had.
+  const served: RouteScan[] = [];
+  for (const entry of scanned) {
+    const render = entry.binding.render;
+    if (render.kind !== "not_found") {
+      served.push(entry);
+      continue;
+    }
+    collector.add(
+      routeAnswers404Finding(
+        entry.binding.routePath,
+        config.pages.get(entry.binding.routePath),
+        render,
+      ),
+    );
+  }
 
-  const gate = applyConfidenceGate(components.candidates);
-  collector.addMany(gate.findings);
+  const components = extractRendered(served, options.repositoryRoot, cache);
+  collector.addMany(components.findings);
 
   // The load-time budget on `contentRoot` guarantees room for the longest slug a
   // single route segment can produce. A route is up to 2,048 characters and folds
   // into ONE segment, so a long enough route is unrepresentable under any root.
   // That is a fact about the route, and it is reported here, where the routes are
   // known, rather than reaching the contract as an invalid path.
-  const routable = scanned.filter((entry) =>
+  const routable = served.filter((entry) =>
     isRepositoryPath(contentPathOf(config.contentRoot, entry.binding.slug)),
   );
+
+  // Same-site links resolve against exactly the pages the contract will
+  // declare, and BEFORE the gate: a link refused here proposes nothing, so it
+  // must not make a sibling's anchor ambiguous on its way out.
+  const links = resolveSiteLinks(components.candidates, sitePagesOf(routable));
+  collector.addMany(links.findings);
+
+  const gate = applyConfidenceGate(links.candidates);
+  collector.addMany(gate.findings);
+
   collector.addMany(
-    scanned
+    served
       .filter((entry) => !routable.includes(entry))
-      .map((entry) => unrepresentableRouteFinding(entry.binding, config.contentRoot)),
+      .map((entry) =>
+        unrepresentableRouteFinding(entry.binding, config.contentRoot),
+      ),
   );
 
   const pages = routable.map((entry) => entry.binding);
-  const bound = bindCandidates(gate.accepted, pages, ledger, config.contentRoot);
+  const bound = bindCandidates(
+    gate.accepted,
+    pages,
+    ledger,
+    config.contentRoot,
+  );
   collector.addMany(bound.findings);
 
   const emitter = new ContractEmitter({
@@ -359,16 +508,22 @@ export function propose(options: ProposeOptions): Proposal {
     config,
     repositoryRoot: options.repositoryRoot,
     parts,
-    pagesById: new Map(pages.map((page) => [page.pageId, page])),
   });
 
   const seo = emitSeo({
     config,
     ledger,
     pages,
-    metadataByRoute: new Map(scanned.map((entry) => [entry.binding.routePath, entry.metadata])),
+    metadataByRoute: new Map(
+      served.map((entry) => [entry.binding.routePath, entry.metadata]),
+    ),
     headingOutline: headingOutlineFor(bound.fields, pages),
     primaryImageByRoute: new Map(),
+    pagesWithContent: new Set(bound.fields.flatMap((field) => field.pageIds)),
+    // Every route the scan found and this run left out, so a declaration for
+    // one is answered by the finding that excluded it rather than by a second,
+    // misleading "this repository serves no such route".
+    excludedRoutes: excludedRoutesOf(scanned, pages),
   });
   collector.addMany(seo.findings);
 
@@ -402,6 +557,10 @@ export function propose(options: ProposeOptions): Proposal {
     ledger,
     validationError: validation.error,
     ambiguous: gate.ambiguous,
+    fields: bound.fields,
+    callSites: components.callSites,
+    contentRoot: config.contentRoot,
+    pages,
   };
 }
 

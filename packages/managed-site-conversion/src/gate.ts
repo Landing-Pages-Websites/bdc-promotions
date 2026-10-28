@@ -67,7 +67,8 @@ function mergeDeclaredReadings(group: readonly Candidate[]): readonly Candidate[
   }
   if (modules.size !== 1) return group;
   const names = new Set(group.flatMap((candidate) => candidate.componentNames));
-  return [{ ...first, componentNames: [...names] }];
+  const keys = new Set(group.flatMap((candidate) => candidate.componentKeys));
+  return [{ ...first, componentNames: [...names], componentKeys: [...keys] }];
 }
 
 function ambiguityFinding(anchor: string, candidate: Candidate, siblings: number): Finding {

@@ -3,9 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const FIXTURE = "fixtures/astro-reference";
-const BRIDGE_SOURCE = "https://app.gomega.ai/review-bridge/v7/review-bridge.js";
+const BRIDGE_SOURCE = "https://app.gomega.ai/review-bridge/v13/review-bridge.js";
 const BRIDGE_INTEGRITY =
-  "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ";
+  "sha384-GrpOL0+U/drV+M5Xmr7vIU11jHh4rpRJrsIAvBgdXnytkyWHDnssPzhI1wK/GpTg";
 
 function repositoryFile(path) {
   return new URL(`../${path}`, import.meta.url);
@@ -72,7 +72,7 @@ test("defines one exact Astro contract and projected content checkpoint", async 
     editProtocol: 2,
     annotationVersion: 1,
     delivery: {
-      version: "v7",
+      version: "v13",
       src: BRIDGE_SOURCE,
       integrity: BRIDGE_INTEGRITY,
       crossOrigin: "anonymous",
@@ -246,14 +246,24 @@ test("the tracked Astro output matches the source it was built from", async () =
       "built page names the promoted bridge",
     );
     assert.ok(page.includes(BRIDGE_INTEGRITY), "built page pins its integrity");
-    assert.doesNotMatch(
-      page,
-      /review-bridge\/v(?!7\/)[0-9]+\//u,
-      "built page names no superseded delivery",
-    );
+    // Every bridge the page names is the promoted one; derived from the
+    // constant so promoting the next version cannot leave this pinned to the
+    // last.
+    const promoted = BRIDGE_SOURCE.match(/review-bridge\/(v[0-9]+)\//u)[1];
+    for (const [, version] of page.matchAll(/review-bridge\/(v[0-9]+)\//gu)) {
+      assert.equal(version, promoted, "built page names no superseded delivery");
+    }
     // Every value the reference renders inside a collection item is annotated
     // with the item that owns it, or an editor reading the page cannot tell two
     // rows apart. A rebuild is what puts them here.
     assert.match(page, /data-gomega-item-id="item_/u);
   }
+  // A mark renders through the site's own element and names itself on it, so
+  // an editor previewing a change can find and reuse that element. The
+  // reference's service bodies carry marks, so a rebuild that dropped the
+  // annotation shows here.
+  assert.ok(
+    pages.some((page) => /<(strong|em)[^>]* data-gomega-mark="(bold|italic)"/u.test(page)),
+    "built rich text names its marks",
+  );
 });

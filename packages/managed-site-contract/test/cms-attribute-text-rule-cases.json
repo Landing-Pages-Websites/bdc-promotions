@@ -1,0 +1,751 @@
+{
+  "about": [
+    "One adversarial table for attribute text (a plain_text field whose value renders into one attribute of an element) in a managed site, run by",
+    "site-starter packages/managed-site-contract (src/attribute-text.ts and fields.ts, the rules Site Guard and a site build hold a declaration and a value to)",
+    "and by megaseo-web's CMS (the SQL writer's judge and its TypeScript twin cms_text_rules.ts).",
+    "Keep this file byte-identical wherever it is run; change every copy together.",
+    "attributeNames: whether a declared constraints.attribute is one a field may write. Exact, case-sensitive; anything else is refused (contract) or makes the field's limits unknown and unsavable (CMS).",
+    "valueCases: an attribute text value under limits minLength 1, maxLength 512, newlines forbid unless the case states limits.",
+    "expected.reason is the CMS's refusal reason, in cmsTextRefusal's order: line_break; then unsafe_character; then blank; then too_long; then too_short. null is admitted. The contract package is held to outcome only.",
+    "policyCases: contract-only; a plain_text field declaring an attribute, and whether the declaration parses."
+  ],
+  "defaultLimits": {
+    "minLength": 1,
+    "maxLength": 512,
+    "newlines": "forbid"
+  },
+  "attributeNames": [
+    {
+      "name": "aria-label",
+      "known": true
+    },
+    {
+      "name": "aria-roledescription",
+      "known": true
+    },
+    {
+      "name": "placeholder",
+      "known": true
+    },
+    {
+      "name": "title",
+      "known": true
+    },
+    {
+      "name": "alt",
+      "known": true
+    },
+    {
+      "name": "Aria-Label",
+      "known": false
+    },
+    {
+      "name": "ARIA-LABEL",
+      "known": false
+    },
+    {
+      "name": "aria-label ",
+      "known": false
+    },
+    {
+      "name": " aria-label",
+      "known": false
+    },
+    {
+      "name": "aria_label",
+      "known": false
+    },
+    {
+      "name": "aria-labelledby",
+      "known": false
+    },
+    {
+      "name": "aria-describedby",
+      "known": false
+    },
+    {
+      "name": "aria-description",
+      "known": false
+    },
+    {
+      "name": "aria-valuetext",
+      "known": false
+    },
+    {
+      "name": "aria-hidden",
+      "known": false
+    },
+    {
+      "name": "href",
+      "known": false
+    },
+    {
+      "name": "src",
+      "known": false
+    },
+    {
+      "name": "srcset",
+      "known": false
+    },
+    {
+      "name": "style",
+      "known": false
+    },
+    {
+      "name": "class",
+      "known": false
+    },
+    {
+      "name": "id",
+      "known": false
+    },
+    {
+      "name": "onclick",
+      "known": false
+    },
+    {
+      "name": "onmouseover",
+      "known": false
+    },
+    {
+      "name": "formaction",
+      "known": false
+    },
+    {
+      "name": "action",
+      "known": false
+    },
+    {
+      "name": "xlink:href",
+      "known": false
+    },
+    {
+      "name": "data-x",
+      "known": false
+    },
+    {
+      "name": "data-gomega-field-id",
+      "known": false
+    },
+    {
+      "name": "value",
+      "known": false
+    },
+    {
+      "name": "content",
+      "known": false
+    },
+    {
+      "name": "",
+      "known": false
+    }
+  ],
+  "valueCases": [
+    {
+      "name": "a label",
+      "text": "Open menu",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "a nav label",
+      "text": "Primary",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "a placeholder with dots",
+      "text": "Get in touch...",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "an ellipsis character",
+      "text": "Get in touch\u2026",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "double quotes",
+      "text": "Say \"hello\"",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "single quotes",
+      "text": "It's ours",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "markup is inert text in an attribute",
+      "text": "<script>alert(1)</script>",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "an entity is text, not an entity",
+      "text": "&amp; &quot;",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "one character",
+      "text": "a",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "a digit",
+      "text": "0",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "punctuation only",
+      "text": "?",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "leading space kept",
+      "text": "  Menu",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "trailing space kept",
+      "text": "Menu  ",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "inner no-break space",
+      "text": "Get\u00a0in touch",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "a no-break space beside a letter",
+      "text": "\u00a0a",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "a zero-width joiner inside an emoji",
+      "text": "\ud83d\udc69\u200d\ud83d\udcbb laptop",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "accents (NFC)",
+      "text": "Caf\u00e9",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "an astral character",
+      "text": "Menu \ud83c\udf54",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "right-to-left script",
+      "text": "\u05ea\u05e4\u05e8\u05d9\u05d8",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "exactly the maximum",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "empty",
+      "text": "",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "one space",
+      "text": " ",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "several spaces",
+      "text": "     ",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a no-break space",
+      "text": "\u00a0",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a zero-width space",
+      "text": "\u200b",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a zero-width non-joiner",
+      "text": "\u200c",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a zero-width joiner",
+      "text": "\u200d",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a word joiner",
+      "text": "\u2060",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a byte order mark",
+      "text": "\ufeff",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "an ideographic space",
+      "text": "\u3000",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "an em space",
+      "text": "\u2003",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a narrow no-break space",
+      "text": "\u202f",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a Mongolian vowel separator",
+      "text": "\u180e",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "an Ogham space mark",
+      "text": "\u1680",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "mixed blanks",
+      "text": " \u200b\u00a0\u3000 ",
+      "expected": {
+        "reason": "blank"
+      }
+    },
+    {
+      "name": "a tab",
+      "text": "\t",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a tab between words",
+      "text": "Open\tmenu",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a vertical tab",
+      "text": "a\u000bb",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a form feed",
+      "text": "a\fb",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "delete",
+      "text": "a\u007f",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a C1 control",
+      "text": "a\u009b",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "next line (C1, also blank)",
+      "text": "\u0085",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a line separator",
+      "text": "a\u2028b",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a paragraph separator",
+      "text": "a\u2029b",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a right-to-left override",
+      "text": "\u202eunem nepO",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a left-to-right embedding",
+      "text": "\u202aMenu",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a first-strong isolate",
+      "text": "\u2068Menu\u2069",
+      "expected": {
+        "reason": "unsafe_character"
+      }
+    },
+    {
+      "name": "a line feed",
+      "text": "Open\nmenu",
+      "expected": {
+        "reason": "line_break"
+      }
+    },
+    {
+      "name": "a carriage return",
+      "text": "Open\rmenu",
+      "expected": {
+        "reason": "line_break"
+      }
+    },
+    {
+      "name": "only a line feed",
+      "text": "\n",
+      "expected": {
+        "reason": "line_break"
+      }
+    },
+    {
+      "name": "one past the maximum",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "reason": "too_long"
+      }
+    },
+    {
+      "name": "an astral character counts once at the maximum",
+      "text": "\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54",
+      "expected": {
+        "reason": null
+      }
+    },
+    {
+      "name": "an astral character counts once past the maximum",
+      "text": "\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54\ud83c\udf54",
+      "expected": {
+        "reason": "too_long"
+      }
+    },
+    {
+      "name": "blank under a larger minimum",
+      "text": "  ",
+      "expected": {
+        "reason": "blank"
+      },
+      "limits": {
+        "minLength": 3,
+        "maxLength": 512,
+        "newlines": "forbid"
+      }
+    },
+    {
+      "name": "words under a larger minimum",
+      "text": "ab",
+      "expected": {
+        "reason": "too_short"
+      },
+      "limits": {
+        "minLength": 3,
+        "maxLength": 512,
+        "newlines": "forbid"
+      }
+    },
+    {
+      "name": "words over a smaller maximum",
+      "text": "Open menu",
+      "expected": {
+        "reason": "too_long"
+      },
+      "limits": {
+        "minLength": 1,
+        "maxLength": 4,
+        "newlines": "forbid"
+      }
+    }
+  ],
+  "policyCases": [
+    {
+      "name": "an aria-label label",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "aria-label"
+      },
+      "valid": true
+    },
+    {
+      "name": "a placeholder caption",
+      "semantic": "caption",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 80,
+        "newlines": "forbid",
+        "attribute": "placeholder"
+      },
+      "valid": true
+    },
+    {
+      "name": "alt",
+      "semantic": "caption",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "alt"
+      },
+      "valid": true
+    },
+    {
+      "name": "title",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "title"
+      },
+      "valid": true
+    },
+    {
+      "name": "aria-roledescription",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "aria-roledescription"
+      },
+      "valid": true
+    },
+    {
+      "name": "no attribute is ordinary text",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid"
+      },
+      "valid": true
+    },
+    {
+      "name": "an empty value allowed",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 0,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "aria-label"
+      },
+      "valid": false
+    },
+    {
+      "name": "line breaks allowed",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "allow",
+        "attribute": "aria-label"
+      },
+      "valid": false
+    },
+    {
+      "name": "longer than the maximum",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 513,
+        "newlines": "forbid",
+        "attribute": "aria-label"
+      },
+      "valid": false
+    },
+    {
+      "name": "body copy",
+      "semantic": "body",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "aria-label"
+      },
+      "valid": false
+    },
+    {
+      "name": "a search title",
+      "semantic": "seo_title",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "title"
+      },
+      "valid": false
+    },
+    {
+      "name": "an address",
+      "semantic": "address",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "title"
+      },
+      "valid": false
+    },
+    {
+      "name": "an unknown attribute",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "href"
+      },
+      "valid": false
+    },
+    {
+      "name": "an attribute in the wrong case",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "Aria-Label"
+      },
+      "valid": false
+    },
+    {
+      "name": "an attribute that is not a string",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": ["aria-label"]
+      },
+      "valid": false
+    },
+    {
+      "name": "a null attribute",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": null
+      },
+      "valid": false
+    },
+    {
+      "name": "a template too",
+      "semantic": "label",
+      "constraints": {
+        "minLength": 1,
+        "maxLength": 512,
+        "newlines": "forbid",
+        "attribute": "aria-label",
+        "template": {
+          "locale": "en",
+          "placeholders": [
+            {
+              "name": "count",
+              "minimumIntegerDigits": 1,
+              "grouping": true
+            }
+          ],
+          "plural": null
+        }
+      },
+      "valid": false
+    }
+  ]
+}

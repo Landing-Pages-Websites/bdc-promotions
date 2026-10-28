@@ -17,7 +17,10 @@ const packageJson = JSON.parse(
 );
 const conformanceBin = "gomega-managed-site-conformance";
 const conformanceUsage =
-  "Usage: gomega-managed-site-conformance --contract <path> --content <path>\n";
+  "Usage: gomega-managed-site-conformance --contract <path> --content <path>\n" +
+  "       gomega-managed-site-conformance migrate --production-contract <path> " +
+  "--production-content <path> --contract <path> --content <path> " +
+  "--migration <path> [--admit-bridge <version>=<integrity>]\n";
 
 function run(command, args, env = process.env) {
   const result = spawnSync(command, args, {
@@ -61,8 +64,8 @@ function minimalBridge() {
     editProtocol: 2,
     annotationVersion: 1,
     delivery: {
-      version: "v7",
-      src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
+      version: "v13",
+      src: "https://app.gomega.ai/review-bridge/v13/review-bridge.js",
       integrity: `sha384-${"a".repeat(64)}`,
       crossOrigin: "anonymous",
       load: "head_defer",
@@ -126,6 +129,10 @@ describe("packed package runtime contract", () => {
       assert.equal(packedFiles.has("./dist/schema.d.ts"), false);
       assert.equal(
         packedFiles.has("./schema/managed-site.v1.schema.json"),
+        true,
+      );
+      assert.equal(
+        packedFiles.has("./schema/managed-site.migration.v1.schema.json"),
         true,
       );
       const binTarget = packageJson.bin?.[conformanceBin];

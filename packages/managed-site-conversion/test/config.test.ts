@@ -16,13 +16,16 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 
 import {
+  MANAGED_SERVED_ASSET_ROOT,
   MAX_REPOSITORY_PATH_BYTES,
   MAX_REPOSITORY_PATH_SEGMENT_BYTES,
-  SUPPORTED_BRIDGE_SRC,
-  SUPPORTED_BRIDGE_VERSION,
+  bridgeSrcFor,
+  CURRENT_BRIDGE_SRC,
+  CURRENT_BRIDGE_VERSION,
+  SUPPORTED_BRIDGE_VERSIONS,
 } from "@landing-pages-websites/managed-site-contract";
 
-import { defaultConfig, loadConfig } from "../src/config.js";
+import { defaultConfig, loadConfig, type PageSeoInput } from "../src/config.js";
 import { FINDING_CODES } from "../src/report.js";
 import { VALID_BRIDGE, run, workspace, type Workspace } from "./support/proposals.js";
 
@@ -166,14 +169,26 @@ describe("content and asset roots in a conversion config", () => {
     );
   });
 
-  it("accepts the longest assetRoot that still leaves room, and refuses one byte more", () => {
-    const accepted = rootOfLength(LONGEST_ASSET_ROOT);
-
-    assert.equal(loadConfig(configWithRoots({ assetRoot: accepted })).assetRoot, accepted);
-    assert.throws(
-      () => loadConfig(configWithRoots({ assetRoot: rootOfLength(LONGEST_ASSET_ROOT + 1) })),
-      /invalid assetRoot/u,
-    );
+  /**
+   * The converter's accepted config can only emit content the pinned contract
+   * accepts, and the contract takes an image only under its served root. A root
+   * outside it would emit refused images; a root inside it (public/images) would
+   * record /hero.png as a file other than the one served. So only the served
+   * root itself loads, whatever else fits the budgets.
+   */
+  it("refuses every assetRoot but the contract's served root", () => {
+    for (const root of ["public/images", "./public", "Public", "publicx", "static", "assets", rootOfLength(LONGEST_ASSET_ROOT)]) {
+      assert.throws(() => loadConfig(configWithRoots({ assetRoot: root })), /invalid assetRoot/u, root);
+    }
+    for (const root of ["public/images", "static", "Public"]) {
+      assert.throws(
+        () => loadConfig(configWithRoots({ assetRoot: root })),
+        /not the served root "public".*accepts an image only under public\//su,
+        `${root}: the message names the served root`,
+      );
+    }
+    const served = MANAGED_SERVED_ASSET_ROOT.slice(0, -1);
+    assert.equal(loadConfig(configWithRoots({ assetRoot: served })).assetRoot, served);
   });
 
   /**
@@ -182,11 +197,12 @@ describe("content and asset roots in a conversion config", () => {
    * are not.
    */
   it("budgets each root against what is appended to that root", () => {
-    // Between the two limits: an asset root may run to 256 bytes, a content root
-    // only to 250, because `/pages/<slug>.json` is longer than one file name.
+    // A content root may run only to 250 bytes, because `/pages/<slug>.json` is
+    // longer than one file name; 253 bytes would still leave room for an asset
+    // name, so this is the content budget refusing, not the asset one. (The
+    // asset root itself is fixed at public.)
     const assetOnly = rootOfLength(253);
 
-    assert.equal(loadConfig(configWithRoots({ assetRoot: assetOnly })).assetRoot, assetOnly);
     assert.throws(
       () => loadConfig(configWithRoots({ contentRoot: assetOnly })),
       /invalid contentRoot/u,
@@ -207,33 +223,58 @@ describe("bridge delivery in a conversion config", () => {
    * `contract: null`, with the config that caused it already accepted and
    * nothing saying why.
    *
-   * The version and the expected message are both derived from the supported
-   * one, so promoting the next bridge cannot leave this test asserting that the
-   * newly supported version is refused -- which is exactly what a find-and-
-   * replace did to it when v6 became v7.
+   * The versions are derived from the supported list, so promoting the next
+   * bridge cannot leave this test asserting that the newly supported version is
+   * refused -- which is exactly what a find-and-replace did to it when v6
+   * became v7.
    */
   it("refuses a version the contract cannot express", () => {
-    const unsupported = `v${Number(SUPPORTED_BRIDGE_VERSION.slice(1)) + 1}`;
-    const next = {
-      ...VALID_BRIDGE,
-      version: unsupported,
-      src: `https://app.gomega.ai/review-bridge/${unsupported}/review-bridge.js`,
-    };
+    const newest = Number(CURRENT_BRIDGE_VERSION.slice(1));
+    const oldest = Number(SUPPORTED_BRIDGE_VERSIONS[0].slice(1));
+    for (const unsupported of [`v${newest + 1}`, `v${oldest - 1}`]) {
+      const next = {
+        ...VALID_BRIDGE,
+        version: unsupported,
+        src: `https://app.gomega.ai/review-bridge/${unsupported}/review-bridge.js`,
+      };
 
-    assert.throws(
-      () => loadConfig(configWith(next)),
-      new RegExp(`is not the supported ${SUPPORTED_BRIDGE_VERSION}`, "u"),
-    );
+      assert.throws(
+        () => loadConfig(configWith(next)),
+        new RegExp(`version ${unsupported} is not one of the supported`, "u"),
+      );
+    }
   });
+
+  /**
+   * Sites certified on an older bridge are converted and re-proposed on that
+   * bridge, so the loader accepts every version the contract accepts, each at
+   * its own asset, and keeps the version it was given.
+   */
+  for (const version of SUPPORTED_BRIDGE_VERSIONS) {
+    it(`accepts supported bridge ${version} at its own src`, () => {
+      const bridge = { ...VALID_BRIDGE, version, src: bridgeSrcFor(version) };
+      assert.deepEqual(loadConfig(configWith(bridge)).bridge, bridge);
+    });
+
+    for (const other of SUPPORTED_BRIDGE_VERSIONS.filter((candidate) => candidate !== version)) {
+      it(`refuses bridge ${version} delivered by ${other}'s asset`, () => {
+        const bridge = { ...VALID_BRIDGE, version, src: bridgeSrcFor(other) };
+        assert.throws(
+          () => loadConfig(configWith(bridge)),
+          new RegExp(`is not ${bridgeSrcFor(version).replaceAll(/[./]/gu, "\\$&")}`, "u"),
+        );
+      });
+    }
+  }
 
   /**
    * The two packages agree by construction rather than by two copies of a
    * literal, so promoting the next bridge is one edit in the contract package.
    */
-  it("takes the supported delivery from the contract package", () => {
-    assert.equal(VALID_BRIDGE.version, SUPPORTED_BRIDGE_VERSION);
-    assert.equal(VALID_BRIDGE.src, SUPPORTED_BRIDGE_SRC);
-    assert.ok(SUPPORTED_BRIDGE_SRC.includes(`/${SUPPORTED_BRIDGE_VERSION}/`));
+  it("takes the current delivery from the contract package", () => {
+    assert.equal(VALID_BRIDGE.version, CURRENT_BRIDGE_VERSION);
+    assert.equal(VALID_BRIDGE.src, CURRENT_BRIDGE_SRC);
+    assert.equal(CURRENT_BRIDGE_SRC, bridgeSrcFor(CURRENT_BRIDGE_VERSION));
   });
 
   it("treats an absent bridge as absent, not as an error", () => {
@@ -718,6 +759,55 @@ describe("business identity the standard would refuse", () => {
  * Every key that reaches the contract is bounded where it is written, not where
  * it lands. This is the list of them, so a key added without a check has no row.
  */
+describe("a route that declares who owns its words", () => {
+  function pageOf(entry: Record<string, unknown>): PageSeoInput | undefined {
+    const directory = mkdtempSync(join(tmpdir(), "conversion-managed-"));
+    const path = join(directory, "site.conversion.json");
+    writeFileSync(path, JSON.stringify({ pages: { "/admin": entry } }));
+    return loadConfig(path).pages.get("/admin");
+  }
+
+  it("is the customer's by default, so declaring a route changes nothing else", () => {
+    assert.equal(pageOf({})?.managedContent, true);
+  });
+
+  it("reads an explicit true", () => {
+    assert.equal(pageOf({ managedContent: true })?.managedContent, true);
+  });
+
+  it("reads an explicit false", () => {
+    assert.equal(pageOf({ managedContent: false })?.managedContent, false);
+  });
+
+  /**
+   * A boolean is the one shape where a permissive read is invisible: every
+   * value below is truthy or falsy in JavaScript, so a loader that coerced
+   * would silently answer the opposite of what some of them look like.
+   * `"false"`, in particular, is truthy.
+   */
+  for (const [label, managedContent] of [
+    ["the string false", "false"],
+    ["the string true", "true"],
+    ["zero", 0],
+    ["one", 1],
+    ["an empty string", ""],
+    ["an array", []],
+    ["an object", {}],
+  ] as const) {
+    it(`refuses ${label}`, () => {
+      assert.throws(
+        () => pageOf({ managedContent }),
+        /invalid pages: route \/admin managedContent it must be true or false/u,
+      );
+    });
+  }
+
+  /** JSON has no `undefined`, so an explicit null is how a person writes "not set". */
+  it("reads an explicit null as absence", () => {
+    assert.equal(pageOf({ managedContent: null })?.managedContent, true);
+  });
+});
+
 describe("the config keys held to the standard's own rules", () => {
   it("covers every page-level SEO input", () => {
     const directory = mkdtempSync(join(tmpdir(), "conversion-coverage-"));
@@ -728,6 +818,7 @@ describe("the config keys held to the standard's own rules", () => {
     assert.notEqual(page, undefined);
     assert.deepEqual(Object.keys(page ?? {}).sort(), [
       "canonical",
+      "managedContent",
       "performanceBudget",
       "purpose",
       "sitemap",

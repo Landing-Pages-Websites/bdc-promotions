@@ -1,0 +1,1385 @@
+{
+  "about": [
+    "One adversarial table for a link destination's query (managed-site contract 0.41.0), judged by three implementations that must agree:",
+    "site-starter packages/managed-site-contract (test/cms-link-query-cases.json, run by test/link-query-destinations.test.ts) and megaseo-web",
+    "(src/server/db/managed_sites/cms_link_query_cases.json: the CMS rule public.managed_site_cms_link_destination_violation on a real database, its",
+    "TypeScript twin src/util/cms_link_rules.ts, and the contract package Site Guard parses). Keep this file byte-identical in both repositories.",
+    "base is a link field's constraints; a case's constraints are shallow-merged over it; a member whose value is the string \"ABSENT\" is deleted instead.",
+    "pageId and otherPageId are static pages every runner declares; only pageId has an allowedQueries entry in base.",
+    "destinationCases: a link field value (label 'Get Started', target same_window). reason is the CMS's refusal; the package is held to outcome only.",
+    "policyCases: whether constraints parse. contract is the package's verdict; cms is whether the CMS rule reads the policy (a policy it refuses is 'link policy is invalid').",
+    "The CMS reads a policy only as far as admission needs: a duplicate the contract refuses admits nothing the deduplicated policy does not, and Site Guard refuses that contract before the CMS sees it.",
+    "spellingCases: a query and the one string every renderer writes for it (managedLinkQueryString), names in ascending code-unit order."
+  ],
+  "pageId": "page_10000000000000000000000000",
+  "otherPageId": "page_20000000000000000000000000",
+  "base": {
+    "labelConstraints": {
+      "minLength": 1,
+      "maxLength": 40,
+      "newlines": "forbid"
+    },
+    "authority": "internal_or_external",
+    "allowedSchemes": [
+      "https"
+    ],
+    "allowedExternalHosts": [
+      "example.com"
+    ],
+    "fragmentPolicy": "declared",
+    "allowedFragments": [
+      "form"
+    ],
+    "allowedQueries": [
+      {
+        "pageId": "page_10000000000000000000000000",
+        "parameters": [
+          {
+            "name": "type",
+            "values": [
+              "strategy",
+              "rfp",
+              "expert",
+              "custom-network",
+              "consultation"
+            ]
+          },
+          {
+            "name": "source",
+            "values": [
+              "header",
+              "footer"
+            ]
+          }
+        ]
+      }
+    ],
+    "allowedTargets": [
+      "same_window"
+    ]
+  },
+  "policyCases": [
+    {
+      "name": "one page, two parameters",
+      "expected": {
+        "contract": "accepted",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "no allowedQueries",
+      "constraints": {
+        "allowedQueries": "ABSENT"
+      },
+      "expected": {
+        "contract": "accepted",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "an empty allowedQueries",
+      "constraints": {
+        "allowedQueries": []
+      },
+      "expected": {
+        "contract": "accepted",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a page twice",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a"
+                ]
+              }
+            ]
+          },
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "source",
+                "values": [
+                  "b"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a parameter twice",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a"
+                ]
+              },
+              {
+                "name": "type",
+                "values": [
+                  "b"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a value twice",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a",
+                  "a"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a parameter with no values",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a page with no parameters",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": []
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a value that is not a token",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a b"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a name that is not a token",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "__proto__",
+                "values": [
+                  "a"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "a page that is not a page id",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "item_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    },
+    {
+      "name": "allowedQueries is an object",
+      "constraints": {
+        "allowedQueries": {
+          "pageId": "page_10000000000000000000000000"
+        }
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "allowedQueries is null",
+      "constraints": {
+        "allowedQueries": null
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "a page entry that is a string",
+      "constraints": {
+        "allowedQueries": [
+          "page_10000000000000000000000000"
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "a page id that is a number",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": 1,
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "parameters that are an object",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": {
+              "type": [
+                "a"
+              ]
+            }
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "a parameter that is a string",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              "type"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "a parameter name that is a number",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": 1,
+                "values": [
+                  "a"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "values that are a string",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": "a"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "a value that is a number",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  1
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "rejected"
+      }
+    },
+    {
+      "name": "a page entry with an extra key",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "a"
+                ]
+              }
+            ],
+            "any": true
+          }
+        ]
+      },
+      "expected": {
+        "contract": "rejected",
+        "cms": "accepted"
+      }
+    }
+  ],
+  "destinationCases": [
+    {
+      "name": "no query, as every link was before",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "one declared parameter and value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "a value with a hyphen",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "custom-network"
+        }
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "two declared parameters",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "rfp",
+          "source": "footer"
+        }
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "two declared parameters, written in the other order",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "source": "footer",
+          "type": "rfp"
+        }
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "a query and a declared fragment",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": "form",
+        "query": {
+          "type": "expert"
+        }
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "a query and an undeclared fragment",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": "pricing",
+        "query": {
+          "type": "expert"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination fragment is not permitted by the field"
+      }
+    },
+    {
+      "name": "an undeclared value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "admin"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "an undeclared parameter",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "admin": "1"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a declared parameter beside an undeclared one",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy",
+          "admin": "1"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a value in another case",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "Strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a value in upper case",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "STRATEGY"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a name in another case",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "Type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a value padded with a dot",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy."
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a value that is a prefix of a declared one",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strat"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a value declared for the other parameter",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "header"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a page the field declares no query for",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_20000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a query on a field that declares none",
+      "constraints": {
+        "allowedQueries": []
+      },
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "a query on a field with no allowedQueries at all",
+      "constraints": {
+        "allowedQueries": "ABSENT"
+      },
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is not permitted by the field"
+      }
+    },
+    {
+      "name": "no query on a field that declares none",
+      "constraints": {
+        "allowedQueries": "ABSENT"
+      },
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "an empty query",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {}
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "an empty value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": ""
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value carrying a second parameter",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy&admin=1"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value carrying an equals sign",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "a=b"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value percent-encoded",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "custom%2Dnetwork"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with an encoded space",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "custom%20network"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a plus for a space",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "custom+network"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a space",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "custom network"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a fragment in it",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy#form"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a question mark",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "?strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a tilde",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy~1"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a slash",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "../admin"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a quote",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "a\"b"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with an angle bracket",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "<script>"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a newline",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy\n"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a bidi override",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strategy\u202e"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value with a non-ASCII letter",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "strat\u00e9gy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value of 65 characters",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a value of 64 characters, declared",
+      "constraints": {
+        "allowedQueries": [
+          {
+            "pageId": "page_10000000000000000000000000",
+            "parameters": [
+              {
+                "name": "type",
+                "values": [
+                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    },
+    {
+      "name": "a name starting with an underscore",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "_type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a name starting with a digit",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "1type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a name with a space",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "ty pe": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "an empty name",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "nine parameters",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "p0": "x",
+          "p1": "x",
+          "p2": "x",
+          "p3": "x",
+          "p4": "x",
+          "p5": "x",
+          "p6": "x",
+          "p7": "x",
+          "p8": "x"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination query is malformed"
+      }
+    },
+    {
+      "name": "a number for a value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": 1
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a null for a value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": null
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a list for a value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": [
+            "strategy"
+          ]
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "an object for a value",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": {
+          "type": {
+            "a": "b"
+          }
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a string for the query",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": "type=strategy"
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a list for the query",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": [
+          [
+            "type",
+            "strategy"
+          ]
+        ]
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a null query",
+      "destination": {
+        "kind": "internal",
+        "pageId": "page_10000000000000000000000000",
+        "fragment": null,
+        "query": null
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a query on an external link",
+      "destination": {
+        "kind": "external",
+        "url": "https://example.com/",
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a query on an email link",
+      "constraints": {
+        "allowedSchemes": [
+          "https",
+          "mailto"
+        ]
+      },
+      "destination": {
+        "kind": "email",
+        "address": "hello@example.com",
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "a query on a phone link",
+      "constraints": {
+        "allowedSchemes": [
+          "https",
+          "tel"
+        ]
+      },
+      "destination": {
+        "kind": "phone",
+        "number": "+15035550100",
+        "query": {
+          "type": "strategy"
+        }
+      },
+      "expected": {
+        "outcome": "rejected",
+        "reason": "link destination is malformed"
+      }
+    },
+    {
+      "name": "an external URL that carries its own query",
+      "destination": {
+        "kind": "external",
+        "url": "https://example.com/contact?type=anything"
+      },
+      "expected": {
+        "outcome": "accepted",
+        "reason": null
+      }
+    }
+  ],
+  "spellingCases": [
+    {
+      "query": {
+        "type": "strategy"
+      },
+      "spelling": "?type=strategy"
+    },
+    {
+      "query": {
+        "type": "rfp",
+        "source": "footer"
+      },
+      "spelling": "?source=footer&type=rfp"
+    },
+    {
+      "query": {
+        "b": "1",
+        "a": "2"
+      },
+      "spelling": "?a=2&b=1"
+    },
+    {
+      "query": {
+        "a": "1",
+        "B": "2"
+      },
+      "spelling": "?B=2&a=1"
+    },
+    {
+      "query": {
+        "aa": "1",
+        "b": "2"
+      },
+      "spelling": "?aa=1&b=2"
+    },
+    {
+      "query": {
+        "a.b": "1",
+        "a-b": "2",
+        "a_b": "3",
+        "a": "4"
+      },
+      "spelling": "?a=4&a-b=2&a.b=1&a_b=3"
+    },
+    {
+      "query": {
+        "Z": "1",
+        "z": "2",
+        "a0": "3",
+        "a": "4"
+      },
+      "spelling": "?Z=1&a=4&a0=3&z=2"
+    }
+  ]
+}

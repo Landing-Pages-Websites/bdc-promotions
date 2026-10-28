@@ -1,0 +1,137 @@
+{
+  "jpeg-plain.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": null,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 278
+  },
+  "jpeg-orientation-1.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 1,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 966
+  },
+  "jpeg-orientation-3.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 3,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 966
+  },
+  "jpeg-orientation-5.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 5,
+    "displayedWidth": 30,
+    "displayedHeight": 40,
+    "bytes": 966
+  },
+  "jpeg-orientation-6.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 6,
+    "displayedWidth": 30,
+    "displayedHeight": 40,
+    "bytes": 966
+  },
+  "jpeg-orientation-7.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 7,
+    "displayedWidth": 30,
+    "displayedHeight": 40,
+    "bytes": 966
+  },
+  "jpeg-orientation-8.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 8,
+    "displayedWidth": 30,
+    "displayedHeight": 40,
+    "bytes": 966
+  },
+  "jpeg-progressive-orientation-6.jpg": {
+    "format": "jpeg",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 6,
+    "displayedWidth": 30,
+    "displayedHeight": 40,
+    "bytes": 1200
+  },
+  "png-plain.png": {
+    "format": "png",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": null,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 127
+  },
+  "webp-lossy.webp": {
+    "format": "webp",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": null,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 84
+  },
+  "webp-lossless.webp": {
+    "format": "webp",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": null,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 38
+  },
+  "webp-alpha.webp": {
+    "format": "webp",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": null,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 96
+  },
+  "webp-exif-orientation-6.webp": {
+    "format": "webp",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": 6,
+    "displayedWidth": 30,
+    "displayedHeight": 40,
+    "bytes": 784
+  },
+  "avif-plain.avif": {
+    "format": "heif",
+    "rawWidth": 40,
+    "rawHeight": 30,
+    "orientation": null,
+    "displayedWidth": 40,
+    "displayedHeight": 30,
+    "bytes": 301
+  },
+  "png-adam7.png": {
+    "format": "png",
+    "rawWidth": 41,
+    "rawHeight": 23,
+    "orientation": null,
+    "displayedWidth": 41,
+    "displayedHeight": 23,
+    "bytes": 160
+  }
+}

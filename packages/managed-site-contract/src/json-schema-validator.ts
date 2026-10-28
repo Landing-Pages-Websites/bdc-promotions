@@ -25,6 +25,7 @@ import {
   type ManagedSiteSemanticId,
 } from "./schema-semantics.js";
 import { parseJsonPointer, parseRepositoryPath } from "./source.js";
+import { isManagedServedAssetPath } from "./values.js";
 
 const MAX_VALIDATION_ERRORS = 100;
 const MAX_ERROR_TEXT = 2_048;
@@ -100,6 +101,7 @@ function addFormats(ajv: Ajv2020): void {
   ajv.addFormat("gomega-repository-path-v1", (value: string) =>
     accepts(() => parseRepositoryPath(value)),
   );
+  ajv.addFormat("gomega-served-asset-path-v1", isManagedServedAssetPath);
   ajv.addFormat("gomega-json-pointer-v1", (value: string) =>
     accepts(() => parseJsonPointer(value)),
   );

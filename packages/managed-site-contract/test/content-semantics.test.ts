@@ -345,6 +345,26 @@ describe("managed value and asset semantics", () => {
       },
     },
     {
+      name: "link field to a generated page, which has no single path",
+      code: "CONTENT_LINK_PAGE_UNPATHED",
+      mutate: (fixture: ContentSemanticsFixture) => {
+        const link = object(contentValue(fixture, fixture.ids.linkField).value);
+        object(link.destination).pageId = fixture.ids.generatedPage;
+      },
+    },
+    {
+      name: "rich-text link to a generated page, which has no single path",
+      code: "CONTENT_RICH_TEXT_LINK_PAGE_UNPATHED",
+      mutate: (fixture: ContentSemanticsFixture) => {
+        const rich = object(contentValue(fixture, fixture.ids.richField).value);
+        const paragraph = objects(rich.content)[0];
+        const marks = objects(objects(paragraph.content)[0].marks);
+        const link = marks.find((mark) => mark.type === "link");
+        if (link === undefined) throw new Error("fixture lost its link mark");
+        object(link.destination).pageId = fixture.ids.generatedPage;
+      },
+    },
+    {
       name: "unresolved rich-text link page",
       code: "CONTENT_LINK_PAGE_UNRESOLVED",
       mutate: (fixture: ContentSemanticsFixture) => {

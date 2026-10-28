@@ -3,11 +3,15 @@ import * as z from "zod";
 import type { DeepReadonly } from "./deep-readonly.js";
 import { ManagedSiteContractError } from "./errors.js";
 import {
+  isManagedIconName,
+  isManagedOptionalItemField,
+  isManagedSeoTextSemantic,
   parseManagedCollectionDescriptor,
   parseManagedFieldDescriptor,
   type ManagedCollectionDescriptor,
   type ManagedCollectionItemField,
   type ManagedFieldDescriptor,
+  type ManagedLinkConstraints,
 } from "./fields.js";
 import { managedInternalValueTypeSchema } from "./internal-value-types.js";
 import {
@@ -22,16 +26,20 @@ import {
   withManagedSiteJsonSchemaSemantic,
 } from "./schema-semantics.js";
 import { parseSchemaInput } from "./schema-input.js";
+import { managedTextTemplateRefusal } from "./text-template.js";
+import { managedAttributeTextRefusal } from "./attribute-text.js";
 import {
   absoluteHttpsUrlSchema,
+  hasUnsafeTextCharacter,
+  isAnyHttpsHost,
   MAX_URL_VALUE_CHARACTERS,
-  MAX_LINK_LABEL_CHARACTERS,
   managedImageMimeTypeSchema,
   managedImageValueSchema,
   managedLinkDestinationSchema,
+  managedLinkLabelSchema,
   managedLinkTargetSchema,
   opaqueJsonValueSchema,
-  repositoryPathSchema,
+  servedAssetPathSchema,
   stableIdSchema,
   type ManagedLinkDestination,
 } from "./values.js";
@@ -77,20 +85,46 @@ const richTextContentValueSchema = z
     }
   });
 
+/**
+ * A link, or `null` (since 0.37.0) for an item whose field is declared
+ * `optional` and holds no link. Whether a field may be empty is its
+ * descriptor's: a `null` anywhere else is refused by the value rule.
+ */
 const linkContentValueSchema = z.strictObject({
   ...contentBase,
   type: z.literal("link"),
-  value: z.strictObject({
-    label: z.string().max(MAX_LINK_LABEL_CHARACTERS),
-    destination: managedLinkDestinationSchema,
-    target: managedLinkTargetSchema,
-  }),
+  value: z
+    .strictObject({
+      label: managedLinkLabelSchema,
+      destination: managedLinkDestinationSchema,
+      target: managedLinkTargetSchema,
+    })
+    .nullable(),
 });
 
+/**
+ * An image, or `null` (since 0.36.0) for an item whose field is declared
+ * `optional` and holds no image. Whether a field may be empty is its
+ * descriptor's: a `null` anywhere else is refused by the value rule.
+ */
 const imageContentValueSchema = z.strictObject({
   ...contentBase,
   type: z.literal("image"),
-  value: managedImageValueSchema,
+  value: managedImageValueSchema.nullable(),
+});
+
+/** The chosen icon's name; which names a field admits is its descriptor's choices. */
+const iconContentValueSchema = z.strictObject({
+  ...contentBase,
+  type: z.literal("icon"),
+  value: z.string().refine(isManagedIconName),
+});
+
+/** A toggle is on or off; what it switches is its field's semantic. */
+const toggleContentValueSchema = z.strictObject({
+  ...contentBase,
+  type: z.literal("toggle"),
+  value: z.boolean(),
 });
 
 const collectionContentValueSchema = z.strictObject({
@@ -223,6 +257,8 @@ const renderedContentValueSchema = z.discriminatedUnion("type", [
   linkContentValueSchema,
   imageContentValueSchema,
   collectionContentValueSchema,
+  iconContentValueSchema,
+  toggleContentValueSchema,
 ]);
 
 export const managedSiteContentValueSchema = withManagedSiteJsonSchemaSemantic(
@@ -232,7 +268,7 @@ export const managedSiteContentValueSchema = withManagedSiteJsonSchemaSemantic(
 
 export const managedSiteAssetManifestEntrySchema = z.strictObject({
   assetSlotId: stableIdSchema("asset"),
-  path: repositoryPathSchema,
+  path: servedAssetPathSchema,
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
   mimeType: managedImageMimeTypeSchema,
   width: z.number().int().positive(),
@@ -279,8 +315,47 @@ function destinationScheme(destination: ManagedLinkDestination): "internal" | "h
   return destination.kind === "email" ? "mailto" : "tel";
 }
 
-function externalHost(destination: ManagedLinkDestination): string | null {
-  return destination.kind === "external" ? new URL(destination.url).hostname : null;
+/** The CMS's test that a link is an absolute https URL, scheme in lowercase. */
+const ABSOLUTE_HTTPS = /^https:\/\/[^/ \t\n\v\f\r]+/;
+const AUTHORITY_HOST = /^https:\/\/([^/?#]*)/;
+const BARE_HOST = /^[A-Za-z0-9.-]+$/;
+
+type ExternalHostConstraints = {
+  readonly externalHostPolicy?: "declared" | "any_https";
+  readonly allowedExternalHosts: readonly string[];
+};
+
+/**
+ * Whether a destination is one its field's host policy admits: always, unless it
+ * is external. Link fields and prose links share it so the two cannot drift.
+ *
+ * Both policies judge the host as it is written, exactly as the CMS does,
+ * because `new URL()` rewrites a host before anyone can judge it: it turns
+ * `0x7f.1` into `127.0.0.1`, `ex%61mple.org` into `example.org`, drops a port,
+ * lowercases `HTTPS:` and reads a backslash as a slash. So the scheme must be
+ * `https://` as written, the authority must hold no `@`, and the host must be
+ * bare ASCII letters, digits, dots and hyphens. `declared` then needs it on the
+ * list, compared in lowercase; `any_https` needs it to be a DNS name. Every host
+ * `declared` admits is therefore one `any_https` judges on the same string.
+ */
+function isAdmittedExternalHost(
+  destination: ManagedLinkDestination,
+  constraints: ExternalHostConstraints,
+): boolean {
+  if (destination.kind !== "external") return true;
+  const host = writtenHost(destination.url);
+  if (host === null) return false;
+  if (constraints.externalHostPolicy === "any_https") return isAnyHttpsHost(host);
+  return constraints.allowedExternalHosts.includes(host.toLowerCase());
+}
+
+/** The bare host an https link names as written, or `null` when it names none. */
+function writtenHost(url: string): string | null {
+  if (!ABSOLUTE_HTTPS.test(url)) return null;
+  // Split exactly as the CMS does: anything after an `@` in it is the authority.
+  if ((url.split("/")[2] ?? "").includes("@")) return null;
+  const host = AUTHORITY_HOST.exec(url)?.[1] ?? "";
+  return BARE_HOST.test(host) ? host : null;
 }
 
 type ManagedValueField = ManagedFieldDescriptor | ManagedCollectionItemField;
@@ -289,18 +364,36 @@ type ManagedTextField = Extract<
   { type: "plain_text" | "heading_text" }
 >;
 
+/**
+ * Whether the field admits a destination's query: none, or one whose every
+ * parameter its page's entry in `allowedQueries` declares, holding one of the
+ * values declared for it. Names and values are compared exactly, so `Type`
+ * and `STRATEGY` are not `type` and `strategy`. Read from own entries only.
+ */
+function isAdmittedQuery(
+  destination: Extract<ManagedLinkDestination, { kind: "internal" }>,
+  allowedQueries: ManagedLinkConstraints["allowedQueries"],
+): boolean {
+  if (destination.query === undefined) return true;
+  const page = (allowedQueries ?? []).find((entry) => entry.pageId === destination.pageId);
+  if (page === undefined) return false;
+  return Object.entries(destination.query).every(([name, value]) =>
+    page.parameters.some((parameter) => parameter.name === name && parameter.values.includes(value)),
+  );
+}
+
 function isAllowedDestination(
   destination: ManagedLinkDestination,
-  constraints: Extract<ManagedValueField, { type: "link" }>['constraints'],
+  constraints: ManagedLinkConstraints,
 ): boolean {
   const internal = destination.kind === "internal";
   if (constraints.authority === "internal_only" && !internal) return false;
   if (constraints.authority === "external_only" && internal) return false;
   const scheme = destinationScheme(destination);
   if (scheme !== "internal" && !constraints.allowedSchemes.includes(scheme)) return false;
-  const host = externalHost(destination);
-  if (host !== null && !constraints.allowedExternalHosts.includes(host)) return false;
+  if (!isAdmittedExternalHost(destination, constraints)) return false;
   if (destination.kind !== "internal") return true;
+  if (!isAdmittedQuery(destination, constraints.allowedQueries)) return false;
   if (constraints.fragmentPolicy === "forbid") return destination.fragment === null;
   return destination.fragment === null || constraints.allowedFragments.includes(destination.fragment);
 }
@@ -313,9 +406,10 @@ function validateRichText(
   const withinEnvelope =
     stats.characters <= field.constraints.maxCharacters &&
     stats.nodes <= field.constraints.maxNodes;
-  const blocksAllowed = stats.blocks.every((block) =>
-    field.constraints.allowedBlocks.includes(block.type),
-  );
+  const maxBlocks = field.constraints.maxBlocks;
+  const blocksAllowed =
+    (maxBlocks === undefined || stats.blocks.length <= maxBlocks) &&
+    stats.blocks.every((block) => field.constraints.allowedBlocks.includes(block.type));
   // A mark is an object now, so what a constraint names is its kind. Link marks
   // are excluded here on purpose: they are governed by `allowLinks` and its
   // companions below, which is where they were governed when a link was a node,
@@ -332,7 +426,22 @@ function validateRichText(
       (mark) => mark.type !== "link" || richTextLinkAllowed(field, mark),
     ),
   );
-  return withinEnvelope && blocksAllowed && marksAllowed && linksAllowed;
+  return withinEnvelope && blocksAllowed && marksAllowed && linksAllowed && hardBreaksAllowed(field, stats.hardBreaks);
+}
+
+/**
+ * Breaks are admitted only by the field's opt-in, and then up to its cap. An
+ * opt-in with no cap is bounded only by the node limit, as an absent
+ * `maxBlocks` is. Where a break may sit is the document's own rule, already
+ * held by the parser.
+ */
+function hardBreaksAllowed(
+  field: Extract<ManagedValueField, { type: "rich_text" }>,
+  hardBreaks: number,
+): boolean {
+  if (hardBreaks === 0) return true;
+  const { allowHardBreaks, maxHardBreaks } = field.constraints;
+  return allowHardBreaks === true && (maxHardBreaks === undefined || hardBreaks <= maxHardBreaks);
 }
 
 function richTextLinkAllowed(
@@ -341,8 +450,7 @@ function richTextLinkAllowed(
 ): boolean {
   if (!field.constraints.allowLinks) return false;
   if (!field.constraints.allowedTargets.includes(mark.target)) return false;
-  const host = externalHost(mark.destination);
-  return host === null || field.constraints.allowedExternalHosts.includes(host);
+  return isAdmittedExternalHost(mark.destination, field.constraints);
 }
 
 interface TextConstraints {
@@ -351,13 +459,44 @@ interface TextConstraints {
   readonly newlines: "forbid" | "allow";
 }
 
+/**
+ * Text is measured in code points, as megaseo-web's CMS measures it
+ * (`char_length`, `[...text].length`), so an emoji counts once toward
+ * `maxLength`. `minLength` still admits a value whose UTF-16 length meets it:
+ * code points never exceed UTF-16 units, so measuring the minimum in code
+ * points alone could refuse a value this contract admitted before, and a
+ * minimum the CMS holds more strictly is refused there, on write. Plain text,
+ * heading text and link labels all come through here.
+ */
 function validatesText(value: string, constraints: TextConstraints): boolean {
   const { minLength, maxLength, newlines } = constraints;
   return (
     value.length >= minLength &&
-    value.length <= maxLength &&
+    [...value].length <= maxLength &&
     (newlines === "allow" || !/[\r\n]/u.test(value))
   );
+}
+
+function isSeoTextField(field: ManagedTextField): boolean {
+  return field.type === "plain_text" && isManagedSeoTextSemantic(field.semantic);
+}
+
+/**
+ * A template or search-pattern field's text holds exactly its declared tokens
+ * (`text-template.ts`): one value rule, whatever fills the tokens.
+ */
+function breaksTemplate(field: ManagedTextField, value: string): boolean {
+  const declared =
+    field.type === "plain_text"
+      ? (field.constraints.template ?? field.constraints.pattern)
+      : field.constraints.pattern;
+  return declared !== undefined && managedTextTemplateRefusal(declared, value) !== null;
+}
+
+/** Attribute text is safe to read aloud and never blank (`attribute-text.ts`). */
+function breaksAttributeText(field: ManagedTextField, value: string): boolean {
+  if (field.type !== "plain_text" || field.constraints.attribute === undefined) return false;
+  return managedAttributeTextRefusal(value) !== null;
 }
 
 function validateTextFieldContent(
@@ -366,7 +505,10 @@ function validateTextFieldContent(
 ): void {
   if (
     (content.type !== "plain_text" && content.type !== "heading_text") ||
-    !validatesText(content.value, field.constraints)
+    !validatesText(content.value, field.constraints) ||
+    breaksTemplate(field, content.value) ||
+    breaksAttributeText(field, content.value) ||
+    (isSeoTextField(field) && hasUnsafeTextCharacter(content.value))
   ) {
     fail("FIELD_VALUE_TEXT", "Text violates its field constraints");
   }
@@ -391,6 +533,10 @@ function validateLinkFieldContent(
 ): void {
   if (content.type !== "link") {
     fail("FIELD_VALUE_IDENTITY", "Content value does not match its field descriptor");
+  }
+  if (content.value === null) {
+    if (isManagedOptionalItemField(field)) return;
+    fail("FIELD_VALUE_LINK_REQUIRED", "A link is required for this field");
   }
   const labelValid = validatesText(content.value.label, field.constraints.labelConstraints);
   const targetValid = field.constraints.allowedTargets.includes(content.value.target);
@@ -426,8 +572,33 @@ export function validateParsedManagedFieldValue(
     case "link":
       return validateLinkFieldContent(field, content);
     case "image":
+      return validateImagePresence(field, content);
     case "collection":
+    case "toggle":
       return;
+    case "icon":
+      return validateIconFieldContent(field, content);
+  }
+}
+
+/** An image is required unless its field is declared optional. */
+function validateImagePresence(
+  field: Extract<ManagedValueField, { type: "image" }>,
+  content: ManagedSiteContentValue,
+): void {
+  if (content.value === null && !isManagedOptionalItemField(field)) {
+    fail("FIELD_VALUE_IMAGE_REQUIRED", "An image is required for this field");
+  }
+}
+
+/** An icon value names one of its field's choices, and nothing else. */
+function validateIconFieldContent(
+  field: Extract<ManagedValueField, { type: "icon" }>,
+  content: ManagedSiteContentValue,
+): void {
+  const chosen = content.type === "icon" ? content.value : null;
+  if (!field.constraints.choices.some((choice) => choice.name === chosen)) {
+    fail("FIELD_VALUE_ICON", "Icon is not one of its field's choices");
   }
 }
 

@@ -121,17 +121,17 @@ function image(pointer: string) {
     type: "image",
   });
   if (
-    !content.value.path.startsWith("public/") ||
-    content.value.altText === null
+    !content.value!.path.startsWith("public/") ||
+    content.value!.altText === null
   ) {
     return fail("Managed hero image must be public and informative");
   }
   return Object.freeze({
     fieldId: field.id,
-    src: `/${content.value.path.slice("public/".length)}`,
-    alt: content.value.altText,
-    width: content.value.width,
-    height: content.value.height,
+    src: `/${content.value!.path.slice("public/".length)}`,
+    alt: content.value!.altText,
+    width: content.value!.width,
+    height: content.value!.height,
   });
 }
 

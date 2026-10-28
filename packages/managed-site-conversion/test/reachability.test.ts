@@ -1163,9 +1163,9 @@ const SEO_CONFIG = {
   contentRoot: "src/content",
   assetRoot: "public",
   bridge: {
-    version: "v7",
-    src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
-    integrity: "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ",
+    version: "v13",
+    src: "https://app.gomega.ai/review-bridge/v13/review-bridge.js",
+    integrity: "sha384-GrpOL0+U/drV+M5Xmr7vIU11jHh4rpRJrsIAvBgdXnytkyWHDnssPzhI1wK/GpTg",
     crossOrigin: "anonymous",
     load: "head_defer",
   },

@@ -1,6 +1,7 @@
 import type { ManagedSiteContentDocument } from "./content.js";
 import { validateManagedContentCollections } from "./content-semantics-collections.js";
 import { collectManagedContentSemanticFacts } from "./content-semantics-facts.js";
+import { validateManagedContentLevelOneHeadings } from "./content-semantics-headings.js";
 import {
   validateManagedContentAssets,
   validateManagedContentValues,
@@ -17,4 +18,5 @@ export function validateManagedSiteContractV1ContentSemantics(
   validateManagedContentValues(facts);
   validateManagedContentCollections(facts);
   validateManagedContentAssets(facts);
+  validateManagedContentLevelOneHeadings(contract, content);
 }

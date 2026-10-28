@@ -81,9 +81,6 @@ export const STRUCTURAL_ATTRIBUTES: ReadonlySet<string> = new Set([
   "suppressHydrationWarning",
 ]);
 
-/** Inline formatting elements. Their presence turns a block into rich text. */
-export const INLINE_MARK_TAGS: ReadonlySet<string> = new Set(["em", "i", "strong", "b"]);
-
 /** Landmark elements. Unique within a component they act as durable regions. */
 export const LANDMARK_TAGS: ReadonlySet<string> = new Set([
   "header",
@@ -129,6 +126,10 @@ export function namesARegion(element: JsxElementNode, tag: string): boolean {
   return childrenOf(element).some(
     (child) => ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child),
   );
+}
+
+export function isElementChild(child: ts.JsxChild): child is JsxElementNode {
+  return ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child);
 }
 
 export function childrenOf(node: JsxElementNode): readonly ts.JsxChild[] {
@@ -268,24 +269,58 @@ export function hasAriaHidden(node: JsxElementNode): boolean {
   return expression.kind !== ts.SyntaxKind.FalseKeyword;
 }
 
-const HTML_ENTITIES: ReadonlyMap<string, string> = new Map([
-  ["&ldquo;", "“"],
-  ["&rdquo;", "”"],
-  ["&lsquo;", "‘"],
-  ["&rsquo;", "’"],
-  ["&nbsp;", " "],
-  ["&amp;", "&"],
-  ["&mdash;", "—"],
-  ["&ndash;", "–"],
-  ["&copy;", "©"],
-]);
-
+/**
+ * JSX text as the compiler produces it.
+ *
+ * JSX decodes HTML character references in text children, so the value a page
+ * RENDERS is the decoded one. This used to hold a hand-written map of nine
+ * entities. `&apos;` was not among them, so `don&apos;t buy one.` was
+ * extracted verbatim, stored in the content document, and a page rendering
+ * that value re-escaped the ampersand and displayed `don&apos;t` to the
+ * customer. Fourteen values on All Points Media carried a raw entity.
+ *
+ * A list of entities is never finished, so this asks the compiler (see
+ * `decodeJsxEntities`) rather than keeping one. The map also decoded in
+ * sequence, which double-decodes: `&amp;lt;` became `<` rather than `&lt;`.
+ * One pass does not.
+ *
+ * Whitespace is collapsed BEFORE decoding, and the order matters: `\s` matches
+ * U+00A0, so decoding first would let the collapse destroy a non-breaking
+ * space that `&nbsp;` had just produced.
+ */
 export function normaliseJsxText(raw: string): string {
-  let text = raw.replace(/\s+/gu, " ");
-  for (const [entity, character] of HTML_ENTITIES) {
-    text = text.replaceAll(entity, character);
-  }
-  return text;
+  return decodeJsxEntities(raw.replace(/\s+/gu, " "));
+}
+
+const JSX_REFERENCE = /&(?:#x[0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]*);/gu;
+const decodedReferences = new Map<string, string>();
+
+/**
+ * A character reference as the JSX compiler decodes it, asked of the compiler.
+ *
+ * JSX knows the HTML 4 names and maps a numeric reference straight to its code
+ * point. An HTML5 decoder knows two thousand more names and remaps some
+ * numbers (`&#x80;` to a euro sign), so `&check;` came out as a tick while the
+ * page, built by a compiler that leaves it alone, showed `&check;`. Next's
+ * compiler and TypeScript's agree on this, so the compiler here is the oracle,
+ * one reference at a time and remembered.
+ */
+function decodedReference(reference: string): string {
+  const known = decodedReferences.get(reference);
+  if (known !== undefined) return known;
+  const emitted = ts.transpileModule(`<p>${reference}</p>;`, {
+    compilerOptions: { jsx: ts.JsxEmit.React },
+    fileName: "reference.tsx",
+  }).outputText;
+  const literal = /createElement\("p", null, ("(?:[^"\\]|\\.)*")\)/u.exec(emitted)?.[1];
+  const decoded = literal === undefined ? reference : (JSON.parse(literal) as string);
+  decodedReferences.set(reference, decoded);
+  return decoded;
+}
+
+/** Every character reference in JSX text or a JSX attribute string, decoded once. */
+export function decodeJsxEntities(text: string): string {
+  return text.replace(JSX_REFERENCE, decodedReference);
 }
 
 /** A `{" "}` style spacer contributes whitespace, not content. */

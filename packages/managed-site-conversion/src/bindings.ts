@@ -3,6 +3,7 @@ import type { StableId } from "@landing-pages-websites/managed-site-contract";
 import { anchorToJsonPointer, humaniseAnchorTail, renderAnchor, type AnchorPath } from "./anchors.js";
 import type { Candidate } from "./candidates.js";
 import type { IdLedger } from "./id-ledger.js";
+import type { RouteRender } from "./reachability.js";
 import type { Finding } from "./report.js";
 
 /**
@@ -13,9 +14,42 @@ import type { Finding } from "./report.js";
 
 export interface PageBinding {
   readonly routePath: string;
+  /**
+   * The route's own module.
+   *
+   * Needed to annotate the page ROOT, which the editor requires: field
+   * discovery scopes to `[data-gomega-page-id]` and returns nothing at all
+   * when no single element carries it, so a page without this has zero
+   * editable fields however many of its values were rewritten.
+   */
+  readonly file: string;
   readonly pageId: StableId<"page">;
   readonly slug: string;
-  readonly componentNames: ReadonlySet<string>;
+  /**
+   * The declarations this route renders, as `declarationKey` identities.
+   *
+   * Names, which this carried until a reviewer found the hole, cannot say
+   * which route owns a value: two modules may each declare `AdminCard`. See
+   * `pagesUsing`.
+   */
+  readonly componentKeys: ReadonlySet<string>;
+  /**
+   * What the chain rendering this route renders, from the walk that read it.
+   *
+   * Scan detail, like `file` beside it, and carried on the binding for the same
+   * reason: a parallel map keyed on route path needs a fallback at the far end
+   * for a key that cannot be missing, and a fallback that can only fire if the
+   * seam is inconsistent is a seam that should not be able to be.
+   */
+  readonly render: RouteRender;
+  /**
+   * Whether a customer owns the words on this route, from the conversion
+   * config's `managedContent`. False for an internal screen, which keeps its
+   * SEO facts and offers none of its own words, so nothing declared here is
+   * proposed and the rewriter does not annotate its root either. A component
+   * it shares with a content-bearing route is unaffected.
+   */
+  readonly ownsContent: boolean;
 }
 
 export interface FieldBinding {
@@ -97,12 +131,19 @@ function humanise(raw: string): string {
  * Every route that renders any of the components this value appears in. A value
  * read from a declared binding can be rendered by several components, and it is
  * on every route any one of them reaches.
+ *
+ * Matched on `declarationKey` identities, never on names. Two modules may each
+ * declare a component called `AdminCard`; asking which routes render "one
+ * called AdminCard" answers for both, which decides the wrong scope, writes the
+ * value into the wrong content document, and -- once a route may decline
+ * content -- lets a candidate from a public page claim an internal screen as an
+ * owner and be rewritten there.
  */
 function pagesUsing(
-  componentNames: readonly string[],
+  componentKeys: readonly string[],
   pages: readonly PageBinding[],
 ): readonly PageBinding[] {
-  return pages.filter((page) => componentNames.some((name) => page.componentNames.has(name)));
+  return pages.filter((page) => componentKeys.some((key) => page.componentKeys.has(key)));
 }
 
 /**
@@ -222,7 +263,7 @@ export function bindCandidates(
   const sectionMeta = new Map<string, { readonly name: string; readonly page: PageBinding }>();
 
   for (const candidate of candidates) {
-    const owners = pagesUsing(candidate.componentNames, pages);
+    const owners = pagesUsing(candidate.componentKeys, pages);
     const owner = owners[0];
     if (owner === undefined) continue;
     const scope: "site" | "page" = owners.length > 1 ? "site" : "page";

@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Proposes a managed-site contract for a Next.js repository, and refuses to guess.",
+  "description": "Proposes a managed-site contract for a Next.js repository, rewrites the repository to read it, and refuses to guess.",
   "scripts": {
     "propose": "tsx src/cli.ts",
     "test": "tsx --test test/*.test.ts",
-    "type-check": "tsc --project tsconfig.json --noEmit"
+    "type-check": "tsc --project tsconfig.json --noEmit",
+    "parity": "tsx src/parity-cli.ts"
   },
   "dependencies": {
-    "@landing-pages-websites/managed-site-contract": "0.5.0",
+    "@landing-pages-websites/managed-site-contract": "0.43.0",
     "typescript": "^5"
   },
   "devDependencies": {

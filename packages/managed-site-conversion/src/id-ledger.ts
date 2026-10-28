@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 import {
   mintStableId,
@@ -17,7 +18,7 @@ import {
 
 const LEDGER_VERSION = "1";
 
-interface LedgerRecord {
+export interface LedgerRecord {
   readonly kind: StableIdKind;
   readonly id: string;
   readonly anchor: string;
@@ -60,6 +61,7 @@ function parseLedgerDocument(text: string): LedgerDocument {
 export class IdLedger {
   readonly #known = new Map<string, LedgerRecord>();
   readonly #used = new Set<string>();
+  readonly #minted = new Set<string>();
   readonly #tombstones: string[];
 
   private constructor(document: LedgerDocument) {
@@ -95,9 +97,24 @@ export class IdLedger {
       );
     }
     const minted = mintStableId(kind);
+    this.#minted.add(minted);
     this.#known.set(anchor, { kind, id: minted, anchor });
     this.#used.add(anchor);
     return minted;
+  }
+
+  /** Whether this run minted the id, rather than finding it already bound. */
+  mintedThisRun(id: string): boolean {
+    return this.#minted.has(id);
+  }
+
+  /**
+   * The ledger records this run retired: bound in the ledger it loaded, with
+   * an anchor this run never resolved. Their anchors are the structural
+   * evidence of what replaced them.
+   */
+  retiredRecords(): readonly LedgerRecord[] {
+    return [...this.#known.values()].filter((entry) => !this.#used.has(entry.anchor));
   }
 
   /** IDs whose anchor vanished this run. Never reused; surfaced to the contract. */
@@ -117,6 +134,11 @@ export class IdLedger {
       entries,
       tombstonedIds: this.retiredIds(),
     };
+    // The ledger's directory is the site's content root, which a plain
+    // proposal run has not written to yet -- only `--write-sources` and
+    // `--rewire` create it. Left to the caller, the default path threw at the
+    // very end of every run that had not asked for one of those.
+    mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`, "utf8");
   }
 }

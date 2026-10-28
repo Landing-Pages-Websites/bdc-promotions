@@ -159,24 +159,28 @@ test("one component reading the same binding twice is still one field", () => {
 });
 
 /**
+ * A page renders declarations, not names, so a hand-built binding takes its
+ * `componentKeys` from what extraction actually produced. Spelling them by
+ * name here would test a join this code no longer performs.
+ */
+function keysRendering(
+  candidates: readonly Candidate[],
+  component: string,
+): ReadonlySet<string> {
+  return new Set(
+    candidates
+      .filter((candidate) => candidate.componentNames.includes(component))
+      .flatMap((candidate) => candidate.componentKeys),
+  );
+}
+
+/**
  * A section belongs to one page. Values anchored on a declaration carry no
  * component and no region, so before this they all rendered to the same empty
  * section key and the last candidate to arrive decided which page the whole
  * group was emitted under.
  */
 test("declared values on different routes are sections on their own pages", () => {
-  const home: PageBinding = {
-    routePath: "/",
-    pageId: "page_home" as PageBinding["pageId"],
-    slug: "home",
-    componentNames: new Set(["Hero"]),
-  };
-  const contact: PageBinding = {
-    routePath: "/contact",
-    pageId: "page_contact" as PageBinding["pageId"],
-    slug: "contact",
-    componentNames: new Set(["ContactPanel"]),
-  };
   const extracted = extractRepository({
     "lib/content.ts": `export const ctas = { primary: { label: "Go" }, rfp: { label: "RFP" } };`,
     "Hero.tsx": reader("Hero", "ctas.primary.label", `import { ctas } from "./lib/content";`),
@@ -187,6 +191,24 @@ test("declared values on different routes are sections on their own pages", () =
     ),
   });
   assert.equal(extracted.accepted.length, 2);
+  const home: PageBinding = {
+    routePath: "/",
+    file: "app/page.tsx",
+    pageId: "page_home" as PageBinding["pageId"],
+    slug: "home",
+    componentKeys: keysRendering(extracted.accepted, "Hero"),
+    render: { kind: "renders" },
+    ownsContent: true,
+  };
+  const contact: PageBinding = {
+    routePath: "/contact",
+    file: "app/page.tsx",
+    pageId: "page_contact" as PageBinding["pageId"],
+    slug: "contact",
+    componentKeys: keysRendering(extracted.accepted, "ContactPanel"),
+    render: { kind: "renders" },
+    ownsContent: true,
+  };
 
   const bound = bindCandidates(extracted.accepted, [home, contact], IdLedger.empty(), "content");
   assert.equal(bound.sections.length, 2);
@@ -331,9 +353,12 @@ test("two anchors claiming one content pointer fail loudly", () => {
   assert.equal(extracted.accepted.length, 2);
   const page: PageBinding = {
     routePath: "/",
+    file: "app/page.tsx",
     pageId: "page_home" as PageBinding["pageId"],
     slug: "home",
-    componentNames: new Set(["Panel"]),
+    componentKeys: keysRendering(extracted.accepted, "Panel"),
+    render: { kind: "renders" },
+    ownsContent: true,
   };
   assert.throws(
     () => bindCandidates(extracted.accepted, [page], IdLedger.empty(), "content"),

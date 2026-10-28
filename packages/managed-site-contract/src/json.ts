@@ -241,6 +241,28 @@ function parseValue(value: unknown, context: ParseContext, depth: number): JsonV
   return fail("JSON_UNSUPPORTED_TYPE", `Unsupported JSON value type: ${typeof value}`);
 }
 
+/**
+ * A mutable deep copy of a JSON value, built from this module's own realm so
+ * the copy passes the plain-object check wherever the package runs.
+ * `structuredClone` builds from the host realm, which a vm-isolated consumer
+ * (Jest runs each suite in its own context) then refuses as non-plain.
+ * `Object.fromEntries` defines keys rather than assigning them, so a
+ * `__proto__` key stays a key. It applies no limits: pass only a value
+ * `parseJsonValue` (or a parser built on it) already admitted.
+ */
+export function copyJsonValue<T extends JsonValue>(value: T): T;
+export function copyJsonValue(value: JsonValue): JsonValue {
+  if (value === null || typeof value !== "object") {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return Array.from(value as readonly JsonValue[], (entry) => copyJsonValue(entry));
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [key, copyJsonValue(entry)]),
+  );
+}
+
 export function parseJsonValue(
   input: unknown,
   limits: JsonParseLimits = {},

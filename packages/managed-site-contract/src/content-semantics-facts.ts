@@ -178,7 +178,7 @@ function completeContractIndexes(
   for (const id of contract.tombstonedIds) addContractId(indexes, id);
 }
 
-function ownerKey(owner: ManagedContentOwner): string {
+export function ownerKey(owner: ManagedContentOwner): string {
   switch (owner.kind) {
     case "site":
       return "site";
@@ -196,7 +196,7 @@ export function contentValueKey(
   return `${fieldId}|${ownerKey(owner)}`;
 }
 
-function requiredOwner(field: ManagedNonItemField): ManagedContentOwner {
+export function requiredOwner(field: ManagedNonItemField): ManagedContentOwner {
   if (field.scope === "site") return { kind: "site" };
   const pageId = field.usages[0]?.pageId;
   if (pageId === undefined) {

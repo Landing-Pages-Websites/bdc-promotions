@@ -105,6 +105,19 @@ test("an ordered list is an ordered list", () => {
   assert.equal(rich.document.content[0]?.type, "ordered_list");
 });
 
+test("a list whose item holds a line break keeps the ordinary walk, not a list document", () => {
+  // A list document is never rendered in place, so its <br> would lose the
+  // source's class. Before breaks were nodes such a list fell back; it still does.
+  for (const item of [`One<br />Two`, `One<br className="hidden md:block" />Two`]) {
+    const { accepted } = extract(page(`      <ul><li>${item}</li><li>Three</li></ul>`));
+    assert.equal(
+      accepted.some((candidate) => candidate.kind === "rich_text" && JSON.stringify(candidate).includes("bullet_list")),
+      false,
+      item,
+    );
+  }
+});
+
 test("marks inside an item survive", () => {
   const { accepted } = extract(
     page(`      <ul><li>Plain <strong>bold</strong></li><li>Two</li></ul>`),
@@ -116,7 +129,7 @@ test("marks inside an item survive", () => {
   assert.ok(paragraph !== undefined);
   // "Plain " and "bold" arrive as two inlines, the second carrying the mark.
   assert.equal(paragraph.content.length, 2);
-  assert.deepEqual(paragraph.content[1]?.marks, [{ type: "bold" }]);
+  assert.deepEqual(paragraph.content[1], { type: "text", text: "bold", marks: [{ type: "bold" }] });
 });
 
 test("a list built by map stays a collection, not one blob of text", () => {
@@ -317,11 +330,28 @@ for (const [why, items] of [
 
 /**
  * A mark kind may appear once on a text node; the schema rejects a repeat.
- * Nesting a tag inside itself adds no formatting, so it is recorded once.
+ * Nesting a tag inside itself cannot be said by one mark, and rendering one
+ * element where the source had two changes the page, so the list is refused
+ * rather than flattened (see `inline-blocks.test.ts`). Two DIFFERENT marks
+ * nested are two marks, and the document the list produces must be one its own
+ * contract accepts.
  */
 for (const [why, item] of [
   ["the same mark nested", `<li><strong><strong>Text</strong></strong></li>`],
   ["a mark nested three deep", `<li><em><em><em>Text</em></em></em></li>`],
+] as const) {
+  test(`${why} is not read as a list`, () => {
+    const { accepted } = extract(page(`      <ul>\n        ${item}\n        <li>Plain</li>\n      </ul>`));
+    const asList = accepted.find(
+      (candidate) =>
+        candidate.kind === "rich_text" &&
+        candidate.document.content.some((block) => block.type === "bullet_list"),
+    );
+    assert.equal(asList, undefined, `${why} was read as one list`);
+  });
+}
+
+for (const [why, item] of [
   ["two different marks nested", `<li><strong><em>Text</em></strong></li>`],
 ] as const) {
   test(`${why} produces a document its own contract accepts`, () => {

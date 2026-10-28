@@ -2,9 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  bridgeSrcFor,
+  CURRENT_BRIDGE_VERSION,
   parseManagedFieldDescriptor,
   parseManagedSiteContractV1,
+  SUPPORTED_BRIDGE_VERSIONS,
   validateManagedFieldValue,
+  validateManagedSiteContractV1JsonSchema,
 } from "../src/index.js";
 import {
   linkContentValue,
@@ -13,7 +17,7 @@ import {
   stableId,
 } from "./schema-fixtures.js";
 
-const BRIDGE_SRC = "https://app.gomega.ai/review-bridge/v7/review-bridge.js";
+const BRIDGE_SRC = bridgeSrcFor(CURRENT_BRIDGE_VERSION);
 
 function withBridgeDelivery(patch: Record<string, unknown>): Record<string, unknown> {
   const contract = managedSiteContract();
@@ -38,26 +42,102 @@ function generatedRoute(pattern: string): Record<string, unknown> {
 }
 
 describe("contract-local identity boundaries", () => {
-  it("pins edit protocol 2 to the one promoted bridge source", () => {
-    assert.doesNotThrow(() =>
-      parseManagedSiteContractV1(withBridgeDelivery({ version: "v7", src: BRIDGE_SRC })),
-    );
-    // v6 included deliberately: the version just superseded is the one a copied
-    // contract is most likely to still name.
-    for (const version of ["v1", "v3", "v4", "v5", "v6", "v999"]) {
-      assert.throws(() => parseManagedSiteContractV1(withBridgeDelivery({ version })));
+  /**
+   * Every supported version is accepted at its own src and nowhere else. The
+   * refusals are derived per version, so promoting the next bridge adds its
+   * near misses without anyone remembering to write them.
+   */
+  it("pins edit protocol 2 to each supported bridge at its own source", () => {
+    assert.deepEqual([...SUPPORTED_BRIDGE_VERSIONS], ["v7", "v8", "v9", "v10", "v11", "v12", "v13"]);
+    assert.equal(CURRENT_BRIDGE_VERSION, SUPPORTED_BRIDGE_VERSIONS.at(-1));
+    for (const version of SUPPORTED_BRIDGE_VERSIONS) {
+      const src = bridgeSrcFor(version);
+      assert.equal(src, `https://app.gomega.ai/review-bridge/${version}/review-bridge.js`);
+      assert.doesNotThrow(() =>
+        parseManagedSiteContractV1(withBridgeDelivery({ version, src })),
+      );
+      for (const nearMiss of [
+        `https://evil.example/review-bridge/${version}/review-bridge.js`,
+        `https://app.gomega.ai.evil.example/review-bridge/${version}/review-bridge.js`,
+        `https://app.gomega.ai/review-bridge/${version}/alternate.js`,
+        `https://app.gomega.ai/review-bridge/${version}/review-bridge.min.js`,
+        `https://app.gomega.ai/review-bridge/${version}/`,
+        `https://app.gomega.ai/review-bridge/${version.toUpperCase()}/review-bridge.js`,
+        `https://APP.gomega.ai/review-bridge/${version}/review-bridge.js`,
+        `https://app.gomega.ai:443/review-bridge/${version}/review-bridge.js`,
+        `https://app.gomega.ai//review-bridge/${version}/review-bridge.js`,
+        `${src}?candidate=1`,
+        `${src}#alternate`,
+        `${src} `,
+        `https://user@app.gomega.ai/review-bridge/${version}/review-bridge.js`,
+        `http://app.gomega.ai/review-bridge/${version}/review-bridge.js`,
+        // Every other version's asset, including the neighbours: a v10 descriptor
+        // loading v9's file, or a v9 descriptor loading v10's, names one runtime
+        // and delivers another.
+        ...["v3", "v4", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14"]
+          .filter((other) => other !== version)
+          .map((other) => `https://app.gomega.ai/review-bridge/${other}/review-bridge.js`),
+      ]) {
+        assert.throws(
+          () => parseManagedSiteContractV1(withBridgeDelivery({ version, src: nearMiss })),
+          undefined,
+          `${version} at ${nearMiss}`,
+        );
+      }
     }
-    for (const src of [
-      "https://evil.example/review-bridge/v7/review-bridge.js",
-      "https://app.gomega.ai/review-bridge/v3/review-bridge.js",
-      "https://app.gomega.ai/review-bridge/v4/review-bridge.js",
-      "https://app.gomega.ai/review-bridge/v7/alternate.js",
-      `${BRIDGE_SRC}?candidate=1`,
-      `${BRIDGE_SRC}#alternate`,
-      "https://user@app.gomega.ai/review-bridge/v7/review-bridge.js",
-      "http://app.gomega.ai/review-bridge/v7/review-bridge.js",
+    // Unsupported versions fail at their own src and at a supported one. v6 is
+    // the version most recently dropped, v14 the one not yet promoted.
+    for (const version of ["v1", "v3", "v4", "v5", "v6", "v14", "v999", "V13", "v013", "13", "latest", ""]) {
+      const ownSrc = `https://app.gomega.ai/review-bridge/${version}/review-bridge.js`;
+      for (const src of [ownSrc, BRIDGE_SRC]) {
+        assert.throws(
+          () => parseManagedSiteContractV1(withBridgeDelivery({ version, src })),
+          undefined,
+          `${version} at ${src}`,
+        );
+      }
+    }
+    for (const integrity of [
+      "sha384-abc",
+      `sha256-${"a".repeat(64)}`,
+      `sha384-${"a".repeat(63)}`,
+      `sha384-${"a".repeat(65)}`,
     ]) {
-      assert.throws(() => parseManagedSiteContractV1(withBridgeDelivery({ src })));
+      assert.throws(() => parseManagedSiteContractV1(withBridgeDelivery({ integrity })));
+    }
+  });
+
+  it("accepts the same bridge deliveries in the JSON Schema artifact as in the parser", () => {
+    const cases = [
+      ...SUPPORTED_BRIDGE_VERSIONS.map((version) => ({ version, src: bridgeSrcFor(version) })),
+      { version: "v8", src: bridgeSrcFor("v7") },
+      { version: "v7", src: bridgeSrcFor("v8") },
+      { version: "v9", src: bridgeSrcFor("v8") },
+      { version: "v8", src: bridgeSrcFor("v9") },
+      { version: "v10", src: bridgeSrcFor("v9") },
+      { version: "v9", src: bridgeSrcFor("v10") },
+      { version: "v11", src: bridgeSrcFor("v10") },
+      { version: "v10", src: bridgeSrcFor("v11") },
+      { version: "v12", src: bridgeSrcFor("v11") },
+      { version: "v11", src: bridgeSrcFor("v12") },
+      { version: "v13", src: bridgeSrcFor("v12") },
+      { version: "v12", src: bridgeSrcFor("v13") },
+      { version: "v14", src: "https://app.gomega.ai/review-bridge/v14/review-bridge.js" },
+      { version: "v6", src: "https://app.gomega.ai/review-bridge/v6/review-bridge.js" },
+    ];
+    for (const patch of cases) {
+      const contract = withBridgeDelivery(patch);
+      let parses = true;
+      try {
+        parseManagedSiteContractV1(contract);
+      } catch {
+        parses = false;
+      }
+      assert.equal(
+        validateManagedSiteContractV1JsonSchema(contract).valid,
+        parses,
+        `${patch.version} at ${patch.src}`,
+      );
     }
   });
 
