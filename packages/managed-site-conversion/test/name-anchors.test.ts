@@ -841,20 +841,24 @@ test("an unrelated escaped selector does not block the name", () => {
  * A dry run writes the proposed names into the repository, and a second
  * unchanged run that read them back would find every name occupied and propose
  * suffixed ones -- the same input answering differently each time.
+ *
+ * The output directory is caller-supplied, so the exclusion has to be per-run.
+ * `.managed-site-proposal`, the DEFAULT, is skipped by name as well -- see
+ * `SKIPPED_DIRECTORIES` -- which is why this case names its report folder
+ * something else. A run given no exclusion at all must still drift, or the
+ * per-run exclusion proves nothing.
  */
 test("a previous proposal in the repository does not change the next one", () => {
   const root = write({
     ...PAGE(`      <p>Start anywhere</p>\n      <p>Finish anywhere</p>`),
-    ".managed-site-proposal/anchor-names.json": JSON.stringify({
+    "reports/anchor-names.json": JSON.stringify({
       names: [{ id: "ms-home-start-anywhere" }, { id: "ms-home-finish-anywhere" }],
     }),
   });
   const withoutOutput = nameAmbiguousAnchors(proposeIn(root).ambiguous, root);
-  const withOutput = nameAmbiguousAnchors(
-    proposeIn(root).ambiguous,
-    root,
-    join(root, ".managed-site-proposal"),
-  );
+  const withOutput = nameAmbiguousAnchors(proposeIn(root).ambiguous, root, {
+    outputDirectory: join(root, "reports"),
+  });
   // Excluded, the names are the plain ones. Included, they collide with
   // themselves and drift to suffixes.
   assert.deepEqual(
@@ -864,6 +868,29 @@ test("a previous proposal in the repository does not change the next one", () =>
   assert.notDeepEqual(
     withoutOutput.names.map((name) => name.id).sort(),
     withOutput.names.map((name) => name.id).sort(),
+  );
+});
+
+/**
+ * The default output directory is skipped by name, in every walk this tool
+ * makes rather than only the one the run was told about.
+ *
+ * Nothing broke before it was: the report that quotes `id="ms-..."` evidence is
+ * a `.txt` and `.txt` is not a searched extension, so the corpus never read it.
+ * A rule beats an accident, and the walks that find render sites, read route
+ * metadata and drive the proposer were never given the exclusion at all.
+ */
+test("the default proposal directory is skipped even with no exclusion given", () => {
+  const root = write({
+    ...PAGE(`      <p>Start anywhere</p>\n      <p>Finish anywhere</p>`),
+    ".managed-site-proposal/anchor-names.json": JSON.stringify({
+      names: [{ id: "ms-home-start-anywhere" }, { id: "ms-home-finish-anywhere" }],
+    }),
+  });
+
+  assert.deepEqual(
+    nameAmbiguousAnchors(proposeIn(root).ambiguous, root).names.map((name) => name.id).sort(),
+    ["ms-home-finish-anywhere", "ms-home-start-anywhere"],
   );
 });
 
@@ -1399,6 +1426,7 @@ function candidateAt(file: string, marker: string): Candidate {
     value: "Fixed words",
     anchor: [{ kind: "component", name: "Home" }, { kind: "role", tag: "p", attribute: null }, { kind: "text" }],
     componentNames: ["Home"],
+    componentKeys: [`${file}#Home@${String(offset)}`],
     location: { file, line, offset },
     evidence: marker,
     ownership: "customer_editable",
@@ -1424,7 +1452,7 @@ for (const sibling of ["outside", "out-takes", "outer/deep"] as const) {
       "out/anchor-names.txt": "",
       [`${sibling}/globals.css`]: "#ms-home-start-anywhere { color: red; }\n",
     });
-    const { names } = nameAmbiguousAnchors(proposeIn(root).ambiguous, root, join(root, "out"));
+    const { names } = nameAmbiguousAnchors(proposeIn(root).ambiguous, root, { outputDirectory: join(root, "out") });
     assert.ok(names.length > 0, "the page is still nameable");
     for (const name of names) {
       assert.notEqual(name.id, "ms-home-start-anywhere", `${sibling} was treated as output`);
@@ -1438,11 +1466,86 @@ test("the output directory is excluded from the scan", () => {
     ...TWINS,
     "out/globals.css": "#ms-home-start-anywhere { color: red; }\n",
   });
-  const { names } = nameAmbiguousAnchors(proposeIn(root).ambiguous, root, join(root, "out"));
+  const { names } = nameAmbiguousAnchors(proposeIn(root).ambiguous, root, { outputDirectory: join(root, "out") });
   assert.ok(
     names.some((name) => name.id === "ms-home-start-anywhere"),
     JSON.stringify(names.map((name) => name.id)),
   );
+});
+
+/**
+ * The ledger is the tool's own artifact too, and it is the one that has to live
+ * in the tree.
+ *
+ * It records the anchor every id was minted for, so every name already handed
+ * out appears in it as text. Scanned, it reserves the names it is the record of,
+ * and the next run mints `-2` for a value that has not moved -- which changes
+ * that value's anchor, which mints a new field id, which is exactly the
+ * stability the ledger exists to provide. The third run would say `-3`.
+ *
+ * Converting All Points Media a second time did this to `ms-proof-challenge`.
+ */
+test("the ledger is excluded from the scan, so a name it holds is not taken twice", () => {
+  const root = write({
+    ...TWINS,
+    "src/content/managed-site.idmap.json": JSON.stringify({
+      version: 1,
+      entries: { "anchor:component:Home/role:p/id:ms-home-start-anywhere/text": "field_x" },
+      tombstonedIds: [],
+    }),
+  });
+  const ledgerPath = join(root, "src/content/managed-site.idmap.json");
+
+  assert.ok(
+    nameAmbiguousAnchors(proposeIn(root).ambiguous, root, { ledgerPath }).names.some(
+      (name) => name.id === "ms-home-start-anywhere",
+    ),
+    "the plain name is still available",
+  );
+});
+
+/** Or the exclusion above is inert and proves nothing. */
+test("a ledger left in the scan does reserve its own names", () => {
+  const root = write({
+    ...TWINS,
+    "src/content/managed-site.idmap.json": JSON.stringify({
+      version: 1,
+      entries: { "anchor:component:Home/role:p/id:ms-home-start-anywhere/text": "field_x" },
+      tombstonedIds: [],
+    }),
+  });
+
+  assert.equal(
+    nameAmbiguousAnchors(proposeIn(root).ambiguous, root, {}).names.some(
+      (name) => name.id === "ms-home-start-anywhere",
+    ),
+    false,
+    "unexcluded, the ledger takes the name it is the record of",
+  );
+});
+
+/** Both exclusions at once: neither may cancel the other. */
+test("the output directory and the ledger are both excluded", () => {
+  const root = write({
+    ...TWINS,
+    "out/globals.css": "#ms-home-start-anywhere { color: red; }\n",
+    "src/content/managed-site.idmap.json": JSON.stringify({
+      version: 1,
+      entries: { "anchor:component:Home/role:p/id:ms-home-finish-anywhere/text": "field_y" },
+      tombstonedIds: [],
+    }),
+  });
+  const { names } = nameAmbiguousAnchors(proposeIn(root).ambiguous, root, {
+    outputDirectory: join(root, "out"),
+    ledgerPath: join(root, "src/content/managed-site.idmap.json"),
+  });
+
+  for (const id of ["ms-home-start-anywhere", "ms-home-finish-anywhere"]) {
+    assert.ok(
+      names.some((name) => name.id === id),
+      `${id} was treated as occupied: ${JSON.stringify(names.map((name) => name.id))}`,
+    );
+  }
 });
 
 /**

@@ -6,6 +6,7 @@ import {
   parseManagedFieldDescriptor,
   parseManagedRichTextDocument,
   validateManagedFieldValue,
+  resolveManagedImageAltText,
   validateManagedImageValue,
 } from "../src/index.js";
 import {
@@ -305,6 +306,38 @@ describe("managed field schemas", () => {
       );
     }
   });
+
+  for (const testCase of [
+    { semantics: { kind: "informative" }, altText: "Gutter", expected: "Gutter" },
+    { semantics: { kind: "decorative" }, altText: "", expected: "" },
+    { semantics: { kind: "fixed_alt", altText: "Company logo" }, altText: null, expected: "Company logo" },
+  ]) {
+    it(`resolves rendered alt text for a ${testCase.semantics.kind} slot`, () => {
+      assert.equal(
+        resolveManagedImageAltText(
+          { ...assetSlot(), semantics: testCase.semantics },
+          { ...imageValue(), altText: testCase.altText },
+        ),
+        testCase.expected,
+      );
+    });
+  }
+
+  for (const testCase of [
+    { semantics: { kind: "informative" }, altText: null },
+    { semantics: { kind: "informative" }, altText: "  " },
+    { semantics: { kind: "decorative" }, altText: "Not empty" },
+    { semantics: { kind: "fixed_alt", altText: "Company logo" }, altText: "Override" },
+  ]) {
+    it(`refuses rendered alt text for a ${testCase.semantics.kind} slot given ${JSON.stringify(testCase.altText)}`, () => {
+      assert.throws(() =>
+        resolveManagedImageAltText(
+          { ...assetSlot(), semantics: testCase.semantics },
+          { ...imageValue(), altText: testCase.altText },
+        ),
+      );
+    });
+  }
 
   it("enforces image dimensions, ratios, policies, bytes, and alt semantics", () => {
     assert.doesNotThrow(() => validateManagedImageValue(assetSlot(), imageValue()));

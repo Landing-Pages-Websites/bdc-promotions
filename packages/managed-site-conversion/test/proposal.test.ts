@@ -15,9 +15,9 @@ const CONFIG = {
   contentRoot: "src/content",
   assetRoot: "public",
   bridge: {
-    version: "v7",
-    src: "https://app.gomega.ai/review-bridge/v7/review-bridge.js",
-    integrity: "sha384-VTUzMpjogRuXFNsE1df8N2HoJyWhNcCkGaUa7aulmDjCmXVoQ4UpQB1xMTrOp3MJ",
+    version: "v13",
+    src: "https://app.gomega.ai/review-bridge/v13/review-bridge.js",
+    integrity: "sha384-GrpOL0+U/drV+M5Xmr7vIU11jHh4rpRJrsIAvBgdXnytkyWHDnssPzhI1wK/GpTg",
     crossOrigin: "anonymous",
     load: "head_defer",
   },
@@ -80,10 +80,18 @@ test("it proposes the values it can name and refuses the rest", () => {
   // Named regions and durable link targets are proposed.
   assert.ok(byPointer.has("/home/services/h2/text"));
   assert.ok(byPointer.has("/home/services/p/text"));
-  // Named by their role, because neither `#contact` nor `/hero.png` may name a
-  // field this tool lets the customer rewrite.
-  assert.ok(byPointer.has("/home/services/a/link"));
+  // Named by its role, because `/hero.png` may not name a field this tool lets
+  // the customer rewrite.
   assert.ok(byPointer.has("/home/services/img/image"));
+  // `#contact` is a bare fragment, which the contract cannot store as written:
+  // it stays in code, reported.
+  assert.equal(byPointer.has("/home/services/a/link"), false);
+  assert.ok(
+    proposal.report.findings.some(
+      (finding) =>
+        finding.code === "LINK_DESTINATION_CODE_OWNED" && finding.evidence.includes("Talk to us"),
+    ),
+  );
   // A module constant's NAME is not the customer's to change, so it still tells
   // the header's third link apart from the other two.
   assert.ok(byPointer.has("/chrome/header/a/bookUrl/link"));
@@ -98,8 +106,8 @@ test("it proposes the values it can name and refuses the rest", () => {
     fields.filter((field) => field.resolver.pointer === "/home/p/text").length,
     0,
   );
-  // The nav's two fragment links differ only by a destination the customer may
-  // rewrite, so neither is proposed and both are reported.
+  // The nav's two links are bare fragments, which render without a path while
+  // the contract stores a page, so neither is proposed and both are reported.
   assert.equal(
     fields.filter((field) => field.resolver.pointer.startsWith("/chrome/header/primary/a")).length,
     0,
@@ -122,9 +130,16 @@ test("accessibility labels and self links stay out of customer authority", () =>
     .filter((field) => field.classification === "code_owned_interface")
     .map((field) => field.resolver.pointer)
     .sort();
+  // The brand's `href="#"` names no page, so it proposes no link field at all
+  // rather than a code-owned one storing a destination it does not have.
   assert.deepEqual(codeOwned, [
-    "/chrome/header/a/self/link",
     "/chrome/header/primary/navAriaLabel/text",
+    // A collection's ORDER and length, which the rewritten template takes from
+    // the repository's own array along with each row's icon, key and click
+    // behaviour. The items' text is the customer's; the shape is not, and a
+    // contract that said otherwise offered reorder, add and remove controls
+    // the page cannot honour.
+    "/home/steps/steps/collection/order",
   ]);
   for (const field of fields) {
     if (field.classification !== "code_owned_interface") continue;

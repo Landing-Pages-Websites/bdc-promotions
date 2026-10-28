@@ -131,9 +131,12 @@ function segmentWords(segment: AnchorSegment): readonly string[] {
 }
 
 function discriminatorWords(value: string): readonly string[] {
+  // `#` names a link to this site. Its word stays "self" so the pointers of
+  // fields minted under it keep their addresses.
   if (value === "#") return ["self"];
   if (value.startsWith("#")) return words(value.slice(1));
   if (value.startsWith("const:")) return words(value.slice("const:".length));
+  if (value.startsWith("call:")) return words(value.slice("call:".length));
   const basename = value.split("/").at(-1) ?? value;
   return words(basename.replace(/\.[A-Za-z0-9]+$/u, ""));
 }

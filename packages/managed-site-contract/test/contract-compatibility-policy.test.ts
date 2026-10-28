@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  bridgeSrcFor,
   ManagedSiteContractError,
   parseManagedSiteContentDocument,
   parseManagedSiteContractV1,
+  SUPPORTED_BRIDGE_VERSIONS,
+  type SupportedBridgeVersion,
   validateManagedSiteContractV1Compatibility,
 } from "../src/index.js";
 import type {
@@ -181,6 +184,9 @@ describe("managed-site contract compatibility", () => {
       addedStableIds: [],
       addedContentValueCount: 0,
       addedAssetManifestCount: 0,
+      changedRedirects: [],
+      reorderedSeo: [],
+      adoptedH1: [],
     });
     assertDeepFrozen(result);
   });
@@ -227,6 +233,33 @@ describe("managed-site contract compatibility", () => {
       const testCase = makeCase();
       mutate(testCase.candidate);
       assertCode(testCase, "COMPATIBILITY_RUNTIME_CHANGED");
+    }
+  });
+
+  /**
+   * The parser accepts every supported bridge, so a candidate on a newer bridge
+   * is a valid contract on its own. It is still a different runtime from the
+   * one production was certified on, in either direction, and a site moves
+   * between versions only by re-enrolling.
+   */
+  it("rejects a move between supported bridge versions in either direction", () => {
+    const setBridge = (fixture: ContentSemanticsFixture, version: SupportedBridgeVersion) => {
+      const delivery = object(object(fixture.contract.bridge).delivery);
+      delivery.version = version;
+      delivery.src = bridgeSrcFor(version);
+    };
+    for (const from of SUPPORTED_BRIDGE_VERSIONS) {
+      for (const to of SUPPORTED_BRIDGE_VERSIONS) {
+        const testCase = makeCase((fixture) => setBridge(fixture, from));
+        setBridge(testCase.candidate, to);
+        parseManagedSiteContractV1(testCase.production.contract);
+        parseManagedSiteContractV1(testCase.candidate.contract);
+        if (from === to) {
+          assert.equal(validate(testCase).kind, "compatible", `${from} -> ${to}`);
+        } else {
+          assertCode(testCase, "COMPATIBILITY_RUNTIME_CHANGED");
+        }
+      }
     }
   });
 
@@ -340,6 +373,107 @@ describe("managed-site contract compatibility", () => {
     asset(testCase.candidate).maxBytes = 2;
 
     assert.doesNotThrow(() => validate(testCase));
+  });
+
+  /**
+   * An absent `maxBlocks` is unbounded, so it is the widest value: adding one
+   * narrows, and so does lowering one. Removing or raising one widens.
+   */
+  it("compares a rich-text block bound with absent as unbounded", () => {
+    const richConstraints = (fixture: ContentSemanticsFixture) =>
+      object(field(fixture, fixture.ids.richField).constraints);
+    const narrowed: readonly [FixtureMutation | undefined, FixtureMutation][] = [
+      [undefined, (fixture) => void (richConstraints(fixture).maxBlocks = 5)],
+      [
+        (fixture) => void (richConstraints(fixture).maxBlocks = 2),
+        (fixture) => void (richConstraints(fixture).maxBlocks = 1),
+      ],
+    ];
+    for (const [production, candidate] of narrowed) {
+      const testCase = makeCase(production);
+      candidate(testCase.candidate);
+      assertCode(testCase, "COMPATIBILITY_FIELD_POLICY_NARROWED");
+    }
+    const widened: readonly FixtureMutation[] = [
+      (fixture) => void delete richConstraints(fixture).maxBlocks,
+      (fixture) => void (richConstraints(fixture).maxBlocks = 3),
+    ];
+    for (const candidate of widened) {
+      const testCase = makeCase((fixture) => void (richConstraints(fixture).maxBlocks = 2));
+      candidate(testCase.candidate);
+      assert.doesNotThrow(() => validate(testCase));
+    }
+  });
+
+  /**
+   * A field's hard-break policy is one input space: absent (or false) admits no
+   * break, an opt-in with no cap admits up to the grammar's ceiling, and a cap
+   * admits up to itself. Every pair is judged by whether the candidate admits
+   * every document production did, so opting in widens whatever cap it names,
+   * and dropping the opt-in or lowering the cap narrows.
+   */
+  it("compares a rich-text hard-break policy as the breaks it admits", () => {
+    type BreakPolicy = { readonly allowHardBreaks?: boolean; readonly maxHardBreaks?: number };
+    const states: Readonly<Record<string, BreakPolicy>> = {
+      absent: {},
+      off: { allowHardBreaks: false },
+      open: { allowHardBreaks: true },
+      cap1: { allowHardBreaks: true, maxHardBreaks: 1 },
+      cap2: { allowHardBreaks: true, maxHardBreaks: 2 },
+      cap5: { allowHardBreaks: true, maxHardBreaks: 5 },
+      cap16: { allowHardBreaks: true, maxHardBreaks: 16 },
+    };
+    const withPolicy =
+      (policy: BreakPolicy): FixtureMutation =>
+      (fixture) => {
+        const constraints = object(field(fixture, fixture.ids.richField).constraints);
+        delete constraints.allowHardBreaks;
+        delete constraints.maxHardBreaks;
+        Object.assign(constraints, policy);
+      };
+    const widened: readonly (readonly [string, string])[] = [
+      ["absent", "absent"],
+      ["absent", "off"],
+      ["off", "absent"],
+      ["absent", "open"],
+      ["absent", "cap1"],
+      ["off", "open"],
+      ["off", "cap2"],
+      ["open", "open"],
+      ["cap1", "cap2"],
+      ["cap2", "cap2"],
+      ["cap2", "cap5"],
+      ["cap5", "cap16"],
+      ["cap2", "open"],
+      ["cap16", "open"],
+    ];
+    const narrowed: readonly (readonly [string, string])[] = [
+      ["open", "absent"],
+      ["open", "off"],
+      ["cap2", "absent"],
+      ["cap1", "off"],
+      ["open", "cap16"],
+      ["open", "cap1"],
+      ["cap5", "cap2"],
+      ["cap16", "cap5"],
+      ["cap2", "cap1"],
+    ];
+    for (const [production, candidate] of widened) {
+      const testCase = makeCase(withPolicy(states[production]!));
+      withPolicy(states[candidate]!)(testCase.candidate);
+      assert.doesNotThrow(() => validate(testCase), `${production} -> ${candidate}`);
+    }
+    for (const [production, candidate] of narrowed) {
+      const testCase = makeCase(withPolicy(states[production]!));
+      withPolicy(states[candidate]!)(testCase.candidate);
+      assert.throws(
+        () => validate(testCase),
+        (error: unknown) =>
+          error instanceof ManagedSiteContractError &&
+          error.code === "COMPATIBILITY_FIELD_POLICY_NARROWED",
+        `${production} -> ${candidate}`,
+      );
+    }
   });
 
   it("rejects collection-policy narrowing while allowing widened bounds", () => {

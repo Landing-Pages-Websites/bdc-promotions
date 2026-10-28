@@ -144,6 +144,25 @@ export function scopeOfDeclaration(declaration: ts.Node): ts.Node | null {
   return null;
 }
 
+/**
+ * The nearest syntax binding this name between the node and the module.
+ *
+ * Null means the name is the module's own — an import, or a module-level
+ * declaration — because a nearer binding of an imported name is the one the
+ * language reads. Every reader that resolves a name written INSIDE a function
+ * needs this: a parameter called `UI` renders where the analyzer read `UI.Card`
+ * from the import, and a `const notFound` is not the framework's.
+ */
+export function nearestBinding(node: ts.Node, name: string): ts.Node | null {
+  let current: ts.Node | undefined = node.parent;
+  while (current !== undefined && !ts.isSourceFile(current)) {
+    const declaration = declarationOfName(current, name);
+    if (declaration !== null) return declaration;
+    current = current.parent;
+  }
+  return null;
+}
+
 export function declarationOfName(node: ts.Node, name: string): ts.Node | null {
   if (isFunctionLike(node)) {
     for (const parameter of node.parameters) {

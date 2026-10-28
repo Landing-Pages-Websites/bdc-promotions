@@ -15,6 +15,9 @@ export interface ContentSemanticsFixtureIds {
   readonly richField: string;
   readonly linkField: string;
   readonly protectedField: string;
+  readonly protectedDescriptionField: string;
+  readonly protectedCanonicalField: string;
+  readonly protectedIndexingField: string;
   readonly routeKeyField: string;
   readonly generatedTitleField: string;
   readonly generatedDescriptionField: string;
@@ -165,6 +168,25 @@ function renderedValue(
   return { fieldId, owner: contentOwner, type, value };
 }
 
+const INDEXING = {
+  index: true,
+  follow: true,
+  archive: true,
+  imageIndex: true,
+  maxSnippet: -1,
+  maxImagePreview: "large",
+  maxVideoPreview: -1,
+};
+
+function protectedPageValue(
+  fieldId: string,
+  ids: ContentSemanticsFixtureIds,
+  valueType: string,
+  value: unknown,
+): JsonObject {
+  return { fieldId, owner: owner("page", ids.homePage), type: "internal_protected", valueType, value };
+}
+
 function protectedItemValue(
   fieldId: string,
   ids: ContentSemanticsFixtureIds,
@@ -281,6 +303,9 @@ function fixtureIds(contract: MutableContract): ContentSemanticsFixtureIds {
     richField: fixtureId("field"),
     linkField: fixtureId("field"),
     protectedField: contract.internalSeo.protectedFields[0].id,
+    protectedDescriptionField: contract.internalSeo.protectedFields[1].id,
+    protectedCanonicalField: contract.internalSeo.protectedFields[2].id,
+    protectedIndexingField: contract.internalSeo.protectedFields[3].id,
     routeKeyField: collection.itemFields[0].id,
     generatedTitleField: generatedMetadata.title,
     generatedDescriptionField: generatedMetadata.description,
@@ -322,7 +347,8 @@ function contentValues(
     renderedValue(ids.richField, owner("site", ids.homePage), "rich_text", richValue(ids.homePage)),
     renderedValue(ids.linkField, owner("page", ids.homePage), "link", {
       label: "Learn more",
-      destination: { kind: "internal", pageId: ids.generatedPage, fragment: null },
+      // A static page: since 0.13.0 an internal destination must have one path.
+      destination: { kind: "internal", pageId: ids.homePage, fragment: null },
       target: "same_window",
     }),
     {
@@ -332,6 +358,9 @@ function contentValues(
       valueType: "string",
       value: "Gomega",
     },
+    protectedPageValue(ids.protectedDescriptionField, ids, "string", "Gomega home."),
+    protectedPageValue(ids.protectedCanonicalField, ids, "url", "https://example.com/"),
+    protectedPageValue(ids.protectedIndexingField, ids, "indexing_directives", INDEXING),
     protectedItemValue(ids.routeKeyField, ids, "string", "service-one"),
     protectedItemValue(ids.generatedTitleField, ids, "string", "Service One | Gomega"),
     protectedItemValue(
@@ -346,15 +375,7 @@ function contentValues(
       "url",
       "https://example.com/services/service-one",
     ),
-    protectedItemValue(ids.generatedIndexingField, ids, "indexing_directives", {
-      index: true,
-      follow: true,
-      archive: true,
-      imageIndex: true,
-      maxSnippet: -1,
-      maxImagePreview: "large",
-      maxVideoPreview: -1,
-    }),
+    protectedItemValue(ids.generatedIndexingField, ids, "indexing_directives", INDEXING),
     renderedValue(ids.itemHeadingField, itemOwner(ids.collection, ids.item), "heading_text", "Service One"),
     renderedValue(ids.itemRichField, itemOwner(ids.collection, ids.item), "rich_text", richValue(ids.homePage)),
     renderedValue(ids.itemLinkField, itemOwner(ids.collection, ids.item), "link", {

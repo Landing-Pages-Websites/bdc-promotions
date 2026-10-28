@@ -46,6 +46,31 @@ export const repositoryPathSchema = z.stringFormat(
   (value) => accepts(() => parseRepositoryPath(value)),
 ) as unknown as z.ZodType<RepositoryPath>;
 
+/**
+ * Where every image a contract names must live: the directory a site serves
+ * from its root. Next.js serves `public/` and nothing else, the CMS writes each
+ * upload to `public/managed-site-cms/`, and the converter refuses at config load
+ * any asset root but this one, so an image at any other path is one no site
+ * can show and nothing in this toolchain writes. Refusing
+ * it here keeps "the contract accepts it" and "a site can render it" the same
+ * statement. The prefix is compared exactly: `Public/`, `publicx/` and a bare
+ * `public` are other paths.
+ */
+export const MANAGED_SERVED_ASSET_ROOT = "public/";
+
+export function isManagedServedAssetPath(value: string): boolean {
+  return (
+    accepts(() => parseRepositoryPath(value)) &&
+    value.startsWith(MANAGED_SERVED_ASSET_ROOT) &&
+    value.length > MANAGED_SERVED_ASSET_ROOT.length
+  );
+}
+
+export const servedAssetPathSchema = z.stringFormat(
+  "gomega-served-asset-path-v1",
+  isManagedServedAssetPath,
+) as unknown as z.ZodType<RepositoryPath>;
+
 export const jsonPointerSchema = z.stringFormat(
   "gomega-json-pointer-v1",
   (value) => accepts(() => parseJsonPointer(value)),
@@ -215,6 +240,51 @@ export const managedStaticRoutePathSchema = withManagedSiteJsonSchemaSemantic(
     .refine((value) => hasCanonicalRouteSegments(value, false)),
 );
 
+/**
+ * What a generated route's key may be: lowercase ASCII words joined by single
+ * hyphens, at most {@link MAX_MANAGED_GENERATED_ROUTE_KEY_CHARACTERS}. Content
+ * semantics holds every item's key to it, so substituting one into its pattern
+ * never needs escaping.
+ */
+export const MANAGED_GENERATED_ROUTE_KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const MAX_MANAGED_GENERATED_ROUTE_KEY_CHARACTERS = 200;
+
+export function isManagedGeneratedRouteKey(value: string): boolean {
+  return (
+    value.length <= MAX_MANAGED_GENERATED_ROUTE_KEY_CHARACTERS &&
+    MANAGED_GENERATED_ROUTE_KEY_PATTERN.test(value)
+  );
+}
+
+/**
+ * The path one item of a generated page is served at: its pattern with the one
+ * parameter segment replaced by the item's route key. `/networks/[slug]` and
+ * `healthcare` give `/networks/healthcare`. Refuses a pattern that is not a
+ * generated route with exactly one parameter, and a key that is not canonical,
+ * rather than writing a path no page serves.
+ */
+export function managedGeneratedRoutePath(pattern: string, routeKey: string): string {
+  const parsed = managedGeneratedRoutePatternSchema.safeParse(pattern);
+  const segments = pattern.slice(1).split("/");
+  const parameters = segments.filter(isManagedGeneratedRouteSegment);
+  if (!parsed.success || parameters.length !== 1) {
+    throw new ManagedSiteContractError(
+      "GENERATED_ROUTE_PATTERN",
+      `Not a generated route with exactly one parameter: ${pattern}`,
+    );
+  }
+  if (!isManagedGeneratedRouteKey(routeKey)) {
+    throw new ManagedSiteContractError(
+      "GENERATED_ROUTE_KEY",
+      `Not a canonical route key: ${routeKey}`,
+    );
+  }
+  const filled = segments.map((segment) =>
+    isManagedGeneratedRouteSegment(segment) ? routeKey : segment,
+  );
+  return `/${filled.join("/")}`;
+}
+
 export const managedGeneratedRoutePatternSchema = withManagedSiteJsonSchemaSemantic(
   "generated-route",
   z
@@ -231,16 +301,200 @@ export const managedFragmentSchema = z
   .max(256)
   .regex(/^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
 
-export const managedLinkDestinationSchema = z.discriminatedUnion("kind", [
+/**
+ * Text that can make a link read as somewhere it does not go: every Cc, the bidi
+ * embeddings, overrides and isolates, and the line and paragraph separators.
+ * The class megaseo-web's CMS states as `unsafe_character`, by code point, so
+ * no link this contract accepts carries a character the CMS refuses. This is
+ * one direction only: elsewhere this contract is stricter than the CMS (an email
+ * address is held to `z.email()`, the CMS only asks for one `@` and a dot).
+ */
+const UNSAFE_LINK_CHARACTER =
+  /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/u;
+/**
+ * Whether text carries the unsafe class, CR and LF included. A search title or
+ * description is one line the customer never sees rendered as a link, so it is
+ * held to the whole class, as a link destination is.
+ */
+export function hasUnsafeTextCharacter(value: string): boolean {
+  return UNSAFE_LINK_CHARACTER.test(value);
+}
+
+/** The same class less CR and LF, which a label's `newlines` policy decides. */
+const UNSAFE_LINK_LABEL_CHARACTER =
+  /[\u0000-\u0009\u000b\u000c\u000e-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/u;
+/** No legitimate unescaped use in a URL, and each breaks out of an attribute. */
+const UNESCAPED_IN_LINK_URL = /["<>`]/;
+/**
+ * The CMS's `SPACE_OR_CONTROL`: an ASCII space or any Cc, anywhere in a link URL.
+ * Checked on the string as written, because `z.url()` trims leading and
+ * trailing whitespace before any later check sees it.
+ */
+const LINK_URL_AS_WRITTEN = /^[^ \p{Cc}]*$/u;
+
+function countCodePoints(value: string): number {
+  return [...value].length;
+}
+
+/**
+ * A string of at most `max` code points: what megaseo-web's CMS counts with
+ * `char_length` and what JSON Schema's `maxLength` means, so an emoji is one.
+ * Zod's own `max` counts UTF-16 units and would refuse what the CMS saved.
+ */
+function maxCodePointsString(max: number) {
+  return z
+    .string()
+    .refine((value) => countCodePoints(value) <= max, `At most ${max} characters`)
+    .meta({ maxLength: max });
+}
+
+/**
+ * What a link destination must satisfy beyond its shape, judged over the whole
+ * destination so no string member escapes it: none carries an unsafe character,
+ * and an external URL is at most {@link MAX_URL_VALUE_CHARACTERS} code points
+ * with no unescaped quote, angle bracket or backtick. Only link destinations are
+ * held to this; a redirect or canonical URL keeps its own rule.
+ */
+function isSafeLinkDestination(destination: Readonly<Record<string, unknown>>): boolean {
+  const unsafe = Object.values(destination).some(
+    (member) => typeof member === "string" && UNSAFE_LINK_CHARACTER.test(member),
+  );
+  if (unsafe) return false;
+  const url = destination.kind === "external" ? destination.url : null;
+  return (
+    typeof url !== "string" ||
+    (countCodePoints(url) <= MAX_URL_VALUE_CHARACTERS && !UNESCAPED_IN_LINK_URL.test(url))
+  );
+}
+
+/**
+ * One name or value of a link's query string (since 0.41.0): ASCII letters,
+ * digits, `.`, `_` and `-`, at most {@link MAX_MANAGED_LINK_QUERY_TOKEN_CHARACTERS}.
+ * Every character is one RFC 3986 leaves unencoded, so a token is written
+ * exactly as it is held and no spelling (`%20`, `+`, `%41`, a lowercase escape)
+ * can name the same value twice. `&`, `=`, `?` and `#` are not in it, so no
+ * token can carry a second parameter or end the query.
+ */
+export const MANAGED_LINK_QUERY_VALUE = /^[A-Za-z0-9._-]+$/;
+/**
+ * A parameter name: a token that starts with a letter, so `__proto__` and
+ * every other name an object assignment treats specially is not one.
+ */
+export const MANAGED_LINK_QUERY_NAME = /^[A-Za-z][A-Za-z0-9._-]*$/;
+export const MAX_MANAGED_LINK_QUERY_TOKEN_CHARACTERS = 64;
+/** At most this many parameters in one destination, and declared for one page. */
+export const MAX_MANAGED_LINK_QUERY_PARAMETERS = 8;
+
+function queryTokenSchema(pattern: RegExp) {
+  return z.string().max(MAX_MANAGED_LINK_QUERY_TOKEN_CHARACTERS).regex(pattern);
+}
+export const managedLinkQueryNameSchema = queryTokenSchema(MANAGED_LINK_QUERY_NAME);
+export const managedLinkQueryValueSchema = queryTokenSchema(MANAGED_LINK_QUERY_VALUE);
+
+/**
+ * A link's query, one value per name. A map, so a name cannot appear twice and
+ * the order a parameter was written in means nothing: the one serialization
+ * is {@link managedLinkQueryString}. Never empty: no query is the key absent,
+ * so one meaning has one canonical form.
+ */
+export const managedLinkQuerySchema = z
+  .record(managedLinkQueryNameSchema, managedLinkQueryValueSchema)
+  .refine((query) => {
+    const size = Object.keys(query).length;
+    return size >= 1 && size <= MAX_MANAGED_LINK_QUERY_PARAMETERS;
+  }, `A link query holds 1 to ${MAX_MANAGED_LINK_QUERY_PARAMETERS} parameters`)
+  .meta({ minProperties: 1, maxProperties: MAX_MANAGED_LINK_QUERY_PARAMETERS });
+
+/**
+ * The one spelling of a query: `?` and each `name=value`, joined by `&`, names
+ * in ascending UTF-16 code unit order (every token is ASCII, so this is byte
+ * order, and Postgres `COLLATE "C"`). Empty for no query. A token needs no
+ * escaping, so none is applied.
+ */
+export function managedLinkQueryString(query: Readonly<Record<string, string>> | undefined): string {
+  if (query === undefined) return "";
+  const names = Object.keys(query).sort();
+  if (names.length === 0) return "";
+  return `?${names.map((name) => `${name}=${query[name]}`).join("&")}`;
+}
+
+const UNSAFE_DESTINATION = "Link destination carries a disallowed character or URL";
+
+const internalDestinationShape = {
+  kind: z.literal("internal"),
+  pageId: stableIdSchema("page"),
+  // The one item of a generated page's route collection this link opens
+  // ("Networks > Healthcare"). Absent names the page itself, the shape every
+  // destination had before 0.25.0; there is no `null` spelling, so one meaning
+  // has one canonical form. Which item a page may name is content semantics:
+  // only a generated page takes one, and only an active item of its route
+  // collection.
+  itemId: stableIdSchema("item").optional(),
+  fragment: managedFragmentSchema.nullable(),
+};
+
+const otherDestinationSchemas = [
   z.strictObject({
-    kind: z.literal("internal"),
-    pageId: stableIdSchema("page"),
-    fragment: managedFragmentSchema.nullable(),
+    kind: z.literal("external"),
+    url: z.string().regex(LINK_URL_AS_WRITTEN).pipe(externalDestinationUrlSchema),
   }),
-  z.strictObject({ kind: z.literal("external"), url: externalDestinationUrlSchema }),
   z.strictObject({ kind: z.literal("email"), address: z.email() }),
   z.strictObject({ kind: z.literal("phone"), number: z.string().regex(/^\+[1-9]\d{7,14}$/) }),
-]);
+] as const;
+
+/**
+ * A link field's destination. An internal one may carry a `query` (since
+ * 0.41.0), which its field's `allowedQueries` must admit name by name and
+ * value by value; absent is no query, exactly as before.
+ */
+export const managedLinkDestinationSchema = z
+  .discriminatedUnion("kind", [
+    z.strictObject({ ...internalDestinationShape, query: managedLinkQuerySchema.optional() }),
+    ...otherDestinationSchemas,
+  ])
+  .refine(isSafeLinkDestination, UNSAFE_DESTINATION);
+
+/**
+ * A prose link mark's destination: a link field's without a query. A
+ * rich-text field declares no query allowlist, so a mark carrying one would be
+ * a query nothing admits; it is refused by its shape rather than judged.
+ */
+export const managedRichTextLinkDestinationSchema = z
+  .discriminatedUnion("kind", [z.strictObject(internalDestinationShape), ...otherDestinationSchemas])
+  .refine(isSafeLinkDestination, UNSAFE_DESTINATION);
+
+/**
+ * A DNS name with an alphabetic top-level label, in labels of at most 63
+ * characters: the CMS's `any_https` host rule. Every IPv4 spelling a browser
+ * resolves (dotted, decimal, hex, octal, short) ends in a numeric label, so none
+ * passes, and a single label such as `localhost` has no top-level label at all.
+ */
+const DNS_NAME =
+  /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const MAX_DNS_NAME_CHARACTERS = 253;
+const BARE_HOST = /^[A-Za-z0-9.-]+$/;
+
+/**
+ * Whether an `externalHostPolicy: "any_https"` field admits a host written
+ * exactly so: bare ASCII letters, digits, dots and hyphens, and a DNS name.
+ */
+export function isAnyHttpsHost(host: string): boolean {
+  return (
+    BARE_HOST.test(host) &&
+    host.length <= MAX_DNS_NAME_CHARACTERS &&
+    DNS_NAME.test(host.toLowerCase())
+  );
+}
+
+/**
+ * A link's visible label. Bounded here and free of the unsafe class; whether it
+ * may break a line is its field's `newlines` policy, so CR and LF are left to it.
+ */
+export const managedLinkLabelSchema = maxCodePointsString(MAX_LINK_LABEL_CHARACTERS)
+  .refine(
+    (label) => !UNSAFE_LINK_LABEL_CHARACTER.test(label),
+    "Link label carries a disallowed character",
+  );
 
 export const managedImageMimeTypeSchema = z.enum([
   "image/jpeg",
@@ -258,19 +512,48 @@ const normalizedRectSchema = z
   })
   .refine((rect) => rect.x + rect.width <= 1 && rect.y + rect.height <= 1);
 
+/**
+ * A crop is a region of the image's own pixel grid, so its smallest meaningful
+ * size is one pixel on each axis: a region narrower than that selects no whole
+ * pixel of the image, has nothing to show, and scales the image by an unbounded
+ * factor when rendered (1e-307 of a 1200px image asks for a 10^309-fold zoom).
+ * The bound is the image's own resolution, not a chosen constant.
+ *
+ * Compared as `crop.width >= 1 / width` in IEEE doubles, because `1 / width` is
+ * exactly how a one-pixel crop is written. The product form,
+ * `crop.width * width >= 1`, refuses that very value for 540 widths up to 5000
+ * (the first is 49: (1/49)*49 < 1 in doubles), since the multiply rounds. With
+ * the division form a renderer's zoom, 100 / crop.width, is at most
+ * 100 * width: always finite. Coordinates are already finite (JSON carries no
+ * NaN or Infinity and the number schema refuses them) and x + width, y + height
+ * stay within 1.
+ */
+function cropCoversAPixel(
+  crop: { readonly width: number; readonly height: number },
+  image: { readonly width: number; readonly height: number },
+): boolean {
+  return crop.width >= 1 / image.width && crop.height >= 1 / image.height;
+}
+
+/** An image value's alt text, which the CMS bounds with `char_length`. */
+const MAX_ALT_TEXT_CHARACTERS = 2_000;
+
 export const managedImageValueSchema = z.strictObject({
-  path: repositoryPathSchema,
+  path: servedAssetPathSchema,
   sha256: z.string().regex(SHA256),
   mimeType: managedImageMimeTypeSchema,
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   bytes: z.number().int().positive(),
-  altText: z.string().max(2_000).nullable(),
+  altText: maxCodePointsString(MAX_ALT_TEXT_CHARACTERS).nullable(),
   crop: normalizedRectSchema.nullable(),
   focalPoint: z
     .strictObject({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) })
     .nullable(),
-});
+}).refine(
+  (image) => image.crop === null || cropCoversAPixel(image.crop, image),
+  "A crop must cover at least one pixel of the image on each axis",
+);
 
 const managedAssetSemanticsSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("decorative") }),
@@ -324,6 +607,9 @@ export type JsonPointerSourceResolver = DeepReadonly<z.infer<
 >>;
 export type ManagedFieldUsage = DeepReadonly<z.infer<typeof managedFieldUsageSchema>>;
 export type ManagedLinkDestination = DeepReadonly<z.infer<typeof managedLinkDestinationSchema>>;
+export type ManagedRichTextLinkDestination = DeepReadonly<
+  z.infer<typeof managedRichTextLinkDestinationSchema>
+>;
 export type ManagedLinkTarget = z.infer<typeof managedLinkTargetSchema>;
 export type ManagedImageValue = DeepReadonly<z.infer<typeof managedImageValueSchema>>;
 export type ManagedAssetSlotDescriptor = DeepReadonly<z.infer<
@@ -363,12 +649,10 @@ function hasValidAlt(slot: ManagedAssetSlotDescriptor, image: ManagedImageValue)
   return image.altText !== null && image.altText.trim().length > 0;
 }
 
-export function validateManagedImageValue(
-  slotInput: unknown,
-  imageInput: unknown,
-): ManagedImageValue {
-  const slot = parseAssetSlot(slotInput);
-  const image = parseManagedImageValueInput(imageInput);
+function assertImagePolicy(
+  slot: ManagedAssetSlotDescriptor,
+  image: ManagedImageValue,
+): void {
   const dimensionsValid =
     image.width >= slot.minWidth &&
     image.width <= slot.maxWidth &&
@@ -386,7 +670,31 @@ export function validateManagedImageValue(
     image.bytes > slot.maxBytes ||
     !hasValidAlt(slot, image)
   ) {
-    return fail("IMAGE_VALUE_POLICY", "Image value violates its asset-slot policy");
+    fail("IMAGE_VALUE_POLICY", "Image value violates its asset-slot policy");
   }
+}
+
+export function validateManagedImageValue(
+  slotInput: unknown,
+  imageInput: unknown,
+): ManagedImageValue {
+  const image = parseManagedImageValueInput(imageInput);
+  assertImagePolicy(parseAssetSlot(slotInput), image);
   return image;
+}
+
+/**
+ * The alt text a renderer must emit for a policy-valid image. A fixed_alt slot
+ * owns its alt text, so its values carry `altText: null` and the slot supplies it.
+ */
+export function resolveManagedImageAltText(
+  slotInput: unknown,
+  imageInput: unknown,
+): string {
+  const slot = parseAssetSlot(slotInput);
+  const image = parseManagedImageValueInput(imageInput);
+  assertImagePolicy(slot, image);
+  if (slot.semantics.kind === "fixed_alt") return slot.semantics.altText;
+  // assertImagePolicy refused a null alt for every other semantics.
+  return image.altText as string;
 }

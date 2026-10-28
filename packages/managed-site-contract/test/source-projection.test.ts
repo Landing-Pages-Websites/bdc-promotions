@@ -255,10 +255,26 @@ describe("managed-site source projection", () => {
     });
   }
 
-  it("rejects conflicting image material sharing one slot", () => {
+  it("projects a different image at a different path under one shared slot", () => {
     const fixture = sourceProjectionFixture();
     const itemImage = services(fixture)[0].image as JsonObject;
     itemImage.path = "public/images/conflict.webp";
+    itemImage.sha256 = "b".repeat(64);
+    // Page SEO names this slot too, and cannot pick one of its two images.
+    expectCode(() => project(fixture), "CONTENT_SEO_IMAGE_AMBIGUOUS");
+    const seoPage = ((fixture.contract.internalSeo as JsonObject).pages as JsonObject[])[0];
+    ((seoPage.metadata as JsonObject).social as JsonObject).image = null;
+    seoPage.primaryImageAssetSlotId = null;
+
+    assert.deepEqual(
+      project(fixture).assetManifest.map((entry) => entry.path),
+      ["public/images/conflict.webp", "public/images/managed.webp"],
+    );
+  });
+
+  it("rejects conflicting image material at one path sharing one slot", () => {
+    const fixture = sourceProjectionFixture();
+    const itemImage = services(fixture)[0].image as JsonObject;
     itemImage.sha256 = "b".repeat(64);
 
     expectCode(() => project(fixture), "CONTENT_ASSET_MANIFEST_MISMATCH");

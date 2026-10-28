@@ -110,6 +110,12 @@ function astralStringWithCodeUnits(length: number): string {
   return value;
 }
 
+function astralStringWithCodePoints(count: number): string {
+  const value = `${"x".repeat(count - 1)}😀`;
+  assert.equal([...value].length, count);
+  return value;
+}
+
 function boundedContractStringCase(
   name: string,
   path: readonly (string | number)[],
@@ -262,6 +268,21 @@ const CONTRACT_CASES: readonly DifferentialCase[] = [
       "constraints",
     ]).allowedFragments = ["#admin"];
   }),
+  {
+    name: "attribute text declaration",
+    input: changed(managedSiteContract, (input) => {
+      const field = objectAt(input, ["pages", 0, "sections", 0, "fields", 0]);
+      field.semantic = "label";
+      objectAt(input, ["pages", 0, "sections", 0, "fields", 0, "constraints"]).attribute = "aria-label";
+    }),
+    valid: true,
+  },
+  ...["href", "Aria-Label", "onclick", "", 1, null].map((attribute) =>
+    invalidContract(`attribute text declaration naming ${JSON.stringify(attribute)}`, (input) => {
+      objectAt(input, ["pages", 0, "sections", 0, "fields", 0]).semantic = "label";
+      objectAt(input, ["pages", 0, "sections", 0, "fields", 0, "constraints"]).attribute = attribute;
+    }),
+  ),
   invalidContract("old bridge version", (input) => {
     objectAt(input, ["bridge", "delivery"]).version = "v3";
   }),
@@ -426,6 +447,29 @@ const CONTRACT_CASES: readonly DifferentialCase[] = [
 function validContentCases(): readonly DifferentialCase[] {
   return [
     { name: "valid content document", input: contentDocument, valid: true },
+    {
+      name: "link label of 2,000 code points, one astral (2,001 UTF-16 units)",
+      input: () =>
+        contentWithValue(
+          linkContentValue({
+            label: astralStringWithCodeUnits(2_001),
+            destination: { kind: "email", address: "hello@example.com" },
+            target: "same_window",
+          }),
+        ),
+      valid: true,
+    },
+    {
+      name: "image alt of 2,000 code points, one astral (2,001 UTF-16 units)",
+      input: () =>
+        contentWithValue({
+          fieldId: stableId("field"),
+          owner: { kind: "site" },
+          type: "image",
+          value: { ...imageValue(), altText: astralStringWithCodeUnits(2_001) },
+        }),
+      valid: true,
+    },
     {
       name: "heading value",
       input: () =>
@@ -687,10 +731,13 @@ const INVALID_CONTENT_CASES: readonly DifferentialCase[] = [
       }),
     ];
   }),
+  // Link labels and alt text count code points, as the CMS's char_length does:
+  // 2,000 code points of which one is astral (2,001 UTF-16 units) is admitted,
+  // 2,001 code points is not.
   invalidContent("link label astral overflow", (input) => {
     input.values = [
       linkContentValue({
-        label: astralStringWithCodeUnits(2_001),
+        label: astralStringWithCodePoints(2_001),
         destination: { kind: "email", address: "hello@example.com" },
         target: "same_window",
       }),
@@ -717,7 +764,7 @@ const INVALID_CONTENT_CASES: readonly DifferentialCase[] = [
   }),
   invalidContent("image alt astral overflow", (input) => {
     const image = imageValue();
-    image.altText = astralStringWithCodeUnits(2_001);
+    image.altText = astralStringWithCodePoints(2_001);
     input.values = [
       {
         fieldId: stableId("field"),

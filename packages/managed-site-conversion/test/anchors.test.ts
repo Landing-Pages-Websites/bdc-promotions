@@ -160,6 +160,9 @@ export function Promo() {
 });
 
 test("json pointers never collide with the values nested inside them", async () => {
+  // The link goes to a declared page (`/`), so it is a field of its own: a
+  // bare `#` names no page and proposes no link field, which would leave
+  // nothing for the nested values to collide with.
   const directory = mkdtempSync(join(tmpdir(), "managed-site-pointer-"));
   mkdirSync(join(directory, "app"), { recursive: true });
   writeFileSync(
@@ -167,7 +170,7 @@ test("json pointers never collide with the values nested inside them", async () 
     `export default function Home() {
   return (
     <section id="brand">
-      <a href="#">Trend<span>Candy</span></a>
+      <a href="/"><h3>Trend</h3><p>Candy</p></a>
     </section>
   );
 }

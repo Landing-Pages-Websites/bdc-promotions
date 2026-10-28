@@ -162,7 +162,7 @@ const BEYOND_REACH: readonly (readonly [string, Files, string])[] = [
     "#",
   ],
   [
-    "a route on this same site, which folds into the same self destination",
+    "a route on this same site, named by its internal_only authority, never by the route",
     page(`<section id="s"><a href="/about">About</a></section>`),
     "#",
   ],

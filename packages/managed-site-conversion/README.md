@@ -1,12 +1,13 @@
-# managed-site conversion proposer
+# managed-site conversion
 
 Reads a Next.js repository and **proposes** a managed-site contract, the content
-that fills it, and a report of everything it refused to decide.
+that fills it, and a report of everything it refused to decide — then, with
+`--rewire`, **converts the repository to read it**.
 
 It automates steps 2 to 4 of `docs/managed-site-adoption.md` — declare the
-contract, mint stable IDs, classify every customer-facing value — for the parts
-of a repository that are already named well enough to be automated, and names
-the rest as work for a person.
+contract, mint stable IDs, classify every customer-facing value, and route the
+rendering through them — for the parts of a repository that are already named
+well enough to be automated, and names the rest as work for a person.
 
 ```bash
 npm --workspace @landing-pages-websites/managed-site-conversion run propose -- \
@@ -82,6 +83,354 @@ A group of rivals is named as a whole or not at all, and the edited file is
 parsed before it is written: a file whose new text would not parse is left
 exactly as it was.
 
+## Rewiring the site to read the contract
+
+A proposal on its own changes nothing: the site still renders its hardcoded
+literals, and the contract describes values nothing reads. `--rewire` closes
+that, and takes the runtime specifier the rewritten code should import from:
+
+```bash
+npm --workspace @landing-pages-websites/managed-site-conversion run propose -- \
+  --repo ../some-customer-site --out /tmp/proposal --config ./site.conversion.json \
+  --write-sources --rewire "@/src/content/managed-site"
+```
+
+It edits the repository in place and writes everything the edited code reads —
+the contract, the content documents, and a generated runtime module beside them.
+Converting a site is that one command; nothing is copied across by hand.
+
+The rewrite runs in the **same process as the proposal that produced the
+contract**, and must. A ledger mints the ids, so a second `propose` run mints
+different ones: doing this as a separate pass emitted a read for an id the
+shipped contract never declared, and the site threw at build time.
+
+### Where an annotation goes
+
+The editor applies an edit with `element.textContent = text`, so **an annotated
+element's only content may be the field's value**. Every shape below is a
+different answer to which element that is:
+
+| the value is | the annotation goes |
+| --- | --- |
+| the only child of a host element | on that element |
+| sharing its element with other children | on a span of its own, around the value |
+| passed to a component as a prop | on the element the RECEIVER renders it in, reached by a prop the receiver takes |
+| written between a component's tags | the same, with `children` as the name |
+| handed on again by that receiver | forwarded under the name the next component knows it by |
+| read inside a prop that takes a node | around the read, because the wrapper IS the node that prop renders |
+| rendered by a client component | threaded in from the server component that renders it, through every client component on the way |
+| an item of a collection | on the item's element, by the index the template maps at |
+| a formatted block (one rich-text field) | on the block's element, with the children replaced by one read of the value and each mark rendered through the element the source used for it, carrying `data-gomega-mark` |
+
+Every prop it adds is optional, and every wrapper it adds is conditional on the
+prop arriving. A call site this pass does not rewrite therefore renders exactly
+what it did before — which is what keeps a site's dynamic routes, excluded from
+the contract and passed nothing, byte-identical.
+
+A **client** component cannot read the contract at all: the package reaches for
+`node:crypto`, which is unbundleable for the browser. Its values are resolved by
+the nearest server component that renders it and passed as a record keyed by
+field id, forwarded verbatim through any client components in between.
+
+### Reading values that are not text
+
+The rewrite emits only text reads (`managedText`, `managedFieldsFor`,
+`managedItemsFor`, `managedItem`). The generated runtime also carries readers
+for everything else a contract can hold, appended after those exports and
+written in `src/runtime-readers.ts`. **Nothing calls them yet**: a person adopts
+each one by editing the component that renders the value, which is also how a
+site that hand-copies the runtime takes them.
+
+**Whatever the contract accepts, a reader renders.** A reader stricter than the
+contract would fail a site's build on content the CMS saved and Site Guard
+passed, leaving the publish stuck. So no reader restates a rule: links go
+through the contract's own content-value parser, rich text through
+`parseManagedRichTextDocument`, images through `resolveManagedImageAltText`
+(the slot policy Site Guard runs), and what is left is a total mapping to
+markup. A reader throws only on a value the contract refuses, or on an id or
+field the calling code got wrong. `test/runtime-readers-differential.test.ts`
+holds this over the contract's shared link and rich-text tables plus image,
+search-text and hand-written adversarial cases: contract accepts implies the
+reader renders.
+
+| reader | returns | adopting it |
+| --- | --- | --- |
+| `managedOrder(collectionId)` | item ids in the customer's order | map over it instead of the source array: `managedOrder(c).map((id) => managedItemById(c, id))`, keyed by the id. Never join an ordered row to `managedItem(c, index)`: that index is the SOURCE position. Several fields may order one collection when they agree, and a collection with no ordering field has no items, so neither throws. A collection an item field lists (contract 0.27.0) has no page order and throws: read each item's list with `managedItemById(...).list` |
+| `managedIcon(fieldId)` | `{ name, attributes }` | a page- or site-owned icon field (contract 0.28.0): render `name` with the site's own icon component for it, on an element spreading `attributes`. The name is always one of the field's declared choices |
+| `managedItemById(collectionId, itemId)` | `value`, `link`, `optionalLink`, `image`, `optionalImage`, `richText`, `list`, `icon` and `attributes`, each by item field id; `list` is the item's own ordered list of a nested collection's item ids, each read with `managedItemById`; `optionalImage` (contract 0.36.0) and `optionalLink` (0.37.0) read an optional image or link, `null` when the item holds none: render nothing then. `image` and `link` refuse an optional field, `optionalImage` and `optionalLink` a required one | read a row's fields from it and spread `attributes(fieldId)` on the element holding each. Throws on an id the collection's source does not list, which only calling code can pass |
+| `managedLink(fieldId)` | `{ href, label, target, rel, attributes }` | `<a {...link.attributes} href={link.href} target={link.target} rel={link.rel}>{link.label}</a>`, replacing the literal `href` and text. Internal links become the linked page's static route path (plus `#fragment`); since contract 0.13.0 an internal destination always names a page with one, and the reader refuses any other rather than inventing a URL, external links stay exactly as written, email and phone become `mailto:` and `tel:`. `target` and `rel` are `undefined` for a same-window link, so the markup gains no attribute it did not have |
+| `resolveManagedLink(value)` | `{ href, label, target, rel }` | the same rule for a link value that reached a component some other way |
+| `managedItemPatternText(fieldId, itemId)` | `{ value, attributes }` | page text on a generated page whose pattern names its item's fields (contract 0.38.0): "Build Your {name} Network." filled with that item's own words. Read such a field with this, never `managedText`, which would show its tokens |
+| `managedImage(fieldId)` | `{ src, alt, width, height, focalPoint, crop, attributes }` | pass `src`, `alt`, `width` and `height` to the `<img>` or `next/image` in place of the literals, and `focalPoint` (fractions) to `object-position` if the design crops. Next serves `public/` from the site root, and since contract 0.12.0 every image is under it: `public/x/y.png` renders at `/x/y.png`, and CMS uploads to `public/managed-site-cms/` at `/managed-site-cms/...`. A path outside `public/` is refused (the contract already refuses it, so no valid value reaches that). `crop` is null for the whole image; otherwise (contract 0.13.0 guarantees at least one pixel on each axis, so the styles are always finite, and the reader refuses a crop that is not) render it with `managedImageCrop(image)`, which returns a `frame` style for a wrapper and an `image` style for the `<img>` (a plain `<img>`, or `next/image` without `fill`, which would override the image style) (the crop's aspect ratio, clipped, the image scaled and shifted by the crop's fractions). A wrapper, not CSS `object-view-box`, which only Chromium supports. `alt` is the slot's fixed text for a `fixed_alt` slot and `""` for a decorative one |
+| `resolveManagedImage(assetSlotId, value)` | the same, without `attributes` | an image value that reached a component some other way |
+| `managedRichTextBlocks(fieldId)` | `{ value, attributes }` | `<div {...body.attributes}>{body.value}</div>` in place of literal multi-block prose. Paragraph, `h2`/`h3`, `ul`/`ol` and blockquote in their plain elements; the text of each paragraph and heading renders through the formatted-block renderer itself (`managedRichText(fieldId, templates)` with no templates), so marks nest outermost-first, carry `data-gomega-mark`, and link through the contract's `managedRichTextLinkAttributesV1`, exactly as a formatted block's do. React escapes every string. Use `managedRichText` for one formatted block in the site's own elements (what the rewrite emits) and this for a whole document |
+| `renderManagedRichText(document)` | React elements | the renderer on its own, for a document from elsewhere |
+| `managedMetadata(pageId, fallback)` | Next `Metadata` | in the page module, `export const metadata = managedMetadata(PAGE_ID, { ...theLiteralMetadata })`. Title and description come from the page's editable `seo_title` / `seo_description` fields when they are not blank (`trim()` empty, the contract's own test of blank alt text), else from `fallback`. An edited title keeps the shape of `fallback.title`, so `{ absolute }` stays out of the layout's template. Next merges a page's metadata into its layouts shallowly, so a page-level `openGraph` replaces the layout's whole card: a share card is patched only when `fallback` states it, and `fallback` must therefore be the page's effective metadata, including any `openGraph` or `twitter` it inherits. Those cards take the social slot's field; a null social slot has no text of its own, so a card that already states a title or description follows the edited one instead of keeping a stale copy, and a card that states none gains none. The share image (`social.imageFieldId`) becomes the cards' `images`, as an absolute URL on the origin of the page's protected canonical. The canonical is whatever `fallback` says: it stays protected. Robots are `fallback`'s unless the page's search entry names a "Hide this page from search engines" toggle (contract 0.34.0, `metadata.hiddenFieldId`), which then decides `index` and `follow` (see `managedSearchRobots`). A page whose share card is customer-editable (a share image, or a social slot naming an editable field) must be given an `openGraph`, or the page's first build fails with a developer error, whatever the content: without one every such edit would be dropped silently. A generated page's metadata is per item, so here it returns `fallback`; see `managedItemMetadata` |
+| `managedSearchRobots(pageId, fallback, itemId?)` | Next `Metadata["robots"]` or `undefined` | for a site that builds its own metadata: the robots a page (or one item of a generated page) serves once its search entry names a "Hide this page from search engines" toggle (contract 0.34.0): hidden is `{ index: false, follow: false }`, shown `{ index: true, follow: true }`, laid over the other directives `fallback` states (a string `fallback` is replaced). `googleBot` is decided the same way when stated as an object; a string `googleBot`, like string robots, fails the developer's build on a page with a toggle. `undefined` when the entry names no toggle, so the code's robots stand. String robots on a page with a toggle fail the developer's build, and `fallback` must be the effective robots (Next replaces a layout's robots with a page's whole). `managedMetadata` and `managedItemMetadata` apply it themselves |
+| `managedSearchHidden(pageId, itemId?)` | `boolean` or `null` | whether the page (or item) is hidden by its toggle, `null` with no toggle: what a site's sitemap leaves out |
+| `managedItemMetadata(pageId, itemId, fallback)` | Next `Metadata` | in a generated page's `generateMetadata`, with the item's literal metadata as `fallback`. A title or description slot naming the item's own search text (contract 0.26.0) is laid over `fallback` as the contract's `managedGeneratedSeoTextV1` decides it: the item's override when it holds text, else the page's pattern filled with the item's text. A slot naming a protected field keeps `fallback`. Share cards follow as `managedMetadata`'s do: a social slot naming the slot's own field takes the same text, a null one only on a card that already states the key. Robots follow the item's own toggle when the page names one, as `managedSearchRobots` decides. A page that is not generated, or an item the page does not route, fails the developer's build |
+
+Every link the runtime renders -- a link field, a whole document, a formatted
+block through its fallback anchor or the site's own template -- goes through
+one builder, `managedRichTextLink`: the contract's href and target plus
+`rel="noopener noreferrer"` for a new window.
+
+All of these run in server components only, like the rest of the runtime.
+
+**The runtime needs contract 0.17.x**, the version this package pins. It is
+type-checked and tested against that version, and for 0.x a minor release is
+breaking: older releases do not compile it even where every imported name
+exists (0.8.0 and 0.9.0 lack `metadata.social.imageFieldId` and the `seo_*`
+semantics, 0.10.x lacks the rich-text render helpers the formatted-block
+reader imports, 0.11.x lacks `isManagedServedAssetPath`, and 0.12.x accepts a
+link field to a generated page and a sub-pixel crop, which the readers then
+refuse, 0.13.x lacks heading level 1, which the readers render as `h1`, and
+0.15.x and 0.16.x lack the `hard_break` node and
+`managedRichTextBreakAttributesV1`, which the formatted-block reader imports to
+draw one). 0.18.0 has not been verified. The converter never edits a
+site's dependencies, so `--rewire` refuses, before writing anything, a
+repository whose declared range could resolve, or whose installed copy is,
+outside [0.17.0, 0.18.0) (`0.17.2`, `^0.17.0` and `~0.17.0` pass; `>=0.17.0`,
+tags and `npm:` aliases do not), or that does not declare every package the
+generated module imports (the contract, `next`, `react`) in its OWN
+package.json `dependencies` or `devDependencies`, with a registry version. Those
+two fields are what a clean deploy install provides (Next.js builds on Vercel
+install devDependencies too). A package that is only installed, only in
+`peerDependencies` or `optionalDependencies`, only in a parent or
+workspace-root package.json, or declared as `workspace:`, `file:` or `link:`
+is refused, with the declaration to add. `next` and `react` are held to the
+floor the imported names need, derived from the module's own imports and a
+table of first releases in `runtime-requirements.ts`: `Metadata` needs Next.js
+13.2 (the Metadata API), `Fragment` React 16.2, so today the floors are
+`next` 13.2.0 and `react` 16.2.0. A declared range's lower bound must reach the
+floor (`13.2.0`, `^14`, `13.2.x` and `>=13.2.0` pass; `13.1.6`, `latest`, `<15`
+and prereleases do not), and there is no ceiling, since no imported name has
+been removed in a later major. An imported name with no known floor is refused
+until the table has it. The runtime is TypeScript, so every type it imports
+must resolve too: `next` ships its own declarations, but `react` does not
+(through 19), so the site must also declare `@types/react` in its own
+`dependencies` or `devDependencies`, at the React release the imported names
+need (`^16.2.0` or later; DefinitelyTyped versions it to the React major.minor
+it describes). It is not required when the installed `react` ships its own
+types. Every way the module can name another package counts: imports
+(side-effect and type-only included), `export … from`, `require()`,
+`require.resolve()` and `import()` calls, `import()` types in code and JSDoc,
+and `/// <reference types>` directives; a loader built at runtime
+(`createRequire`) or a non-literal specifier is refused outright. An installed
+copy is checked in addition, never instead, and looked for up to the site's
+git root and no further. The message names the version to
+move to. The generated runtime is Next.js only; the Astro
+reference site keeps its own hand-written reader and imports no React.
+
+The gate runs only on a first conversion: a repository that already has a
+contract is refused before it, because a second pass cannot be made. A site
+converted before the readers existed (All Points Media) takes them by hand:
+move its contract dependency into 0.17.x, then append this package's readers
+to its `src/content/managed-site.ts` (everything `runtime-module.ts` adds after
+`managedItem`, with the import names in `READER_CONTRACT_IMPORTS` and
+`READER_MODULE_IMPORTS`), or regenerate the file from a fresh conversion of its
+unconverted commit. Its existing exports are unchanged either way. One part
+of the generator's own text did change in 0.17.x: `renderSpans` draws a
+`hard_break` span through `renderBreak`, and `ManagedRichTextTemplates` gains
+`hard_break`. A runtime written before that cannot draw a break, so a site
+taking the readers by hand takes those two as well before any field opts into
+`allowHardBreaks`.
+
+### It converts a repository once
+
+Converting is not idempotent and cannot be: a converted value is a contract
+READ, not a literal, so the proposer cannot see it again. A second pass over
+converted All Points Media proposes 92 of its 286 fields, and because
+`--rewire` writes the contract into the repository, that run would replace a
+complete contract with the partial one and leave the site reading ids nothing
+declares.
+
+So an existing `<contentRoot>/managed-site.contract.json` refuses the run
+before anything is written. Convert from a checkout that has not been
+converted; to redo a conversion, start from one.
+
+### Fields a conversion replaces
+
+A conversion run against an existing ledger (`--ledger`, from an unconverted
+checkout) can replace production fields: a formatted block that used to be one
+field per text run becomes one rich-text field, and the ledger retires the old
+ids. The platform accepts that only with a declared field migration (contract
+0.15.0, `managed-site.migration.json`), and the converter knows half of one.
+
+What it knows is WHICH fields merged, from anchors alone: a new field anchored
+at an element replaces the retired fields anchored beneath it
+(`…/role:h2` replaces `…/role:h2/text` and `…/role:h2/role:span/text`). Every
+such group is printed as `field migration: <target> replaces <sources>`, and a
+retired field no new field contains is printed as retired with nothing
+replacing it. The run succeeds only when every id it retired is one a
+declared step consumes: a merge consumes its source fields and, since contract
+0.21.0, a `retire` step consumes the fields and emptied sections it names (only
+ids this run retired; since 0.29.0 also a collection it names, with what that
+collection carries: its item fields, the fields placing it and the items it
+held, derived by the contract package from production exactly as its verifier
+claims them; since 0.30.0 also a page it names, with its sections, the fields
+it declares and the protected search slots only it renders), and since contract 0.22.0 a `link` step consumes its one
+source, which must be exactly the field its new link field's anchor replaced
+(a label's `…/role:a/text` beneath the link's `…/role:a`). Any other retired id (a field in a group the plan
+leaves out or replaced by nothing a step names, a page no retire step names,
+an asset, which no step can consume, or an item no retired collection held in production) is printed as `UNRESOLVED` by kind, id
+and anchor, and the run exits non-zero.
+
+What it does NOT know is HOW: the order of the parts, the separators between
+them (All Points Media needed a `" "` in every target and a trailing `"."` in
+three) and which mark or link each part takes. None of that is in an anchor
+or in the ledger, the retired fields' text runs are no longer read as fields,
+and the converter does not guess. So a person writes the steps in a plan,
+`{ "bridge"?: {...}, "steps": [...] }` in the declaration's own step shape, and
+passes it with the production artifacts it migrates:
+
+```bash
+npm --workspace @landing-pages-websites/managed-site-conversion run propose -- \
+  --repo ../some-unconverted-checkout --ledger ./managed-site.idmap.json \
+  --migration-plan ./plan.json \
+  --production-contract ./prod/managed-site.contract.json \
+  --production-content ./prod/managed-site.content.json
+```
+
+The run binds the plan to production by digest, parses it with the contract
+package's schema, refuses it unless every step consumes exactly the fields its
+target's anchor replaced, and writes `managed-site.migration.json` to `--out`
+(and beside the idmap under `--rewire`); a run with no plan removes a stale
+one. It does not prove the plan: `gomega-managed-site-conformance migrate`
+does, against the candidate the conversion produced. A wrong order, a missing
+separator or a lost mark fails there, never silently.
+
+All Points Media #73 itself was not produced by this flow: its targets are
+anchored `block:<file>#<pointer>`, a scheme no converter code mints, so its
+declaration was written from the spike's mapping, and the contract package
+carries it as a test fixture.
+
+### What it refuses
+
+The same trade as everywhere else here: a value it cannot place is reported
+with its field and the line it was read from, never guessed at. On All Points
+Media that is 228 of 233 customer-editable fields rewritten, and the remainder
+named: two rich-text values, one link, one collection inside a client
+component, and one page that is deliberately a 404.
+
+### One field per text block
+
+One visual text block is exactly one field. A heading, paragraph, list item,
+button or link label whose text is interrupted by inline formatting used to
+become one field per text run, so a customer saw fragments of one sentence as
+separate values. It is now ONE `rich_text` field holding one block: a heading
+at the element's level when the contract's heading block admits that level (1,
+2 or 3), and a paragraph otherwise, the element keeping its own level in code.
+`allowedBlocks` is that one block, `maxBlocks` is 1, `allowedMarks` is the
+marks the block actually uses, and links are allowed only if it had one, to the
+hosts and targets it used. A `<br>` inside the block is a `hard_break` node, and
+the field gains `allowHardBreaks: true` (with no cap) only if the block had one.
+A static list whose item holds a `<br>` is not read as a list document (a list
+is never rendered in place, so the `<br>` would lose its class); it keeps the
+ordinary walk.
+
+What maps to a mark, and nothing else:
+
+| source | mark |
+| --- | --- |
+| `em`, `i`, a `span` whose literal class is `italic` | italic |
+| `strong`, `b`, a `span` whose literal class is `font-semibold`, `font-bold`, `font-extrabold` or `font-black` | bold |
+| `a` (or `next/link`) to an https URL, an email address or a phone number, written as a literal | link |
+
+A plain block is unchanged, and so is anything that is not formatting: a
+decorative child with no text (an icon, an empty dot), a container whose
+children are blocks of their own, and a paragraph that is only a link.
+
+Everything else is refused whole with `INLINE_FORMATTING_UNMAPPED`, never split
+and never guessed: a span whose classes name no mark or more than one, or set
+formatting only at a breakpoint or state, or turn it off; a class or attribute
+that is not a literal (a `<br>`'s included); a `<br>` with children; a
+component; a link to a page of this site or a fragment; and a mark nested
+inside itself. Last, the value is rendered back through the site's own elements
+exactly as the rewritten site will render it and compared to the source, so
+anything the value cannot say (two adjacent runs of one mark, one mark written
+two ways, two `<br>`s written two ways, a `<br>` between two elements of one
+mark, an empty element, a link target other than `_blank` or none) is refused
+because it would render differently. A `<br>` at the edge of the block or
+beside another, and text holding a control character (a `{"\n"}`, a tab, a C1
+reference such as `&#x80;`), are refused because the contract refuses the value. A computed value inside the block
+is `NON_LITERAL_VALUE`, as before.
+
+A link label has exactly one editor. A formatted label (by a tag or by a
+span's class, alone or beside text) becomes ONE rich-text field of its own,
+rendered in place inside the link, and a link inside it is refused. The link
+field keeps the destination and target, and offers `link.label.edit` only when
+the label is bare text: a label beside other elements has its text read as a
+field of its own.
+
+The rewrite renders the block through `managedRichText(id, templates)` from
+the generated runtime, which resolves a customer's link to a page of this site
+through the contract's static page paths, where each template is the element the source used for
+that mark (and `hard_break` is the source's own `<br>` with `data-gomega-break=""`
+added; without one the runtime draws `<br data-gomega-break="">`), and the parity gate proves the page is byte-identical apart from the
+annotations. A link template also gains `rel={link.rel}` where the source
+element wrote no `rel`: it renders only for a new window, so an element that
+opens in the same window keeps exactly its attributes, and a customer who
+switches the link to a new window gets `rel="noopener noreferrer"` with it. A
+`rel` the source wrote is its own and stays. A block in a client component,
+and a list document, are refused by the rewrite and reported.
+
+### What proves it
+
+Two guarantees, one per failure mode.
+
+**Nothing unparseable is written.** Every rewritten file is parsed before it
+reaches disk, and a file that would not parse stops the run naming itself.
+Every corruption this rewrite has produced was a parse error — a tag renamed by
+a missing space, a redundant fragment inside a new element, an opening tag
+spliced into an import — and each was otherwise found by a `next build` error
+pointing a dozen lines away from its cause.
+
+**Nothing rendered changes.** Build the site before and after and compare the
+prerendered HTML, with the command that ships beside this tool:
+
+```bash
+npm --workspace @landing-pages-websites/managed-site-conversion run parity -- \
+  /tmp/before/.next/server/app /tmp/after/.next/server/app \
+  --contract src/content/managed-site.contract.json \
+  --css /tmp/before/.next/static/css,/tmp/after/.next/static/css
+```
+
+It exits non-zero on any difference it is not allowed to normalise away, and on
+any declared route it could not compare.
+
+**CI runs that whole loop on every push**, against a reference site in
+`fixtures/next-unconverted` that is deliberately left unconverted: build it,
+convert a copy, build that, compare. The repository's only other Next
+application is the starter, which is already a managed site, so nothing else
+here can be converted to prove anything. The reference contains only shapes the
+rewriter HANDLES -- a documented refusal such as a rich-text list would leave a
+customer-editable field unconverted and make the gate unpassable by design,
+which teaches whoever meets it to ignore the gate rather than the shape.
+
+It is also a mutation test in the ordinary sense: changing the page wrapper
+from `display:contents` to anything a reader could see turns it red and names
+both pages. A page rendered ON DEMAND writes no file, so it is absent
+from both sides and a comparison of built output never mentions it: All Points
+Media's `/contact` is dynamic because of its form, and a run reporting "90 of
+90 identical" had not looked at it. Given `--contract` it names those routes and
+FAILS, rather than reporting the pages it could see: fetch each from a running
+build and drop it into both trees under the same name. Silence about a page is
+not evidence about it.
+
+Stylesheets are compared as an ordered sequence carrying at-rule context, not
+as a set of rule text. A rule moved into an `@media` block reads identically
+either side, and two rules swapped are the same two rules — both change what
+renders. An added rule is reported and allowed, because the conversion does add
+exactly one: the page-root wrapper is the first user of `display:contents` on
+most sites. Normalise only what a reader cannot see and the rewrite is
+allowed to change: the hydration payload, the build id, hashed and numbered
+chunk filenames, React's empty-text separators, the `data-gomega-*` attributes,
+and the page-root wrapper and annotation spans (unwrapped by matching depth,
+not by regex). A single changed character anywhere else is a failure, and has
+been: the whitespace, HTML-entity and fragment defects in this tool's history
+were all found that way rather than by review.
+
 ## The confidence rule
 
 > A value enters the proposed contract only when its **identity**, its **field
@@ -131,12 +480,16 @@ Concretely it refuses, rather than guesses, on:
 | `AMBIGUOUS_ANCHOR` | two or more values resolve to the same anchor; both are withheld, and so is anything nested inside them |
 | `NO_DURABLE_ANCHOR` | a `<section>` with no `id` and no component of its own, or an element whose only available name is a value this tool proposes as the customer's — a component prop it renders as copy, an image `src`, an editable link destination |
 | `NON_LITERAL_VALUE` | the rendered value is computed, not a literal that can be migrated |
+| `INLINE_FORMATTING_UNMAPPED` | a text block's inline formatting maps to no mark, so the block is refused whole rather than split into one field per run |
 | `UNKNOWN_ATTRIBUTE_ROLE` | on a host element, a literal attribute that is neither structural nor a known accessibility interface; on a COMPONENT, one whose receiver was read but does not decide what the prop is |
 | `DUPLICATE_COMPONENT_NAME` | one component name declared in two files |
 | `UNRESOLVED_COMPONENT` | a local import of a rendered component that could not be resolved, so its markup was never read |
-| `UNRESOLVED_RENDER_TARGET` | a rendered element names no traceable declaration — chosen at runtime, arriving as a prop, or an unnamed default export — or a JSX-writing function was handed to a call or to a component and where its result renders could not be read |
+| `UNRESOLVED_RENDER_TARGET` | a rendered element names no traceable declaration — chosen at runtime, arriving as a prop, an unnamed default export, or a component that always calls `notFound()` — or a JSX-writing function was handed to a call or to a component and where its result renders could not be read |
 | `COLLECTION_BOUNDS_NOT_DERIVABLE` | item counts are policy, and item IDs were bootstrapped from present array order |
-| `COLLECTION_ITEM_IMAGE_UNSUPPORTED` | items each carry a different image, which one asset slot cannot express |
+| `COLLECTION_ITEM_IMAGE_UNSUPPORTED` | items each carry a different image, and the converter does not yet derive one asset slot that fits them all |
+| `COLLECTION_ITEM_LINK_UNSUPPORTED` | an item template's link reads its destination from the item; an item link has no label of its own to be a link value, so the href stays in code and the item's text is still proposed |
+| `LINK_DESTINATION_CODE_OWNED` | a same-site href the converter cannot propose as a field (not a declared page's exact path, a query string, which a field holds only from a declared allowlist, a bare `#` or `#fragment`, a fragment the target page does not provably render once, or an attribute such as `as` that changes where the link goes), so the link stays in code and no field is proposed for it |
+| `LINK_BEHAVIOUR_UNSTORABLE` | a link carries behaviour a link value (`label`, `destination`, `target`) cannot store: a `target` other than `_blank`, a `rel` other than `noopener noreferrer` beside `_blank`, a spread, or any attribute outside presentation, identity, accessibility and `prefetch` (`as`, `locale`, `replace`, `scroll`, handlers, `download`); judged for every link kind, so the link stays in code |
 | `ASSET_UNREADABLE` | an image whose dimensions could not be read |
 | `ASSET_PATH_UNREPRESENTABLE` | the configured `assetRoot` joined to the referenced file is not a path the standard can carry |
 | `SEO_INPUT_REQUIRED` | an internal-SEO or platform fact with no source in the repository |
@@ -144,6 +497,7 @@ Concretely it refuses, rather than guesses, on:
 | `CONSTRAINTS_DEFAULTED` | a length or node limit came from policy rather than from anything the source proves |
 | `DYNAMIC_ROUTE_NOT_A_PAGE` | a route template stands for many URLs, so it is not one page to convert |
 | `ROUTE_PATH_UNREPRESENTABLE` | a route folds into a file name longer than one path segment may be, so no content file can hold it |
+| `ROUTE_NOT_SERVED` | this repository does not serve a route the contract would describe — a module in its chain always calls `notFound()` (which excludes the route), or the route is in the sitemap and its module could not be read or carries no editable value (both reported only) |
 
 ## What counts as customer content
 
@@ -241,6 +595,65 @@ read. The binding may otherwise be **mentioned** nowhere but its declaration and
 its export: a read is enough to refuse, because a read is how the object reaches
 a mutator, and no list of ways to write one ever terminates.
 
+### Links to this site
+
+A link to a page of this site becomes a customer-editable link field whose
+destination is that page: `{ kind: "internal", pageId, fragment }`, authority
+`internal_only`. The runtime renders such a value as the page's declared path,
+then `#fragment`, so the rule is that the stored value must render the href the
+source wrote, byte for byte, on every page the link renders on
+(`site-links.ts`). Concretely:
+
+- the href is a declared page's path exactly, written from the root: `/about`
+  is, `/about/`, `/About`, `./about`, `about`, `/%61bout`, `//host/about` and a
+  dynamic route's detail page `/blog/hello` are not;
+- it carries no query string. Since contract 0.41.0 an internal destination
+  may hold one, but only from its field's declared `allowedQueries`, which
+  the converter does not infer from one href; a declared `link` migration
+  turns such a code-owned link into a field;
+- a fragment is one the contract can store and that the TARGET page provably
+  renders exactly once (`rendered-ids.ts`): a literal `id` on a host element in
+  the JSX the route's own default-exported page component returns, when that
+  component has a single return. Not under any `{expression}` (a conditional or
+  a repeated item), not inside a component element, not replaceable by a later
+  spread, not inside `<template>` or `<noscript>`, and not written twice.
+  Layouts, child components and early returns are not read. The field then
+  allows exactly that fragment;
+- the link element carries no behaviour a link value cannot store. A value is
+  `{ label, destination, target }`, so, for every link kind, a `target` other
+  than `_blank`, a `rel` other than `noopener noreferrer` beside `_blank` (what
+  the runtime renders), a spread, and any attribute outside presentation,
+  identity, accessibility and `prefetch` (`next/link`'s `as`, `locale`,
+  `replace` and `scroll`, event handlers, `download`) keep the link in code
+  (`LINK_BEHAVIOUR_UNSTORABLE`);
+- a bare `#fragment` renders without a path while the stored page renders
+  `/path#fragment`, so it never qualifies, and neither do `#` and `""`, which
+  name no page at all;
+- a path two routes both claim names no one page.
+
+Everything else stays in code: no link field is proposed and the link is
+reported as `LINK_DESTINATION_CODE_OWNED`, with the reason. A code-owned field
+would still have to store a destination, and there is no true one to store;
+storing the page the link sits on, which is what this did before, sent the
+footer's "Contact" on the home page to the home page.
+
+The href is read from a literal, a declared value (`ctas.primary.href`, by the
+same rules as any declared text: no `let`, shadowing, spread, optional or
+indexed read), or either of those passed through a function this module
+declares that provably returns its one argument unchanged
+(`const localize = (href: string) => href`); a literal read only through such
+a wrapper is named by the wrapper (`at:call:localize`), so a link that just
+became readable cannot make a literal sibling's `at:#` ambiguous. A wrapper
+that changes the href, is `async`, is imported, is reassigned or is declared
+twice, a template literal with a
+substitution, and an `href` a later spread can replace are `NON_LITERAL_VALUE`.
+An absolute URL on the site's own host stays the external destination it is.
+
+A collection item's link is never an item field (`COLLECTION_ITEM_LINK_UNSUPPORTED`):
+a link value needs a label of its own and an item has none, and proposing the
+bare href string made every such collection's content fail the contract, which
+refused the whole proposal.
+
 ## The ID scheme
 
 Stable IDs are random, exactly as the platform mints them. What has to be
@@ -258,7 +671,7 @@ A segment may only be:
 - `component:<Name>` — a uniquely named component declaration
 - `region:<name>` — a container's literal `id` attribute (also a URL fragment target), the accessible name a literal `aria-labelledby` or `aria-label` gives it, or a unique landmark element
 - `role:<tag>[#<attribute>]` — the element, or the attribute a value flows into
-- `at:<discriminator>` — a durable way to tell siblings apart: a declared `id`, a module constant name, a destination the customer is granted nothing over
+- `at:<discriminator>`: a durable way to tell siblings apart, namely a declared `id`, a module constant name or declared path (`const:ctas.primary.href`), or `#` for a link to a page of this site, whose `internal_only` authority no edit can change
 - `each:<BINDING>` / `prop:<name>` — a module-level array and an object-literal property name
 - `text` — the direct text run of an element
 
@@ -276,8 +689,9 @@ and a link's `href` fragment — no longer exist. Both were offered to the
 customer as editable, so both identified a field by a value the customer owns:
 `image.upload` replaced the one and `link.destination.edit` rewrote the other,
 and the next run saw a different anchor. A link destination is now named only
-through `ownershipOfDestination`, the single reading `emit-contract.ts` grants
-the capability from, and an image is named only by a literal `id`.
+by `destinationDiscriminator`: by the source name it was read through, or, for a
+link to this site, by `#`, which names its `internal_only` authority rather than
+the page the customer may change. An image is named only by a literal `id`.
 
 What holds all of it together is `AnchorName`: `region:` and `at:` carry that
 branded type, and only `anchor-name.ts` mints one, from the reading that decided
@@ -318,9 +732,13 @@ Consequences, all covered by `test/anchors.test.ts`:
   reports the old anchors as retired and the new ones as fresh, so a human
   either accepts the churn or declares an alias. A silent rebind would be worse.
 
-Re-running is idempotent. `managed-site.idmap.json` maps anchor to ID; a known
-anchor keeps its ID, a new one mints, and an anchor that disappeared has its ID
-written to `tombstonedIds` rather than recycled.
+Re-running the PROPOSAL is idempotent. `managed-site.idmap.json` maps anchor to
+ID; a known anchor keeps its ID, a new one mints, and an anchor that disappeared
+has its ID written to `tombstonedIds` rather than recycled.
+
+Re-running the CONVERSION is not, and is refused — a converted value is a
+contract read rather than a literal, so a second pass cannot see it. See
+"It converts a repository once".
 
 Item IDs inside a collection are the one place position is used, and only once:
 at the first run, when position is the only truth available. The IDs are written
@@ -335,6 +753,40 @@ integrity hash. Those come from `--config` (see `example.conversion.json`).
 Anything missing is reported as `SEO_INPUT_REQUIRED` and the contract is withheld
 — it is never defaulted into place.
 
+A declaration is checked against the repository, not only against the schema. A
+route the config names and the scan never found is reported against the config
+rather than against the route that does exist, and the contract describes no
+route this repository does not serve:
+
+| what the walk read | what happens |
+| --- | --- |
+| a module in the route's chain always calls Next's `notFound()` | the route is **excluded**: no contract page, no canonical, no indexing directives, no content document |
+| the route is in the sitemap and its module could not be read at all | reported beside the declaration; the route is kept |
+| the route is in the sitemap, owns content, and this run proposed none | reported — a sparse page is thin, not unserved |
+
+Only the first decides anything, because only the first is a fact about the
+ROUTE: a function that always reaches `notFound()` renders nothing whatever else
+is true of it. The other two are facts about this reader, and a legitimately
+sparse page produces one of them.
+
+The exclusion holds whatever the config declares, because the whole page
+descriptor is the advertisement. Keying it on `sitemap.included` alone leaves
+the canonical URL, the robots directives and a content document behind for a
+route that 404s, which is the same defect one field over. The proof is taken
+from the import graph rather than the spelling — a local function called
+`notFound` is not the framework's — and it fails towards "cannot prove it": `if
+(hidden) notFound();` above a `return <section/>` is a page that renders, and is
+left alone.
+
+All Points Media is why this exists. `/innovation/network-portal` is `export
+default function NetworkPortalHidden() { notFound(); }`, declared `purpose:
+"service"` with `sitemap.included: true`, and the emitted contract advertised an
+indexable service page, with a canonical URL, for a route the site 404s. Both
+halves were already in the run — an `UNRESOLVED_RENDER_TARGET` quoting the
+`notFound()` body, and the declaration in the config — in two different files,
+so nothing joined them. `ROUTE_NOT_SERVED` is that join, and it carries the
+route, the declaration and the line in one finding.
+
 A key nobody wrote takes the default. A key somebody wrote, with a value the
 loader cannot use, is refused by name — `"pages": 42` is a mistake in the file,
 and loading it as no declared pages hides the one thing the writer needs told.
@@ -343,14 +795,72 @@ values the standard defines — page purpose, sitemap policy, performance budget
 are checked by the standard's own parser rather than by a second description of
 them here.
 
+### The two files a converted site keeps
+
+Both inputs a conversion cannot re-derive belong in the site's own repository,
+committed:
+
+| file | what it is |
+| --- | --- |
+| `<contentRoot>/managed-site.idmap.json` | the anchor-to-ID ledger. It is what keeps a field's ID the same across conversions, and the CMS addresses a customer's edits by that ID. `--ledger` defaults here. |
+| the conversion config | everything the repository cannot know about itself, including which routes own customer content. Pass it as `--config`; keep it beside the code it converts, not with this tool. |
+
+The ledger's old default was `<out>/managed-site.idmap.json`, a report folder
+nobody commits, so a re-run minted a fresh ID for every field and orphaned every
+edit made through the CMS. Remembering `--ledger` was the only thing standing
+between a site and that.
+
+It is also excluded from the scan that mints anchor names, along with the output
+directory. It records the anchor every ID was minted for, so unexcluded it
+reserves the names it is the record of: converting All Points Media a second
+time turned `ms-proof-challenge` into `ms-proof-challenge-2`, which changed that
+value's anchor and minted it a new field ID although nothing about the value had
+moved.
+
+### Routes whose words the customer does not own
+
+Every route the scan finds and KEEPS has to be declared, or internal SEO is
+incomplete and the contract is withheld. A route it excludes — a dynamic
+template, a path no content file can carry, a route that answers 404 — needs no
+declaration, and one written for it is reported as inert rather than as a page
+missing its inputs. That includes a repository's internal screens —
+an operator console, a debug page — and declaring one used to be the same as
+offering its labels to the customer: All Points Media's password-gated
+`/admin` contributed seven editable fields, `Shared password` among them, to
+the editor of a page no customer can open.
+
+`"managedContent": false` on a page declares the route and gives it no content
+of its own. It keeps the route's SEO facts and its content document's `seo`
+block; none of the words it alone renders become fields, collections or asset
+slots; the anchor pass has nothing to name in them; and the route gets no
+page-root annotation, so the editor discovers nothing on it. It says nothing
+about who may READ the page; that is the repository's own auth.
+
+The question is about the routes that REACH a component, never about the file.
+A header rendered by both `/admin` and `/about` is still the customer's, so it
+is proposed and rewired as usual; only a component no content-bearing route
+reaches is left out. Where that shared component is a CLIENT one, its values
+arrive as a prop, so the internal screen's call site is threaded too — skipping
+it would leave that one route rendering the literal the repository shipped
+while every public page rendered the customer's edit. Absence of the key is not
+`false`: a route declared without it behaves exactly as it always did.
+
 `contentRoot` and `assetRoot` are checked against the paths derived beneath them,
 not only their own shape, because the standard bounds a whole path: a root that
 loads must not be able to fail at emission. A content root has to leave room for
 `/pages/<slug>.json` at the longest slug that can exist. An asset root has to
 leave room for one file name at the longest the standard permits — an asset path
 is whatever the repository already calls the file, so anything deeper is decided
-when that path is built, and reported as `ASSET_PATH_UNREPRESENTABLE` naming
-whichever of the two is at fault.
+when that path is built, and reported as `ASSET_PATH_UNREPRESENTABLE`.
+
+`assetRoot` must be the contract's served root, `public` (`MANAGED_SERVED_ASSET_ROOT`),
+and any other value is refused at config load. The contract (0.12.0) accepts an
+image only under `public/`, so a root outside it would emit images the contract
+refuses; and an image the source writes as `/hero.png` is the file served from
+`public/hero.png`, so even a root inside it, such as `public/images`, would
+record a different file than the one rendered. The key stays so a config that
+states it keeps loading. Every image path the proposer emits is also checked
+with the contract's `isManagedServedAssetPath` as it is built.
 
 What *is* migrated automatically: `metadata.title`, `metadata.description` and
 `robots`, resolved per route from the Next.js `metadata` exports along that
@@ -404,8 +914,11 @@ as declared list items. No copy was touched and no layout changed.
 
 **What it got right, unaided.** Five of the eight navigation fields — the other
 three are the fragment links above, which the current code withholds — including the split
-of `Trend<span>Candy</span>` into two editable values and the `href="#"` brand
-link as `code_owned_interface`. The hero heading as `rich_text` with the `<em>`
+of `Trend<span>Candy</span>` into two editable values (since read as the link's one
+label, see "One field per text block") and the `href="#"` brand
+link as `code_owned_interface` (since links to this site are resolved against
+the declared pages, a bare `#` names no page and is refused as
+`LINK_DESTINATION_CODE_OWNED` instead). The hero heading as `rich_text` with the `<em>`
 preserved as an italic mark. Every heading, every link with its destination and
 target, the hero image with real dimensions and digest, the method steps as a
 collection, and the two `aria-label` values as `code_owned_interface`.
@@ -417,8 +930,8 @@ was ever proposed as protected.
 **What it missed, and reported.** On the untouched source: six proof metrics and
 seven loose paragraphs, whose `<p>` siblings are indistinguishable without a
 name; the two identical `BOOK_URL` calls to action, which cannot be told apart
-from each other; and sixteen partner values, because a collection cannot vary an
-image per item under this standard. That is seventeen `AMBIGUOUS_ANCHOR`
+from each other; and sixteen partner values, because the converter does not yet
+propose a collection whose items vary an image. That is seventeen `AMBIGUOUS_ANCHOR`
 findings plus one `COLLECTION_ITEM_IMAGE_UNSUPPORTED` covering all sixteen
 partner values — every missed value is covered by a finding that names the
 decision required.

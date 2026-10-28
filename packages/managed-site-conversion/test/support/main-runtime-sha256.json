@@ -1,0 +1,34 @@
+{
+  "about": [
+    "sha256 of the generator's own output (the runtime minus the three reader additions) for each converter fixture, with configFor([\"/\"]).",
+    "Recorded from main at 6c04116, and re-recorded deliberately when #104's formatted-block reader gained one link builder with rel (peter/formatted-block-link-rel),",
+    "and again when the formatted-block reader gained the hard_break template and its <br data-gomega-break> fallback (peter/rich-text-hard-break).",
+    "and again when internal links to an item of a generated page gained itemPath (peter/contract-item-link-destinations).",
+    "and again when the one link builder took a link field's value, whose destination may carry a query (peter/contract-link-query).",
+    "runtime-readers.test.ts removes exactly the reader additions from today's output and must reproduce each digest; re-record only for an intended change to the generator's own text."
+  ],
+  "digests": {
+    "annotationsafety": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "apmshaped": "fe730e05768badc04ae79d78eee26222f203ebbad048e5e077018e2d8f8101d2",
+    "callbacks": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "childrenhop": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "clientchain": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "clientcollection": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "clientcollectionlink": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "formattedblocks": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "hiddenroute": "efd9d7b5386dc007929abacebc8d59758f586e2f23e30dc2116009b42d6a9a0d",
+    "inlinetypevalue": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "linebreaks": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "multilineimport": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "namecollision": "1fb6e7a691a7771c94c0a87f2fdc2824597538171a2a003318a779d00fd4bcd3",
+    "nodeprop": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "reachability": "50bcdc9d33014994f77a1237564737548601b1c2e394824888f673aeb6909a39",
+    "receiverchain": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "routes": "b114cfbcb4c0ab6a6858661ea2e0bb24328b7f7eb9a2bcb7286661d357067b89",
+    "site": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "twinvalues": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "typeonlyimport": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "typeonlyvalue": "26b0a8ac66a7bfb4a288dd089645b558a2cdd85e40503396749d1bf1992fa4cf",
+    "unmanagedroute": "1fb6e7a691a7771c94c0a87f2fdc2824597538171a2a003318a779d00fd4bcd3"
+  }
+}

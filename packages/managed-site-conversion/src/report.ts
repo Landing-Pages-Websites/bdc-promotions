@@ -23,6 +23,8 @@ export const FINDING_CODES = Object.freeze([
   "NO_DURABLE_ANCHOR",
   /** The rendered value is computed, not a literal the tool can migrate. */
   "NON_LITERAL_VALUE",
+  /** A text block's inline formatting maps to no mark, so the block is refused whole. */
+  "INLINE_FORMATTING_UNMAPPED",
   /** The value flows into an attribute whose ownership is not decidable. */
   "UNKNOWN_ATTRIBUTE_ROLE",
   /** Two component declarations share a name, so neither can be anchored. */
@@ -33,8 +35,14 @@ export const FINDING_CODES = Object.freeze([
   "UNRESOLVED_RENDER_TARGET",
   /** Collection cardinality is a policy decision, never derivable from source. */
   "COLLECTION_BOUNDS_NOT_DERIVABLE",
-  /** The standard binds one asset slot to one file, so items cannot vary an image. */
+  /** The converter does not yet derive one asset slot that fits every item's image. */
   "COLLECTION_ITEM_IMAGE_UNSUPPORTED",
+  /** A collection item's link has no label of its own, so it cannot be a link value. */
+  "COLLECTION_ITEM_LINK_UNSUPPORTED",
+  /** A same-site href the contract cannot state exactly, so it stays in code. */
+  "LINK_DESTINATION_CODE_OWNED",
+  /** A link's behaviour (target, rel, navigation props, handlers) is more than a link value stores. */
+  "LINK_BEHAVIOUR_UNSTORABLE",
   /** An image referenced by the source could not be read or probed. */
   "ASSET_UNREADABLE",
   /** The asset root plus the referenced file is not a path the contract can carry. */
@@ -49,6 +57,8 @@ export const FINDING_CODES = Object.freeze([
   "DYNAMIC_ROUTE_NOT_A_PAGE",
   /** A route folds into a slug the content path cannot carry. */
   "ROUTE_PATH_UNREPRESENTABLE",
+  /** This repository does not serve a route the contract would describe. */
+  "ROUTE_NOT_SERVED",
 ] as const);
 
 export type FindingCode = (typeof FINDING_CODES)[number];

@@ -9,6 +9,10 @@ import {
 import { managedInternalValueTypeSchema } from "./internal-value-types.js";
 import { parseSchemaInput } from "./schema-input.js";
 import {
+  MANAGED_TEXT_TEMPLATE_MAX_PLACEHOLDERS,
+  MANAGED_TEXT_TEMPLATE_PLACEHOLDER_NAME,
+} from "./text-template.js";
+import {
   absoluteHttpsUrlSchema,
   externalDestinationUrlSchema,
   jsonPointerSourceResolverSchema,
@@ -83,7 +87,17 @@ const managedMetadataSchema = z.strictObject({
     title: nullableFieldId,
     description: nullableFieldId,
     image: stableIdSchema("asset").nullable(),
+    // The page's own editable share image, on the `image` slot. Absent is the
+    // shape every contract had before it: the slot alone names the picture. No
+    // `null` spelling, so one meaning has one canonical form.
+    imageFieldId: fieldId.optional(),
   }),
+  // The page's own "Hide this page from search engines" toggle (0.34.0): a
+  // customer-editable `toggle` field with semantic `seo_hidden`. When on, the
+  // page serves noindex, nofollow; when off, it is indexable; `indexing` still
+  // names the protected directives for everything else. Absent is the shape
+  // every contract had before it: the page's robots are code's.
+  hiddenFieldId: fieldId.optional(),
 });
 
 const managedJsonLdDeclarationSchema = z.strictObject({
@@ -91,6 +105,26 @@ const managedJsonLdDeclarationSchema = z.strictObject({
   required: z.boolean(),
   sourceFieldIds: z.array(fieldId).min(1),
   requiredOutputProperties: z.array(z.string().min(1).max(160)).min(1),
+});
+
+/**
+ * A generated page's search title or description written once for every item:
+ * `fieldId` is the page's own search-pattern field, and each source names the
+ * item text field one of its placeholders reads. The slot it belongs to then
+ * names the item's own editable override, served instead whenever it holds
+ * text (see `contract-semantics-seo.ts`).
+ */
+const managedGeneratedSeoPatternSchema = z.strictObject({
+  fieldId,
+  sources: z
+    .array(
+      z.strictObject({
+        placeholder: z.string().regex(MANAGED_TEXT_TEMPLATE_PLACEHOLDER_NAME),
+        fieldId,
+      }),
+    )
+    .min(1)
+    .max(MANAGED_TEXT_TEMPLATE_MAX_PLACEHOLDERS),
 });
 
 const managedGeneratedMetadataSchema = z.strictObject({
@@ -103,6 +137,14 @@ const managedGeneratedMetadataSchema = z.strictObject({
     description: nullableFieldId,
     imageFieldId: nullableFieldId,
   }),
+  // Absent is the shape every generated page had before 0.26.0: the slot alone
+  // names what is served. No `null` spelling, so one meaning has one form.
+  titlePattern: managedGeneratedSeoPatternSchema.optional(),
+  descriptionPattern: managedGeneratedSeoPatternSchema.optional(),
+  // Each item's own "Hide this page from search engines" toggle (0.34.0): a
+  // customer-editable item field of the route collection, type `toggle`,
+  // semantic `seo_hidden`. Absent: the items' robots are code's.
+  hiddenFieldId: fieldId.optional(),
 });
 
 const managedGeneratedJsonLdDeclarationSchema = z

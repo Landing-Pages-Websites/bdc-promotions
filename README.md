@@ -97,9 +97,11 @@ itself.
 The starter's `robots.txt` permits crawlers and advertises the generated
 `sitemap.xml`; every registered route receives a weekly crawl-frequency hint.
 Keep `src/lib/routes.ts` current so a prelaunch Website Review can discover
-the complete public site. The Gomega review bridge is immutable v4 plumbing:
-`https://app.gomega.ai/review-bridge/v7/review-bridge.js` with its pinned SRI
-value and anonymous cross-origin mode. Do not replace any of those values.
+the complete public site. The Gomega review bridge is fixed plumbing:
+`https://app.gomega.ai/review-bridge/latest/review-bridge.js`, always the newest
+release, with anonymous cross-origin mode, `defer`, and no `integrity`
+attribute (a digest would pin it to one release). Do not replace or add any of
+those values.
 
 What you DO edit: `src/site.config.ts`, `src/content/`,
 `content/blog/*.md` (articles; the `/blog` page and `[slug]` template stay),

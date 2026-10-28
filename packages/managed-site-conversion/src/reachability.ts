@@ -1,6 +1,9 @@
 import ts from "typescript";
 
-import { findComponentDeclarations, type ComponentDeclaration } from "./extract.js";
+import {
+  findComponentDeclarations,
+  type ComponentDeclaration,
+} from "./extract.js";
 import {
   isComponentName,
   isProvablyHostTag,
@@ -8,6 +11,15 @@ import {
   unwrapTransparent,
   type JsxElementNode,
 } from "./jsx-facts.js";
+import { notFoundCallIn, notFoundNamesIn } from "./not-found.js";
+import {
+  chainRender,
+  notFoundRender,
+  unreadEntryFinding,
+  unreadRender,
+  RENDERS,
+  type RouteRender,
+} from "./route-render.js";
 import {
   walkRenderOutput,
   EVERY_TRIGGER,
@@ -15,11 +27,12 @@ import {
   type UnreadableRender,
 } from "./render-output.js";
 import type { Finding } from "./report.js";
-import { declarationOfName, scopeOfDeclaration } from "./scopes.js";
+import { nearestBinding, scopeOfDeclaration } from "./scopes.js";
 import {
   evidenceOf,
   importedBindingsOf,
   locationOf,
+  namedFunctionsOf,
   reExportsOf,
   type ModuleCache,
   type ModuleReference,
@@ -41,9 +54,22 @@ import {
  * same coverage gap it is meant to prevent.
  */
 
+export type { RouteRender } from "./route-render.js";
+
 export interface RenderTree {
   readonly components: readonly ComponentDeclaration[];
   readonly findings: readonly Finding[];
+  /**
+   * What the FIRST entry module renders, which by this walk's contract is the
+   * route's own page module rather than a layout above it.
+   *
+   * The walk already decides this to know whether to follow the module at all,
+   * and used to keep only the finding. A caller that has to decide whether a
+   * route SERVES anything -- the SEO emitter, which advertises it in a sitemap
+   * -- needs the answer itself, and deriving it a second time is how two
+   * readers come to disagree about what a page renders.
+   */
+  readonly route: RouteRender;
 }
 
 const DEFAULT_EXPORT = "default";
@@ -54,6 +80,12 @@ type Resolution =
   /** Declared outside the repository, so there is nothing of ours to inspect. */
   | { readonly kind: "external" }
   | { readonly kind: "missing_module"; readonly reference: ModuleReference }
+  /** Resolves to a function that always answers 404, so it renders nothing. */
+  | {
+      readonly kind: "not_found";
+      readonly module: ParsedModule;
+      readonly node: ts.Node;
+    }
   | { readonly kind: "unresolved" };
 
 /**
@@ -91,8 +123,14 @@ function encloses(outer: ts.Node, inner: ts.Node): boolean {
   return outer !== inner && outer.pos <= inner.pos && outer.end >= inner.end;
 }
 
-function isNestedIn(inner: ComponentDeclaration, outer: ComponentDeclaration): boolean {
-  return inner.module.file === outer.module.file && encloses(outer.jsxRoot, inner.jsxRoot);
+function isNestedIn(
+  inner: ComponentDeclaration,
+  outer: ComponentDeclaration,
+): boolean {
+  return (
+    inner.module.file === outer.module.file &&
+    encloses(outer.jsxRoot, inner.jsxRoot)
+  );
 }
 
 /**
@@ -114,10 +152,33 @@ function isDefaultExported(statement: ts.Statement): boolean {
 
 function defaultExportStatement(module: ParsedModule): ts.Statement | null {
   for (const statement of module.source.statements) {
-    if (ts.isExportAssignment(statement) && statement.isExportEquals !== true) return statement;
+    if (ts.isExportAssignment(statement) && statement.isExportEquals !== true)
+      return statement;
     if (isDefaultExported(statement)) return statement;
   }
   return null;
+}
+
+/**
+ * The function body an anonymous `export default` renders from, when there is
+ * one to read.
+ *
+ * `defaultExportName` answers null for these, so every reading keyed on a name
+ * skips them. The two forms Next pages are written in are a function with no
+ * name and an exported arrow; anything else -- a class, an object, a call
+ * wrapping a component -- is left unread, as it was.
+ */
+function anonymousDefaultBody(module: ParsedModule): ts.Node | null {
+  const statement = defaultExportStatement(module);
+  if (statement === null) return null;
+  if (ts.isFunctionDeclaration(statement)) {
+    return statement.name === undefined ? (statement.body ?? null) : null;
+  }
+  if (!ts.isExportAssignment(statement)) return null;
+  const exported = unwrapTransparent(statement.expression);
+  return ts.isArrowFunction(exported) || ts.isFunctionExpression(exported)
+    ? exported.body
+    : null;
 }
 
 /** The local name a module's default export refers to, when it has one at all. */
@@ -125,7 +186,9 @@ function defaultExportName(module: ParsedModule): string | null {
   const statement = defaultExportStatement(module);
   if (statement === null) return null;
   if (ts.isExportAssignment(statement)) {
-    return ts.isIdentifier(statement.expression) ? statement.expression.text : null;
+    return ts.isIdentifier(statement.expression)
+      ? statement.expression.text
+      : null;
   }
   if (ts.isFunctionDeclaration(statement)) return statement.name?.text ?? null;
   if (ts.isClassDeclaration(statement)) return statement.name?.text ?? null;
@@ -152,19 +215,20 @@ const RENDERED_OUTPUT = new WeakMap<ts.Node, RenderedOutput>();
  * renders a prop wherever its own declaration says, which is where the reader
  * has to look.
  */
-const UNREADABLE_DECISION: Readonly<Record<UnreadableRender["kind"], string>> = {
-  call:
-    "This call is given a function that writes JSX, but whether the call's " +
-    "result is rendered could not be read, so nothing inside it was " +
-    "inspected. Render the result where it is written, or convert this " +
-    "subtree by hand. Nothing was proposed for it.",
-  attribute:
-    "A component is given this function, which writes JSX, but only that " +
-    "component decides whether it renders what the function returns, and an " +
-    "attribute is written the same way whether it does or not. Nothing inside " +
-    "was inspected. Write the JSX where it renders, or convert this subtree " +
-    "by hand. Nothing was proposed for it.",
-};
+const UNREADABLE_DECISION: Readonly<Record<UnreadableRender["kind"], string>> =
+  {
+    call:
+      "This call is given a function that writes JSX, but whether the call's " +
+      "result is rendered could not be read, so nothing inside it was " +
+      "inspected. Render the result where it is written, or convert this " +
+      "subtree by hand. Nothing was proposed for it.",
+    attribute:
+      "A component is given this function, which writes JSX, but only that " +
+      "component decides whether it renders what the function returns, and an " +
+      "attribute is written the same way whether it does or not. Nothing inside " +
+      "was inspected. Write the JSX where it renders, or convert this subtree " +
+      "by hand. Nothing was proposed for it.",
+  };
 
 /**
  * Every component-shaped tag this declaration renders, each named once, and
@@ -212,31 +276,30 @@ class RenderWalker {
   }
 
   walk(entryFiles: readonly string[]): RenderTree {
-    for (const file of entryFiles) this.#enterModule(file);
-    return { components: this.#components, findings: this.#findings };
+    const rendered = entryFiles.map((file) => this.#enterModule(file));
+    return {
+      components: this.#components,
+      findings: this.#findings,
+      route: chainRender(rendered),
+    };
   }
 
-  #enterModule(file: string): void {
+  #enterModule(file: string): RouteRender {
     const entry = this.#cache.read(file);
     const resolution = this.#resolveExport(entry, DEFAULT_EXPORT, new Set());
     if (resolution.kind === "declaration") {
       this.#visit(resolution.declaration);
-      return;
+      return RENDERS;
     }
-    const statement = defaultExportStatement(entry);
-    this.#findings.push({
-      code: "UNRESOLVED_RENDER_TARGET",
-      anchor: null,
-      location:
-        statement === null
-          ? { file, line: 1, offset: 0 }
-          : locationOf(entry.source, file, statement),
-      evidence:
-        statement === null ? "no default export" : evidenceOf(entry.source, statement),
-      decision:
-        "This route or layout does not export a named component, so nothing it " +
-        "renders was inspected. Give the default export a name, then re-run.",
-    });
+    if (resolution.kind === "not_found") {
+      // No finding here. The route that reaches this module carries one, with
+      // the declaration that advertises it beside the line that answers 404,
+      // and a finding is one decision for a human.
+      return notFoundRender(resolution.module, resolution.node);
+    }
+    const render = unreadRender(file, entry, defaultExportStatement(entry));
+    this.#findings.push(unreadEntryFinding(render));
+    return render;
   }
 
   #visit(declaration: ComponentDeclaration): void {
@@ -245,7 +308,8 @@ class RenderWalker {
     this.#visited.add(key);
     this.#components.push(declaration);
     const rendered = renderedOutputOf(declaration);
-    for (const entry of rendered.unreadable) this.#reportUnreadable(entry, declaration);
+    for (const entry of rendered.unreadable)
+      this.#reportUnreadable(entry, declaration);
     for (const tag of rendered.tags) this.#follow(tag, declaration);
   }
 
@@ -271,7 +335,10 @@ class RenderWalker {
    * reimplemented, so a second reader cannot come to disagree with it about
    * what `<Hero />` refers to.
    */
-  resolveTag(tagName: string, from: ComponentDeclaration): ComponentDeclaration | null {
+  resolveTag(
+    tagName: string,
+    from: ComponentDeclaration,
+  ): ComponentDeclaration | null {
     const resolution = this.#resolutionOf(tagName, from);
     return resolution.kind === "declaration" ? resolution.declaration : null;
   }
@@ -285,7 +352,11 @@ class RenderWalker {
     return resolution.kind === "declaration" ? resolution.declaration : null;
   }
 
-  targetAtSite(tagName: string, from: ComponentDeclaration, at: ts.Node): TagTarget {
+  targetAtSite(
+    tagName: string,
+    from: ComponentDeclaration,
+    at: ts.Node,
+  ): TagTarget {
     return tagTargetOf(this.#resolutionOf(tagName, from, at));
   }
 
@@ -311,11 +382,13 @@ class RenderWalker {
     // the analyzer read `UI.Card` from the import.
     if (at !== undefined && nearestBinding(at, root) !== null) {
       return members.length === 0
-        ? declarationResolution(componentDeclaredBy(nearestBinding(at, root)!, from.module))
+        ? this.#resolved(componentDeclaredBy(nearestBinding(at, root)!, from.module))
         : UNRESOLVED;
     }
-    if (members.length > 0) return this.#resolveMember(from.module, root, members);
-    if (at !== undefined) return this.#resolveName(from.module, root, new Set(), null);
+    if (members.length > 0)
+      return this.#resolveMember(from.module, root, members);
+    if (at !== undefined)
+      return this.#resolveName(from.module, root, new Set(), null);
     return this.#resolveName(from.module, root, new Set(), from);
   }
 
@@ -327,7 +400,22 @@ class RenderWalker {
       return;
     }
     if (resolution.kind === "missing_module") {
-      this.#findings.push(unresolvedImportFinding(resolution.reference, from.module.file));
+      this.#findings.push(
+        unresolvedImportFinding(resolution.reference, from.module.file),
+      );
+      return;
+    }
+    if (resolution.kind === "not_found") {
+      this.#findings.push({
+        code: "UNRESOLVED_RENDER_TARGET",
+        anchor: null,
+        location: locationOf(from.module.source, from.module.file, tag.node),
+        evidence: evidenceOf(from.module.source, tag.node),
+        decision:
+          `'${tag.name}' always calls \`notFound()\`, so it renders nothing and ` +
+          "whatever it stands in for was not inspected. Render a component here, " +
+          "or convert this subtree by hand. Nothing was proposed for it.",
+      });
       return;
     }
     this.#findings.push({
@@ -351,12 +439,21 @@ class RenderWalker {
     const binding = importedBindingsOf(module, this.#repositoryRoot).get(root);
     if (binding === undefined) return UNRESOLVED;
     if (!binding.isRepositoryLocal) return EXTERNAL;
-    if (binding.resolvedFile === null) return { kind: "missing_module", reference: binding };
+    if (binding.resolvedFile === null)
+      return { kind: "missing_module", reference: binding };
     const [member] = members;
-    if (binding.importedName !== null || member === undefined || members.length > 1) {
+    if (
+      binding.importedName !== null ||
+      member === undefined ||
+      members.length > 1
+    ) {
       return UNRESOLVED;
     }
-    return this.#resolveExport(this.#cache.read(binding.resolvedFile), member, new Set());
+    return this.#resolveExport(
+      this.#cache.read(binding.resolvedFile),
+      member,
+      new Set(),
+    );
   }
 
   /**
@@ -370,11 +467,12 @@ class RenderWalker {
     scope: ComponentDeclaration | null,
   ): Resolution {
     const declared = this.#declarationInScope(module, name, scope);
-    if (declared !== undefined) return { kind: "declaration", declaration: declared };
+    if (declared !== undefined) return this.#resolved(declared);
     const binding = importedBindingsOf(module, this.#repositoryRoot).get(name);
     if (binding === undefined) return UNRESOLVED;
     if (!binding.isRepositoryLocal) return EXTERNAL;
-    if (binding.resolvedFile === null) return { kind: "missing_module", reference: binding };
+    if (binding.resolvedFile === null)
+      return { kind: "missing_module", reference: binding };
     if (binding.importedName === null) return UNRESOLVED;
     return this.#resolveExport(
       this.#cache.read(binding.resolvedFile),
@@ -383,19 +481,41 @@ class RenderWalker {
     );
   }
 
-  #resolveExport(module: ParsedModule, exportName: string, seen: Set<string>): Resolution {
+  #resolveExport(
+    module: ParsedModule,
+    exportName: string,
+    seen: Set<string>,
+  ): Resolution {
     const key = `${module.file}#${exportName}`;
     if (seen.has(key)) return UNRESOLVED;
     seen.add(key);
-    const localName = exportName === DEFAULT_EXPORT ? defaultExportName(module) : exportName;
+    const localName =
+      exportName === DEFAULT_EXPORT ? defaultExportName(module) : exportName;
     if (localName !== null) {
       const local = this.#resolveName(module, localName, seen, null);
       if (local.kind !== "unresolved") return local;
+      // Only an EXPORTED name is asked this. A tag resolving to nothing is a
+      // gap in the walk wherever it is written, while a module whose export
+      // answers 404 is a fact about the route that names the module, and the
+      // one place that distinction can be drawn is here.
+      const answers404 = this.#answers404(module, localName);
+      if (answers404 !== null) return answers404;
+    } else if (exportName === DEFAULT_EXPORT) {
+      // `export default function () { notFound(); }` and `export default () =>
+      // notFound()` bind no name at all, so there is nothing for the lookup
+      // above to find. The body is right there in the export statement, and a
+      // route written that way answers 404 exactly as one with a name does.
+      const anonymous = this.#anonymousDefaultAnswers404(module);
+      if (anonymous !== null) return anonymous;
     }
     return this.#throughReExports(module, exportName, seen);
   }
 
-  #throughReExports(module: ParsedModule, exportName: string, seen: Set<string>): Resolution {
+  #throughReExports(
+    module: ParsedModule,
+    exportName: string,
+    seen: Set<string>,
+  ): Resolution {
     for (const reExport of reExportsOf(module, this.#repositoryRoot)) {
       const named = reExport.exportedName !== null;
       if (named && reExport.exportedName !== exportName) continue;
@@ -417,6 +537,67 @@ class RenderWalker {
     return UNRESOLVED;
   }
 
+  /**
+   * The `notFound()` an exported function always reaches, when it has one.
+   *
+   * Asked only of names `findComponentDeclarations` already declined, which is
+   * every named function with no JSX in it. Such a function renders nothing
+   * whatever it does; the call is what says the route answers 404 rather than
+   * merely defeating this reader.
+   */
+  #answers404(module: ParsedModule, name: string): Resolution | null {
+    for (const entry of namedFunctionsOf(module.source)) {
+      if (entry.name !== name) continue;
+      if (!isModuleLevelBinding(entry.body, module)) continue;
+      const answers = this.#answeredBy(module, entry.body);
+      if (answers !== null) return answers;
+    }
+    return null;
+  }
+
+  /** The 404 an anonymous `export default` answers with, when it does. */
+  #anonymousDefaultAnswers404(module: ParsedModule): Resolution | null {
+    const body = anonymousDefaultBody(module);
+    return body === null ? null : this.#answeredBy(module, body);
+  }
+
+  /**
+   * A resolved declaration, unless its body proves the route answers 404.
+   *
+   * The proof runs HERE, at the one place a name becomes a declaration, rather
+   * than only where a name resolves to nothing. `export default function
+   * Hidden() { notFound(); return <div />; }` is a component declaration by
+   * every structural test -- it writes JSX -- and every request still reaches
+   * `notFound()` before that JSX exists. Asking only about functions the
+   * component reading declined left exactly those routes in the contract.
+   *
+   * It answers for a rendered TAG as well, deliberately: markup below a
+   * component that always 404s is markup no visitor sees, which is the same
+   * reason this walk exists.
+   */
+  #resolved(declaration: ComponentDeclaration | null): Resolution {
+    if (declaration === null) return UNRESOLVED;
+    return (
+      this.#answeredBy(declaration.module, declaration.jsxRoot) ?? {
+        kind: "declaration",
+        declaration,
+      }
+    );
+  }
+
+  /** The `notFound()` a body is guaranteed to reach, as a resolution. */
+  #answeredBy(module: ParsedModule, body: ts.Node): Resolution | null {
+    // Cheapest question first: a module that never imports `notFound` cannot
+    // reach one, and almost none of them do.
+    const names = notFoundNamesIn(
+      module,
+      importedBindingsOf(module, this.#repositoryRoot),
+    );
+    if (names === null) return null;
+    const node = notFoundCallIn(body, names);
+    return node === null ? null : { kind: "not_found", module, node };
+  }
+
   #moduleDeclarations(module: ParsedModule): readonly ComponentDeclaration[] {
     const existing = this.#declarations.get(module.file);
     if (existing !== undefined) return existing;
@@ -426,7 +607,9 @@ class RenderWalker {
   }
 
   /** Every component this one is written inside, innermost first. */
-  #enclosingDeclarations(declaration: ComponentDeclaration): readonly ComponentDeclaration[] {
+  #enclosingDeclarations(
+    declaration: ComponentDeclaration,
+  ): readonly ComponentDeclaration[] {
     return this.#moduleDeclarations(declaration.module)
       .filter((other) => encloses(other.jsxRoot, declaration.jsxRoot))
       .sort((left, right) => right.jsxRoot.pos - left.jsxRoot.pos);
@@ -449,7 +632,10 @@ class RenderWalker {
    * closure: the component it is declared in, or one nested deeper in that one.
    * Anywhere else the name is out of scope and resolves to nothing.
    */
-  #isInScope(target: ComponentDeclaration, from: ComponentDeclaration): boolean {
+  #isInScope(
+    target: ComponentDeclaration,
+    from: ComponentDeclaration,
+  ): boolean {
     const [enclosing] = this.#enclosingDeclarations(target);
     if (enclosing === undefined) return true;
     return enclosing === from || isNestedIn(from, enclosing);
@@ -467,17 +653,23 @@ class RenderWalker {
     return this.#moduleDeclarations(module)
       .filter((entry) => entry.name === name)
       .filter((entry) =>
-        scope === null ? this.#isModuleLevel(entry) : this.#isInScope(entry, scope),
+        scope === null
+          ? this.#isModuleLevel(entry)
+          : this.#isInScope(entry, scope),
       )
       .sort(
         (left, right) =>
-          this.#enclosingDeclarations(right).length - this.#enclosingDeclarations(left).length,
+          this.#enclosingDeclarations(right).length -
+          this.#enclosingDeclarations(left).length,
       )
       .at(0);
   }
 }
 
-function unresolvedImportFinding(reference: ModuleReference, file: string): Finding {
+function unresolvedImportFinding(
+  reference: ModuleReference,
+  file: string,
+): Finding {
   return {
     code: "UNRESOLVED_COMPONENT",
     anchor: null,
@@ -547,6 +739,15 @@ export interface CallSiteIndex {
    * only question asked of them is whether any exist.
    */
   readonly unknownRenders: number;
+  /**
+   * The declarations the index was built from, keyed the same way as `sites`.
+   *
+   * A caller walk asks "who renders THIS component", which is a question about
+   * a declaration, not a file: `WordWall.tsx` declares `Numeral` beside
+   * `WordWall`, so a file-keyed lookup reported `<Numeral/>` as a caller of
+   * `WordWall` and threaded a value into the wrong component.
+   */
+  readonly declarations: ReadonlyMap<string, ComponentDeclaration>;
 }
 
 export function callSiteIndex(
@@ -554,12 +755,20 @@ export function callSiteIndex(
   resolver: TagResolver,
 ): CallSiteIndex {
   const sites = new Map<string, CallSite[]>();
+  const byKey = new Map<string, ComponentDeclaration>(
+    declarations.map((declaration) => [
+      declarationKey(declaration),
+      declaration,
+    ]),
+  );
   const opaque: CallSite[] = [];
   let unknownRenders = 0;
   for (const from of declarations) {
     walkRenderOutput(from.jsxRoot, EVERY_TRIGGER, (node) => {
-      if (isUnfollowableRenderedCallee(node, from.module.source)) unknownRenders += 1;
-      if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) return false;
+      if (isUnfollowableRenderedCallee(node, from.module.source))
+        unknownRenders += 1;
+      if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node))
+        return false;
       const name = node.tagName.getText(from.module.source);
       // Every reachable site that renders a component is evidence, dotted ones
       // included -- see `readTagAs`. A component from a PACKAGE is not one of
@@ -580,11 +789,14 @@ export function callSiteIndex(
       return false;
     });
   }
-  return { sites, opaque, unknownRenders };
+  return { sites, opaque, unknownRenders, declarations: byKey };
 }
 
 export interface TagResolver {
-  resolve(tagName: string, from: ComponentDeclaration): ComponentDeclaration | null;
+  resolve(
+    tagName: string,
+    from: ComponentDeclaration,
+  ): ComponentDeclaration | null;
   /**
    * `resolveAt` with the REASON kept: a tag that is not one of our
    * declarations is either a package's component or a binding of ours this
@@ -611,11 +823,15 @@ export interface TagResolver {
   ): ComponentDeclaration | null;
 }
 
-export function tagResolver(repositoryRoot: string, cache: ModuleCache): TagResolver {
+export function tagResolver(
+  repositoryRoot: string,
+  cache: ModuleCache,
+): TagResolver {
   const walker = new RenderWalker(cache, repositoryRoot);
   return {
     resolve: (tagName, from) => walker.resolveTag(tagName, from),
-    resolveAt: (tagName, from, at) => walker.resolveTagAtSite(tagName, from, at),
+    resolveAt: (tagName, from, at) =>
+      walker.resolveTagAtSite(tagName, from, at),
     targetAt: (tagName, from, at) => walker.targetAtSite(tagName, from, at),
   };
 }
@@ -681,7 +897,10 @@ export function readTagAs(
   from: ComponentDeclaration,
 ): TagReading {
   if (isComponentName(tagName)) {
-    return { kind: "component", target: resolver.targetAt(tagName, from, node) };
+    return {
+      kind: "component",
+      target: resolver.targetAt(tagName, from, node),
+    };
   }
   if (isProvablyHostTag(tagName)) return { kind: "host" };
 
@@ -703,18 +922,9 @@ export function readTagAs(
   // they wrote `declare const motion`, a local binding, where they meant an
   // import from a package.
   const target = resolver.targetAt(tagName, from, node);
-  return target.kind === "external" ? { kind: "host" } : { kind: "component", target };
-}
-
-/** The nearest syntax binding this name between the node and the module. */
-function nearestBinding(node: ts.Node, name: string): ts.Node | null {
-  let current: ts.Node | undefined = node.parent;
-  while (current !== undefined && !ts.isSourceFile(current)) {
-    const declaration = declarationOfName(current, name);
-    if (declaration !== null) return declaration;
-    current = current.parent;
-  }
-  return null;
+  return target.kind === "external"
+    ? { kind: "host" }
+    : { kind: "component", target };
 }
 
 /**
@@ -732,9 +942,13 @@ function componentDeclaredBy(
   // parentheses, so the match has to look through them too — comparing against
   // the original initializer made the two disagree and reported a local
   // component unresolved.
-  const initializer = ts.isVariableDeclaration(binding) ? binding.initializer : binding;
+  const initializer = ts.isVariableDeclaration(binding)
+    ? binding.initializer
+    : binding;
   if (initializer === undefined) return null;
-  const owner = ts.isExpression(initializer) ? unwrapTransparent(initializer) : initializer;
+  const owner = ts.isExpression(initializer)
+    ? unwrapTransparent(initializer)
+    : initializer;
   return (
     findComponentDeclarations(module).find(
       (candidate) => candidate.jsxRoot.parent === owner,
@@ -751,30 +965,43 @@ function componentDeclaredBy(
  * decides and this only asks whether the answer is the file.
  */
 function isModuleLevelDeclaration(declaration: ComponentDeclaration): boolean {
-  const site = bindingSiteOf(declaration);
-  if (site === null) return false;
-  return scopeOfDeclaration(site) === declaration.module.source;
+  return isModuleLevelBinding(declaration.jsxRoot, declaration.module);
 }
 
 /**
- * The syntax that binds a component's name: its declaration or its variable.
+ * The same question for any named function, component or not.
+ *
+ * Only a module-level name can be exported, so a nested function that happens
+ * to share the export's name answers for nothing.
+ */
+function isModuleLevelBinding(body: ts.Node, module: ParsedModule): boolean {
+  const site = bindingSiteOf(body);
+  if (site === null) return false;
+  return scopeOfDeclaration(site) === module.source;
+}
+
+/**
+ * The syntax that binds a function's name: its declaration or its variable.
  *
  * Transparent wrappers nest, so this climbs through however many there are.
  * Reading one level agreed with `componentDeclaredBy` — which unwraps
  * recursively — only for singly-wrapped components, and a module-level
  * `const Local = (((() => …))) as T` became unreachable.
  */
-function bindingSiteOf(declaration: ComponentDeclaration): ts.Node | null {
-  const owner = declaration.jsxRoot.parent;
+function bindingSiteOf(body: ts.Node): ts.Node | null {
+  const owner = body.parent;
   if (owner === undefined) return null;
   if (ts.isFunctionDeclaration(owner)) return owner;
   let current: ts.Node | undefined = owner.parent;
-  while (current !== undefined && ts.isExpression(current) && isTransparentWrapper(current)) {
+  while (
+    current !== undefined &&
+    ts.isExpression(current) &&
+    isTransparentWrapper(current)
+  ) {
     current = current.parent;
   }
-  return current !== undefined && ts.isVariableDeclaration(current) ? current : null;
+  return current !== undefined && ts.isVariableDeclaration(current)
+    ? current
+    : null;
 }
 
-function declarationResolution(declaration: ComponentDeclaration | null): Resolution {
-  return declaration === null ? UNRESOLVED : { kind: "declaration", declaration };
-}

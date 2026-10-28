@@ -9,6 +9,7 @@ import {
   parseManagedSiteContractV1,
   type ManagedSiteGuardPolicyFactsV1,
 } from "../src/index.js";
+import { assetFacts } from "../src/site-guard-policy-facts.js";
 import {
   contentSemanticsFixture,
   type ContentSemanticsFixture,
@@ -72,16 +73,6 @@ function addReferencedAsset(
   Object.assign(manifest, material);
   objects(fixture.content.assetManifest).push(manifest);
   return asset.id as string;
-}
-
-function setPrimaryImagePath(
-  fixture: ContentSemanticsFixture,
-  path: string,
-): void {
-  for (const value of objects(fixture.content.values)) {
-    if (value.type === "image") object(value.value).path = path;
-  }
-  objects(fixture.content.assetManifest)[0].path = path;
 }
 
 function expectCode(action: () => unknown, code: string): void {
@@ -177,19 +168,27 @@ describe("managed-site Guard policy facts", () => {
       mutate(fixture: ContentSemanticsFixture) {
         addReferencedAsset(fixture, { sha256: "b".repeat(64) });
       },
-      code: "GUARD_ASSET_PATH_CONFLICT",
+      // Content semantics now refuses one path with two materials before Guard
+      // facts are derived, since the manifest is keyed by path.
+      code: "CONTENT_ASSET_PATH_CONFLICT",
     },
     {
       name: "case-aliased asset paths",
       mutate(fixture: ContentSemanticsFixture) {
-        addReferencedAsset(fixture, { path: "PUBLIC/images/managed.webp" });
+        // Case-aliased inside public/: an asset path must be served (0.12.0),
+        // so the alias the Guard refuses has to be one too.
+        addReferencedAsset(fixture, { path: "public/images/MANAGED.webp" });
       },
       code: "GUARD_POLICY_PATH_AMBIGUOUS",
     },
     {
       name: "a source file reused as an asset",
       mutate(fixture: ContentSemanticsFixture) {
-        setPrimaryImagePath(fixture, "content/site.json");
+        // The source moves onto the asset's path: an asset must be served, so
+        // the asset cannot move onto a source's.
+        for (const field of fields(fixture)) {
+          object(field.resolver).path = "public/images/managed.webp";
+        }
       },
       code: "GUARD_POLICY_PATH_AMBIGUOUS",
     },
@@ -246,5 +245,42 @@ describe("managed-site Guard policy facts", () => {
     fixture.content.assetManifest = [];
 
     expectCode(() => derive(fixture), "CONTENT_ASSET_MANIFEST_MISSING");
+  });
+
+  describe("Guard asset facts on their own", () => {
+    function entry(material: Partial<JsonObject> = {}): JsonObject {
+      return {
+        assetSlotId: fixtureId("asset"),
+        path: "public/images/managed.webp",
+        sha256: "a".repeat(64),
+        mimeType: "image/webp",
+        width: 1200,
+        height: 600,
+        bytes: 1,
+        ...material,
+      };
+    }
+    function facts(entries: JsonObject[]) {
+      // Deliberately skips content validation, which would refuse first.
+      return assetFacts({ schemaVersion: "1.0", values: [], assetManifest: entries } as never);
+    }
+
+    it("deduplicates one path with identical material under two slots", () => {
+      assert.deepEqual(facts([entry(), entry()]), [
+        { path: "public/images/managed.webp", sha256: "a".repeat(64), bytes: 1 },
+      ]);
+    });
+
+    for (const [field, value] of [
+      ["sha256", "b".repeat(64)],
+      ["mimeType", "image/avif"],
+      ["width", 1000],
+      ["height", 500],
+      ["bytes", 2],
+    ] as const) {
+      it(`refuses one path whose ${field} differs`, () => {
+        expectCode(() => facts([entry(), entry({ [field]: value })]), "GUARD_ASSET_PATH_CONFLICT");
+      });
+    }
   });
 });

@@ -1,3 +1,9 @@
+import {
+  addManifestEntry,
+  emptyManifestIndex,
+  manifestEntryAt,
+} from "./asset-manifest-index.js";
+import { isBridgeMoveToLatest } from "./bridge-move.js";
 import { canonicalizeJson } from "./canonical.js";
 import type {
   ManagedSiteAssetManifestEntry,
@@ -15,6 +21,16 @@ import {
   isCompatibilityCollectionWidened,
   isCompatibilityFieldWidened,
 } from "./contract-compatibility-constraints.js";
+import {
+  assertProductionRedirectsPreserved,
+  assertProductionRoutesUnmoved,
+  type ManagedSiteRedirectChangeV1,
+} from "./contract-compatibility-routes.js";
+import { assertProductionH1sKept, type ManagedSiteH1AdoptionV1 } from "./contract-compatibility-h1.js";
+import { assertProductionSeoIdentityPreserved } from "./contract-compatibility-seo.js";
+import { assertSearchVisibilityAdoptionsServeTheSame } from "./contract-compatibility-search-visibility.js";
+import type { ManagedSiteSeoReorderV1 } from "./contract-compatibility-seo-facts.js";
+import { withAdmittedEditableSeoRepoints } from "./contract-compatibility-seo-repoint.js";
 import type { ManagedSiteContractV1 } from "./contract.js";
 import { validateManagedSiteContractV1Semantics } from "./contract-semantics.js";
 import { ManagedSiteContractError } from "./errors.js";
@@ -25,6 +41,19 @@ export interface ManagedSiteContractCompatibilityV1 {
   readonly addedStableIds: readonly StableId[];
   readonly addedContentValueCount: number;
   readonly addedAssetManifestCount: number;
+  /** Every production redirect the candidate kept but changed, by path. */
+  readonly changedRedirects: readonly ManagedSiteRedirectChangeV1[];
+  /** Every production SEO list the candidate kept in another order, by path. */
+  readonly reorderedSeo: readonly ManagedSiteSeoReorderV1[];
+  /** Every static page with no H1 field in production that declares its H1 now, by page. */
+  readonly adoptedH1: readonly ManagedSiteH1AdoptionV1[];
+}
+
+/** What a change does to production URLs and SEO that is admitted and listed. */
+export interface ManagedUrlAndSeoChanges {
+  readonly changedRedirects: readonly ManagedSiteRedirectChangeV1[];
+  readonly reorderedSeo: readonly ManagedSiteSeoReorderV1[];
+  readonly adoptedH1: readonly ManagedSiteH1AdoptionV1[];
 }
 
 function fail(code: string, message: string): never {
@@ -49,8 +78,10 @@ function scopeKey(scope: { readonly collectionId: string } | "global"): string {
 function assertDeclarations(
   production: ManagedContractCompatibilityFacts,
   candidate: ManagedContractCompatibilityFacts,
+  retired: ReadonlySet<string>,
 ): void {
   for (const [id, declaration] of production.declarations) {
+    if (retired.has(id)) continue;
     const next = candidate.declarations.get(id);
     if (
       next === undefined ||
@@ -82,8 +113,10 @@ function assertTombstones(
 function assertFields(
   production: ManagedContractCompatibilityFacts,
   candidate: ManagedContractCompatibilityFacts,
+  retired: ReadonlySet<string>,
 ): void {
   for (const [id, field] of production.fields) {
+    if (retired.has(id)) continue;
     const next = candidate.fields.get(id);
     if (next === undefined || !isCompatibilityFieldWidened(field, next)) {
       fail(
@@ -94,15 +127,45 @@ function assertFields(
   }
 }
 
+/**
+ * Whether any field listing the collection in the candidate grants a customer
+ * `collection.add`: a page's list, or a list inside an item. Read over every
+ * field fact, so a place a list may sit later is covered too.
+ */
+function customerCanCreateItems(
+  facts: ManagedContractCompatibilityFacts,
+  collectionId: string,
+): boolean {
+  for (const fact of facts.fields.values()) {
+    if (fact.kind === "protected") continue;
+    const descriptor = fact.descriptor;
+    if (
+      descriptor.type === "collection" &&
+      descriptor.collectionId === collectionId &&
+      descriptor.capabilities.includes("collection.add")
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function assertCollections(
   production: ManagedContractCompatibilityFacts,
   candidate: ManagedContractCompatibilityFacts,
+  retired: ReadonlySet<string>,
 ): void {
   for (const [id, descriptor] of production.collections) {
+    if (retired.has(id)) continue;
     const next = candidate.collections.get(id);
     if (
       next === undefined ||
-      !isCompatibilityCollectionWidened(descriptor, next)
+      !isCompatibilityCollectionWidened(descriptor, next, {
+        existedInProduction: (fieldId) =>
+          production.fields.has(fieldId) || production.tombstones.has(fieldId),
+        customerCanCreateItems: customerCanCreateItems(candidate, id),
+        customerCouldCreateItems: customerCanCreateItems(production, id),
+      })
     ) {
       fail(
         "COMPATIBILITY_COLLECTION_POLICY_NARROWED",
@@ -170,19 +233,18 @@ function assertContentPreserved(
   }
 }
 
-function assertManifestPreserved(
+export function assertManifestPreserved(
   production: readonly ManagedSiteAssetManifestEntry[],
   candidate: readonly ManagedSiteAssetManifestEntry[],
 ): void {
-  const candidateEntries = new Map(
-    candidate.map((entry) => [entry.assetSlotId, entry]),
-  );
+  const candidateEntries = emptyManifestIndex();
+  for (const entry of candidate) addManifestEntry(candidateEntries, entry);
   for (const entry of production) {
-    const next = candidateEntries.get(entry.assetSlotId);
+    const next = manifestEntryAt(candidateEntries, entry.assetSlotId, entry.path);
     if (next === undefined || !canonicalEqual(entry, next)) {
       fail(
         "COMPATIBILITY_ASSET_CHANGED",
-        `Production asset material changed: ${entry.assetSlotId}`,
+        `Production asset material changed: ${entry.assetSlotId} ${entry.path}`,
       );
     }
   }
@@ -195,7 +257,10 @@ function assertRuntimeIdentity(
   if (
     production.contractId !== candidate.contractId ||
     !canonicalEqual(production.adapter, candidate.adapter) ||
-    !canonicalEqual(production.bridge, candidate.bridge)
+    !(
+      canonicalEqual(production.bridge, candidate.bridge) ||
+      isBridgeMoveToLatest(production.bridge, candidate.bridge)
+    )
   ) {
     fail(
       "COMPATIBILITY_RUNTIME_CHANGED",
@@ -209,6 +274,7 @@ function compatibilityResult(
   candidate: ManagedContractCompatibilityFacts,
   productionContent: ManagedSiteContentDocument,
   candidateContent: ManagedSiteContentDocument,
+  changes: ManagedUrlAndSeoChanges,
 ): ManagedSiteContractCompatibilityV1 {
   const addedStableIds = [...candidate.declarations.values()]
     .filter(({ id }) => !production.declarations.has(id))
@@ -222,7 +288,29 @@ function compatibilityResult(
     addedAssetManifestCount:
       candidateContent.assetManifest.length -
       productionContent.assetManifest.length,
+    changedRedirects: changes.changedRedirects,
+    reorderedSeo: changes.reorderedSeo,
+    adoptedH1: changes.adoptedH1,
   });
+}
+
+/**
+ * Every declaration and policy check the compatibility rule makes, except for
+ * the ids in `retired`: production fields and collections a declared migration
+ * consumes, which the candidate may drop. The ordinary rule passes an empty set, so it checks
+ * exactly what it always has, in the same order, with the same errors.
+ */
+export function assertManagedContractFactsCompatible(
+  productionFacts: ManagedContractCompatibilityFacts,
+  candidateFacts: ManagedContractCompatibilityFacts,
+  retired: ReadonlySet<string>,
+): void {
+  assertDeclarations(productionFacts, candidateFacts, retired);
+  assertTombstones(productionFacts, candidateFacts);
+  assertFields(productionFacts, candidateFacts, retired);
+  assertCollections(productionFacts, candidateFacts, retired);
+  assertAssets(productionFacts, candidateFacts);
+  assertAliases(productionFacts, candidateFacts);
 }
 
 function assertContractCompatibility(
@@ -237,16 +325,50 @@ function assertContractCompatibility(
     collectManagedContractCompatibilityFacts(productionContract);
   const candidateFacts =
     collectManagedContractCompatibilityFacts(candidateContract);
-  assertDeclarations(productionFacts, candidateFacts);
-  assertTombstones(productionFacts, candidateFacts);
-  assertFields(productionFacts, candidateFacts);
-  assertCollections(productionFacts, candidateFacts);
-  assertAssets(productionFacts, candidateFacts);
-  assertAliases(productionFacts, candidateFacts);
+  assertManagedContractFactsCompatible(productionFacts, candidateFacts, new Set());
   return [productionFacts, candidateFacts];
 }
 
-function validateCompatibilityInputs(
+export interface ManagedCompatibilitySides {
+  readonly productionContract: ManagedSiteContractV1;
+  readonly productionContent: ManagedSiteContentDocument;
+  readonly candidateContract: ManagedSiteContractV1;
+  readonly candidateContent: ManagedSiteContentDocument;
+}
+
+/**
+ * A change keeps every production URL and SEO identity fact. `renames` is
+ * empty for an ordinary change; a declared migration maps each field it
+ * retires to its target. The ordinary policy runs this after every older
+ * check, so a candidate those refused is refused with the same code as
+ * before. Returns what it admitted and lists: changed redirects, reordered
+ * SEO lists and pages that declare their H1 for the first time.
+ */
+export function assertManagedProductionUrlsAndSeoIdentity(
+  sides: ManagedCompatibilitySides,
+  renames: ReadonlyMap<string, string>,
+): ManagedUrlAndSeoChanges {
+  const { productionContract, candidateContract, candidateContent } = sides;
+  assertProductionRoutesUnmoved(productionContract, candidateContract);
+  const changedRedirects = assertProductionRedirectsPreserved(productionContract, candidateContract, candidateContent);
+  const reorderedSeo = assertProductionSeoIdentityPreserved(
+    productionContract,
+    withAdmittedEditableSeoRepoints(sides),
+    renames,
+  );
+  assertSearchVisibilityAdoptionsServeTheSame(
+    { contract: productionContract, content: sides.productionContent },
+    { contract: candidateContract, content: candidateContent },
+  );
+  const adoptedH1 = assertProductionH1sKept(
+    { contract: productionContract, content: sides.productionContent },
+    { contract: candidateContract, content: candidateContent },
+    renames,
+  );
+  return { changedRedirects, reorderedSeo, adoptedH1 };
+}
+
+export function validateCompatibilityInputs(
   productionContract: ManagedSiteContractV1,
   productionContent: ManagedSiteContentDocument,
   candidateContract: ManagedSiteContractV1,
@@ -288,10 +410,9 @@ export function validateManagedSiteContractV1Compatibility(
     candidateContract,
     candidateContent,
   );
-  return compatibilityResult(
-    productionFacts,
-    candidateFacts,
-    productionContent,
-    candidateContent,
+  const changes = assertManagedProductionUrlsAndSeoIdentity(
+    { productionContract, productionContent, candidateContract, candidateContent },
+    new Map(),
   );
+  return compatibilityResult(productionFacts, candidateFacts, productionContent, candidateContent, changes);
 }

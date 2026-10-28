@@ -60,7 +60,7 @@ const AMBIGUITY_CASES: readonly (readonly [string, string, readonly string[]])[]
   [
     "one paragraph nested inside an ambiguous twin",
     `export function A() {
-       return <section id="s"><p>One <span>emphasis</span></p><p>Two <span>other</span></p></section>;
+       return <section id="s"><p>One <em>emphasis</em></p><p>Two <em>other</em></p></section>;
      }`,
     [],
   ],

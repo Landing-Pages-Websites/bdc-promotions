@@ -69,12 +69,18 @@ const surfaces: readonly Surface[] = [
   surface("parseManagedInternalStringList", [["https://example.com/"]]),
   surface("parseManagedPerformanceBudget", [performanceBudget()]),
   surface("parseManagedSiteContractV1", [managedSiteContract()]),
+  surface("parseManagedSiteFieldMigrationV1", [{
+    schemaVersion: "1.0",
+    from: { contractSha256: "a".repeat(64), contentSha256: "b".repeat(64) },
+    steps: [],
+  }]),
   surface("validateManagedFieldValue", [plainTextField(), plainContentValue]),
   surface("validateManagedCollectionValue", [
     collectionDescriptor(),
     collectionContentValue,
   ]),
   surface("validateManagedImageValue", [assetSlot(), imageValue()]),
+  surface("resolveManagedImageAltText", [assetSlot(), imageValue()]),
 ];
 
 function surface(
@@ -142,7 +148,7 @@ describe("public managed-site surface", () => {
   it("exports only safe C2 functions, types, and frozen constants", () => {
     const actual = Object.keys(publicApi)
       .filter((name) =>
-        /^(createManaged|deriveManaged|managedSite.*Attributes|normalizeManaged|parseManaged|projectManaged|validateManaged)/u.test(
+        /^(createManaged|deriveManaged|managedSite.*Attributes|normalizeManaged|parseManaged|projectManaged|resolveManaged|validateManaged)/u.test(
           name,
         ),
       )
@@ -155,6 +161,7 @@ describe("public managed-site surface", () => {
         "createManagedSiteNextV1",
         "deriveManagedSiteGuardContractFactsV1",
         "deriveManagedSiteGuardPolicyFactsV1",
+        "managedSiteAttributeFieldAttributesV1",
         "managedSiteFieldAttributesV1",
         "managedSitePageAttributesV1",
         "normalizeManagedSiteArtifactsV1",
@@ -163,6 +170,7 @@ describe("public managed-site surface", () => {
         "validateManagedSiteContractV1JsonSchema",
         "validateManagedSiteContractV1ContentSemantics",
         "validateManagedSiteContractV1Compatibility",
+        "validateManagedSiteContractV1MigrationCompatibility",
         "validateManagedSiteContractV1Semantics",
       ].sort(),
     );
@@ -177,6 +185,24 @@ describe("public managed-site surface", () => {
     assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_CAPABILITIES), true);
     assert.deepEqual(publicApi.MANAGED_FIELD_SCOPES, ["site", "page"]);
     assert.equal(Object.isFrozen(publicApi.MANAGED_FIELD_SCOPES), true);
+    assert.deepEqual(publicApi.MANAGED_SEO_TEXT_SEMANTICS, ["seo_title", "seo_description"]);
+    assert.equal(Object.isFrozen(publicApi.MANAGED_SEO_TEXT_SEMANTICS), true);
+    assert.equal(publicApi.MAX_MANAGED_SEO_TEXT_CHARACTERS, 320);
+    assert.equal(publicApi.hasUnsafeTextCharacter("Home | Gomega"), false);
+    for (const unsafe of ["\n", "\r", "\t", "\u0000", "\u007f", "\u0085", "\u2028", "\u2029", "\u202e", "\u2066"]) {
+      assert.equal(publicApi.hasUnsafeTextCharacter(`Home${unsafe}Gomega`), true);
+    }
+    assert.deepEqual(publicApi.MANAGED_TEXT_ATTRIBUTES, [
+      "aria-label",
+      "aria-roledescription",
+      "placeholder",
+      "title",
+      "alt",
+    ]);
+    assert.equal(Object.isFrozen(publicApi.MANAGED_TEXT_ATTRIBUTES), true);
+    assert.equal(Object.isFrozen(publicApi.MANAGED_ATTRIBUTE_TEXT_BLANK_CODE_POINTS), true);
+    assert.equal(Object.isFrozen(publicApi.MANAGED_ATTRIBUTE_TEXT_SEMANTICS), true);
+    assert.equal(publicApi.MAX_MANAGED_ATTRIBUTE_TEXT_CHARACTERS, 512);
     assert.equal(
       Object.isFrozen(publicApi.MANAGED_SITE_JSON_SCHEMA_BUNDLE_V1),
       true,

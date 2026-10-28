@@ -1,6 +1,6 @@
 {
   "name": "@landing-pages-websites/managed-site-contract",
-  "version": "0.5.0",
+  "version": "0.43.0",
   "type": "module",
   "bin": {
     "gomega-managed-site-conformance": "./dist/conformance-cli.js"
@@ -9,6 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./text-template": {
+      "types": "./dist/text-template.d.ts",
+      "import": "./dist/text-template.js"
+    },
+    "./attribute-text": {
+      "types": "./dist/attribute-text.d.ts",
+      "import": "./dist/attribute-text.js"
     }
   },
   "files": [

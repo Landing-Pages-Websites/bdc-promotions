@@ -7,12 +7,13 @@ import type {
 
 import { renderAnchor } from "./anchors.js";
 import type { Candidate, CollectionCandidate, RawDestination } from "./candidates.js";
-import type { FieldBinding, PageBinding } from "./bindings.js";
+import type { FieldBinding } from "./bindings.js";
 import type { ContractParts } from "./emit-contract.js";
 import type { ConversionConfig } from "./config.js";
 import { assetRepositoryPath } from "./paths.js";
 import { probeImage } from "./image-probe.js";
 import { cloneJson, isJsonObject, writeAtPointer, type JsonObject } from "./json-write.js";
+import { offSiteDestination } from "./destinations.js";
 
 /**
  * Content emission is a pure restatement of what the source already renders.
@@ -32,21 +33,18 @@ function setPointer(root: JsonObject, pointer: string, value: JsonValue): void {
   writeAtPointer(root, pointer, cloneJson(value));
 }
 
-function destinationValue(
-  destination: RawDestination,
-  pageId: StableId<"page">,
-): JsonValue {
+function destinationValue(destination: RawDestination): JsonValue {
   switch (destination.kind) {
-    case "self":
-      return { kind: "internal", pageId, fragment: null };
-    case "fragment":
-      return { kind: "internal", pageId, fragment: destination.fragment };
+    case "page":
+      return { kind: "internal", pageId: destination.pageId, fragment: destination.fragment };
     case "external":
-      return { kind: "external", url: destination.url };
     case "email":
-      return { kind: "email", address: destination.address };
     case "phone":
-      return { kind: "phone", number: destination.number };
+      return offSiteDestination(destination);
+    case "fragment":
+    case "site_href":
+      // `site-links.ts` resolves or refuses every one of these before the gate.
+      throw new Error(`An unresolved ${destination.kind} destination reached content emission`);
   }
 }
 
@@ -54,7 +52,6 @@ interface ContentContext {
   readonly config: ConversionConfig;
   readonly repositoryRoot: string;
   readonly parts: ContractParts;
-  readonly pagesById: ReadonlyMap<string, PageBinding>;
 }
 
 function imageValueFor(
@@ -115,13 +112,11 @@ function simpleValueFor(
     case "rich_text":
       return { type: "rich_text", value: candidate.document as unknown as JsonValue };
     case "link": {
-      const pageId = binding.pageIds[0];
-      if (pageId === undefined) return null;
       return {
         type: "link",
         value: {
           label: candidate.label,
-          destination: destinationValue(candidate.destination, pageId),
+          destination: destinationValue(candidate.destination),
           target: candidate.newWindow ? "new_window" : "same_window",
         },
       };

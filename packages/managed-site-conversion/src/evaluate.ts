@@ -81,7 +81,7 @@ interface Bound {
 }
 
 /** Wrappers that change a type and never a value. `!` is deliberately absent. */
-function unwrap(expression: ts.Expression): ts.Expression {
+export function unwrap(expression: ts.Expression): ts.Expression {
   let current = expression;
   for (;;) {
     if (ts.isParenthesizedExpression(current)) {
@@ -1626,6 +1626,21 @@ export function isWriteTarget(outer: ts.Expression): boolean {
     }
     return false;
   }
+}
+
+/** Whether any identifier spelled `name` under `root` is the target of a write. */
+export function isNameWrittenIn(root: ts.Node, name: string): boolean {
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (ts.isIdentifier(node) && node.text === name && isWriteTarget(node)) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  ts.forEachChild(root, visit);
+  return found;
 }
 
 /**

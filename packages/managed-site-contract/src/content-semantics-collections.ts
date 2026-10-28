@@ -1,25 +1,33 @@
 import { canonicalizeJson } from "./canonical.js";
 import {
   validateParsedManagedCollectionValue,
+  type ManagedSiteContentDocument,
   type ManagedSiteContentValue,
 } from "./content.js";
 import {
+  collectManagedContentSemanticFacts,
   contentSemanticFail,
   contentValueKey,
   type ManagedContentSemanticFacts,
   type ManagedResolvedContentValue,
 } from "./content-semantics-facts.js";
+import type { ManagedSiteContractV1 } from "./contract.js";
 import { ManagedSiteContractError } from "./errors.js";
 import type { ManagedCollectionDescriptor } from "./fields.js";
 import type { StableId } from "./ids.js";
+import { validateManagedContentLinkItems } from "./content-semantics-values.js";
+import { isManagedGeneratedRouteKey } from "./values.js";
 
 interface ManagedCollectionState {
   readonly descriptor: ManagedCollectionDescriptor;
+  /** Every active item, in order: the shared view, or each parent's list in turn. */
   readonly itemIds: readonly StableId<"item">[];
+  /**
+   * The ordered lists the items sit in: one shared view for a collection pages
+   * list, and one per parent item for a list inside an item.
+   */
+  readonly lists: readonly (readonly StableId<"item">[])[];
 }
-
-const GENERATED_ROUTE_KEY_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const MAX_GENERATED_ROUTE_KEY_CHARACTERS = 200;
 
 function arraysEqual(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
@@ -39,11 +47,12 @@ function validateCollectionPolicy(
   }
 }
 
+/** The collection a collection-typed value lists, whether a page's field or an item's. */
 function collectionDescriptor(
   facts: ManagedContentSemanticFacts,
   resolved: ManagedResolvedContentValue,
 ): ManagedCollectionDescriptor | null {
-  if (resolved.kind !== "field" || resolved.descriptor.type !== "collection") {
+  if (resolved.kind === "protected" || resolved.descriptor.type !== "collection") {
     return null;
   }
   const descriptor = facts.collections.get(resolved.descriptor.collectionId);
@@ -56,10 +65,17 @@ function collectionDescriptor(
   return descriptor;
 }
 
-function collectionState(
+interface ListedView {
+  readonly descriptor: ManagedCollectionDescriptor;
+  readonly itemIds: readonly StableId<"item">[];
+  /** Whether an item field holds it: a list inside one item rather than a page's view. */
+  readonly nested: boolean;
+}
+
+function listedView(
   facts: ManagedContentSemanticFacts,
   resolved: ManagedResolvedContentValue,
-): ManagedCollectionState | null {
+): ListedView | null {
   const descriptor = collectionDescriptor(facts, resolved);
   if (descriptor === null) return null;
   if (resolved.value.type !== "collection") {
@@ -69,7 +85,45 @@ function collectionState(
     );
   }
   validateCollectionPolicy(descriptor, resolved.value);
-  return { descriptor, itemIds: resolved.value.value.orderedItemIds };
+  return {
+    descriptor,
+    itemIds: resolved.value.value.orderedItemIds,
+    nested: resolved.kind === "collection_item",
+  };
+}
+
+/**
+ * A collection pages list has one order, however many fields show it. A list
+ * inside an item is that item's own: lists of one collection never share an
+ * item, so moving or removing one item touches exactly one list.
+ */
+function addView(states: Map<string, ManagedCollectionState>, view: ListedView): void {
+  const current = states.get(view.descriptor.id);
+  if (current === undefined) {
+    states.set(view.descriptor.id, { descriptor: view.descriptor, itemIds: view.itemIds, lists: [view.itemIds] });
+    return;
+  }
+  if (!view.nested) {
+    if (!arraysEqual(current.itemIds, view.itemIds)) {
+      contentSemanticFail(
+        "CONTENT_COLLECTION_ORDER_CONFLICT",
+        `Collection ${view.descriptor.id} has conflicting ordered views`,
+      );
+    }
+    return;
+  }
+  const held = new Set(current.itemIds);
+  if (view.itemIds.some((itemId) => held.has(itemId))) {
+    contentSemanticFail(
+      "CONTENT_NESTED_ITEM_SHARED",
+      `An item of nested collection ${view.descriptor.id} sits in more than one list`,
+    );
+  }
+  states.set(view.descriptor.id, {
+    descriptor: view.descriptor,
+    itemIds: [...current.itemIds, ...view.itemIds],
+    lists: [...current.lists, view.itemIds],
+  });
 }
 
 function collectCollectionStates(
@@ -77,16 +131,8 @@ function collectCollectionStates(
 ): ReadonlyMap<string, ManagedCollectionState> {
   const states = new Map<string, ManagedCollectionState>();
   for (const resolved of facts.resolvedValues) {
-    const candidate = collectionState(facts, resolved);
-    if (candidate === null) continue;
-    const current = states.get(candidate.descriptor.id);
-    if (current !== undefined && !arraysEqual(current.itemIds, candidate.itemIds)) {
-      contentSemanticFail(
-        "CONTENT_COLLECTION_ORDER_CONFLICT",
-        `Collection ${candidate.descriptor.id} has conflicting ordered views`,
-      );
-    }
-    if (current === undefined) states.set(candidate.descriptor.id, candidate);
+    const view = listedView(facts, resolved);
+    if (view !== null) addView(states, view);
   }
   return states;
 }
@@ -254,14 +300,27 @@ function uniquenessPart(
   return resolved.value.value.toLowerCase();
 }
 
+/** A uniqueness rule holds within each list: a page's view, or one item's own list. */
 function validateUniquenessRule(
   facts: ManagedContentSemanticFacts,
   state: ManagedCollectionState,
   fieldIds: readonly StableId<"field">[],
   comparison: "exact" | "case_folded",
 ): void {
+  for (const list of state.lists) {
+    validateUniqueWithin(facts, state, list, fieldIds, comparison);
+  }
+}
+
+function validateUniqueWithin(
+  facts: ManagedContentSemanticFacts,
+  state: ManagedCollectionState,
+  list: readonly StableId<"item">[],
+  fieldIds: readonly StableId<"field">[],
+  comparison: "exact" | "case_folded",
+): void {
   const seen = new Set<string>();
-  for (const itemId of state.itemIds) {
+  for (const itemId of list) {
     const parts = fieldIds.map((fieldId) =>
       uniquenessPart(
         comparison,
@@ -314,8 +373,7 @@ function validateGeneratedRouteKeys(
         resolved.value.type !== "internal_protected" ||
         resolved.value.valueType !== "string" ||
         typeof resolved.value.value !== "string" ||
-        resolved.value.value.length > MAX_GENERATED_ROUTE_KEY_CHARACTERS ||
-        !GENERATED_ROUTE_KEY_PATTERN.test(resolved.value.value)
+        !isManagedGeneratedRouteKey(resolved.value.value)
       ) {
         contentSemanticFail(
           "CONTENT_GENERATED_ROUTE_KEY",
@@ -326,6 +384,22 @@ function validateGeneratedRouteKeys(
   }
 }
 
+/**
+ * Each active item of a content revision and the collection it belongs to:
+ * listed in one of its collection's ordered views and not tombstoned. Read
+ * through the same derivation the content rules judge items by, so a caller
+ * asking whether an item exists (a declared link to it, say) sees exactly the
+ * items those rules see.
+ */
+export function managedContentActiveItemCollections(
+  contract: ManagedSiteContractV1,
+  content: ManagedSiteContentDocument,
+): ReadonlyMap<string, string> {
+  const facts = collectManagedContentSemanticFacts(contract, content);
+  const active = indexActiveItems(facts, collectCollectionStates(facts));
+  return new Map([...active].map(([itemId, collection]) => [itemId, collection.id] as const));
+}
+
 export function validateManagedContentCollections(
   facts: ManagedContentSemanticFacts,
 ): void {
@@ -334,6 +408,7 @@ export function validateManagedContentCollections(
   validateItemValueOwners(facts, active);
   validateItemCompleteness(facts, states);
   validateUsageItems(facts, active);
+  validateManagedContentLinkItems(facts, active);
   validateCollectionUniqueness(facts, states);
   validateGeneratedRouteKeys(facts, states);
 }
