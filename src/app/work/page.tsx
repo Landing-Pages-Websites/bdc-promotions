@@ -56,6 +56,7 @@ export default function WorkPage() {
         <div><h3>Google Vehicle Listing Ads</h3><WorkExample file="work-google-vla" width={963} height={509} alt="Supplied Google search example with sponsored vehicle listings and original vehicle prices" caption="Google Vehicle Listing Ads example — sponsored vehicles shown within a vehicle search." /></div>
       </div>
       <Link className={shared.textLink} href="/services/inventory-advertising">Compare inventory advertising channels<span aria-hidden="true">→</span></Link>
+      <Link className={shared.textLink} href="/services/lead-generation">Explore dealership lead generation<span aria-hidden="true">→</span></Link>
     </InteriorChapter>
     <InteriorLinks title="Continue your review" links={[{ href: "/testimonials", label: "Watch Curt’s testimonial" }, { href: "/pricing", label: "Discuss service options" }]} />
   </InteriorPage>;
