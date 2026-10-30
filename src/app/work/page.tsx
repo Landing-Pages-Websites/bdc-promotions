@@ -58,6 +58,6 @@ export default function WorkPage() {
       <Link className={shared.textLink} href="/services/inventory-advertising">Compare inventory advertising channels<span aria-hidden="true">→</span></Link>
       <Link className={shared.textLink} href="/services/lead-generation">Explore dealership lead generation<span aria-hidden="true">→</span></Link>
     </InteriorChapter>
-    <InteriorLinks title="Continue your review" links={[{ href: "/testimonials", label: "Watch Curt’s testimonial" }, { href: "/pricing", label: "Discuss service options" }]} />
+    <InteriorLinks title="Continue your review" links={[{ href: "/testimonials", label: "Watch Curt’s testimonial" }, { href: "/pricing", label: "Discuss service options" }, { href: "/services/lead-nurturing-appointment-setting", label: "Explore lead nurturing and appointment setting" }]} />
   </InteriorPage>;
 }
