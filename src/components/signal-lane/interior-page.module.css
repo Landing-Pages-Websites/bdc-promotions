@@ -31,6 +31,12 @@
 .container { width: min(1180px, calc(100% - 64px)); margin-inline: auto; }
 .page a[aria-current="page"] { color: var(--mint); text-decoration: underline; }
 .hero { padding-top: clamp(40px, 4.5vw, 72px); }
+.breadcrumbs { padding-bottom: 28px; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.breadcrumbs ol { display: flex; flex-wrap: wrap; gap: 8px 12px; padding: 0; list-style: none; }
+.breadcrumbs li { display: inline-flex; align-items: center; gap: 12px; }
+.breadcrumbs li:not(:last-child)::after { content: "/"; color: var(--muted); }
+.breadcrumbs a { color: var(--paper); text-decoration: underline; text-underline-offset: 4px; }
+.breadcrumbs li[aria-current="page"] { color: var(--mint); }
 .hero h1 { max-width: 1050px; font-size: clamp(44px, 5.5vw, 80px); }
 .page .intro { max-width: 810px; margin-top: 24px; color: var(--muted); }
 .chapterLinks { display: flex; flex-wrap: wrap; gap: 0 48px; margin-top: 40px; padding-block: 16px; border-top: 1px solid var(--muted); }
