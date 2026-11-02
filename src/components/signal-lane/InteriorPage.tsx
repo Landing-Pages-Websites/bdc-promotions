@@ -21,13 +21,12 @@ export { strategyCall };
 
 type PageLink = { href: string; label: string };
 
-export function InteriorPage({ path, title, intro, chapters, children, breadcrumbs, contactTitle, contactCopy, contactLabel, visual }: {
+export function InteriorPage({ path, title, intro, chapters, children, contactTitle, contactCopy, contactLabel, visual }: {
   path: string;
   title: string;
   intro: string;
   chapters: PageLink[];
   children: ReactNode;
-  breadcrumbs?: ReactNode;
   // Legal, thank-you and 404 pages carry no contact band of their own.
   contactTitle?: string;
   contactCopy?: string;
@@ -40,7 +39,6 @@ export function InteriorPage({ path, title, intro, chapters, children, breadcrum
       <SiteHeader path={path} />
       <main id="main-content" tabIndex={-1}>
         <section className={`${styles.container} ${styles.hero} ${visual ? styles.heroSplit : ""}`} aria-labelledby="interior-title">
-          {breadcrumbs ? <div className={styles.breadcrumbs}>{breadcrumbs}</div> : null}
           <div className={styles.heroCopy}>
             <h1 id="interior-title">{title}</h1>
             <p className={styles.intro}>{intro}</p>
