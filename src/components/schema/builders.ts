@@ -5,8 +5,8 @@ export type SchemaObject = Record<string, unknown>;
 
 export interface BreadcrumbItem {
   name: string;
-  /** Site-relative path, e.g. "/services/roof-repair". */
-  path: string;
+  /** Site-relative path, e.g. "/services/roof-repair". Omit when no canonical URL is established. */
+  path?: string;
 }
 
 export interface FaqItem {
@@ -97,15 +97,16 @@ export function buildBusinessSchema(
   return base;
 }
 
-export function buildBreadcrumbSchema(items: BreadcrumbItem[]): SchemaObject {
+export function buildBreadcrumbSchema(items: BreadcrumbItem[], id?: string): SchemaObject {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    ...(id ? { "@id": absoluteUrl(id) } : {}),
     itemListElement: items.map((item, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: absoluteUrl(item.path),
+      ...(item.path ? { item: absoluteUrl(item.path) } : {}),
     })),
   };
 }

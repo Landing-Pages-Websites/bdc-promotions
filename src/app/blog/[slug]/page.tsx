@@ -81,10 +81,10 @@ export default async function BlogArticlePage({
       {showBreadcrumbs ? (
         <JsonLd
           data={buildBreadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "Blog", path: "/blog" },
-            { name: post.title, path },
-          ])}
+            { name: "BDC Promotions", path: "/" },
+            { name: "Insights" },
+            { name: "Automotive Dealership Digital Marketing Trends for 2026", path },
+          ], path + "#breadcrumb")}
         />
       ) : null}
       {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
