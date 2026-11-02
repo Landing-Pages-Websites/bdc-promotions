@@ -14,9 +14,10 @@ const readingSlugs = [
   "automotive-dealership-crm-buyer-guide",
 ] as const;
 
-export default function SelectedArticlePage({ post, publishedIso, children }: {
+export default function SelectedArticlePage({ post, publishedIso, showBreadcrumbs = false, children }: {
   post: BlogPost;
   publishedIso: string | null;
+  showBreadcrumbs?: boolean;
   children: ReactNode;
 }) {
   const relatedPosts = readingSlugs
@@ -31,7 +32,16 @@ export default function SelectedArticlePage({ post, publishedIso, children }: {
         path={`/blog/${post.slug}`}
         title={post.title}
         intro={post.description}
-        chapters=[
+        breadcrumbs={showBreadcrumbs ? (
+          <nav aria-label="Breadcrumb">
+            <ol>
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="/blog">Blog</Link></li>
+              <li aria-current="page">{post.title}</li>
+            </ol>
+          </nav>
+        ) : undefined}
+        chapters={[
           { href: "#article-content", label: "Read the article" },
           { href: "#related-articles", label: "Keep reading" },
           { href: "#discuss-your-dealership", label: "Discuss your dealership" },

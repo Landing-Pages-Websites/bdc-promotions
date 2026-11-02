@@ -64,8 +64,9 @@ export default async function BlogArticlePage({
   // The date the author wrote is still shown either way.
   const publishedIso = publishedDate(post)?.toISOString() ?? null;
   const faqItems = blogFaqBySlug[post.slug];
+  const showBreadcrumbs = post.slug === "automotive-dealership-digital-marketing-trends";
   return (
-    <SelectedArticlePage post={post} publishedIso={publishedIso}>
+    <SelectedArticlePage post={post} publishedIso={publishedIso} showBreadcrumbs={showBreadcrumbs}>
       {publishedIso ? (
         <JsonLd
           data={buildArticleSchema({
@@ -77,13 +78,13 @@ export default async function BlogArticlePage({
           })}
         />
       ) : null}
-      {post.slug === "automotive-dealership-digital-marketing-trends" ? (
+      {showBreadcrumbs ? (
         <JsonLd
           data={buildBreadcrumbSchema([
-            { name: "BDC Promotions", path: "/" },
-            { name: "Insights" },
-            { name: "Automotive Dealership Digital Marketing Trends for 2026", path },
-          ], path + "#breadcrumb")}
+            { name: "Home", path: "/" },
+            { name: "Blog", path: "/blog" },
+            { name: post.title, path },
+          ])}
         />
       ) : null}
       {faqItems ? <JsonLd data={buildFaqSchema(faqItems)} /> : null}
