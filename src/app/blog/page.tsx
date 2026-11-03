@@ -70,6 +70,6 @@ export default function BlogIndexPage(): ReactElement {
         })}
       </div>
     </InteriorChapter>
-    <InteriorLinks title="Explore related support" links={[{ href: "/services/lead-generation", label: "Lead generation" }, { href: "/services/lead-nurturing-appointment-setting", label: "Lead nurturing & appointment setting" }, { href: "/process", label: "How the work connects" }]} />
+    <InteriorLinks title="Explore related support" links={[{ href: "/services/lead-generation", label: "Lead generation" }, { href: "/services/lead-nurturing-appointment-setting", label: "Lead nurturing & appointment setting" }, { href: "/services/automotive-ad-creative", label: "Automotive ad creative" }, { href: "/process", label: "How the work connects" }]} />
   </InteriorPage></div>;
 }
