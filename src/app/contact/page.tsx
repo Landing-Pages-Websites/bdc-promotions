@@ -44,7 +44,7 @@ export default function ContactPage() {
     <InteriorChapter id="prepare-your-conversation" title="Make the conversation useful">
       <p className={shared.chapterIntro}>Think through these questions before a call or include the details in your email.</p>
       <div className={styles.preparation}>
-        <div><h3>What needs attention?</h3><p>Which vehicles, offers or events matter to your store? Where do creative, campaign activity or shopper response need support?</p><Link className={shared.textLink} href="/services">Explore the service roles<span aria-hidden="true">→</span></Link></div>
+        <div><h3>What needs attention?</h3><p>Which vehicles, offers or events matter to your store? Where do creative, campaign activity or shopper response need support?</p><p>Learn more about <Link href="/services/lead-generation">automotive dealership lead generation</Link> for your store.</p><Link className={shared.textLink} href="/services">Explore the service roles<span aria-hidden="true">→</span></Link></div>
         <div><h3>What does your team handle?</h3><p>Who responds to leads today, who approves campaign messaging and how do appointment details reach your sales team?</p><Link className={shared.textLink} href="/process">Review the process<span aria-hidden="true">→</span></Link></div>
         <div><h3>What belongs in the scope?</h3><p>Consider the support you need, the work your team will keep, and any timing or budget questions you want to discuss.</p><Link className={shared.textLink} href="/pricing">Compare service options<span aria-hidden="true">→</span></Link></div>
       </div>
