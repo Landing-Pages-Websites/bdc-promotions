@@ -1,6 +1,6 @@
 ---
 id: item_73tbc7c87evetz3d6bwecttnm5
-title: Dealership Lead Response Monitoring: Metrics That Matter
+title: "Dealership Lead Response Monitoring: Metrics That Matter"
 slug: dealership-lead-response-monitoring
 date: 2026-11-06
 description: Learn how dealerships can track response time, contact, channel coverage, appointment progress, and ownership to find follow-up gaps.
