@@ -33,6 +33,7 @@ export const siteRoutes: RouteEntry[] = [
   { path: "/services", title: "Automotive Marketing Services" },
   { path: "/services/automotive-ad-creative", title: "Automotive Ad Creative for Car Dealerships" },
   { path: "/services/lead-generation", title: "Automotive Dealership Lead Generation" },
+  { path: "/services/google-ads-vs-facebook-ads-for-car-dealership-1", title: "Google Ads vs. Facebook Ads for Car Dealerships" },
   { path: "/services/lead-nurturing-appointment-setting", title: "Dealership Lead Nurturing & Appointment Setting" },
   { path: "/services/inventory-advertising", title: "Automotive Inventory Ads & Google Vehicle Listing Ads" },
   { path: "/process", title: "How BDC Promotions Moves Leads Toward the Showroom" },
