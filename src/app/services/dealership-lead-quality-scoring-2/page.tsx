@@ -11,7 +11,7 @@ const pageTitle = "Dealership Digital Marketing & Lead Quality Scoring | BDC Pro
 export const metadata: Metadata = buildMetadata({
   title: pageTitle,
   description: "Explore dealership digital marketing through a practical lead-quality lens: connect creative, inventory, shopper response and follow-up to clearer next steps.",
-  path: "/services/dealership-lead-quality-scoring-2/",
+  path: "/services/dealership-lead-quality-scoring-2",
 });
 
 export default function DealershipLeadQualityScoringPage(): ReactElement {
