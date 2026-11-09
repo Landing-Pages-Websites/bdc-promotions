@@ -8,11 +8,14 @@ import { buildMetadata } from "@/lib/seo";
 
 const pageTitle = "Dealership Digital Marketing & Lead Quality Scoring | BDC Promotions";
 
-export const metadata: Metadata = buildMetadata({
-  title: pageTitle,
-  description: "Explore dealership digital marketing through a practical lead-quality lens: connect creative, inventory, shopper response and follow-up to clearer next steps.",
-  path: "/services/dealership-lead-quality-scoring-2",
-});
+export const metadata: Metadata = {
+  ...buildMetadata({
+    title: pageTitle,
+    description: "Explore dealership digital marketing through a practical lead-quality lens: connect creative, inventory, shopper response and follow-up to clearer next steps.",
+    path: "/services/dealership-lead-quality-scoring-2",
+  }),
+  title: { absolute: pageTitle },
+};
 
 export default function DealershipLeadQualityScoringPage(): ReactElement {
   return (
