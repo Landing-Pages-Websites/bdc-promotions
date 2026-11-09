@@ -7,7 +7,7 @@ import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Automotive Dealership Marketing | BDC Promotions",
+  title: "Automotive Dealership Marketing",
   description: "Automotive dealership marketing services for lead generation, ad creative, inventory advertising, and dealership lead follow-up.",
   path: "/services/car-dealer-lead-source-comparison-3",
 });
