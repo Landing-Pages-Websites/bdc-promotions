@@ -38,6 +38,7 @@ export const siteRoutes: RouteEntry[] = [
   { path: "/services/lead-nurturing-appointment-setting", title: "Dealership Lead Nurturing & Appointment Setting" },
   { path: "/services/inventory-advertising", title: "Automotive Inventory Ads & Google Vehicle Listing Ads" },
   { path: "/services/car-dealership-advertising-budget-calculator-4", title: "Dealership Marketing Agency" },
+  { path: "/services/car-dealer-lead-source-comparison-3", title: "Automotive Dealership Marketing" },
   { path: "/process", title: "How BDC Promotions Moves Leads Toward the Showroom" },
   { path: "/work", title: "Automotive Advertising Work" },
   { path: "/testimonials", title: "Dealership Testimonials" },
