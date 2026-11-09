@@ -32,6 +32,7 @@ export const siteRoutes: RouteEntry[] = [
   // Builders: append new pages below this line.
   { path: "/services", title: "Automotive Marketing Services" },
   { path: "/services/automotive-ad-creative", title: "Automotive Ad Creative for Car Dealerships" },
+  { path: "/services/dealership-lead-quality-scoring-2", title: "Dealership Digital Marketing & Lead Quality Scoring" },
   { path: "/services/lead-generation", title: "Automotive Dealership Lead Generation" },
   { path: "/services/google-ads-vs-facebook-ads-for-car-dealership-1", title: "Google Ads vs. Facebook Ads for Car Dealerships" },
   { path: "/services/lead-nurturing-appointment-setting", title: "Dealership Lead Nurturing & Appointment Setting" },
