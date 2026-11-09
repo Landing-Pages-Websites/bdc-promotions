@@ -5,11 +5,16 @@ import { Chapter, RelatedLinks, ServicePage } from "@/components/signal-lane/Ser
 import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = buildMetadata({
-  title: "Google Ads vs. Facebook Ads for Car Dealerships | BDC Promotions",
-  description: "Compare Google Ads and Facebook Ads for dealership marketing, then choose a channel mix around shopper intent, creative, inventory and follow-up.",
-  path: "/services/google-ads-vs-facebook-ads-for-car-dealership-1",
-});
+const pageTitle = "Google Ads vs. Facebook Ads for Car Dealerships | BDC Promotions";
+
+export const metadata: Metadata = {
+  ...buildMetadata({
+    title: pageTitle,
+    description: "Compare Google Ads and Facebook Ads for dealership marketing, then choose a channel mix around shopper intent, creative, inventory and follow-up.",
+    path: "/services/google-ads-vs-facebook-ads-for-car-dealership-1",
+  }),
+  title: { absolute: pageTitle },
+};
 
 export default function GoogleAdsVsFacebookAdsForCarDealershipPage(): ReactElement {
   return (
