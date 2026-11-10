@@ -1,5 +1,5 @@
 ---
-id: 2d8646e4-213e-4bcc-98f5-0b9a15a92be7
+id: item_6zdnhxry6q05r7j2b1hjnmsvyw
 title: 'Digital Marketing For Car Dealerships: A Practical Guide for Dealerships'
 metaTitle: Car Dealership Marketing Calendar Guide
 description: Build a car dealership marketing calendar that coordinates campaign goals, creative approvals, lead response, and follow-up with a practical review process.
