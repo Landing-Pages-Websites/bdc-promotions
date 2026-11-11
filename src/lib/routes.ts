@@ -39,6 +39,7 @@ export const siteRoutes: RouteEntry[] = [
   { path: "/services/inventory-advertising", title: "Automotive Inventory Ads & Google Vehicle Listing Ads" },
   { path: "/services/car-dealership-advertising-budget-calculator-4", title: "Dealership Marketing Agency" },
   { path: "/services/car-dealer-lead-source-comparison-3", title: "Automotive Dealership Marketing" },
+  { path: "/services/dealership-marketing-roi-calculator-5", title: "Digital Marketing for Dealerships: ROI Calculator Guide" },
   { path: "/process", title: "How BDC Promotions Moves Leads Toward the Showroom" },
   { path: "/work", title: "Automotive Advertising Work" },
   { path: "/testimonials", title: "Dealership Testimonials" },
