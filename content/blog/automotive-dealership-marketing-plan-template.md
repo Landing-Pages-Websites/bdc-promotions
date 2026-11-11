@@ -1,13 +1,15 @@
 ---
-id: item_2gqtqejtkk5eypr8zdzgtwedv4
+id: item_9gr2vz28v7dx45e6sxzhej19mz
 title: 'Car Dealership Marketing: A Practical Guide for Dealerships | Automotive Dealership Marketing Plan Template'
-metaTitle: Automotive Dealership Marketing Plan Template | BDC
-description: Build an automotive dealership marketing plan template with clear goals, audience, channel roles, budgets, lead handling, and checks before launch.
-metaDescription: Build an automotive dealership marketing plan template with clear goals, audience, channel roles, budgets, lead handling, and checks before launch.
+metaTitle: 'Automotive Dealership Marketing Plan Template | BDC'
+metaDescription: 'Build an automotive dealership marketing plan template with clear goals, audience, channel roles, budgets, lead handling, and checks before launch.'
+description: 'Build an automotive dealership marketing plan template with clear goals, audience, channel roles, budgets, lead handling, and checks before launch.'
+excerpt: 'Build an automotive dealership marketing plan template with clear goals, audience, channel roles, budgets, lead handling, and checks before launch.'
+subtitle: 'Build an automotive dealership marketing plan template with clear goals, audience, channel roles, budgets, lead handling, and checks before launch.'
 slug: automotive-dealership-marketing-plan-template
 date: 2026-11-11
 image: https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/car-dealership-marketing-a-practical-guide-for-dealerships--automotive-dealership-marketing-plan-template-524104.webp
-imageAlt: Dealership team reviewing a campaign plan and performance dashboard before launch
+imageAlt: 'Dealership team reviewing a campaign plan and performance dashboard before launch'
 author: Justin Specht
 targetKeyword: automotive dealership marketing plan template
 category: Automotive Dealerships
