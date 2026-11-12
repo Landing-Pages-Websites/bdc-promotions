@@ -1,15 +1,13 @@
 ---
-id: item_01k9r8franchisedealershipx
+id: item_dpdp19qxpygz76yn0hh5k13pt0
 title: 'Car Dealership Digital Marketing: A Practical Guide for Dealerships | Franchise Dealership Marketing Plan'
-metaTitle: 'Franchise Dealership Marketing Plan | BDC Promotions'
-metaDescription: 'Build a franchise dealership marketing plan that connects each model, offer, channel, and lead response step to a clear goal and measurable next action.'
-description: 'Build a franchise dealership marketing plan that connects each model, offer, channel, and lead response step to a clear goal and measurable next action.'
-excerpt: 'Build a franchise dealership marketing plan that connects each model, offer, channel, and lead response step to a clear goal and measurable next action.'
-subtitle: 'Build a franchise dealership marketing plan that connects each model, offer, channel, and lead response step to a clear goal and measurable next action.'
+metaTitle: Franchise Dealership Marketing Plan
+metaDescription: Build a franchise dealership marketing plan that connects each model, offer, channel, and lead response step to a clear goal and measurable next action.
+description: Build a franchise dealership marketing plan that connects each model, offer, channel, and lead response step to a clear goal and measurable next action.
 slug: franchise-dealership-marketing-plan
 date: 2026-11-12
 image: https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/car-dealership-digital-marketing-a-practical-guide-for-dealerships--franchise-dealership-marketing-plan-704958.webp
-imageAlt: 'Dealership team reviewing a marketing plan beside a showroom vehicle'
+imageAlt: Dealership team reviewing a marketing plan beside a showroom vehicle
 author: Justin Specht
 targetKeyword: franchise dealership marketing plan
 category: Automotive Dealerships
