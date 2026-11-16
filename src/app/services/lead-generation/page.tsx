@@ -27,11 +27,17 @@ export default function LeadGenerationPage(): ReactElement {
       contactCopy="Tell us about your inventory, current offers and how shopper responses are handled today. Define the campaign and follow-up support your store needs."
       contactLabel="Discuss lead generation"
     >
-      <Chapter id="campaign-inputs" title="Your inventory and offers shape the campaign">
+      <Chapter id="campaign-inputs" title="What an automotive lead generation company does for your dealership">
         <div className={styles.split}>
           <div className={styles.stack}>
-            <p>A campaign starts with the dealership: the vehicles you want to promote, the offer you can make and the shoppers you want to engage. Consultation brings those priorities into the creative and campaign plan.</p>
-            <p>Creative production gives the campaign its message and format. Lead generation adds the campaign job: connecting that advertising with shopper engagement and response.</p>
+            <p>For a dealership, lead generation starts with the vehicles you want to promote, the offer you can make and the shoppers you want to engage. BDC Promotions uses those priorities to shape the creative, campaign audience and response path.</p>
+            <p>The goal is to turn campaign engagement into a lead your team can act on. When a shopper responds, the agreed lead-routing and follow-up process sends that opportunity to the right person, helping your team qualify interest and work toward an appointment. A lead is an opportunity to follow up, not a promise of a sale.</p>
+            <h3>From campaign to appointment opportunity</h3>
+            <ol className={styles.steps}>
+              <li><strong>Campaign setup:</strong> Connect inventory, offers and audience priorities to a clear campaign message.</li>
+              <li><strong>Lead generation:</strong> Give relevant shoppers a reason to respond and make the next step clear.</li>
+              <li><strong>Lead routing and follow-up:</strong> Send responses into the agreed handoff so your team can continue the conversation and work toward a scheduled appointment.</li>
+            </ol>
             <Link className={styles.textLink} href="/services/automotive-ad-creative">Compare creative formats <span aria-hidden="true">→</span></Link>
           </div>
           <dl className={styles.definitions}>
