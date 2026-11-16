@@ -67,6 +67,24 @@ export default function AutomotiveAdCreativePage(): ReactElement {
         </div>
       </Chapter>
 
+      <Chapter id="automotive-digital-marketing" title="How creative fits into automotive digital marketing">
+        <div className={styles.split}>
+          <div className={styles.stack}>
+            <p>Dealerships comparing automotive digital marketing companies should be able to see where creative fits in the full campaign journey. BDC Promotions connects the message, the review process and the next shopper-response step without losing sight of your vehicles, offers or events.</p>
+            <h3>Campaign creative</h3>
+            <p>Start with the campaign goal, vehicle, offer or event. Shape static, event, inventory or video creative around the message your dealership wants shoppers to see.</p>
+            <h3>Approval before launch</h3>
+            <p>Review the offer, details, format and call to action before the creative is used. Approval keeps the campaign message aligned with your dealership’s priorities.</p>
+          </div>
+          <div className={styles.stack}>
+            <h3>Optimization in context</h3>
+            <p>Ad optimization connects the creative to the campaign where it is used. Use the campaign objective, audience and response to guide future creative decisions and revisions.</p>
+            <h3>Handoff to shopper follow-up</h3>
+            <p>When a shopper responds, the next step belongs to your dealership’s lead-management process. If you also need support continuing the conversation and moving toward an appointment, explore <Link className={styles.inlineLink} href="/services/lead-nurturing-appointment-setting">lead nurturing and appointment setting</Link>.</p>
+          </div>
+        </div>
+      </Chapter>
+
       <RelatedLinks title="Put the creative to work" links={[
         { href: "/services/lead-generation", label: "Lead generation" },
         { href: "/services/inventory-advertising", label: "Inventory advertising" },
