@@ -130,6 +130,34 @@ const facebookAdvertisingFaq: readonly FaqItem[] = [
   },
 ];
 
+const carDealershipMarketingAgencyFaq: readonly FaqItem[] = [
+  {
+    question: "What does a car dealership marketing agency do?",
+    answer:
+      "A car dealership marketing agency helps a store plan and execute marketing that reaches vehicle shoppers, creates conversations, supports lead engagement, and measures progress toward dealership opportunities. Services vary, so confirm the exact scope, channels, handoffs, reporting, and approvals in writing.",
+  },
+  {
+    question: "How is a dealership marketing agency different from a general agency?",
+    answer:
+      "A dealership specialist should understand automotive shoppers, inventory and offer changes, BDC handoffs, sales-team workflows, and appointment-focused measurement. A general agency may still be capable, but it should demonstrate how it will learn and adapt to dealership-specific operations.",
+  },
+  {
+    question: "What should I ask about Facebook and Messenger campaigns?",
+    answer:
+      "Ask which campaign objectives and placements the agency recommends, who manages responses, how quickly shoppers are engaged, how questions are escalated, and how Messenger conversations are connected to appointment reporting. The ad and the follow-up workflow should be evaluated together.",
+  },
+  {
+    question: "Should an agency guarantee appointments or sales?",
+    answer:
+      "Be cautious with guarantees that lack a baseline, defined scope, and measurement method. A responsible agency should explain what it controls, what the dealership controls, how outcomes will be tracked, and what will be tested when performance does not meet the agreed objective.",
+  },
+  {
+    question: "How often should a dealership review marketing performance?",
+    answer:
+      "Set a review cadence that matches campaign activity and dealership decision-making. Every review should cover what ran, what shoppers did, how responses were handled, what appointments or opportunities progressed, what the data cannot prove, and what will change next.",
+  },
+];
+
 const automotiveDealershipCrmFaq: readonly FaqItem[] = [
   {
     question: "What should an automotive dealership CRM actually manage?",
@@ -160,6 +188,7 @@ const automotiveDealershipCrmFaq: readonly FaqItem[] = [
 
 export const blogFaqBySlug: Readonly<Record<string, readonly FaqItem[]>> = {
   "automotive-dealership-customer-retention": customerRetentionFaq,
+  "car-dealership-marketing-agency": carDealershipMarketingAgencyFaq,
   "automotive-marketing-agency-evaluation": marketingAgencyEvaluationFaq,
   "messenger-vs-email-for-car-dealership-leads": messengerVsEmailFaq,
   "dealership-messenger-lead-workflow": dealershipMessengerLeadWorkflowFaq,
