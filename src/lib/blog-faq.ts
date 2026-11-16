@@ -158,6 +158,34 @@ const carDealershipMarketingAgencyFaq: readonly FaqItem[] = [
   },
 ];
 
+const automotiveDealershipCrmFaq: readonly FaqItem[] = [
+  {
+    question: "What should an automotive dealership CRM actually manage?",
+    answer:
+      "An automotive dealership CRM should give sales and BDC teams one dependable view of each shopper and the work still required. It is not simply a list of names or a place to store email addresses. The useful test is whether a team member can open a record and understand who the shopper is, what they asked about, how the dealership responded, who owns the opportunity, and what should happen next.",
+  },
+  {
+    question: "How should a CRM support lead routing and follow-up?",
+    answer:
+      "Lead routing is the bridge between capturing an inquiry and assigning responsibility for the next step. A CRM should make the path visible and repeatable, whether the lead arrives from a dealership website, a third-party listing, paid social campaign, phone call, text, or another source.",
+  },
+  {
+    question: "What appointment features should dealerships evaluate?",
+    answer:
+      "Appointments are an important stage between a conversation and a potential showroom opportunity. A CRM should let the team distinguish a general inquiry from a requested appointment, a scheduled appointment, a confirmed appointment, a show, a no-show, and a rescheduled or canceled visit. These labels should be visible enough for staff and managers to act on them.",
+  },
+  {
+    question: "How should a dealership CRM connect marketing activity to outcomes?",
+    answer:
+      "Marketing attribution is useful when it helps a dealership compare sources and make better decisions. It becomes misleading when the system assigns every outcome to the last click or treats incomplete source data as certainty.",
+  },
+  {
+    question: "Which integrations matter in an automotive dealership CRM?",
+    answer:
+      "Integration lists can be impressive, but the practical question is how information moves through the dealership. A connection should reduce duplicate entry, preserve important fields, and make ownership clear when a workflow crosses systems.",
+  },
+];
+
 export const blogFaqBySlug: Readonly<Record<string, readonly FaqItem[]>> = {
   "automotive-dealership-customer-retention": customerRetentionFaq,
   "car-dealership-marketing-agency": carDealershipMarketingAgencyFaq,
@@ -165,4 +193,5 @@ export const blogFaqBySlug: Readonly<Record<string, readonly FaqItem[]>> = {
   "messenger-vs-email-for-car-dealership-leads": messengerVsEmailFaq,
   "dealership-messenger-lead-workflow": dealershipMessengerLeadWorkflowFaq,
   "facebook-advertising-for-car-dealerships": facebookAdvertisingFaq,
+  "automotive-dealership-crm-buyer-guide": automotiveDealershipCrmFaq,
 };
