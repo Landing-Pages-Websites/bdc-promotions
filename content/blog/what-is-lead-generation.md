@@ -4,6 +4,8 @@ title: 'What Is Lead Generation? A Dealership Guide'
 metaTitle: 'What Is Lead Generation? A Dealership Guide'
 metaDescription: 'What is lead generation for a car dealership? See how a shopper response becomes a qualified opportunity, and what a lead is not.'
 description: 'What is lead generation for a car dealership? See how a shopper response becomes a qualified opportunity, and what a lead is not.'
+excerpt: 'What is lead generation for a car dealership? See how a shopper response becomes a qualified opportunity, and what a lead is not.'
+subtitle: 'What is lead generation for a car dealership? See how a shopper response becomes a qualified opportunity, and what a lead is not.'
 slug: what-is-lead-generation
 date: 2026-11-17
 image: https://zleague-public-prod.s3.us-east-2.amazonaws.com/article_images/9951b3b9-96d6-4185-a938-f509cd50ae67/what-is-lead-generation-a-dealership-guide-391593.webp
