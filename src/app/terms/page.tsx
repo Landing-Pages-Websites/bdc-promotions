@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { LegalPageLayout, type LegalSection } from "@/components/legal/LegalPageLayout";
+import { JsonLd } from "@/components/schema/JsonLd";
+import { buildWebPageSchema } from "@/components/schema/builders";
 import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/site.config";
 
@@ -37,6 +39,19 @@ const sections: LegalSection[] = [
   },
 ];
 
+const termsSchema = buildWebPageSchema({
+  name: "BDC Promotions Terms of Service",
+  description:
+    "Official terms of service for BDC Promotions, including website use, services, intellectual property, liability, governing law, and contact information.",
+  path: "/terms",
+  inLanguage: "en-US",
+});
+
 export default function TermsPage(): ReactElement {
-  return <LegalPageLayout title="Terms of Service" path="/terms" sections={sections} />;
+  return (
+    <>
+      <JsonLd data={termsSchema} />
+      <LegalPageLayout title="Terms of Service" path="/terms" sections={sections} />
+    </>
+  );
 }
