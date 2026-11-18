@@ -48,6 +48,14 @@ export interface ArticleInput {
   imagePath?: string;
 }
 
+export interface WebPageInput {
+  readonly name: string;
+  readonly description: string;
+  /** Site-relative path of the page. */
+  readonly path: string;
+  readonly inLanguage: string;
+}
+
 function businessSchemaBase(identity?: BusinessSchemaIdentity): SchemaObject {
   const { contact } = siteConfig;
   const address = identity?.postalAddress ?? {
@@ -167,6 +175,25 @@ export function buildFaqSchema(items: readonly FaqItem[]): SchemaObject {
         text: item.answer,
       },
     })),
+  };
+}
+
+export function buildWebPageSchema(input: WebPageInput): SchemaObject {
+  const pageUrl = absoluteUrl(input.path);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${pageUrl}#webpage`,
+    url: pageUrl,
+    name: input.name,
+    description: input.description,
+    inLanguage: input.inLanguage,
+    isPartOf: {
+      "@type": "WebSite",
+      name: siteConfig.businessName,
+      url: absoluteUrl("/"),
+    },
   };
 }
 
