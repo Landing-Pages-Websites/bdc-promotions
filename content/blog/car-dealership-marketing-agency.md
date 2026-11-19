@@ -1,6 +1,6 @@
 ---
 id: item_8hjz9gvt07aj8zdef31nkvw5v0
-title: 'Car Dealership Marketing Agency: How to Choose'
+title: 'What Questions Should a Dealership Ask a Marketing Agency?'
 slug: car-dealership-marketing-agency
 description: 'Compare a car dealership marketing agency by specialty, creative, lead handling, reporting, approvals, and appointment outcomes before you sign.'
 date: 2026-09-10
@@ -9,6 +9,8 @@ imageAlt: 'Dealership owner and marketing strategist discussing a car dealership
 author: 'Justin Specht'
 ---
 Choosing a **car dealership marketing agency** is not just a matter of finding someone who can buy ads. The right partner should understand how dealership shoppers move from a social impression to a conversation, from a conversation to an appointment, and from an appointment to a showroom opportunity. This guide gives dealership owners, sales leaders, and BDC managers a practical way to compare agencies before signing an agreement.
+
+**[See how BDC Promotions approaches automotive ad creative for car dealerships.](https://bdcpromotions.com/services/automotive-ad-creative)**
 
 **[Talk with BDC Promotions about your dealership's marketing goals.](https://www.bdcpromotions.com/#contact)**
 
