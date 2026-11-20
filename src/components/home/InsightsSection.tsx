@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { managedSiteFieldAttributesV1 } from "@landing-pages-websites/managed-site-contract";
+import Link from "next/link";
 
 import { formatSequenceNumber } from "@/lib/formatSequenceNumber";
 
@@ -54,10 +55,11 @@ export function InsightsSection({
           ))}
         </div>
         <p className="insights-link">
-          Explore more{' '}
-          <a className="button button--ghost" href="https://bdcpromotions.com/blog">
-            dealership marketing guides
-          </a>
+          Read practical guidance on lead response, paid social campaigns, and
+          customer engagement in the BDC Promotions blog.{' '}
+          <Link className="button button--ghost" href="/blog">
+            Explore dealership marketing insights
+          </Link>
           .
         </p>
       </div>
