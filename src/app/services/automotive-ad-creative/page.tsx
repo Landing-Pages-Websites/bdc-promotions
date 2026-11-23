@@ -21,6 +21,7 @@ export default function AutomotiveAdCreativePage(): ReactElement {
       chapters={[
         { href: "#creative-formats", label: "Choose a format" },
         { href: "#creative-support", label: "Shape the creative" },
+        { href: "#buyer-questions", label: "Questions before you choose" },
         { href: "#discuss-your-dealership", label: "Discuss your creative" },
       ]}
       contactTitle="What does your next campaign need to say?"
@@ -82,6 +83,25 @@ export default function AutomotiveAdCreativePage(): ReactElement {
             <h3>Handoff to shopper follow-up</h3>
             <p>When a shopper responds, the next step belongs to your dealership’s lead-management process. If you also need support continuing the conversation and moving toward an appointment, explore <Link className={styles.inlineLink} href="/services/lead-nurturing-appointment-setting">lead nurturing and appointment setting</Link>.</p>
           </div>
+        </div>
+      </Chapter>
+
+      <Chapter id="buyer-questions" title="Questions dealerships ask before choosing creative">
+        <div className={styles.stack}>
+          <h3>What does an automotive digital marketing company do with dealership ad creative?</h3>
+          <p>An automotive digital marketing company can help connect a dealership’s campaign goal to the message shoppers see. BDC Promotions shapes static, event, inventory and video creative around the vehicles, offers or events your dealership wants to promote, then discusses how the creative fits the campaign.</p>
+
+          <h3>Can we choose only the creative support we need?</h3>
+          <p>Yes. Start with the format or production support that fits the campaign, such as static creative, event ads and videos, inventory creative, or video creation and editing. Discuss campaign execution, optimization and shopper follow-up separately so the scope matches your dealership.</p>
+
+          <h3>What types of automotive ad creative can BDC Promotions create?</h3>
+          <p>BDC Promotions works with static and new-car lead-gen ads, event ads and event videos, inventory creative, and video creation and editing. The right format depends on the message, vehicles, offer, event, footage and story available.</p>
+
+          <h3>What do you need from our dealership before creative work starts?</h3>
+          <p>Bring the vehicles, offers or event you want to promote; the static or video formats you are considering; and existing footage, creative and approved stories. During consultation, confirm the production scope, timing and revision needs.</p>
+
+          <h3>How does approval work before launch?</h3>
+          <p>Review the offer, details, format and call to action before the creative is used. That review keeps the campaign message aligned with your dealership’s priorities.</p>
         </div>
       </Chapter>
 
