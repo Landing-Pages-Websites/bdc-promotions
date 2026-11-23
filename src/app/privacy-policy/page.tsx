@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactElement } from "react";
 import { LegalPageLayout, type LegalSection } from "@/components/legal/LegalPageLayout";
+import { JsonLd } from "@/components/schema/JsonLd";
 import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/site.config";
 
@@ -37,6 +38,21 @@ const sections: LegalSection[] = [
   },
 ];
 
+const privacySchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "https://bdcpromotions.com/privacy-policy",
+  url: "https://bdcpromotions.com/privacy-policy",
+  name: "Privacy Policy",
+  description:
+    "BDC Promotions may collect information you choose to provide when contacting us, along with basic website usage and device information collected through analytics tools.",
+};
+
 export default function PrivacyPolicyPage(): ReactElement {
-  return <LegalPageLayout title="Privacy Policy" path="/privacy-policy" sections={sections} />;
+  return (
+    <>
+      <JsonLd data={privacySchema} />
+      <LegalPageLayout title="Privacy Policy" path="/privacy-policy" sections={sections} />
+    </>
+  );
 }
