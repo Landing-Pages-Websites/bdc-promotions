@@ -30,5 +30,12 @@ const sections: LegalSection[] = [
 ];
 
 export default function CookiePolicyPage(): ReactElement {
-  return <LegalPageLayout title="Cookie Policy" path="/cookie-policy" sections={sections} />;
+  return (
+    <LegalPageLayout
+      title="Cookie Policy"
+      path="/cookie-policy"
+      intro="BDC Promotions, Inc. (BDC Promotions). Cookies help this website work properly, remember your preferences, and help BDC Promotions understand site activity so we can improve the experience. This page explains how cookies and similar technologies may be used and how to manage analytics preferences. If you have questions about cookie use, contact BDC Promotions at 352-207-1074 or Justin@BDC-Promotions.com."
+      sections={sections}
+    />
+  );
 }

@@ -12,12 +12,18 @@ export interface LegalPageLayoutProps {
   title: string;
   path: string;
   sections: LegalSection[];
+  intro?: string;
 }
 
 /** Shared shell for the scaffolded legal pages (privacy/terms/cookies). */
-export function LegalPageLayout({ title, path, sections }: LegalPageLayoutProps): ReactElement {
+export function LegalPageLayout({ title, path, sections, intro }: LegalPageLayoutProps): ReactElement {
   return (
-    <InteriorPage path={path} title={title} intro={`${siteConfig.legalName} (${siteConfig.businessName})`} chapters={[]}>
+    <InteriorPage
+      path={path}
+      title={title}
+      intro={intro ?? `${siteConfig.legalName} (${siteConfig.businessName})`}
+      chapters={[]}
+    >
       <section className={shared.chapter} aria-label={title}>
         <div className={`${shared.container} ${shared.legalDoc}`}>
           {sections.map((section, index) => (
