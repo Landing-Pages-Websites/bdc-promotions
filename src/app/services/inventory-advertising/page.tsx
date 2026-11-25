@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
 
+import { JsonLd } from "@/components/schema/JsonLd";
+import { buildServiceSchema } from "@/components/schema/builders";
 import { Chapter, Plate, RelatedLinks, ServicePage } from "@/components/signal-lane/ServicePage";
 import styles from "@/components/signal-lane/service-page.module.css";
 import { buildMetadata } from "@/lib/seo";
@@ -12,9 +14,23 @@ export const metadata: Metadata = buildMetadata({
   path: "/services/inventory-advertising",
 });
 
+const serviceSchema = buildServiceSchema({
+  name: "Automotive Inventory Advertising",
+  description:
+    "Inventory advertising support for automotive dealerships comparing Meta Automotive Inventory Ads and Google Vehicle Listing Ads, with discussion of channel roles, inventory, feed requirements, campaign geography, media spend, and service scope.",
+  path: "/services/inventory-advertising",
+  serviceType: "Automotive inventory advertising support",
+  providerName: "BDC Promotions",
+  providerPath: "/",
+  areaServedName: "United States",
+  audienceType: "Automotive dealerships",
+});
+
 export default function InventoryAdvertisingPage(): ReactElement {
   return (
-    <ServicePage
+    <>
+      <JsonLd data={serviceSchema} />
+      <ServicePage
       visual={<Plate file="hero-wholesale-public" width={1122} height={1402} alt="Historical wholesale-to-the-public creative showing vehicles outside a dealership" max={400} eager />}
       title="Inventory advertising for the vehicles on your lot"
       intro="Bring dealership inventory into your advertising. Compare Meta Automotive Inventory Ads with Google Vehicle Listing Ads to understand where each channel fits your store’s priorities."
@@ -90,6 +106,7 @@ export default function InventoryAdvertisingPage(): ReactElement {
         { href: "/services/lead-nurturing-appointment-setting", label: "Lead nurturing and appointment setting" },
         { href: "/pricing", label: "Service Options" },
       ]} />
-    </ServicePage>
+      </ServicePage>
+    </>
   );
 }

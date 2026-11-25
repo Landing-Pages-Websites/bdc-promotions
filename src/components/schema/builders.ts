@@ -56,6 +56,19 @@ export interface WebPageInput {
   readonly inLanguage: string;
 }
 
+export interface ServiceInput {
+  readonly name: string;
+  readonly description: string;
+  /** Site-relative path of the service page. */
+  readonly path: string;
+  readonly serviceType: string;
+  readonly providerName: string;
+  /** Site-relative path of the provider's homepage. */
+  readonly providerPath: string;
+  readonly areaServedName: string;
+  readonly audienceType: string;
+}
+
 function businessSchemaBase(identity?: BusinessSchemaIdentity): SchemaObject {
   const { contact } = siteConfig;
   const address = identity?.postalAddress ?? {
@@ -193,6 +206,33 @@ export function buildWebPageSchema(input: WebPageInput): SchemaObject {
       "@type": "WebSite",
       name: siteConfig.businessName,
       url: absoluteUrl("/"),
+    },
+  };
+}
+
+export function buildServiceSchema(input: ServiceInput): SchemaObject {
+  const serviceUrl = absoluteUrl(input.path);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${serviceUrl}#service`,
+    name: input.name,
+    description: input.description,
+    url: serviceUrl,
+    serviceType: input.serviceType,
+    provider: {
+      "@type": "Organization",
+      name: input.providerName,
+      url: absoluteUrl(input.providerPath),
+    },
+    areaServed: {
+      "@type": "Country",
+      name: input.areaServedName,
+    },
+    audience: {
+      "@type": "Audience",
+      audienceType: input.audienceType,
     },
   };
 }
