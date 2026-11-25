@@ -43,6 +43,12 @@ export default function InventoryAdvertisingPage(): ReactElement {
             <p>The channel’s role is search visibility: connecting the vehicles you advertise with shoppers already looking for a vehicle.</p>
           </article>
         </div>
+        <h3>Which approach fits your dealership?</h3>
+        <dl className={styles.definitions}>
+          <div><dt>Choose Meta Automotive Inventory Ads when</dt><dd>You want to put real vehicles in front of shoppers while they browse a social environment and are open to testing the audience options available for your campaign.</dd></div>
+          <div><dt>Choose Google Vehicle Listing Ads when</dt><dd>You want your advertised vehicles to appear for shoppers actively searching on Google and are ready to review the inventory feed and account requirements.</dd></div>
+          <div><dt>Discuss inventory advertising support when</dt><dd>You want help comparing channel roles, inventory and feed requirements, campaign geography, media spend and service scope before choosing a path.</dd></div>
+        </dl>
       </Chapter>
 
       <Chapter id="inventory-creative" title="Keep the vehicles and the message connected">
